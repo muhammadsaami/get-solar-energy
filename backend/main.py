@@ -27,12 +27,14 @@ from roi import router as roi_router
 from chat import router as chat_router
 from referral import router as referral_router
 from auth import router as auth_router
+from generation import router as generation_router
 
 app.include_router(roof_router)
 app.include_router(roi_router)
 app.include_router(chat_router)
 app.include_router(referral_router)
 app.include_router(auth_router)
+app.include_router(generation_router)
 
 @app.get("/")
 def home():
