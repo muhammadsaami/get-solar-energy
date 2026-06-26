@@ -1,0 +1,44 @@
+[
+  {
+    "id": "amazon_500",
+    "name": "Amazon Voucher \u20b9500",
+    "points_required": 5000,
+    "category": "voucher",
+    "description": "Redeem for an Amazon.in gift card worth \u20b9500."
+  },
+  {
+    "id": "amazon_200",
+    "name": "Amazon Voucher \u20b9200",
+    "points_required": 2000,
+    "category": "voucher",
+    "description": "Redeem for an Amazon.in gift card worth \u20b9200."
+  },
+  {
+    "id": "consultation",
+    "name": "Free Solar Consultation",
+    "points_required": 1000,
+    "category": "service",
+    "description": "One-on-one 30-minute session with a certified solar adviser."
+  },
+  {
+    "id": "site_survey",
+    "name": "Free Site Survey",
+    "points_required": 3000,
+    "category": "service",
+    "description": "Professional on-site rooftop survey and shadow analysis."
+  },
+  {
+    "id": "maintenance_1yr",
+    "name": "1 Year Panel Maintenance",
+    "points_required": 8000,
+    "category": "service",
+    "description": "Annual cleaning and performance check for your solar panels."
+  },
+  {
+    "id": "cashback_100",
+    "name": "Cashback \u20b9100",
+    "points_required": 1000,
+    "category": "cashback",
+    "description": "Direct cashback of \u20b9100 to your linked bank account."
+  }
+]

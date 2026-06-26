@@ -1,0 +1,26 @@
+[
+  {
+    "email": "admin@getsolar.in",
+    "reward_id": "amazon_500",
+    "reward_name": "Amazon Voucher ₹500",
+    "points_spent": 5000,
+    "status": "processing",
+    "redeemed_at": "2026-06-19T09:39:58.888445"
+  },
+  {
+    "email": "admin@getsolar.in",
+    "reward_id": "amazon_200",
+    "reward_name": "Amazon Voucher ₹200",
+    "points_spent": 2000,
+    "status": "processing",
+    "redeemed_at": "2026-06-19T09:40:02.847566"
+  },
+  {
+    "email": "admin@getsolar.in",
+    "reward_id": "consultation",
+    "reward_name": "Free Solar Consultation",
+    "points_spent": 1000,
+    "status": "processing",
+    "redeemed_at": "2026-06-19T09:40:08.333309"
+  }
+]

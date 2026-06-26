@@ -1,0 +1,10 @@
+[
+  {
+    "referrer_email": "hammaad@test.com",
+    "referred_email": "demo@getsolar.in",
+    "referrer_points": 100,
+    "referred_points": 50,
+    "status": "completed",
+    "created_at": "2026-06-17T04:23:55.876979"
+  }
+]
