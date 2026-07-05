@@ -154,3 +154,11 @@ def get_recent_bills(
 ):
     """Retrieve the most recently uploaded or processed billing records."""
     return customer_service.get_recent_bills(db, skip=skip, limit=limit)
+
+
+@router.get("/api/dashboard/analytics")
+def get_dashboard_analytics(
+    db: Session = Depends(get_sqlite_db)
+):
+    """Retrieve comprehensive SQL-driven business intelligence and aggregates."""
+    return customer_service.get_dashboard_analytics(db)

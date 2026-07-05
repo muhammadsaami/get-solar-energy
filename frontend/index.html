@@ -5374,519 +5374,572 @@
 
       <!-- --- BUSINESS INTELLIGENCE TAB CONTENT --- -->
       <div class="tab-content" id="tab-business-intelligence">
-        <!-- Boardroom Executive Header -->
+        
+        <!-- Boardroom Executive Header & Command Center -->
         <div class="card-base" style="--card-theme: 23, 168, 229; padding: 20px; margin-bottom: 20px; background: rgba(15, 23, 42, 0.45); backdrop-filter: blur(16px); border: 1px solid rgba(255, 255, 255, 0.08);">
-          <div style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 15px;">
+          <div style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 15px; margin-bottom: 15px;">
             <div>
               <h2 class="tab-heading" style="margin: 0; font-size: 22px; font-weight: 800; letter-spacing: -0.5px; background: linear-gradient(135deg, #fff, #94a3b8); -webkit-background-clip: text; -webkit-text-fill-color: transparent;">Executive Business Intelligence</h2>
-              <p class="tab-subheading" style="margin: 5px 0 0 0; font-size: 12px; color: var(--text-muted); font-weight: 600;">Real-Time Solar Platform Performance &amp; Strategic Insights</p>
+              <p class="tab-subheading" style="margin: 5px 0 0 0; font-size: 12px; color: var(--text-muted); font-weight: 600;">India's Enterprise Solar Performance Command Center</p>
             </div>
+            
             <div style="display: flex; align-items: center; gap: 12px; flex-wrap: wrap;">
+              <!-- Auto-Refresh Selector -->
+              <div style="display: flex; align-items: center; gap: 6px; background: rgba(255,255,255,0.02); border: 1px solid var(--border-color); border-radius: 6px; padding: 4px 8px;">
+                <label for="biAutoRefresh" style="font-size: 10px; color: var(--text-secondary); font-weight: 700;">AUTO REFRESH:</label>
+                <select id="biAutoRefresh" class="bi-filter-select" style="padding: 2px 6px; margin: 0; font-size: 10px; background: transparent; border: none; color: #fff; width: auto; font-weight: 800;">
+                  <option value="off" style="background:#0f172a;">Off</option>
+                  <option value="30" style="background:#0f172a;">30 Sec</option>
+                  <option value="60" style="background:#0f172a;">60 Sec</option>
+                </select>
+              </div>
+              
+              <!-- Refresh timestamp -->
               <span id="biLastRefreshTime" style="font-size: 11px; color: var(--text-muted); font-weight: 600; padding: 6px 12px; background: rgba(255,255,255,0.02); border: 1px solid var(--border-color); border-radius: 6px;">Last Refreshed: Just Now</span>
-              <button id="btnBiInvestorMode" class="calc-btn" style="padding: 8px 16px; font-size: 12px; height: auto; display: flex; align-items: center; gap: 6px; width: auto; margin: 0; background: rgba(255,255,255,0.03); border-color: rgba(255,255,255,0.15);">
-                <span>Investor Mode</span>
+              
+              <!-- Export Center Dropdown -->
+              <div class="bi-multiselect-dropdown" style="width: auto;">
+                <button id="biBtnExportCenter" class="calc-btn" style="padding: 8px 16px; font-size: 12px; height: auto; display: flex; align-items: center; gap: 6px; width: auto; margin: 0; background: var(--accent-blue); border-color: var(--accent-blue);">
+                  <span>Export Center ▼</span>
+                </button>
+                <div id="biExportDropdownMenu" class="bi-multiselect-options" style="right: 0; width: 220px;">
+                  <div class="bi-multiselect-item" id="biExportBoardReport">📋 Board Meeting Report (PDF)</div>
+                  <div class="bi-multiselect-item" id="biExportMgmtSummary">📊 Management Summary (Excel)</div>
+                  <div class="bi-multiselect-item" id="biExportCustReport">👥 Detailed Customer Report (CSV)</div>
+                  <div class="bi-multiselect-item" id="biExportSnapshot">📸 Analytics Snapshot (PDF)</div>
+                </div>
+              </div>
+              
+              <button id="biBtnPrintReport" class="calc-btn" style="padding: 8px 16px; font-size: 12px; height: auto; display: flex; align-items: center; gap: 6px; width: auto; margin: 0; background: var(--accent-orange); border-color: var(--accent-orange);">
+                <span>Print Report</span>
               </button>
-              <button id="btnBiPresentationMode" class="calc-btn" style="padding: 8px 16px; font-size: 12px; height: auto; display: flex; align-items: center; gap: 6px; width: auto; margin: 0;">
-                <span>Presentation Mode</span>
-              </button>
-              <button id="btnBiExportCSV" class="calc-btn technical-metric" style="padding: 8px 16px; font-size: 12px; height: auto; background: var(--accent-orange); border-color: var(--accent-orange); display: flex; align-items: center; gap: 6px; width: auto; margin: 0;">
-                <span>Export CSV</span>
-              </button>
+            </div>
+          </div>
+          
+          <!-- Auto Refresh Countdown Progress -->
+          <div class="bi-refresh-countdown-outer">
+            <div class="bi-refresh-countdown-inner" id="biRefreshTimerBar" style="width: 0%;"></div>
+          </div>
+          
+          <!-- Executive Command Center Status Panel -->
+          <div class="bi-command-center" style="margin-top: 15px;">
+            <div class="bi-cc-metric">
+              <span class="bi-cc-label">Platform Health Score</span>
+              <div class="bi-cc-health-score">
+                <div class="bi-health-indicator-circle healthy" id="biCcHealthIndicator"></div>
+                <span class="bi-cc-value" id="biCcHealthScore">98%</span>
+              </div>
+            </div>
+            <div class="bi-cc-metric">
+              <span class="bi-cc-label">System Status</span>
+              <span class="bi-cc-value" style="color: #36D399;" id="biCcSystemHealth">Operational</span>
+            </div>
+            <div class="bi-cc-metric">
+              <span class="bi-cc-label">Database Status</span>
+              <span class="bi-cc-value" id="biCcDbStatus">Connected (SQLite)</span>
+            </div>
+            <div class="bi-cc-metric">
+              <span class="bi-cc-label">Active API Services</span>
+              <span class="bi-cc-value" id="biCcActiveApis">12 Endpoints</span>
+            </div>
+            <div class="bi-cc-metric">
+              <span class="bi-cc-label">Active Clientele</span>
+              <span class="bi-cc-value" id="biCcActiveCustomers">—</span>
             </div>
           </div>
         </div>
 
-        <!-- BI Empty State Container -->
-        <div id="biDashboardEmptyState" class="card-base" style="display: none; padding: 40px; text-align: center; max-width: 600px; margin: 40px auto; flex-direction: column; align-items: center; justify-content: center; gap: 20px; border-color: rgba(247, 147, 30, 0.3);">
-          <div style="background: rgba(247, 147, 30, 0.1); border-radius: 50%; width: 70px; height: 70px; display: flex; align-items: center; justify-content: center; margin-bottom: 10px;">
-            <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" width="36" height="36" fill="none" stroke="#F7931E" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-              <line x1="18" y1="20" x2="18" y2="10"></line>
-              <line x1="12" y1="20" x2="12" y2="4"></line>
-              <line x1="6" y1="20" x2="6" y2="14"></line>
-            </svg>
-          </div>
-          <h3 style="margin: 0; font-size: 18px; font-weight: 700; color: #ffffff;">No Business Intelligence Data Available</h3>
-          <p style="margin: 0; color: var(--text-secondary); line-height: 1.6; font-size: 13px; max-width: 480px;">
-            No sales opportunities have entered the CRM pipeline yet. Complete Bill Analysis, Roof Assessment, ROI Calculations, or generate Reports to begin collecting lead intelligence.
-          </p>
-          <div style="display: flex; gap: 15px; margin-top: 15px; flex-wrap: wrap; justify-content: center;">
-            <button id="btnEmptyStateCrm" class="calc-btn" style="padding: 10px 20px; font-size: 13px; height: auto; width: auto; margin: 0; display: flex; align-items: center; gap: 6px;">
-              <span>Open CRM</span>
-            </button>
-            <button id="btnEmptyStateBill" class="calc-btn" style="padding: 10px 20px; font-size: 13px; height: auto; width: auto; margin: 0; background: #00AEEF; border-color: #00AEEF; display: flex; align-items: center; gap: 6px;">
-              <span>Open Bill Analyzer</span>
-            </button>
-            <button id="btnEmptyStateRoi" class="calc-btn" style="padding: 10px 20px; font-size: 13px; height: auto; width: auto; margin: 0; background: #ea580c; border-color: #ea580c; display: flex; align-items: center; gap: 6px;">
-              <span>Open ROI Calculator</span>
-            </button>
-          </div>
+        <!-- BI Skeleton Loader -->
+        <div id="biSkeletonLoader" class="kpi-grid-5" style="display: none; margin-bottom: 20px;">
+          <div class="card-base skeleton-loader" style="height: 100px; padding: 16px;"></div>
+          <div class="card-base skeleton-loader" style="height: 100px; padding: 16px;"></div>
+          <div class="card-base skeleton-loader" style="height: 100px; padding: 16px;"></div>
+          <div class="card-base skeleton-loader" style="height: 100px; padding: 16px;"></div>
+          <div class="card-base skeleton-loader" style="height: 100px; padding: 16px;"></div>
         </div>
 
-        <!-- Skeleton Loaders Overlay -->
-        <div id="biSkeletonLoader" class="kpi-grid-5" style="display: none;">
-          <div class="card-base skeleton-loader" style="height: 120px; padding: 16px;">
-            <div class="skeleton-text"></div>
-            <div class="skeleton-text short" style="height: 24px;"></div>
-            <div class="skeleton-text" style="width: 50%;"></div>
-          </div>
-          <div class="card-base skeleton-loader" style="height: 120px; padding: 16px;">
-            <div class="skeleton-text"></div>
-            <div class="skeleton-text short" style="height: 24px;"></div>
-            <div class="skeleton-text" style="width: 50%;"></div>
-          </div>
-          <div class="card-base skeleton-loader" style="height: 120px; padding: 16px;">
-            <div class="skeleton-text"></div>
-            <div class="skeleton-text short" style="height: 24px;"></div>
-            <div class="skeleton-text" style="width: 50%;"></div>
-          </div>
-          <div class="card-base skeleton-loader" style="height: 120px; padding: 16px;">
-            <div class="skeleton-text"></div>
-            <div class="skeleton-text short" style="height: 24px;"></div>
-            <div class="skeleton-text" style="width: 50%;"></div>
-          </div>
-          <div class="card-base skeleton-loader" style="height: 120px; padding: 16px;">
-            <div class="skeleton-text"></div>
-            <div class="skeleton-text short" style="height: 24px;"></div>
-            <div class="skeleton-text" style="width: 50%;"></div>
-          </div>
+        <!-- BI Error Container -->
+        <div id="biErrorContainer" class="card-base" style="display: none; padding: 20px; text-align: center; margin-bottom: 20px; border-color: rgba(239, 68, 68, 0.3);">
+          <span style="color: #ef4444; font-size: 13px; font-weight: 700; display: block; margin-bottom: 10px;">Failed to load Business Intelligence metrics from SQLite.</span>
+          <button id="biErrorRetryBtn" class="calc-btn" style="width: auto; padding: 6px 16px; font-size: 11px;">Retry Connection</button>
         </div>
 
-        <!-- Conditional Active View Wrapper -->
+        <!-- BI Active View Container -->
         <div id="biDashboardActiveView">
-          <!-- Executive KPI Grid Row (5 per row on desktop) -->
-          <div class="kpi-grid-5">
-            <!-- Total Registered Users -->
-            <div class="card-base technical-metric" style="--card-theme: 23, 168, 229; padding: 16px; display: flex; flex-direction: column; justify-content: space-between; min-height: 120px;">
-              <div>
-                <div style="display: flex; justify-content: space-between; align-items: flex-start;">
-                  <span style="font-size: 10px; text-transform: uppercase; color: var(--text-muted); font-weight: bold; letter-spacing: 0.5px;">Registered Users</span>
-                  <span id="biKpiTotalUsersBadge" class="crm-badge badge-intent-high" style="font-size: 9px; font-weight: 700; padding: 1px 4px;">ACTIVE</span>
-                </div>
-                <div style="font-size: 22px; font-weight: 800; color: #ffffff; margin-top: 4px;" id="biKpiTotalUsers">—</div>
-              </div>
-              <div style="margin: 8px 0; height: 30px;">
-                <svg viewBox="0 0 120 30" width="100%" height="30" preserveAspectRatio="none" style="overflow: visible;">
-                  <path id="biSparklineUsersPath" d="M 0 15" fill="none" stroke="#00aeef" stroke-width="1.5" stroke-linecap="round"></path>
-                </svg>
-              </div>
-              <div style="display: flex; justify-content: space-between; align-items: baseline; font-size: 10px; border-top: 1px solid rgba(255,255,255,0.03); padding-top: 4px;">
-                <span style="color: var(--text-secondary);" id="biKpiTotalUsersPrev">Prev Period: —</span>
-                <span id="biTrendTotalUsers" class="trend-indicator trend-neutral" style="font-size: 9px;">—</span>
+          
+          <!-- Executive Brief Summary Box -->
+          <div class="card-base" style="--card-theme: 54, 211, 153; padding: 20px; margin-bottom: 20px; background: rgba(6, 17, 31, 0.72); border: 1px solid rgba(255, 255, 255, 0.08);">
+            <div style="display: flex; gap: 8px; align-items: center; margin-bottom: 8px;">
+              <span class="api-tag" style="margin: 0; background: var(--accent-blue-glow); color: var(--accent-blue); font-size: 9px; font-weight: 800; border-radius: 4px; padding: 2px 6px;">BOARDROOM EXECUTIVE BRIEF</span>
+              <span style="font-size: 10px; color: var(--text-muted);">SQL Aggregated Snapshot</span>
+            </div>
+            <p id="biExecutiveBrief" style="margin: 0; font-size: 13px; font-weight: 700; color: #ffffff; line-height: 1.6; letter-spacing: -0.2px;">
+              Analyzing database analytics...
+            </p>
+          </div>
+
+          <!-- Time Intelligence Grid -->
+          <div class="bi-time-intelligence">
+            <div class="bi-time-chip">
+              <span style="font-size: 9px; color: var(--text-muted); font-weight: 700; text-transform: uppercase;">Added Today</span>
+              <span class="bi-time-chip-val" id="biTimeCustomersToday">—</span>
+              <span style="font-size: 8px; color: var(--text-secondary);">Customers</span>
+            </div>
+            <div class="bi-time-chip">
+              <span style="font-size: 9px; color: var(--text-muted); font-weight: 700; text-transform: uppercase;">Imported Today</span>
+              <span class="bi-time-chip-val" id="biTimeBillsToday">—</span>
+              <span style="font-size: 8px; color: var(--text-secondary);">Utility Bills</span>
+            </div>
+            <div class="bi-time-chip">
+              <span style="font-size: 9px; color: var(--text-muted); font-weight: 700; text-transform: uppercase;">This Week</span>
+              <span class="bi-time-chip-val" id="biTimeCustomersWeek">—</span>
+              <span style="font-size: 8px; color: var(--text-secondary);">Customers</span>
+            </div>
+            <div class="bi-time-chip">
+              <span style="font-size: 9px; color: var(--text-muted); font-weight: 700; text-transform: uppercase;">This Month</span>
+              <span class="bi-time-chip-val" id="biTimeCustomersMonth">—</span>
+              <span style="font-size: 8px; color: var(--text-secondary);">Customers</span>
+            </div>
+            <div class="bi-time-chip">
+              <span style="font-size: 9px; color: var(--text-muted); font-weight: 700; text-transform: uppercase;">Last 30 Days</span>
+              <span class="bi-time-chip-val" id="biTimeCustomers30d">—</span>
+              <span style="font-size: 8px; color: var(--text-secondary);">Customers</span>
+            </div>
+            <div class="bi-time-chip">
+              <span style="font-size: 9px; color: var(--text-muted); font-weight: 700; text-transform: uppercase;">Prev Month</span>
+              <span class="bi-time-chip-val" id="biTimeCustomersPrevMonth">—</span>
+              <span style="font-size: 8px; color: var(--text-secondary);">Customers</span>
+            </div>
+            <div class="bi-time-chip" style="border-color: rgba(0, 174, 239, 0.25); background: rgba(0, 174, 239, 0.02);">
+              <span style="font-size: 9px; color: var(--accent-blue); font-weight: 800; text-transform: uppercase;">Latest Import</span>
+              <span class="bi-time-chip-val" style="color: var(--accent-blue); font-size: 11px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;" id="biTimeLatestImport">—</span>
+              <span style="font-size: 8px; color: var(--text-secondary);" id="biTimeLatestImportDate">—</span>
+            </div>
+          </div>
+
+          <!-- Advanced Horizontal Filter Bar -->
+          <div class="bi-filter-bar">
+            <div class="bi-filter-group">
+              <label class="bi-filter-label" for="biFilterSearch">Search Customers</label>
+              <input type="text" id="biFilterSearch" class="bi-filter-input" placeholder="Name or Consumer ID...">
+            </div>
+            
+            <div class="bi-filter-group">
+              <label class="bi-filter-label">City Location (Multi-select)</label>
+              <div class="bi-multiselect-dropdown">
+                <button type="button" id="biFilterCityBtn" class="bi-multiselect-btn">Select Cities <span>▼</span></button>
+                <div id="biFilterCityOptions" class="bi-multiselect-options"></div>
               </div>
             </div>
-            <!-- Total Leads Pipeline -->
-            <div class="card-base" style="--card-theme: 23, 168, 229; padding: 16px; display: flex; flex-direction: column; justify-content: space-between; min-height: 120px;">
-              <div>
-                <div style="display: flex; justify-content: space-between; align-items: flex-start;">
-                  <span style="font-size: 10px; text-transform: uppercase; color: var(--text-muted); font-weight: bold; letter-spacing: 0.5px;">Total Leads</span>
-                  <span id="biKpiTotalLeadsBadge" class="crm-badge badge-intent-medium" style="font-size: 9px; font-weight: 700; padding: 1px 4px;">STEADY</span>
-                </div>
-                <div style="font-size: 22px; font-weight: 800; color: #ffffff; margin-top: 4px;" id="biKpiTotalLeads">—</div>
-              </div>
-              <div style="margin: 8px 0; height: 30px;">
-                <svg viewBox="0 0 120 30" width="100%" height="30" preserveAspectRatio="none" style="overflow: visible;">
-                  <path id="biSparklineLeadsPath" d="M 0 15" fill="none" stroke="#a855f7" stroke-width="1.5" stroke-linecap="round"></path>
-                </svg>
-              </div>
-              <div style="display: flex; justify-content: space-between; align-items: baseline; font-size: 10px; border-top: 1px solid rgba(255,255,255,0.03); padding-top: 4px;">
-                <span style="color: var(--text-secondary);" id="biKpiTotalLeadsPrev">Prev Period: —</span>
-                <span id="biTrendTotalLeads" class="trend-indicator trend-neutral" style="font-size: 9px;">—</span>
+            
+            <div class="bi-filter-group">
+              <label class="bi-filter-label">DISCOM Utility (Multi-select)</label>
+              <div class="bi-multiselect-dropdown">
+                <button type="button" id="biFilterDiscomBtn" class="bi-multiselect-btn">Select DISCOMs <span>▼</span></button>
+                <div id="biFilterDiscomOptions" class="bi-multiselect-options"></div>
               </div>
             </div>
-            <!-- Active Referrals -->
-            <div class="card-base" style="--card-theme: 23, 168, 229; padding: 16px; display: flex; flex-direction: column; justify-content: space-between; min-height: 120px;">
-              <div>
-                <div style="display: flex; justify-content: space-between; align-items: flex-start;">
-                  <span style="font-size: 10px; text-transform: uppercase; color: var(--text-muted); font-weight: bold; letter-spacing: 0.5px;">Active Referrals</span>
-                  <span id="biKpiReferralsBadge" class="crm-badge badge-intent-low" style="font-size: 9px; font-weight: 700; padding: 1px 4px;">GROWING</span>
-                </div>
-                <div style="font-size: 22px; font-weight: 800; color: #ffffff; margin-top: 4px;" id="biKpiReferrals">—</div>
+            
+            <div class="bi-filter-group">
+              <label class="bi-filter-label" for="biFilterPeriod">Billing Period</label>
+              <select id="biFilterPeriod" class="bi-filter-select">
+                <option value="">All Periods</option>
+              </select>
+            </div>
+            
+            <div class="bi-filter-group bi-range-container">
+              <div class="bi-range-labels">
+                <span class="bi-filter-label">Min Recommended kW</span>
+                <span id="biValFilterKw">Any</span>
               </div>
-              <div style="margin: 8px 0; height: 30px;">
-                <svg viewBox="0 0 120 30" width="100%" height="30" preserveAspectRatio="none" style="overflow: visible;">
-                  <path id="biSparklineReferralsPath" d="M 0 15" fill="none" stroke="#ff8a1d" stroke-width="1.5" stroke-linecap="round"></path>
-                </svg>
+              <input type="range" id="biFilterKw" class="bi-range-slider" min="0" max="15" step="0.5" value="0">
+            </div>
+            
+            <div class="bi-filter-group bi-range-container">
+              <div class="bi-range-labels">
+                <span class="bi-filter-label">Max Payback Years</span>
+                <span id="biValFilterPayback">Any</span>
               </div>
-              <div style="display: flex; justify-content: space-between; align-items: baseline; font-size: 10px; border-top: 1px solid rgba(255,255,255,0.03); padding-top: 4px;">
-                <span style="color: var(--text-secondary);" id="biKpiReferralsPrev">Prev Period: —</span>
-                <span id="biTrendReferrals" class="trend-indicator trend-neutral" style="font-size: 9px;">—</span>
+              <input type="range" id="biFilterPayback" class="bi-range-slider" min="0" max="10" step="0.5" value="10">
+            </div>
+            
+            <div class="bi-filter-group bi-range-container">
+              <div class="bi-range-labels">
+                <span class="bi-filter-label">Max Monthly Bill</span>
+                <span id="biValFilterBill">Any</span>
+              </div>
+              <input type="range" id="biFilterBill" class="bi-range-slider" min="500" max="15000" step="500" value="15000">
+            </div>
+            
+            <div class="bi-filter-group bi-range-container">
+              <div class="bi-range-labels">
+                <span class="bi-filter-label">Max Units Consumed</span>
+                <span id="biValFilterUnits">Any</span>
+              </div>
+              <input type="range" id="biFilterUnits" class="bi-range-slider" min="50" max="1500" step="50" value="1500">
+            </div>
+          </div>
+
+          <!-- Executive Alerts Banners -->
+          <div class="bi-alerts-container" id="biAlertsContainer"></div>
+
+          <!-- 14-Card Live KPI Grid (with trend percentages and Sparklines) -->
+          <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(130px, 1fr)); gap: 12px; margin-bottom: 20px;">
+            <!-- Customers -->
+            <div class="card-base bi-focusable" tabindex="0" id="biCardKpiCustomers" style="--card-theme: 23, 168, 229; padding: 12px; min-height: 110px; cursor:pointer;">
+              <span class="kpi-title" style="font-size: 9px; text-transform: uppercase; font-weight: 700; color: var(--text-muted);">Total Customers</span>
+              <div style="font-size: 20px; font-weight: 800; color: #ffffff; margin-top: 4px;" id="biKpiCustomers">—</div>
+              <span style="font-size: 8px; color: var(--accent-blue); font-weight:700;" id="biTrendCustomers">Stable</span>
+              <div class="bi-sparkline-container">
+                <svg class="bi-sparkline-svg" id="biSparklineCustomers"></svg>
               </div>
             </div>
-            <!-- Conversion Rate -->
-            <div class="card-base" style="--card-theme: 23, 168, 229; padding: 16px; display: flex; flex-direction: column; justify-content: space-between; min-height: 120px;">
-              <div>
-                <div style="display: flex; justify-content: space-between; align-items: flex-start;">
-                  <span style="font-size: 10px; text-transform: uppercase; color: var(--text-muted); font-weight: bold; letter-spacing: 0.5px;">Conversion Rate</span>
-                  <span id="biKpiConversionRateBadge" class="crm-badge badge-intent-high" style="font-size: 9px; font-weight: 700; padding: 1px 4px;">OPTIMAL</span>
-                </div>
-                <div style="font-size: 22px; font-weight: 800; color: #ffffff; margin-top: 4px;" id="biKpiConversionRate">—</div>
-              </div>
-              <div style="margin: 8px 0; height: 30px;">
-                <svg viewBox="0 0 120 30" width="100%" height="30" preserveAspectRatio="none" style="overflow: visible;">
-                  <path id="biSparklineWinRatePath" d="M 0 15" fill="none" stroke="#36d399" stroke-width="1.5" stroke-linecap="round"></path>
-                </svg>
-              </div>
-              <div style="display: flex; justify-content: space-between; align-items: baseline; font-size: 10px; border-top: 1px solid rgba(255,255,255,0.03); padding-top: 4px;">
-                <span style="color: var(--text-secondary);" id="biKpiConversionRatePrev">Prev Period: —</span>
-                <span id="biTrendConversionRate" class="trend-indicator trend-neutral" style="font-size: 9px;">—</span>
+            <!-- Bills -->
+            <div class="card-base bi-focusable" tabindex="0" id="biCardKpiBills" style="--card-theme: 23, 168, 229; padding: 12px; min-height: 110px; cursor:pointer;">
+              <span class="kpi-title" style="font-size: 9px; text-transform: uppercase; font-weight: 700; color: var(--text-muted);">Bills Analyzed</span>
+              <div style="font-size: 20px; font-weight: 800; color: #ffffff; margin-top: 4px;" id="biKpiBills">—</div>
+              <span style="font-size: 8px; color: var(--accent-blue); font-weight:700;" id="biTrendBills">Stable</span>
+              <div class="bi-sparkline-container">
+                <svg class="bi-sparkline-svg" id="biSparklineBills"></svg>
               </div>
             </div>
-            <!-- Business Health Score KPI Card -->
-            <div class="card-base" style="--card-theme: 23, 168, 229; padding: 16px; display: flex; flex-direction: column; justify-content: space-between; min-height: 120px;">
-              <div>
-                <div style="display: flex; justify-content: space-between; align-items: flex-start;">
-                  <span style="font-size: 10px; text-transform: uppercase; color: var(--text-muted); font-weight: bold; letter-spacing: 0.5px;">Health Score</span>
-                  <span id="biKpiHealthScoreBadge" class="crm-badge badge-intent-high" style="font-size: 9px; font-weight: 700; padding: 1px 4px;">STRONG</span>
-                </div>
-                <div style="font-size: 22px; font-weight: 800; color: #ffffff; margin-top: 4px;" id="biKpiHealthScore">—</div>
+            <!-- Monthly Revenue -->
+            <div class="card-base bi-focusable" tabindex="0" id="biCardKpiRevenue" style="--card-theme: 23, 168, 229; padding: 12px; min-height: 110px; cursor:pointer;">
+              <span class="kpi-title" style="font-size: 9px; text-transform: uppercase; font-weight: 700; color: var(--text-muted);">Monthly Revenue</span>
+              <div style="font-size: 20px; font-weight: 800; color: #ffffff; margin-top: 4px;" id="biKpiMonthlyRevenue">—</div>
+              <span style="font-size: 8px; color: #36D399; font-weight:700;" id="biTrendRevenue">↑ 15%</span>
+              <div class="bi-sparkline-container">
+                <svg class="bi-sparkline-svg" id="biSparklineRevenue"></svg>
               </div>
-              <div style="margin: 8px 0; height: 30px;">
-                <svg viewBox="0 0 120 30" width="100%" height="30" preserveAspectRatio="none" style="overflow: visible;">
-                  <path id="biSparklineHealthPath" d="M 0 15" fill="none" stroke="#10b981" stroke-width="1.5" stroke-linecap="round"></path>
-                </svg>
+            </div>
+            <!-- Avg Bill -->
+            <div class="card-base bi-focusable" tabindex="0" id="biCardKpiAvgBill" style="--card-theme: 23, 168, 229; padding: 12px; min-height: 110px; cursor:pointer;">
+              <span class="kpi-title" style="font-size: 9px; text-transform: uppercase; font-weight: 700; color: var(--text-muted);">Average Bill</span>
+              <div style="font-size: 20px; font-weight: 800; color: #ffffff; margin-top: 4px;" id="biKpiAvgBill">—</div>
+              <span style="font-size: 8px; color: #36D399; font-weight:700;" id="biTrendAvgBill">↑ 4.2%</span>
+              <div class="bi-sparkline-container">
+                <svg class="bi-sparkline-svg" id="biSparklineAvgBill"></svg>
               </div>
-              <div style="display: flex; justify-content: space-between; align-items: baseline; font-size: 10px; border-top: 1px solid rgba(255,255,255,0.03); padding-top: 4px;">
-                <span style="color: var(--text-secondary);" id="biKpiHealthScorePrev">Prev Period: —</span>
-                <span id="biTrendHealthScore" class="trend-indicator trend-neutral" style="font-size: 9px;">—</span>
+            </div>
+            <!-- Avg Units -->
+            <div class="card-base bi-focusable" tabindex="0" id="biCardKpiAvgUnits" style="--card-theme: 23, 168, 229; padding: 12px; min-height: 110px; cursor:pointer;">
+              <span class="kpi-title" style="font-size: 9px; text-transform: uppercase; font-weight: 700; color: var(--text-muted);">Average Units</span>
+              <div style="font-size: 20px; font-weight: 800; color: #ffffff; margin-top: 4px;" id="biKpiAvgUnits">—</div>
+              <span style="font-size: 8px; color: var(--text-muted); font-weight:700;" id="biTrendAvgUnits">Stable</span>
+              <div class="bi-sparkline-container">
+                <svg class="bi-sparkline-svg" id="biSparklineAvgUnits"></svg>
+              </div>
+            </div>
+            <!-- Avg Payback -->
+            <div class="card-base bi-focusable" tabindex="0" id="biCardKpiAvgPayback" style="--card-theme: 23, 168, 229; padding: 12px; min-height: 110px; cursor:pointer;">
+              <span class="kpi-title" style="font-size: 9px; text-transform: uppercase; font-weight: 700; color: var(--text-muted);">Average Payback</span>
+              <div style="font-size: 20px; font-weight: 800; color: #ffffff; margin-top: 4px;" id="biKpiAvgPayback">—</div>
+              <span style="font-size: 8px; color: #36D399; font-weight:700;" id="biTrendAvgPayback">↓ -2.1%</span>
+              <div class="bi-sparkline-container">
+                <svg class="bi-sparkline-svg" id="biSparklineAvgPayback"></svg>
+              </div>
+            </div>
+            <!-- Avg system size -->
+            <div class="card-base bi-focusable" tabindex="0" id="biCardKpiAvgSystemSize" style="--card-theme: 23, 168, 229; padding: 12px; min-height: 110px; cursor:pointer;">
+              <span class="kpi-title" style="font-size: 9px; text-transform: uppercase; font-weight: 700; color: var(--text-muted);">Avg System Size</span>
+              <div style="font-size: 20px; font-weight: 800; color: #ffffff; margin-top: 4px;" id="biKpiAvgSystemSize">—</div>
+              <span style="font-size: 8px; color: #36D399; font-weight:700;" id="biTrendAvgSystemSize">↑ 8.5%</span>
+              <div class="bi-sparkline-container">
+                <svg class="bi-sparkline-svg" id="biSparklineAvgSystemSize"></svg>
+              </div>
+            </div>
+            <!-- Capacity -->
+            <div class="card-base bi-focusable" tabindex="0" id="biCardKpiCapacity" style="--card-theme: 23, 168, 229; padding: 12px; min-height: 110px; cursor:pointer;">
+              <span class="kpi-title" style="font-size: 9px; text-transform: uppercase; font-weight: 700; color: var(--text-muted);">Total Capacity</span>
+              <div style="font-size: 20px; font-weight: 800; color: #ffffff; margin-top: 4px;" id="biKpiTotalInstalled">—</div>
+              <span style="font-size: 8px; color: var(--text-muted); font-weight:700;" id="biTrendCapacity">Stable</span>
+              <div class="bi-sparkline-container">
+                <svg class="bi-sparkline-svg" id="biSparklineCapacity"></svg>
+              </div>
+            </div>
+            <!-- Project Value -->
+            <div class="card-base bi-focusable" tabindex="0" id="biCardKpiProjectValue" style="--card-theme: 23, 168, 229; padding: 12px; min-height: 110px; cursor:pointer;">
+              <span class="kpi-title" style="font-size: 9px; text-transform: uppercase; font-weight: 700; color: var(--text-muted);">Total Project Value</span>
+              <div style="font-size: 20px; font-weight: 800; color: #ffffff; margin-top: 4px;" id="biKpiTotalProjectValue">—</div>
+              <span style="font-size: 8px; color: var(--text-muted); font-weight:700;" id="biTrendProjectValue">Stable</span>
+              <div class="bi-sparkline-container">
+                <svg class="bi-sparkline-svg" id="biSparklineProjectValue"></svg>
+              </div>
+            </div>
+            <!-- 25 yr savings -->
+            <div class="card-base bi-focusable" tabindex="0" id="biCardKpiSavings25" style="--card-theme: 23, 168, 229; padding: 12px; min-height: 110px; cursor:pointer;">
+              <span class="kpi-title" style="font-size: 9px; text-transform: uppercase; font-weight: 700; color: var(--text-muted);">25-Year Savings</span>
+              <div style="font-size: 20px; font-weight: 800; color: #ffffff; margin-top: 4px;" id="biKpiTotal25YrSavings">—</div>
+              <span style="font-size: 8px; color: var(--text-muted); font-weight:700;" id="biTrendSavings25">Stable</span>
+              <div class="bi-sparkline-container">
+                <svg class="bi-sparkline-svg" id="biSparklineSavings25"></svg>
+              </div>
+            </div>
+            <!-- monthly savings -->
+            <div class="card-base bi-focusable" tabindex="0" id="biCardKpiMonthlySavings" style="--card-theme: 23, 168, 229; padding: 12px; min-height: 110px; cursor:pointer;">
+              <span class="kpi-title" style="font-size: 9px; text-transform: uppercase; font-weight: 700; color: var(--text-muted);">Monthly Savings</span>
+              <div style="font-size: 20px; font-weight: 800; color: #ffffff; margin-top: 4px;" id="biKpiAvgMonthlySavings">—</div>
+              <span style="font-size: 8px; color: var(--text-muted); font-weight:700;" id="biTrendMonthlySavings">Stable</span>
+              <div class="bi-sparkline-container">
+                <svg class="bi-sparkline-svg" id="biSparklineMonthlySavings"></svg>
+              </div>
+            </div>
+            <!-- annual savings -->
+            <div class="card-base bi-focusable" tabindex="0" id="biCardKpiAnnualSavings" style="--card-theme: 23, 168, 229; padding: 12px; min-height: 110px; cursor:pointer;">
+              <span class="kpi-title" style="font-size: 9px; text-transform: uppercase; font-weight: 700; color: var(--text-muted);">Annual Savings</span>
+              <div style="font-size: 20px; font-weight: 800; color: #ffffff; margin-top: 4px;" id="biKpiTotalAnnualSavings">—</div>
+              <span style="font-size: 8px; color: var(--text-muted); font-weight:700;" id="biTrendAnnualSavings">Stable</span>
+              <div class="bi-sparkline-container">
+                <svg class="bi-sparkline-svg" id="biSparklineAnnualSavings"></svg>
+              </div>
+            </div>
+            <!-- cities -->
+            <div class="card-base bi-focusable" tabindex="0" id="biCardKpiCities" style="--card-theme: 23, 168, 229; padding: 12px; min-height: 110px; cursor:pointer;">
+              <span class="kpi-title" style="font-size: 9px; text-transform: uppercase; font-weight: 700; color: var(--text-muted);">Cities Covered</span>
+              <div style="font-size: 20px; font-weight: 800; color: #ffffff; margin-top: 4px;" id="biKpiCities">—</div>
+              <span style="font-size: 8px; color: var(--text-muted); font-weight:700;" id="biTrendCities">Stable</span>
+              <div class="bi-sparkline-container">
+                <svg class="bi-sparkline-svg" id="biSparklineCities"></svg>
+              </div>
+            </div>
+            <!-- discoms -->
+            <div class="card-base bi-focusable" tabindex="0" id="biCardKpiDiscoms" style="--card-theme: 23, 168, 229; padding: 12px; min-height: 110px; cursor:pointer;">
+              <span class="kpi-title" style="font-size: 9px; text-transform: uppercase; font-weight: 700; color: var(--text-muted);">DISCOMs Covered</span>
+              <div style="font-size: 20px; font-weight: 800; color: #ffffff; margin-top: 4px;" id="biKpiDiscoms">—</div>
+              <span style="font-size: 8px; color: var(--text-muted); font-weight:700;" id="biTrendDiscoms">Stable</span>
+              <div class="bi-sparkline-container">
+                <svg class="bi-sparkline-svg" id="biSparklineDiscoms"></svg>
               </div>
             </div>
           </div>
 
-          <!-- Revenue Intelligence Center -->
-          <div class="card-base" style="--card-theme: 23, 168, 229; padding: 20px; margin-bottom: 20px; background: rgba(15, 23, 42, 0.45); backdrop-filter: blur(16px); border: 1px solid rgba(255, 255, 255, 0.08);">
-            <h3 style="margin: 0 0 15px 0; font-size: 13px; font-weight: 700; color: #ffffff; text-transform: uppercase; letter-spacing: 0.5px;">Revenue Intelligence Center</h3>
-            <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(180px, 1fr)); gap: 15px;">
-              <!-- Pipeline Revenue -->
-              <div style="background: rgba(255,255,255,0.02); border: 1px solid rgba(255,255,255,0.06); padding: 12px; border-radius: 6px; border-left: 3px solid #00AEEF;">
-                <div style="font-size: 9px; color: var(--text-muted); text-transform: uppercase; font-weight: 700;">Pipeline Revenue</div>
-                <div id="biKpiPipelineRevenue" style="font-size: 18px; font-weight: 800; color: #ffffff; margin-top: 4px;">—</div>
-                <div style="display: flex; justify-content: space-between; align-items: center; font-size: 9px; margin-top: 6px; color: var(--text-muted);">
-                  <span id="biKpiPipelineRevenuePrev">Last Period: —</span>
-                  <span id="biTrendPipelineRevenue" class="trend-indicator trend-neutral" style="font-size: 8px;">—</span>
-                </div>
+          <!-- Sales Funnel & Predictive Analytics Panel -->
+          <div style="display: grid; grid-template-columns: 1.2fr 0.8fr; gap: 20px; margin-bottom: 20px;">
+            <!-- Sales Funnel -->
+            <div class="card-base" style="--card-theme: 168, 85, 247; padding: 20px;">
+              <h3 style="margin: 0; font-size: 13px; font-weight: 800; color: #ffffff; text-transform: uppercase; letter-spacing: 0.5px;">Sales Pipeline Conversion Funnel</h3>
+              <p style="margin: 2px 0 10px 0; font-size: 10px; color: var(--text-muted);">Real-time lead conversion and drop-off analysis</p>
+              <div class="bi-funnel-container" id="biFunnelContainer">
+                <!-- Dynamically drawn funnel stages -->
               </div>
-              <!-- Qualified Revenue -->
-              <div style="background: rgba(255,255,255,0.02); border: 1px solid rgba(255,255,255,0.06); padding: 12px; border-radius: 6px; border-left: 3px solid #a855f7;">
-                <div style="font-size: 9px; color: var(--text-muted); text-transform: uppercase; font-weight: 700;">Qualified Revenue</div>
-                <div id="biKpiQualifiedRevenue" style="font-size: 18px; font-weight: 800; color: #ffffff; margin-top: 4px;">—</div>
-                <div style="display: flex; justify-content: space-between; align-items: center; font-size: 9px; margin-top: 6px; color: var(--text-muted);">
-                  <span id="biKpiQualifiedRevenuePrev">Last Period: —</span>
-                  <span id="biTrendQualifiedRevenue" class="trend-indicator trend-neutral" style="font-size: 8px;">—</span>
+            </div>
+            
+            <!-- Predictive Forecasting -->
+            <div class="card-base" style="--card-theme: 247, 147, 30; padding: 20px;">
+              <h3 style="margin: 0 0 15px 0; font-size: 13px; font-weight: 800; color: #ffffff; text-transform: uppercase; letter-spacing: 0.5px;">Linear Regression Projections</h3>
+              <div style="display: flex; flex-direction: column; gap: 12px;">
+                <div style="display: flex; justify-content: space-between; border-bottom: 1px solid rgba(255,255,255,0.04); padding-bottom: 6px;">
+                  <span style="font-size: 11px; color: var(--text-secondary);">Expected Monthly Revenue</span>
+                  <strong style="color: var(--accent-orange); font-size: 12px;" id="biForecastMonthlyRev">—</strong>
                 </div>
-              </div>
-              <!-- Proposal Revenue -->
-              <div style="background: rgba(255,255,255,0.02); border: 1px solid rgba(255,255,255,0.06); padding: 12px; border-radius: 6px; border-left: 3px solid #ff8a1d;">
-                <div style="font-size: 9px; color: var(--text-muted); text-transform: uppercase; font-weight: 700;">Proposal Revenue</div>
-                <div id="biKpiProposalRevenue" style="font-size: 18px; font-weight: 800; color: #ffffff; margin-top: 4px;">—</div>
-                <div style="display: flex; justify-content: space-between; align-items: center; font-size: 9px; margin-top: 6px; color: var(--text-muted);">
-                  <span id="biKpiProposalRevenuePrev">Last Period: —</span>
-                  <span id="biTrendProposalRevenue" class="trend-indicator trend-neutral" style="font-size: 8px;">—</span>
+                <div style="display: flex; justify-content: space-between; border-bottom: 1px solid rgba(255,255,255,0.04); padding-bottom: 6px;">
+                  <span style="font-size: 11px; color: var(--text-secondary);">Expected Customer Growth</span>
+                  <strong style="color: #ffffff; font-size: 12px;" id="biForecastCustGrowth">—</strong>
                 </div>
-              </div>
-              <!-- Won Revenue -->
-              <div style="background: rgba(255,255,255,0.02); border: 1px solid rgba(255,255,255,0.06); padding: 12px; border-radius: 6px; border-left: 3px solid #36D399;">
-                <div style="font-size: 9px; color: var(--text-muted); text-transform: uppercase; font-weight: 700;">Won Revenue</div>
-                <div id="biKpiWonRevenue" style="font-size: 18px; font-weight: 800; color: #ffffff; margin-top: 4px;">—</div>
-                <div style="display: flex; justify-content: space-between; align-items: center; font-size: 9px; margin-top: 6px; color: var(--text-muted);">
-                  <span id="biKpiWonRevenuePrev">Last Period: —</span>
-                  <span id="biTrendWonRevenue" class="trend-indicator trend-neutral" style="font-size: 8px;">—</span>
+                <div style="display: flex; justify-content: space-between; border-bottom: 1px solid rgba(255,255,255,0.04); padding-bottom: 6px;">
+                  <span style="font-size: 11px; color: var(--text-secondary);">Expected Installed Capacity</span>
+                  <strong style="color: #ffffff; font-size: 12px;" id="biForecastInstalledKw">—</strong>
                 </div>
-              </div>
-              <!-- Expected Revenue -->
-              <div style="background: rgba(255,255,255,0.02); border: 1px solid rgba(255,255,255,0.06); padding: 12px; border-radius: 6px; border-left: 3px solid #eab308;">
-                <div style="font-size: 9px; color: var(--text-muted); text-transform: uppercase; font-weight: 700;">Expected Revenue</div>
-                <div id="biKpiExpectedRevenue" style="font-size: 18px; font-weight: 800; color: #ffffff; margin-top: 4px;">—</div>
-                <div style="display: flex; justify-content: space-between; align-items: center; font-size: 9px; margin-top: 6px; color: var(--text-muted);">
-                  <span id="biKpiExpectedRevenuePrev">Last Period: —</span>
-                  <span id="biTrendExpectedRevenue" class="trend-indicator trend-neutral" style="font-size: 8px;">—</span>
+                <div style="display: flex; justify-content: space-between; border-bottom: 1px solid rgba(255,255,255,0.04); padding-bottom: 6px;">
+                  <span style="font-size: 11px; color: var(--text-secondary);">Expected Grid Savings</span>
+                  <strong style="color: #ffffff; font-size: 12px;" id="biForecastSavings">—</strong>
                 </div>
-              </div>
-              <!-- Average Deal Size -->
-              <div style="background: rgba(255,255,255,0.02); border: 1px solid rgba(255,255,255,0.06); padding: 12px; border-radius: 6px; border-left: 3px solid #10b981;">
-                <div style="font-size: 9px; color: var(--text-muted); text-transform: uppercase; font-weight: 700;">Avg Deal Size</div>
-                <div id="biKpiAvgDealSize" style="font-size: 18px; font-weight: 800; color: #ffffff; margin-top: 4px;">—</div>
-                <div style="display: flex; justify-content: space-between; align-items: center; font-size: 9px; margin-top: 6px; color: var(--text-muted);">
-                  <span id="biKpiAvgDealSizePrev">Last Period: —</span>
-                  <span id="biTrendAvgDealSize" class="trend-indicator trend-neutral" style="font-size: 8px;">—</span>
+                <div style="display: flex; justify-content: space-between; padding-top: 4px;">
+                  <span style="font-size: 11px; color: var(--text-secondary); font-weight: 800;">Projected Annual Revenue</span>
+                  <strong style="color: #36D399; font-size: 13px;" id="biForecastAnnualRev">—</strong>
                 </div>
               </div>
             </div>
           </div>
 
-          <!-- Waterfall and Stage Distribution charts row -->
-          <div style="display: grid; grid-template-columns: 1.2fr 1fr; gap: 20px; margin-bottom: 20px;">
-            <!-- Revenue Waterfall -->
-            <div class="card-base" style="--card-theme: 23, 168, 229; padding: 20px; display: flex; flex-direction: column;">
-              <h3 style="margin: 0 0 15px 0; font-size: 13px; font-weight: 700; color: #ffffff; text-transform: uppercase; letter-spacing: 0.5px;">Enterprise Revenue Waterfall</h3>
+          <!-- Customer Segmentation Filters -->
+          <div class="card-base" style="--card-theme: 54, 211, 153; padding: 20px; margin-bottom: 20px;">
+            <h3 style="margin: 0; font-size: 13px; font-weight: 800; color: #ffffff; text-transform: uppercase; letter-spacing: 0.5px;">Customer Segmentation &amp; Classifications</h3>
+            <p style="margin: 2px 0 12px 0; font-size: 10px; color: var(--text-muted);">Quick filter by automated customer segment classification</p>
+            <div class="bi-segmentation-grid" id="biSegmentationGrid">
+              <div class="bi-segment-card" data-segment="residential">
+                <span class="bi-segment-title">Residential</span>
+                <div class="bi-segment-val" id="biSegResidential">—</div>
+              </div>
+              <div class="bi-segment-card" data-segment="commercial">
+                <span class="bi-segment-title">Commercial</span>
+                <div class="bi-segment-val" id="biSegCommercial">—</div>
+              </div>
+              <div class="bi-segment-card" data-segment="industrial">
+                <span class="bi-segment-title">Industrial</span>
+                <div class="bi-segment-val" id="biSegIndustrial">—</div>
+              </div>
+              <div class="bi-segment-card" data-segment="high_consumption">
+                <span class="bi-segment-title">High Consumption</span>
+                <div class="bi-segment-val" id="biSegHighCons">—</div>
+              </div>
+              <div class="bi-segment-card" data-segment="medium_consumption">
+                <span class="bi-segment-title">Medium Consumption</span>
+                <div class="bi-segment-val" id="biSegMedCons">—</div>
+              </div>
+              <div class="bi-segment-card" data-segment="low_consumption">
+                <span class="bi-segment-title">Low Consumption</span>
+                <div class="bi-segment-val" id="biSegLowCons">—</div>
+              </div>
+              <div class="bi-segment-card" data-segment="high_roi">
+                <span class="bi-segment-title">High ROI Yield</span>
+                <div class="bi-segment-val" id="biSegHighRoi">—</div>
+              </div>
+              <div class="bi-segment-card" data-segment="long_payback">
+                <span class="bi-segment-title">Long Payback</span>
+                <div class="bi-segment-val" id="biSegLongPayback">—</div>
+              </div>
+              <div class="bi-segment-card" data-segment="premium_customers">
+                <span class="bi-segment-title">Premium (>3L)</span>
+                <div class="bi-segment-val" id="biSegPremium">—</div>
+              </div>
+            </div>
+          </div>
+
+          <!-- Interactive Chart Suite Card -->
+          <div class="card-base shadow-lift" id="biInteractiveChartContainer" style="--card-theme: 23, 168, 229; padding: 20px; margin-bottom: 20px; position: relative;">
+            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 16px; flex-wrap: wrap; gap: 10px;">
+              <div class="bi-chart-tabs" style="margin: 0; border: none; padding: 0;">
+                <span id="biTabBill" class="bi-chart-tab active" data-chart="bill">Monthly Bill</span>
+                <span id="biTabUnits" class="bi-chart-tab" data-chart="units">Units Consumption</span>
+                <span id="biTabKw" class="bi-chart-tab" data-chart="kw">Recommended kW</span>
+                <span id="biTabPayback" class="bi-chart-tab" data-chart="payback">Payback Timeline</span>
+                <span id="biTabSavings" class="bi-chart-tab" data-chart="savings">Monthly Savings</span>
+                <span id="biTabAnnSavings" class="bi-chart-tab" data-chart="annSavings">Annual Savings</span>
+                <span id="biTabGrowth" class="bi-chart-tab" data-chart="growth">Growth Timeline</span>
+                <span id="biTabCity" class="bi-chart-tab" data-chart="city">Cities Covered</span>
+                <span id="biTabDiscom" class="bi-chart-tab" data-chart="discom">DISCOM Shares</span>
+                <span id="biTabProjValue" class="bi-chart-tab" data-chart="projValue">Project Value</span>
+              </div>
               
-              <!-- Refactored Visual Horizontal Waterfall Progression -->
-              <div class="waterfall-container" id="biWaterfallContainer" style="margin-top: 10px; flex: 1; display: flex; flex-direction: column; justify-content: space-between; gap: 4px;">
-                <!-- Filled in JS -->
-              </div>
-              
-              <!-- Waterfall Loss warnings cards -->
-              <div class="waterfall-loss-cards-grid">
-                <div class="waterfall-loss-card">
-                  <div style="font-size: 18px;">📉</div>
-                  <div>
-                    <div class="waterfall-loss-title">Pipeline → Qualified Loss</div>
-                    <div class="waterfall-loss-value" id="biLossPipeToQual">—</div>
-                  </div>
-                </div>
-                <div class="waterfall-loss-card">
-                  <div style="font-size: 18px;">📉</div>
-                  <div>
-                    <div class="waterfall-loss-title">Qualified → Proposal Loss</div>
-                    <div class="waterfall-loss-value" id="biLossQualToProp">—</div>
-                  </div>
-                </div>
-                <div class="waterfall-loss-card">
-                  <div style="font-size: 18px;">📉</div>
-                  <div>
-                    <div class="waterfall-loss-title">Proposal → Won Loss</div>
-                    <div class="waterfall-loss-value" id="biLossPropToWon">—</div>
-                  </div>
-                </div>
-              </div>
-            </div>
-
-            <!-- Stage Distribution Chart -->
-            <div class="card-base" style="--card-theme: 23, 168, 229; padding: 20px; display: flex; flex-direction: column;">
-              <h3 style="margin: 0 0 15px 0; font-size: 13px; font-weight: 700; color: #ffffff; text-transform: uppercase; letter-spacing: 0.5px;">Stage Distribution</h3>
-              <div style="height: 330px; position: relative; flex: 1; display: flex; align-items: center;">
-                <canvas id="biStageDistributionChart" style="max-height: 330px;"></canvas>
-              </div>
-            </div>
-          </div>
-
-          <!-- Customer Segmentation & Lead Source Analytics Row -->
-          <div style="display: grid; grid-template-columns: 1fr 1.8fr; gap: 20px; margin-bottom: 20px;" class="technical-metric">
-            <!-- Customer Segmentation -->
-            <div class="card-base" style="--card-theme: 168, 85, 247; padding: 20px; display: flex; flex-direction: column;">
-              <h3 style="margin: 0 0 15px 0; font-size: 13px; font-weight: 700; color: #ffffff; text-transform: uppercase; letter-spacing: 0.5px;">Customer Segmentation</h3>
-              <div style="height: 280px; position: relative; flex: 1; display: flex; align-items: center; justify-content: center;">
-                <canvas id="biSegmentationChart" style="max-height: 280px;"></canvas>
-              </div>
-            </div>
-            <!-- Lead Source Analytics -->
-            <div class="card-base" style="--card-theme: 23, 168, 229; padding: 20px; display: flex; flex-direction: column;">
-              <h3 style="margin: 0 0 15px 0; font-size: 13px; font-weight: 700; color: #ffffff; text-transform: uppercase; letter-spacing: 0.5px;">Lead Source Analytics</h3>
-              <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 15px; flex: 1; min-height: 280px;">
-                <div style="position: relative; display: flex; flex-direction: column; align-items: center;">
-                  <span style="font-size: 10px; font-weight: 700; color: var(--text-muted); margin-bottom: 10px; text-transform: uppercase;">Lead Volume by Source</span>
-                  <div style="height: 230px; width: 100%; position: relative;">
-                    <canvas id="biLeadSourceVolumeChart" style="max-height: 230px;"></canvas>
-                  </div>
-                </div>
-                <div style="position: relative; display: flex; flex-direction: column; align-items: center;">
-                  <span style="font-size: 10px; font-weight: 700; color: var(--text-muted); margin-bottom: 10px; text-transform: uppercase;">Conversion Rate by Source</span>
-                  <div style="height: 230px; width: 100%; position: relative;">
-                    <canvas id="biLeadSourceConvChart" style="max-height: 230px;"></canvas>
-                  </div>
-                </div>
-              </div>
-            </div>
-          </div>
-
-          <!-- Cohort Analysis & AI Influence Row -->
-          <div style="display: grid; grid-template-columns: 1.8fr 1fr; gap: 20px; margin-bottom: 20px;">
-            <!-- User Cohort Table -->
-            <div class="card-base technical-metric" style="--card-theme: 234, 179, 8; padding: 20px; display: flex; flex-direction: column;">
-              <h3 style="margin: 0 0 15px 0; font-size: 13px; font-weight: 700; color: #ffffff; text-transform: uppercase; letter-spacing: 0.5px;">User Engagement Cohort Matrix</h3>
-              <div class="table-responsive-wrapper" style="overflow-x: auto; flex: 1;">
-                <table class="cohorts-table" style="width: 100%; text-align: center; color: var(--text-navy);">
-                  <thead>
-                    <tr>
-                      <th style="text-align: left;">Cohort Month</th>
-                      <th>Size</th>
-                      <th>Bill Analyzed</th>
-                      <th>Roof Scanned</th>
-                      <th>Referred</th>
-                      <th>Copilot Active</th>
-                    </tr>
-                  </thead>
-                  <tbody id="biCohortMatrixBody">
-                    <!-- Loaded dynamically in app.js -->
-                  </tbody>
-                </table>
+              <!-- Chart interactions fullscreen/png/csv -->
+              <div style="display: flex; align-items: center; gap: 8px;">
+                <button id="biChartBtnFullscreen" class="table-action-btn" style="padding: 4px 10px; font-size: 10px;" aria-label="Toggle Fullscreen Chart">Fullscreen</button>
+                <button id="biChartBtnPng" class="table-action-btn" style="padding: 4px 10px; font-size: 10px;" aria-label="Download PNG Image">Download PNG</button>
+                <button id="biChartBtnCsv" class="table-action-btn" style="padding: 4px 10px; font-size: 10px;" aria-label="Download Dataset CSV">Download CSV</button>
               </div>
             </div>
             
-            <!-- AI Impact Info -->
-            <div class="card-base" style="--card-theme: 167, 139, 250; padding: 20px; display: flex; flex-direction: column;">
-              <h3 style="margin: 0 0 15px 0; font-size: 13px; font-weight: 700; color: #ffffff; text-transform: uppercase; letter-spacing: 0.5px;">AI Copilot Influence</h3>
-              <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 15px; flex: 1;">
-                <div style="display: flex; flex-direction: column; justify-content: space-between; font-size: 11px;">
-                  <div>
-                    <div style="color: var(--text-muted); font-size: 9px; text-transform: uppercase; font-weight: 700;">Copilot Influence Score</div>
-                    <div id="biAiInfluenceScore" style="font-size: 28px; font-weight: 800; color: #ffffff; margin-top: 4px;">—</div>
-                  </div>
-                  <div style="border-top: 1px dashed var(--border-color-light); padding-top: 6px; display: flex; flex-direction: column; gap: 4px;">
-                    <div>Queries: <strong id="biAiTotalQueries" style="color:#ffffff;">—</strong></div>
-                    <div>Recs: <strong id="biAiRecommendations" style="color:#ffffff;">—</strong></div>
-                    <div>Leads: <strong id="biAiLeadsInfluenced" style="color:#ffffff;">—</strong></div>
-                    <div>Conv %: <strong id="biAiAssessmentConversions" style="color:#ffffff;">—</strong></div>
-                  </div>
-                </div>
-                <div style="position: relative; display: flex; flex-direction: column; align-items: center; justify-content: center;">
-                  <span style="font-size: 9px; font-weight: 700; color: var(--text-muted); margin-bottom: 6px; text-transform: uppercase;">Queries Distribution</span>
-                  <div style="height: 120px; width: 100%; position: relative;">
-                    <canvas id="biAiCategoryChart" style="max-height: 120px;"></canvas>
-                  </div>
-                </div>
-              </div>
+            <div style="height: 350px; position: relative;">
+              <canvas id="biInteractiveChartCanvas"></canvas>
             </div>
           </div>
 
-          <!-- Business Health scorecard & Risks & Recommendations Row -->
-          <div style="display: grid; grid-template-columns: 1.2fr 1.8fr; gap: 20px; margin-bottom: 20px;">
-            <!-- Business Health Scorecard -->
-            <div class="card-base" style="--card-theme: 54, 211, 153; padding: 20px; display: flex; flex-direction: column;">
-              <h3 style="margin: 0 0 15px 0; font-size: 13px; font-weight: 700; color: #ffffff; text-transform: uppercase; letter-spacing: 0.5px;">Business Health Scorecard</h3>
-              <div style="display: flex; gap: 20px; align-items: center; flex: 1; flex-wrap: wrap;">
-                <!-- SVG Radial Circle -->
-                <div style="position: relative; width: 100px; height: 100px; flex-shrink: 0; display: flex; align-items: center; justify-content: center;">
-                  <svg width="100" height="100" viewBox="0 0 100 100" style="transform: rotate(-90deg);">
-                    <circle cx="50" cy="50" r="40" fill="none" stroke="rgba(255,255,255,0.04)" stroke-width="8"></circle>
-                    <circle id="biHealthRadialProgress" cx="50" cy="50" r="40" fill="none" stroke="#10b981" stroke-width="8" stroke-dasharray="251.2" stroke-dashoffset="251.2" style="transition: stroke-dashoffset 1.2s ease-in-out;"></circle>
-                  </svg>
-                  <div style="position: absolute; display: flex; flex-direction: column; align-items: center;">
-                    <span id="biHealthRadialText" style="font-size: 20px; font-weight: 900; color: #ffffff;">—</span>
-                    <span style="font-size: 8px; text-transform: uppercase; color: var(--text-muted); font-weight: 700;">Score</span>
-                  </div>
-                </div>
-                <!-- Score Breakdown Progress Bars -->
-                <div style="flex: 1; min-width: 150px; display: flex; flex-direction: column; gap: 10px; font-size: 10px;">
-                  <div>
-                    <div style="display: flex; justify-content: space-between; margin-bottom: 2px;">
-                      <span>Platform Growth Trend</span>
-                      <strong id="biScorecardGrowthVal">—</strong>
-                    </div>
-                    <div style="height: 4px; background: rgba(255,255,255,0.05); border-radius: 2px; overflow: hidden;">
-                      <div id="biScorecardGrowthBar" style="height: 100%; background: #00AEEF; width: 0%; transition: width 1s;"></div>
-                    </div>
-                  </div>
-                  <div>
-                    <div style="display: flex; justify-content: space-between; margin-bottom: 2px;">
-                      <span>Sales &amp; Conversion velocity</span>
-                      <strong id="biScorecardSalesVal">—</strong>
-                    </div>
-                    <div style="height: 4px; background: rgba(255,255,255,0.05); border-radius: 2px; overflow: hidden;">
-                      <div id="biScorecardSalesBar" style="height: 100%; background: #36D399; width: 0%; transition: width 1s;"></div>
-                    </div>
-                  </div>
-                  <div>
-                    <div style="display: flex; justify-content: space-between; margin-bottom: 2px;">
-                      <span>AI Copilot Adoption</span>
-                      <strong id="biScorecardOpsVal">—</strong>
-                    </div>
-                    <div style="height: 4px; background: rgba(255,255,255,0.05); border-radius: 2px; overflow: hidden;">
-                      <div id="biScorecardOpsBar" style="height: 100%; background: #a855f7; width: 0%; transition: width 1s;"></div>
-                    </div>
-                  </div>
-                </div>
-              </div>
-            </div>
-            
-            <!-- Risk & Recommendations panel -->
-            <div style="display: grid; grid-template-rows: 1fr 1fr; gap: 15px;">
-              <!-- Risk Alerts -->
-              <div class="card-base" style="--card-theme: 231, 76, 60; padding: 15px; display: flex; flex-direction: column;">
-                <h4 style="margin: 0 0 10px 0; font-size: 11px; font-weight: 700; color: #ffffff; text-transform: uppercase; letter-spacing: 0.5px;">Platform Risk Intelligence Alerts</h4>
-                <div id="biRiskList" style="display: flex; flex-direction: column; gap: 8px; overflow-y: auto; max-height: 110px; flex: 1;">
-                  <!-- Filled dynamically in app.js -->
-                </div>
-              </div>
-              <!-- Strategic Recommendations -->
-              <div class="card-base" style="--card-theme: 54, 211, 153; padding: 15px; display: flex; flex-direction: column;">
-                <h4 style="margin: 0 0 10px 0; font-size: 11px; font-weight: 700; color: #ffffff; text-transform: uppercase; letter-spacing: 0.5px;">Executive Strategy Recommendations</h4>
-                <div id="biOpportunitiesList" style="display: flex; flex-direction: column; gap: 8px; overflow-y: auto; max-height: 110px; flex: 1;">
-                  <!-- Filled dynamically in app.js -->
-                </div>
-              </div>
-            </div>
-          </div>
-
-          <!-- Forecast Center -->
-          <div class="card-base" style="--card-theme: 23, 168, 229; padding: 20px; margin-bottom: 20px; background: rgba(15, 23, 42, 0.45); backdrop-filter: blur(16px); border: 1px solid rgba(255, 255, 255, 0.08);">
-            <h3 style="margin: 0 0 15px 0; font-size: 13px; font-weight: 700; color: #ffffff; text-transform: uppercase; letter-spacing: 0.5px;">Predictive Growth &amp; Forecast Center</h3>
-            <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); gap: 15px;">
-              <!-- Projected Revenue -->
-              <div style="background: rgba(255,255,255,0.02); border: 1px solid rgba(255,255,255,0.06); padding: 12px; border-radius: 6px; display: flex; flex-direction: column; justify-content: space-between; min-height: 100px;">
-                <div>
-                  <div style="display: flex; justify-content: space-between; align-items: center;">
-                    <span style="font-size: 9px; color: var(--text-muted); text-transform: uppercase; font-weight: 700;">Revenue Projection (30d)</span>
-                    <span id="biBadgeForecastRev" class="crm-badge badge-intent-high" style="font-size: 8px; padding: 1px 4px;">HIGH CONFIDENCE</span>
-                  </div>
-                  <div id="biForecastRevenue" style="font-size: 20px; font-weight: 800; color: #ffffff; margin-top: 4px;">—</div>
-                </div>
-                <div style="margin: 4px 0; height: 16px;">
-                  <svg viewBox="0 0 120 20" width="100%" height="16" preserveAspectRatio="none" style="overflow: visible;">
-                    <path id="biSparklineForecastRevPath" d="M 0 10" fill="none" stroke="#10b981" stroke-width="1.5" stroke-linecap="round"></path>
-                  </svg>
-                </div>
-              </div>
-              <!-- Projected Lead Growth -->
-              <div style="background: rgba(255,255,255,0.02); border: 1px solid rgba(255,255,255,0.06); padding: 12px; border-radius: 6px; display: flex; flex-direction: column; justify-content: space-between; min-height: 100px;">
-                <div>
-                  <div style="display: flex; justify-content: space-between; align-items: center;">
-                    <span style="font-size: 9px; color: var(--text-muted); text-transform: uppercase; font-weight: 700;">Lead Acquisition Forecast</span>
-                    <span id="biBadgeForecastLeads" class="crm-badge badge-intent-medium" style="font-size: 8px; padding: 1px 4px;">MODERATE</span>
-                  </div>
-                  <div id="biForecastLeads" style="font-size: 20px; font-weight: 800; color: #ffffff; margin-top: 4px;">—</div>
-                </div>
-                <div style="margin: 4px 0; height: 16px;">
-                  <svg viewBox="0 0 120 20" width="100%" height="16" preserveAspectRatio="none" style="overflow: visible;">
-                    <path id="biSparklineForecastLeadsPath" d="M 0 10" fill="none" stroke="#00aeef" stroke-width="1.5" stroke-linecap="round"></path>
-                  </svg>
-                </div>
-              </div>
-              <!-- Projected Referral Volume -->
-              <div style="background: rgba(255,255,255,0.02); border: 1px solid rgba(255,255,255,0.06); padding: 12px; border-radius: 6px; display: flex; flex-direction: column; justify-content: space-between; min-height: 100px;">
-                <div>
-                  <div style="display: flex; justify-content: space-between; align-items: center;">
-                    <span style="font-size: 9px; color: var(--text-muted); text-transform: uppercase; font-weight: 700;">Referral Growth Forecast</span>
-                    <span id="biBadgeForecastRef" class="crm-badge badge-intent-medium" style="font-size: 8px; padding: 1px 4px;">MODERATE</span>
-                  </div>
-                  <div id="biForecastReferrals" style="font-size: 20px; font-weight: 800; color: #ffffff; margin-top: 4px;">—</div>
-                </div>
-                <div style="margin: 4px 0; height: 16px;">
-                  <svg viewBox="0 0 120 20" width="100%" height="16" preserveAspectRatio="none" style="overflow: visible;">
-                    <path id="biSparklineForecastRefPath" d="M 0 10" fill="none" stroke="#ff8a1d" stroke-width="1.5" stroke-linecap="round"></path>
-                  </svg>
-                </div>
-              </div>
-            </div>
-          </div>
-
-          <!-- Executive Insights Center -->
-          <div class="card-base" style="--card-theme: 23, 168, 229; padding: 20px; margin-bottom: 10px;">
-            <h3 style="margin: 0 0 15px 0; font-size: 13px; font-weight: 700; color: #ffffff; text-transform: uppercase; letter-spacing: 0.5px;">Executive Summary &amp; Analytics Insights</h3>
-            
-            <div style="background: rgba(255,255,255,0.02); border: 1px dashed var(--border-color); border-radius: 8px; padding: 15px; margin-bottom: 20px; font-size: 12px; line-height: 1.6; color: #e2e8f0; font-weight: 500;">
-              <span style="display: inline-block; background: var(--accent-blue-glow); color: var(--accent-blue); padding: 2px 6px; border-radius: 4px; font-size: 9px; font-weight: bold; text-transform: uppercase; margin-right: 8px; vertical-align: middle;">Executive Brief</span>
-              <span id="biExecutiveSummaryText" style="vertical-align: middle;">Analyzing platform data and compiling corporate briefing summary...</span>
-            </div>
-
+          <!-- Executive Insights Cards Panel -->
+          <div class="card-base" style="--card-theme: 234, 179, 8; padding: 20px; margin-bottom: 20px;">
+            <h3 style="margin: 0 0 15px 0; font-size: 13px; font-weight: 800; color: #ffffff; text-transform: uppercase; letter-spacing: 0.5px;">Strategic Smart Insights</h3>
             <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 15px;">
-              <div class="card-base" style="--card-theme: 23, 168, 229; padding: 12px; border: 1px solid rgba(0, 174, 239, 0.15); background: rgba(0, 174, 239, 0.02);">
-                <strong style="color: #ffffff; font-size: 11px; display: block; margin-bottom: 6px; text-transform: uppercase;">📈 Growth Insight</strong>
-                <span id="biInsightGrowth" style="font-size: 11px; color: var(--text-secondary); line-height: 1.5; display: block;">—</span>
+              <div class="card-base" style="--card-theme: 23, 168, 229; padding: 12px; background: rgba(0, 174, 239, 0.02);">
+                <strong style="color: #ffffff; font-size: 10px; display: block; margin-bottom: 4px; text-transform: uppercase;">Highest Bill Opportunity</strong>
+                <span id="biInsightHighestBill" style="font-size: 11px; color: var(--text-secondary); line-height: 1.4; display: block; font-weight: 700;">—</span>
               </div>
-              <div class="card-base" style="--card-theme: 54, 211, 153; padding: 12px; border: 1px solid rgba(54, 211, 153, 0.15); background: rgba(54, 211, 153, 0.02);">
-                <strong style="color: #ffffff; font-size: 11px; display: block; margin-bottom: 6px; text-transform: uppercase;">💰 Revenue Velocity</strong>
-                <span id="biInsightRevenue" style="font-size: 11px; color: var(--text-secondary); line-height: 1.5; display: block;">—</span>
+              <div class="card-base" style="--card-theme: 54, 211, 153; padding: 12px; background: rgba(54, 211, 153, 0.02);">
+                <strong style="color: #ffffff; font-size: 10px; display: block; margin-bottom: 4px; text-transform: uppercase;">Highest Lifetime Savings</strong>
+                <span id="biInsightHighestSavings" style="font-size: 11px; color: var(--text-secondary); line-height: 1.4; display: block; font-weight: 700;">—</span>
               </div>
-              <div class="card-base" style="--card-theme: 168, 85, 247; padding: 12px; border: 1px solid rgba(168, 85, 247, 0.15); background: rgba(168, 85, 247, 0.02);">
-                <strong style="color: #ffffff; font-size: 11px; display: block; margin-bottom: 6px; text-transform: uppercase;">👥 Customer Engagement</strong>
-                <span id="biInsightCustomer" style="font-size: 11px; color: var(--text-secondary); line-height: 1.5; display: block;">—</span>
+              <div class="card-base" style="--card-theme: 234, 179, 8; padding: 12px; background: rgba(234, 179, 8, 0.02);">
+                <strong style="color: #ffffff; font-size: 10px; display: block; margin-bottom: 4px; text-transform: uppercase;">Fastest Payback period</strong>
+                <span id="biInsightFastestPayback" style="font-size: 11px; color: var(--text-secondary); line-height: 1.4; display: block; font-weight: 700;">—</span>
               </div>
-              <div class="card-base" style="--card-theme: 231, 76, 60; padding: 12px; border: 1px solid rgba(231, 76, 60, 0.15); background: rgba(231, 76, 60, 0.02);">
-                <strong style="color: #ffffff; font-size: 11px; display: block; margin-bottom: 6px; text-transform: uppercase;">🛡️ Platform Risk &amp; Integrity</strong>
-                <span id="biInsightRisk" style="font-size: 11px; color: var(--text-secondary); line-height: 1.5; display: block;">—</span>
+              <div class="card-base" style="--card-theme: 168, 85, 247; padding: 12px; background: rgba(168, 85, 247, 0.02);">
+                <strong style="color: #ffffff; font-size: 10px; display: block; margin-bottom: 4px; text-transform: uppercase;">Largest capacity kW</strong>
+                <span id="biInsightLargestSystem" style="font-size: 11px; color: var(--text-secondary); line-height: 1.4; display: block; font-weight: 700;">—</span>
+              </div>
+              <div class="card-base" style="--card-theme: 23, 168, 229; padding: 12px; background: rgba(0, 174, 239, 0.02);">
+                <strong style="color: #ffffff; font-size: 10px; display: block; margin-bottom: 4px; text-transform: uppercase;">Largest Project Value</strong>
+                <span id="biInsightLargestProject" style="font-size: 11px; color: var(--text-secondary); line-height: 1.4; display: block; font-weight: 700;">—</span>
+              </div>
+              <div class="card-base" style="--card-theme: 54, 211, 153; padding: 12px; background: rgba(54, 211, 153, 0.02);">
+                <strong style="color: #ffffff; font-size: 10px; display: block; margin-bottom: 4px; text-transform: uppercase;">Highest ROI Yield</strong>
+                <span id="biInsightHighestRoi" style="font-size: 11px; color: var(--text-secondary); line-height: 1.4; display: block; font-weight: 700;">—</span>
+              </div>
+              <div class="card-base" style="--card-theme: 234, 179, 8; padding: 12px; background: rgba(234, 179, 8, 0.02);">
+                <strong style="color: #ffffff; font-size: 10px; display: block; margin-bottom: 4px; text-transform: uppercase;">Most Active City</strong>
+                <span id="biInsightCommonCity" style="font-size: 11px; color: var(--text-secondary); line-height: 1.4; display: block; font-weight: 700;">—</span>
+              </div>
+              <div class="card-base" style="--card-theme: 168, 85, 247; padding: 12px; background: rgba(168, 85, 247, 0.02);">
+                <strong style="color: #ffffff; font-size: 10px; display: block; margin-bottom: 4px; text-transform: uppercase;">Dominant DISCOM</strong>
+                <span id="biInsightCommonDiscom" style="font-size: 11px; color: var(--text-secondary); line-height: 1.4; display: block; font-weight: 700;">—</span>
               </div>
             </div>
           </div>
+
+          <!-- Top Performers Leaderboards -->
+          <div style="display: flex; align-items: center; justify-content: space-between; margin-bottom: 15px;">
+            <h3 style="margin: 0; font-size: 13px; font-weight: 800; color: #ffffff; text-transform: uppercase; letter-spacing: 0.5px;">Boardroom Performance Leaderboards</h3>
+            <!-- Leaderboard switch selector -->
+            <div style="display: flex; align-items: center; gap: 8px;">
+              <span style="font-size: 10px; color: var(--text-muted); font-weight: 700;">METRIC SELECTOR:</span>
+              <select id="biLeaderboardSelector" class="bi-filter-select" style="width: auto; padding: 4px 10px; font-size: 11px;">
+                <option value="groupA">Set A: Bills, Savings, Systems, ROI, Payback</option>
+                <option value="groupB">Set B: Projects, Units, Life Savings, Newest, Revenue</option>
+              </select>
+            </div>
+          </div>
+          
+          <div class="bi-leaderboard-grid" id="biLeaderboardGridContainer">
+            <!-- Active leaderboard card items populated via JS -->
+          </div>
+
+          <!-- Geographic Summary Cards -->
+          <h3 style="margin: 20px 0 15px 0; font-size: 13px; font-weight: 800; color: #ffffff; text-transform: uppercase; letter-spacing: 0.5px;">Geographic Distribution</h3>
+          <div class="bi-geo-grid" id="biGeoGridContainer"></div>
+
+          <!-- Enterprise Customer Analytics Table -->
+          <div class="card-base" style="--card-theme: 23, 168, 229; padding: 20px; margin-bottom: 20px;">
+            <div style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 15px; margin-bottom: 15px;">
+              <div>
+                <h3 style="margin: 0; font-size: 13px; font-weight: 800; color: #ffffff; text-transform: uppercase; letter-spacing: 0.5px;">Customer Analytics Directory</h3>
+                <p style="margin: 2px 0 0 0; font-size: 11px; color: var(--text-muted);">Live drill-down grid table supporting sorting, filtering and selected row exports.</p>
+              </div>
+              
+              <div style="display: flex; align-items: center; gap: 10px; flex-wrap: wrap;">
+                <!-- Column Visibility Toggle -->
+                <div class="bi-multiselect-dropdown" style="width: auto;">
+                  <button type="button" id="biTableColumnVisibilityBtn" class="bi-multiselect-btn" style="padding: 6px 12px; font-size: 11px; width: 140px;">Columns <span>▼</span></button>
+                  <div id="biTableColumnVisibilityOptions" class="bi-multiselect-options" style="right: 0;">
+                    <!-- Checkbox items generated in JS -->
+                  </div>
+                </div>
+                
+                <input type="text" id="biTableSearch" class="bi-filter-input" style="padding: 6px 12px; margin: 0; font-size: 11px; width: 160px;" placeholder="Search in table...">
+                <button id="biBtnExportSelected" class="table-action-btn" style="padding: 6px 12px; font-size: 11px; background: rgba(0, 174, 239, 0.15); color: var(--accent-blue); border: 1px solid rgba(0, 174, 239, 0.3);">Export Selected</button>
+              </div>
+            </div>
+            
+            <div class="bi-table-sticky-header">
+              <table style="color: var(--text-navy);" id="biAnalyticsDirectoryTable">
+                <thead>
+                  <tr>
+                    <th style="padding: 10px; width: 35px; text-align: center;"><input type="checkbox" id="biTableSelectAll" aria-label="Select all rows"></th>
+                    <th style="padding: 10px; text-align: left; cursor: pointer;" id="biThCustomer" class="bi-resizable-th" data-col="customer_name">Customer<div class="bi-col-resizer"></div></th>
+                    <th style="padding: 10px; text-align: left; cursor: pointer;" id="biThConsumerNum" class="bi-resizable-th" data-col="consumer_number">Consumer ID<div class="bi-col-resizer"></div></th>
+                    <th style="padding: 10px; text-align: left; cursor: pointer;" id="biThCity" class="bi-resizable-th" data-col="city">City<div class="bi-col-resizer"></div></th>
+                    <th style="padding: 10px; text-align: left; cursor: pointer;" id="biThDiscom" class="bi-resizable-th" data-col="discom">DISCOM<div class="bi-col-resizer"></div></th>
+                    <th style="padding: 10px; text-align: right; cursor: pointer;" id="biThUnits" class="bi-resizable-th" data-col="monthly_units">Monthly Units<div class="bi-col-resizer"></div></th>
+                    <th style="padding: 10px; text-align: right; cursor: pointer;" id="biThBillAmt" class="bi-resizable-th" data-col="bill_amount">Bill Amount<div class="bi-col-resizer"></div></th>
+                    <th style="padding: 10px; text-align: right; cursor: pointer;" id="biThRate" class="bi-resizable-th" data-col="per_unit_rate">Per Unit Rate<div class="bi-col-resizer"></div></th>
+                    <th style="padding: 10px; text-align: right; cursor: pointer;" id="biThKw" class="bi-resizable-th" data-col="recommended_kw">Rec. kW<div class="bi-col-resizer"></div></th>
+                    <th style="padding: 10px; text-align: right; cursor: pointer;" id="biThMonthlySavings" class="bi-resizable-th" data-col="monthly_savings">Monthly Savings<div class="bi-col-resizer"></div></th>
+                    <th style="padding: 10px; text-align: right; cursor: pointer;" id="biThAnnualSavings" class="bi-resizable-th" data-col="annual_savings">Annual Savings<div class="bi-col-resizer"></div></th>
+                    <th style="padding: 10px; text-align: right; cursor: pointer;" id="biThSavings25Yr" class="bi-resizable-th" data-col="savings_25yr">25-Year Savings<div class="bi-col-resizer"></div></th>
+                    <th style="padding: 10px; text-align: right; cursor: pointer;" id="biThPayback" class="bi-resizable-th" data-col="payback_years">Payback<div class="bi-col-resizer"></div></th>
+                    <th style="padding: 10px; text-align: center; cursor: pointer;" id="biThStatus" class="bi-resizable-th" data-col="status">Status<div class="bi-col-resizer"></div></th>
+                  </tr>
+                </thead>
+                <tbody id="biAnalyticsTableBody"></tbody>
+              </table>
+            </div>
+            <!-- Pagination Controls -->
+            <div style="display: flex; justify-content: space-between; align-items: center; margin-top: 15px; font-size: 11px; color: var(--text-secondary);">
+              <span id="biTablePaginationSummary">Showing 0-0 of 0 entries</span>
+              <div style="display: flex; gap: 8px;">
+                <button id="biTableBtnPrev" class="table-action-btn" style="padding: 4px 10px; font-size: 10px;">Previous</button>
+                <button id="biTableBtnNext" class="table-action-btn" style="padding: 4px 10px; font-size: 10px;">Next</button>
+              </div>
+            </div>
+          </div>
+
         </div> <!-- /biDashboardActiveView -->
       </div> <!-- /tab-business-intelligence -->
 

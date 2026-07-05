@@ -9514,1323 +9514,1438 @@ let biStageDistributionChartInstance = null;
 let biLeadSourceVolumeChartInstance = null;
 let biLeadSourceConvChartInstance = null;
 let biAiCategoryChartInstance = null;
+let biInteractiveChartInstance = null;
+
+// Global variables for Advanced BI (Phase 12.3.1)
+window.biSelectedCities = [];
+window.biSelectedDiscoms = [];
+window.biActiveSegment = "";
+window.biAutoRefreshInterval = null;
+window.biAutoRefreshCountdown = null;
+window.biRemainingSeconds = 0;
+window.biTotalSeconds = 0;
 
 function initBusinessIntelligence() {
-  const btnPresentation = document.getElementById('btnBiPresentationMode');
-  if (btnPresentation) {
-    btnPresentation.addEventListener('click', () => {
-      document.body.classList.toggle('presentation-active');
-      const isPresentation = document.body.classList.contains('presentation-active');
-      btnPresentation.querySelector('span').textContent = isPresentation ? 'Exit Presentation' : 'Presentation Mode';
+  // Bind tabs for chart selection
+  const chartTabs = document.querySelectorAll('.bi-chart-tab');
+  chartTabs.forEach(tab => {
+    tab.addEventListener('click', (e) => {
+      chartTabs.forEach(t => t.classList.remove('active'));
+      e.target.classList.add('active');
+      const chartType = e.target.getAttribute('data-chart');
+      renderActiveBiChart(chartType);
+    });
+  });
+
+  // Range Slider Value Output bindings
+  const rangeKw = document.getElementById('biFilterKw');
+  const valKw = document.getElementById('biValFilterKw');
+  if (rangeKw && valKw) {
+    rangeKw.addEventListener('input', () => {
+      valKw.textContent = parseFloat(rangeKw.value) === 0 ? 'Any' : `>= ${rangeKw.value} kW`;
+      applyBiFilters();
     });
   }
 
-  const btnInvestor = document.getElementById('btnBiInvestorMode');
-  if (btnInvestor) {
-    btnInvestor.addEventListener('click', () => {
-      document.body.classList.toggle('investor-active');
+  const rangePayback = document.getElementById('biFilterPayback');
+  const valPayback = document.getElementById('biValFilterPayback');
+  if (rangePayback && valPayback) {
+    rangePayback.addEventListener('input', () => {
+      valPayback.textContent = parseFloat(rangePayback.value) === 10 ? 'Any' : `<= ${rangePayback.value} Yrs`;
+      applyBiFilters();
     });
   }
 
-  const btnExport = document.getElementById('btnBiExportCSV');
-  if (btnExport) {
-    btnExport.addEventListener('click', () => {
-      exportBusinessIntelligenceCSV();
+  const rangeBill = document.getElementById('biFilterBill');
+  const valBill = document.getElementById('biValFilterBill');
+  if (rangeBill && valBill) {
+    rangeBill.addEventListener('input', () => {
+      valBill.textContent = parseFloat(rangeBill.value) === 15000 ? 'Any' : `<= ₹${Number(rangeBill.value).toLocaleString('en-IN')}`;
+      applyBiFilters();
     });
   }
-  
-  const btnGoToBi = document.getElementById('adminGoToBiBtn');
-  if (btnGoToBi) {
-    btnGoToBi.addEventListener('click', () => {
-      // Switch active menu selection in sidebar
-      const menuItems = document.querySelectorAll('.menu-item');
-      menuItems.forEach(item => {
-        if (item.getAttribute('data-tab') === 'business-intelligence') {
-          item.classList.add('active');
+
+  const rangeUnits = document.getElementById('biFilterUnits');
+  const valUnits = document.getElementById('biValFilterUnits');
+  if (rangeUnits && valUnits) {
+    rangeUnits.addEventListener('input', () => {
+      valUnits.textContent = parseFloat(rangeUnits.value) === 1500 ? 'Any' : `<= ${rangeUnits.value} Units`;
+      applyBiFilters();
+    });
+  }
+
+  // Filter Search Inputs and dropdowns
+  const searchInput = document.getElementById('biFilterSearch');
+  if (searchInput) {
+    searchInput.addEventListener('input', applyBiFilters);
+  }
+
+  const periodSelect = document.getElementById('biFilterPeriod');
+  if (periodSelect) {
+    periodSelect.addEventListener('change', applyBiFilters);
+  }
+
+  // Multi-select dropdown toggle listeners
+  _setupMultiselectDropdown('biFilterCityBtn', 'biFilterCityOptions');
+  _setupMultiselectDropdown('biFilterDiscomBtn', 'biFilterDiscomOptions');
+  _setupMultiselectDropdown('biTableColumnVisibilityBtn', 'biTableColumnVisibilityOptions');
+  _setupMultiselectDropdown('biBtnExportCenter', 'biExportDropdownMenu');
+
+  // Customer Segmentation quick filters
+  const segCards = document.querySelectorAll('.bi-segment-card');
+  segCards.forEach(card => {
+    card.addEventListener('click', () => {
+      const active = card.classList.contains('active');
+      segCards.forEach(c => c.classList.remove('active'));
+      if (active) {
+        window.biActiveSegment = "";
+      } else {
+        card.classList.add('active');
+        window.biActiveSegment = card.getAttribute('data-segment');
+      }
+      applyBiFilters();
+    });
+  });
+
+  // Table sorting headers
+  const headers = [
+    { id: 'biThCustomer', col: 'customer_name' },
+    { id: 'biThConsumerNum', col: 'consumer_number' },
+    { id: 'biThCity', col: 'city' },
+    { id: 'biThDiscom', col: 'discom' },
+    { id: 'biThUnits', col: 'monthly_units' },
+    { id: 'biThBillAmt', col: 'bill_amount' },
+    { id: 'biThRate', col: 'per_unit_rate' },
+    { id: 'biThKw', col: 'recommended_kw' },
+    { id: 'biThMonthlySavings', col: 'monthly_savings' },
+    { id: 'biThAnnualSavings', col: 'annual_savings' },
+    { id: 'biThSavings25Yr', col: 'savings_25yr' },
+    { id: 'biThPayback', col: 'payback_years' },
+    { id: 'biThStatus', col: 'status' }
+  ];
+
+  window.biSortColumn = 'customer_name';
+  window.biSortDirection = 'asc';
+  window.biTablePage = 1;
+  window.biTablePageSize = 5;
+
+  headers.forEach(h => {
+    const el = document.getElementById(h.id);
+    if (el) {
+      el.addEventListener('click', () => {
+        if (window.biSortColumn === h.col) {
+          window.biSortDirection = window.biSortDirection === 'asc' ? 'desc' : 'asc';
         } else {
-          item.classList.remove('active');
+          window.biSortColumn = h.col;
+          window.biSortDirection = 'asc';
+        }
+        headers.forEach(hSub => {
+          const elSub = document.getElementById(hSub.id);
+          if (elSub) {
+            elSub.innerHTML = elSub.innerHTML.replace(/ [▲▼]/g, '');
+          }
+        });
+        const arrow = window.biSortDirection === 'asc' ? ' ▲' : ' ▼';
+        el.innerHTML += arrow;
+        sortAndRenderBiTable();
+      });
+    }
+  });
+
+  // Table select all checkbox
+  const selectAllCheckbox = document.getElementById('biTableSelectAll');
+  if (selectAllCheckbox) {
+    selectAllCheckbox.addEventListener('change', (e) => {
+      const isChecked = e.target.checked;
+      const rowChecks = document.querySelectorAll('.bi-row-checkbox');
+      rowChecks.forEach(chk => {
+        chk.checked = isChecked;
+        const tr = chk.closest('tr');
+        if (tr) {
+          if (isChecked) tr.classList.add('bi-table-row-selected');
+          else tr.classList.remove('bi-table-row-selected');
         }
       });
-      switchTab('business-intelligence');
     });
   }
+
+  // Export buttons
+  const btnExportSelected = document.getElementById('biBtnExportSelected');
+  if (btnExportSelected) {
+    btnExportSelected.addEventListener('click', exportSelectedBiRows);
+  }
+
+  // Export Center Actions
+  const boardReportBtn = document.getElementById('biExportBoardReport');
+  if (boardReportBtn) boardReportBtn.addEventListener('click', () => triggerExportCenterReport('board'));
+  const mgmtSummaryBtn = document.getElementById('biExportMgmtSummary');
+  if (mgmtSummaryBtn) mgmtSummaryBtn.addEventListener('click', () => triggerExportCenterReport('mgmt'));
+  const custReportBtn = document.getElementById('biExportCustReport');
+  if (custReportBtn) custReportBtn.addEventListener('click', () => triggerExportCenterReport('customer'));
+  const snapshotBtn = document.getElementById('biExportSnapshot');
+  if (snapshotBtn) snapshotBtn.addEventListener('click', () => triggerExportCenterReport('snapshot'));
+
+  // Print button
+  const btnPrintReport = document.getElementById('biBtnPrintReport');
+  if (btnPrintReport) {
+    btnPrintReport.addEventListener('click', () => {
+      window.print();
+      logAuditEvent((_getUser() || {}).email, 'Print BI Report', 'Admin', 'Triggered print report action in BI dashboard', 'Low');
+    });
+  }
+
+  // Pagination buttons
+  const btnPrev = document.getElementById('biTableBtnPrev');
+  if (btnPrev) {
+    btnPrev.addEventListener('click', () => {
+      if (window.biTablePage > 1) {
+        window.biTablePage--;
+        renderBiTablePage();
+      }
+    });
+  }
+
+  const btnNext = document.getElementById('biTableBtnNext');
+  if (btnNext) {
+    btnNext.addEventListener('click', () => {
+      const totalPages = Math.ceil(window.biFilteredDirectory.length / window.biTablePageSize);
+      if (window.biTablePage < totalPages) {
+        window.biTablePage++;
+        renderBiTablePage();
+      }
+    });
+  }
+
+  // Retry Connection Button
+  const retryBtn = document.getElementById('biErrorRetryBtn');
+  if (retryBtn) {
+    retryBtn.addEventListener('click', refreshBusinessIntelligenceUI);
+  }
+
+  // Auto-Refresh selector
+  const refreshSelect = document.getElementById('biAutoRefresh');
+  if (refreshSelect) {
+    refreshSelect.addEventListener('change', () => {
+      setupAutoRefreshLoop(refreshSelect.value);
+    });
+  }
+
+  // Chart canvas utilities (fullscreen, download png, download csv)
+  const fullBtn = document.getElementById('biChartBtnFullscreen');
+  if (fullBtn) {
+    fullBtn.addEventListener('click', toggleFullscreenChart);
+  }
+  const pngBtn = document.getElementById('biChartBtnPng');
+  if (pngBtn) {
+    pngBtn.addEventListener('click', downloadChartPng);
+  }
+  const csvBtn = document.getElementById('biChartBtnCsv');
+  if (csvBtn) {
+    csvBtn.addEventListener('click', downloadChartCsvData);
+  }
+
+  // Leaderboard Selector Switch
+  const lbSelect = document.getElementById('biLeaderboardSelector');
+  if (lbSelect) {
+    lbSelect.addEventListener('change', () => {
+      renderBiLeaderboards();
+    });
+  }
+
+  // Table Inline Search
+  const tableSearch = document.getElementById('biTableSearch');
+  if (tableSearch) {
+    tableSearch.addEventListener('input', () => {
+      sortAndRenderBiTable();
+    });
+  }
+
+  // Drill-down KPI Card Clicks
+  const bindKpiDrillDown = (cardId, filterSetup) => {
+    const card = document.getElementById(cardId);
+    if (card) {
+      card.addEventListener('click', () => {
+        filterSetup();
+        applyBiFilters();
+      });
+    }
+  };
+
+  bindKpiDrillDown('biCardKpiCustomers', () => {
+    const search = document.getElementById('biFilterSearch');
+    if (search) search.value = "";
+    document.querySelectorAll('.bi-segment-card').forEach(c => c.classList.remove('active'));
+    window.biActiveSegment = "";
+  });
+  
+  bindKpiDrillDown('biCardKpiRevenue', () => {
+    const rangeKw = document.getElementById('biFilterKw');
+    if (rangeKw) {
+      rangeKw.value = "5.0";
+      const valKw = document.getElementById('biValFilterKw');
+      if (valKw) valKw.textContent = ">= 5.0 kW";
+    }
+  });
+
+  bindKpiDrillDown('biCardKpiAvgPayback', () => {
+    const rangePayback = document.getElementById('biFilterPayback');
+    if (rangePayback) {
+      rangePayback.value = "4.0";
+      const valPayback = document.getElementById('biValFilterPayback');
+      if (valPayback) valPayback.textContent = "<= 4.0 Yrs";
+    }
+  });
+
+  // Table Column resizing setup
+  setupTableColumnResizing();
 }
 
-function refreshBusinessIntelligenceUI() {
-  const cachedDataStr = localStorage.getItem('cachedAdminData');
-  if (!cachedDataStr) {
-    // If no cache, trigger loadAdminDashboardData to fetch the data
-    loadAdminDashboardData(true);
+function _setupMultiselectDropdown(btnId, containerId) {
+  const btn = document.getElementById(btnId);
+  const container = document.getElementById(containerId);
+  if (!btn || !container) return;
+
+  btn.addEventListener('click', (e) => {
+    e.stopPropagation();
+    // Close other dropdowns
+    document.querySelectorAll('.bi-multiselect-options').forEach(c => {
+      if (c.id !== containerId) c.classList.remove('open');
+    });
+    container.classList.toggle('open');
+  });
+
+  document.addEventListener('click', (e) => {
+    if (!container.contains(e.target) && e.target !== btn) {
+      container.classList.remove('open');
+    }
+  });
+}
+
+function setupAutoRefreshLoop(val) {
+  if (window.biAutoRefreshInterval) clearInterval(window.biAutoRefreshInterval);
+  if (window.biAutoRefreshCountdown) clearInterval(window.biAutoRefreshCountdown);
+
+  const bar = document.getElementById('biRefreshTimerBar');
+  if (bar) bar.style.width = '0%';
+
+  if (val === 'off') {
+    window.biTotalSeconds = 0;
+    window.biRemainingSeconds = 0;
     return;
   }
-  
-  const consolidated = JSON.parse(cachedDataStr);
-  _hydrateBusinessIntelligenceUI(consolidated);
+
+  const secs = parseInt(val);
+  window.biTotalSeconds = secs;
+  window.biRemainingSeconds = secs;
+
+  window.biAutoRefreshCountdown = setInterval(() => {
+    window.biRemainingSeconds--;
+    if (bar) {
+      const pct = ((window.biRemainingSeconds / window.biTotalSeconds) * 100);
+      bar.style.width = (100 - pct) + '%';
+    }
+    if (window.biRemainingSeconds <= 0) {
+      window.biRemainingSeconds = window.biTotalSeconds;
+      refreshBusinessIntelligenceUI();
+    }
+  }, 1000);
 }
 
-function _hydrateBiTelemetryWidget(data) {
-  const metrics = calculateBiMetrics(data);
-  
-  const forecastEl = document.getElementById('admTelemetryBiRevenue');
-  const convEl = document.getElementById('admTelemetryBiConversion');
-  const scoreEl = document.getElementById('admTelemetryBiScore');
-  const growthEl = document.getElementById('admTelemetryBiGrowth');
-  
-  if (forecastEl) forecastEl.textContent = formatCurrencyRupee(metrics.revenueForecast);
-  if (convEl) convEl.textContent = `${_safeNum(metrics.conversionRate).toFixed(1)}%`;
-  if (scoreEl) scoreEl.textContent = `${Math.round(metrics.businessScore)}/100`;
-  if (growthEl) growthEl.textContent = `${metrics.growthScore >= 0 ? '+' : ''}${Math.round(metrics.growthScore)}%`;
-}
-
-function _hydrateBusinessIntelligenceUI(data) {
+async function refreshBusinessIntelligenceUI() {
+  const loader = document.getElementById('biSkeletonLoader');
+  const errorContainer = document.getElementById('biErrorContainer');
   const activeView = document.getElementById('biDashboardActiveView');
-  const emptyState = document.getElementById('biDashboardEmptyState');
-  const leads = Object.values(getCrmLeads() || {});
-
-  if (leads.length === 0) {
-    if (activeView) activeView.style.display = 'none';
-    if (emptyState) emptyState.style.display = 'flex';
-    _bindBiEmptyStateButtons();
-    return;
-  } else {
-    if (activeView) activeView.style.display = 'block';
-    if (emptyState) emptyState.style.display = 'none';
-  }
-
-  const metrics = calculateBiMetrics(data);
   
-  // Hydrate top summary plain-English text
-  const summaryTextEl = document.getElementById('biExecutiveSummaryText');
-  if (summaryTextEl) {
-    summaryTextEl.textContent = metrics.executiveSummary;
-  }
+  if (loader) loader.style.display = 'grid';
+  if (errorContainer) errorContainer.style.display = 'none';
+  if (activeView) activeView.style.display = 'none';
   
-  // Hydrate KPI mini cards
-  const miniHealth = document.getElementById('biMetricHealthScore');
-  const miniForecast = document.getElementById('biMetricRevenueForecast');
-  const miniGrowth = document.getElementById('biMetricLeadGrowth');
-  const miniRisk = document.getElementById('biMetricRiskLevel');
-  
-  if (miniHealth) {
-    miniHealth.textContent = `${Math.round(metrics.businessScore)}/100`;
-    miniHealth.style.color = metrics.businessScore >= 70 ? '#10b981' : metrics.businessScore >= 45 ? '#f59e0b' : '#ef4444';
-  }
-  if (miniForecast) miniForecast.textContent = formatCurrencyRupee(metrics.revenueForecast);
-  if (miniGrowth) {
-    miniGrowth.textContent = `${_safeNum(metrics.leadGrowth) >= 0 ? '+' : ''}${_safeNum(metrics.leadGrowth).toFixed(1)}%`;
-    miniGrowth.style.color = metrics.leadGrowth >= 0 ? '#10b981' : '#ef4444';
-  }
-  if (miniRisk) {
-    miniRisk.textContent = metrics.riskLevel;
-    miniRisk.style.color = metrics.riskLevel === 'Low' ? '#10b981' : metrics.riskLevel === 'Medium' ? '#f59e0b' : '#ef4444';
-  }
-  
-  // Hydrate main KPI grids
-  const kpiUsers = document.getElementById('biKpiTotalUsers');
-  const trendUsers = document.getElementById('biTrendTotalUsers');
-  if (kpiUsers) kpiUsers.textContent = metrics.totalUsers;
-  if (trendUsers) {
-    trendUsers.textContent = metrics.benchmarks.users.diffText;
-    trendUsers.className = `trend-indicator ${metrics.benchmarks.users.trendClass}`;
-  }
-  
-  const kpiLeads = document.getElementById('biKpiTotalLeads');
-  const trendLeads = document.getElementById('biTrendTotalLeads');
-  if (kpiLeads) kpiLeads.textContent = metrics.totalLeads;
-  if (trendLeads) {
-    trendLeads.textContent = metrics.benchmarks.leads.diffText;
-    trendLeads.className = `trend-indicator ${metrics.benchmarks.leads.trendClass}`;
-  }
-  
-  const kpiRefs = document.getElementById('biKpiReferrals');
-  const trendRefs = document.getElementById('biTrendReferrals');
-  if (kpiRefs) kpiRefs.textContent = metrics.referralConversions;
-  if (trendRefs) {
-    trendRefs.textContent = metrics.benchmarks.referrals.diffText;
-    trendRefs.className = `trend-indicator ${metrics.benchmarks.referrals.trendClass}`;
-  }
-  
-  const kpiConv = document.getElementById('biKpiConversionRate');
-  const trendConv = document.getElementById('biTrendConversionRate');
-  if (kpiConv) kpiConv.textContent = `${_safeNum(metrics.conversionRate).toFixed(1)}%`;
-  if (trendConv) {
-    trendConv.textContent = metrics.conversionTrendText;
-    trendConv.className = `trend-indicator ${metrics.conversionTrendClass}`;
-  }
-
-  // Hydrate Revenue & Efficiency KPI Grid
-  const kpiPipelineRev = document.getElementById('biKpiPipelineRevenue');
-  const trendPipelineRev = document.getElementById('biTrendPipelineRevenue');
-  if (kpiPipelineRev) kpiPipelineRev.textContent = formatCurrencyRupee(metrics.pipelineRevenue);
-  if (trendPipelineRev) {
-    trendPipelineRev.textContent = metrics.benchmarks.revenue.diffText;
-    trendPipelineRev.className = `trend-indicator ${metrics.benchmarks.revenue.trendClass}`;
-  }
-
-  const kpiQualRev = document.getElementById('biKpiQualifiedRevenue');
-  const trendQualRev = document.getElementById('biTrendQualifiedRevenue');
-  if (kpiQualRev) kpiQualRev.textContent = formatCurrencyRupee(metrics.qualifiedRevenue);
-  if (trendQualRev) {
-    trendQualRev.textContent = metrics.benchmarks.leads.diffText;
-    trendQualRev.className = `trend-indicator ${metrics.benchmarks.leads.trendClass}`;
-  }
-
-  const kpiWonRev = document.getElementById('biKpiWonRevenue');
-  const trendWonRev = document.getElementById('biTrendWonRevenue');
-  if (kpiWonRev) kpiWonRev.textContent = formatCurrencyRupee(metrics.wonRevenue);
-  if (trendWonRev) {
-    trendWonRev.textContent = metrics.benchmarks.revenue.diffText;
-    trendWonRev.className = `trend-indicator ${metrics.benchmarks.revenue.trendClass}`;
-  }
-
-  const kpiExpectedRev = document.getElementById('biKpiExpectedRevenue');
-  if (kpiExpectedRev) kpiExpectedRev.textContent = formatCurrencyRupee(metrics.expectedRevenue);
-
-  const kpiRevPerLead = document.getElementById('biKpiRevPerLead');
-  if (kpiRevPerLead) kpiRevPerLead.textContent = formatCurrencyRupee(metrics.revPerLead);
-
-  const kpiRevPerQual = document.getElementById('biKpiRevPerQualified');
-  if (kpiRevPerQual) kpiRevPerQual.textContent = formatCurrencyRupee(metrics.revPerQualified);
-
-  const kpiRevPerWon = document.getElementById('biKpiRevPerWon');
-  if (kpiRevPerWon) kpiRevPerWon.textContent = formatCurrencyRupee(metrics.revPerWon);
-
-  const kpiWinRate = document.getElementById('biKpiWinRate');
-  if (kpiWinRate) kpiWinRate.textContent = `${_safeNum(metrics.winRate).toFixed(1)}%`;
-
-  const kpiAvgDealSize = document.getElementById('biKpiAvgDealSize');
-  if (kpiAvgDealSize) kpiAvgDealSize.textContent = formatCurrencyRupee(metrics.avgDealSize);
-  
-  // Populate Waterfall
-  const waterfallContainer = document.getElementById('biWaterfallContainer');
-  if (waterfallContainer) {
-    waterfallContainer.innerHTML = '';
-    const stages = [
-      { label: `Leads (${metrics.totalLeads})`, value: metrics.pipelineRevenue, color: '0, 174, 239', percent: 100, dropoffText: '<span class="waterfall-dropoff conversion">Start</span>' },
-      { 
-        label: `Qualified (${metrics.qualifiedCount})`, 
-        value: metrics.qualifiedRevenue, 
-        color: '168, 85, 247', 
-        percent: metrics.pipelineRevenue > 0 ? (metrics.qualifiedRevenue / metrics.pipelineRevenue * 100) : 0, 
-        dropoffText: `<span class="waterfall-dropoff loss">${_safeNum(metrics.conversionRates.leadToQualifiedRate).toFixed(0)}% Conv / ${(100 - _safeNum(metrics.conversionRates.leadToQualifiedRate)).toFixed(0)}% Loss <span class="stage-health-badge ${metrics.conversionHealth.leadToQualified.status}">${metrics.conversionHealth.leadToQualified.text}</span></span>` 
-      },
-      { 
-        label: `Proposal Sent (${metrics.proposalCount})`, 
-        value: metrics.proposalRevenue, 
-        color: '255, 138, 29', 
-        percent: metrics.pipelineRevenue > 0 ? (metrics.proposalRevenue / metrics.pipelineRevenue * 100) : 0, 
-        dropoffText: `<span class="waterfall-dropoff loss">${_safeNum(metrics.conversionRates.qualifiedToProposalRate).toFixed(0)}% Conv / ${(100 - _safeNum(metrics.conversionRates.qualifiedToProposalRate)).toFixed(0)}% Loss <span class="stage-health-badge ${metrics.conversionHealth.qualifiedToProposal.status}">${metrics.conversionHealth.qualifiedToProposal.text}</span></span>` 
-      },
-      { 
-        label: `Won Projects (${metrics.wonCount})`, 
-        value: metrics.wonRevenue, 
-        color: '54, 211, 153', 
-        percent: metrics.pipelineRevenue > 0 ? (metrics.wonRevenue / metrics.pipelineRevenue * 100) : 0, 
-        dropoffText: `<span class="waterfall-dropoff loss">${_safeNum(metrics.conversionRates.proposalToWonRate).toFixed(0)}% Conv / ${(100 - _safeNum(metrics.conversionRates.proposalToWonRate)).toFixed(0)}% Loss <span class="stage-health-badge ${metrics.conversionHealth.proposalToWon.status}">${metrics.conversionHealth.proposalToWon.text}</span></span>` 
-      }
-    ];
+  try {
+    const res = await safeFetch(`${API_BASE}/api/dashboard/analytics`);
+    const data = await res.json();
     
-    stages.forEach((stg) => {
-      const row = document.createElement('div');
-      row.className = 'waterfall-row';
-      row.innerHTML = `
-        <span class="waterfall-stage-label">${stg.label}</span>
-        <div class="waterfall-bar-wrapper">
-          <div class="waterfall-bar" style="width: ${Math.max(5, stg.percent)}%; --bar-color: ${stg.color};">
-            <span class="waterfall-value">${formatCurrencyRupee(stg.value)}</span>
-          </div>
-        </div>
-        ${stg.dropoffText}
-      `;
-      waterfallContainer.appendChild(row);
+    window.biOriginalData = data;
+    window.biFilteredDirectory = [...(data.directory || [])];
+    
+    // Set Command Center fields
+    document.getElementById('biCcHealthScore').textContent = `${data.command_center.platform_health_score}%`;
+    document.getElementById('biCcActiveCustomers').textContent = data.command_center.total_active_customers;
+    
+    const indicator = document.getElementById('biCcHealthIndicator');
+    if (indicator) {
+      indicator.className = 'bi-health-indicator-circle';
+      if (data.command_center.platform_health_score >= 95) indicator.classList.add('healthy');
+      else if (data.command_center.platform_health_score >= 85) indicator.classList.add('warning');
+      else indicator.classList.add('danger');
+    }
+    
+    // Set Time Intelligence chips
+    document.getElementById('biTimeCustomersToday').textContent = data.time_intelligence.customers_today || 0;
+    document.getElementById('biTimeBillsToday').textContent = data.time_intelligence.bills_today || 0;
+    document.getElementById('biTimeCustomersWeek').textContent = data.time_intelligence.customers_week || 0;
+    document.getElementById('biTimeCustomersMonth').textContent = data.time_intelligence.customers_month || 0;
+    document.getElementById('biTimeCustomers30d').textContent = data.time_intelligence.customers_30d || 0;
+    document.getElementById('biTimeCustomersPrevMonth').textContent = data.time_intelligence.customers_prev_month || 0;
+    
+    const impChip = document.getElementById('biTimeLatestImport');
+    const impChipDate = document.getElementById('biTimeLatestImportDate');
+    if (impChip && data.time_intelligence.newest_bill) {
+      impChip.textContent = data.time_intelligence.newest_bill.customer_name;
+      if (impChipDate) {
+        const d = new Date(data.time_intelligence.newest_bill.date);
+        impChipDate.textContent = d.toLocaleDateString();
+      }
+    }
+    
+    // Populate dynamic multi-select filters
+    _populateMultiSelectOptions(data);
+    _populateColumnVisibilityOptions();
+    
+    // Set Refreshed time
+    const lastRefresh = document.getElementById('biLastRefreshTime');
+    if (lastRefresh) {
+      const now = new Date();
+      lastRefresh.textContent = `Last Refreshed: ${now.toLocaleTimeString()}`;
+    }
+    
+    // Apply filters which will draw KPIs, Leaderboards, geo cards, tables, charts
+    applyBiFilters();
+    
+    if (loader) loader.style.display = 'none';
+    if (activeView) activeView.style.display = 'block';
+  } catch (err) {
+    console.error("Failed to load business intelligence dashboard analytics from backend", err);
+    if (loader) loader.style.display = 'none';
+    if (errorContainer) errorContainer.style.display = 'block';
+  }
+}
+
+function _populateMultiSelectOptions(data) {
+  const cityContainer = document.getElementById('biFilterCityOptions');
+  const discomContainer = document.getElementById('biFilterDiscomOptions');
+  const periodSelect = document.getElementById('biFilterPeriod');
+  
+  if (cityContainer) {
+    cityContainer.innerHTML = '';
+    const cities = [...new Set((data.directory || []).map(x => x.city))].sort();
+    cities.forEach(c => {
+      const div = document.createElement('div');
+      div.className = 'bi-multiselect-item';
+      div.innerHTML = `<input type="checkbox" value="${c}" id="chkCity_${c}" class="bi-city-checkbox"> <label for="chkCity_${c}">${c}</label>`;
+      div.addEventListener('click', (e) => {
+        if (e.target.tagName !== 'INPUT') {
+          const chk = div.querySelector('input');
+          chk.checked = !chk.checked;
+          chk.dispatchEvent(new Event('change'));
+        }
+      });
+      const chk = div.querySelector('input');
+      chk.addEventListener('change', () => {
+        if (chk.checked) {
+          if (!window.biSelectedCities.includes(chk.value)) window.biSelectedCities.push(chk.value);
+        } else {
+          window.biSelectedCities = window.biSelectedCities.filter(x => x !== chk.value);
+        }
+        const btn = document.getElementById('biFilterCityBtn');
+        if (btn) {
+          btn.textContent = window.biSelectedCities.length === 0 ? "Select Cities ▼" : `Cities (${window.biSelectedCities.length}) ▼`;
+        }
+        applyBiFilters();
+      });
+      cityContainer.appendChild(div);
     });
   }
   
-  // Render Charts
-  renderBiStageDistributionChart(metrics);
-  renderBiSegmentationChart(metrics.segmentation);
-  
-  // Hydrate Cohorts Table
-  const cohortsBody = document.getElementById('biCohortMatrixBody');
-  if (cohortsBody) {
-    cohortsBody.innerHTML = '';
-    const sortedMonths = Object.keys(metrics.cohorts).sort((a, b) => new Date(a) - new Date(b));
-    if (sortedMonths.length === 0) {
-      cohortsBody.innerHTML = `<tr><td colspan="6" style="padding:20px; color:var(--text-muted); text-align:center;">No cohort data available</td></tr>`;
-    } else {
-      sortedMonths.forEach(month => {
-        const c = metrics.cohorts[month];
-        const tr = document.createElement('tr');
-        tr.innerHTML = `
-          <td style="padding: 10px; text-align: left; font-weight: bold;">${month}</td>
-          <td style="padding: 10px; font-weight: 700;">${c.size}</td>
-          <td class="cohort-cell-heat" style="padding: 10px; background-color: rgba(0, 174, 239, ${Math.max(0.05, _safeNum(c.billPct) / 100)})">${_safeNum(c.billPct).toFixed(0)}%</td>
-          <td class="cohort-cell-heat" style="padding: 10px; background-color: rgba(54, 211, 153, ${Math.max(0.05, _safeNum(c.roofPct) / 100)})">${_safeNum(c.roofPct).toFixed(0)}%</td>
-          <td class="cohort-cell-heat" style="padding: 10px; background-color: rgba(255, 138, 29, ${Math.max(0.05, _safeNum(c.referralPct) / 100)})">${_safeNum(c.referralPct).toFixed(0)}%</td>
-          <td class="cohort-cell-heat" style="padding: 10px; background-color: rgba(168, 85, 247, ${Math.max(0.05, _safeNum(c.copilotPct) / 100)})">${_safeNum(c.copilotPct).toFixed(0)}%</td>
-        `;
-        cohortsBody.appendChild(tr);
-      });
-    }
-  }
-  
-  // Hydrate Solar metrics card
-  const avgBill = document.getElementById('biSolarAvgBill');
-  const avgSize = document.getElementById('biSolarAvgSize');
-  const avgPayback = document.getElementById('biSolarAvgPayback');
-  const avgRoi = document.getElementById('biSolarAvgRoi');
-  const avgSuitability = document.getElementById('biSolarAvgSuitability');
-  
-  if (avgBill) avgBill.textContent = formatCurrencyRupee(metrics.solar.avgBill);
-  if (avgSize) avgSize.textContent = `${_safeNum(metrics.solar.avgSize).toFixed(1)} kW`;
-  if (avgPayback) avgPayback.textContent = `${_safeNum(metrics.solar.avgPayback).toFixed(1)} Years`;
-  if (avgRoi) avgRoi.textContent = `${Math.round(metrics.solar.avgRoi)}%`;
-  if (avgSuitability) avgSuitability.textContent = `${Math.round(metrics.solar.avgSuitability)}/100`;
-  
-  // Hydrate Referral Impact Card
-  const refPipeline = document.getElementById('biRefPipeline');
-  const refConversion = document.getElementById('biRefConversion');
-  const refTopSegment = document.getElementById('biRefTopSegment');
-  const refMultiplier = document.getElementById('biRefMultiplier');
-  
-  if (refPipeline) refPipeline.textContent = formatCurrencyRupee(metrics.referral.pipeline);
-  if (refConversion) refConversion.textContent = `${_safeNum(metrics.referral.conversionRate).toFixed(1)}%`;
-  if (refTopSegment) refTopSegment.textContent = metrics.referral.topSegment;
-  if (refMultiplier) refMultiplier.textContent = `${_safeNum(metrics.referral.multiplier).toFixed(1)}x`;
-  
-  // Hydrate AI Scorecard
-  const aiInfluence = document.getElementById('biAiInfluenceScore');
-  const aiQueries = document.getElementById('biAiTotalQueries');
-  const aiRecommendations = document.getElementById('biAiRecommendations');
-  const aiLeads = document.getElementById('biAiLeadsInfluenced');
-  const aiAssessmentConv = document.getElementById('biAiAssessmentConversions');
-  
-  if (aiInfluence) aiInfluence.textContent = `${Math.round(metrics.ai.influenceScore)}%`;
-  if (aiQueries) aiQueries.textContent = metrics.ai.queries;
-  if (aiRecommendations) aiRecommendations.textContent = metrics.ai.recommendations;
-  if (aiLeads) aiLeads.textContent = metrics.ai.leadsInfluenced;
-  if (aiAssessmentConv) aiAssessmentConv.textContent = `${_safeNum(metrics.ai.conversionPct).toFixed(1)}%`;
-  
-  // Hydrate Risk list
-  const riskListEl = document.getElementById('biRiskList');
-  if (riskListEl) {
-    riskListEl.innerHTML = '';
-    if (metrics.risks.length === 0) {
-      riskListEl.innerHTML = `<div style="font-size:11px; color:var(--text-secondary);">No immediate platform risks identified.</div>`;
-    } else {
-      metrics.risks.forEach(r => {
-        const item = document.createElement('div');
-        item.className = 'risk-warning-card';
-        item.innerHTML = `
-          <span class="risk-warning-icon">⚠️</span>
-          <div>
-            <strong style="font-weight:700;">${r.title}</strong>
-            <span>${r.desc}</span>
-          </div>
-        `;
-        riskListEl.appendChild(item);
-      });
-    }
-  }
-  
-  // Hydrate Opportunities / Recommender
-  const oppListEl = document.getElementById('biOpportunitiesList');
-  if (oppListEl) {
-    oppListEl.innerHTML = '';
-    if (metrics.opportunities.length === 0) {
-      oppListEl.innerHTML = `<div style="font-size:11px; color:var(--text-secondary);">Analyzing conversion bottlenecks...</div>`;
-    } else {
-      metrics.opportunities.forEach(o => {
-        const item = document.createElement('div');
-        item.className = 'opportunity-card';
-        item.innerHTML = `
-          <span style="font-size:14px; flex-shrink:0;">💡</span>
-          <div>
-            <strong style="font-weight:700;">${o.title}</strong>
-            <span>${o.desc}</span>
-          </div>
-        `;
-        oppListEl.appendChild(item);
-      });
-    }
-  }
-  
-  // Hydrate Benchmarking
-  const benchUCurrent = document.getElementById('biBenchUsersCurrent');
-  const benchUDiff = document.getElementById('biBenchUsersDiff');
-  if (benchUCurrent) benchUCurrent.textContent = metrics.benchmarks.users.current;
-  if (benchUDiff) {
-    benchUDiff.textContent = metrics.benchmarks.users.diffText;
-    benchUDiff.className = `trend-indicator ${metrics.benchmarks.users.trendClass}`;
-  }
-  
-  const benchRefCurrent = document.getElementById('biBenchRefCurrent');
-  const benchRefDiff = document.getElementById('biBenchRefDiff');
-  if (benchRefCurrent) benchRefCurrent.textContent = metrics.benchmarks.referrals.current;
-  if (benchRefDiff) {
-    benchRefDiff.textContent = metrics.benchmarks.referrals.diffText;
-    benchRefDiff.className = `trend-indicator ${metrics.benchmarks.referrals.trendClass}`;
-  }
-  
-  const benchLeadsCurrent = document.getElementById('biBenchLeadsCurrent');
-  const benchLeadsDiff = document.getElementById('biBenchLeadsDiff');
-  if (benchLeadsCurrent) benchLeadsCurrent.textContent = metrics.benchmarks.leads.current;
-  if (benchLeadsDiff) {
-    benchLeadsDiff.textContent = metrics.benchmarks.leads.diffText;
-    benchLeadsDiff.className = `trend-indicator ${metrics.benchmarks.leads.trendClass}`;
-  }
-  
-  const benchRevCurrent = document.getElementById('biBenchRevenueCurrent');
-  const benchRevDiff = document.getElementById('biBenchRevenueDiff');
-  if (benchRevCurrent) benchRevCurrent.textContent = formatCurrencyRupee(metrics.benchmarks.revenue.current);
-  if (benchRevDiff) {
-    benchRevDiff.textContent = metrics.benchmarks.revenue.diffText;
-    benchRevDiff.className = `trend-indicator ${metrics.benchmarks.revenue.trendClass}`;
-  }
-
-  // Phase 10.7 Executive Redesign & Enhancement updates
-  _hydrateWaterfallLossCards(metrics);
-  renderBiLeadSourceCharts(leads);
-  renderBiAiCategoryChart(metrics);
-  renderBiRadialHealthGauge(metrics);
-  renderBiForecastSection(metrics);
-  renderBiInsightsCenter(metrics);
-}
-
-function _hydrateWaterfallLossCards(metrics) {
-  const pipeToQualLoss = Math.max(0, metrics.pipelineRevenue - metrics.qualifiedRevenue);
-  const qualToPropLoss = Math.max(0, metrics.qualifiedRevenue - metrics.proposalRevenue);
-  const propToWonLoss = Math.max(0, metrics.proposalRevenue - metrics.wonRevenue);
-
-  const el1 = document.getElementById('biLossPipeToQual');
-  const el2 = document.getElementById('biLossQualToProp');
-  const el3 = document.getElementById('biLossPropToWon');
-
-  if (el1) el1.textContent = formatCurrencyRupee(pipeToQualLoss);
-  if (el2) el2.textContent = formatCurrencyRupee(qualToPropLoss);
-  if (el3) el3.textContent = formatCurrencyRupee(propToWonLoss);
-}
-
-function renderBiLeadSourceCharts(leads) {
-  const canvasVolume = document.getElementById('biLeadSourceVolumeChart');
-  const canvasConv = document.getElementById('biLeadSourceConvChart');
-  if (!canvasVolume || !canvasConv) return;
-
-  const sources = ['Referral', 'Bill Analysis', 'Roof Assessment', 'ROI Calculator', 'Reports Center', 'Solar Copilot', 'Direct Signup'];
-  
-  const sourceCounts = {};
-  const wonCounts = {};
-  sources.forEach(src => {
-    sourceCounts[src] = 0;
-    wonCounts[src] = 0;
-  });
-
-  leads.forEach(l => {
-    const src = l.source || 'Direct Signup';
-    if (sourceCounts[src] !== undefined) {
-      sourceCounts[src]++;
-      if (l.status === 'Won') {
-        wonCounts[src]++;
-      }
-    }
-  });
-
-  const volumeData = sources.map(src => sourceCounts[src]);
-  const convRates = sources.map(src => {
-    const total = sourceCounts[src];
-    return total > 0 ? parseFloat(_safeNum(wonCounts[src] / total * 100).toFixed(1)) : 0;
-  });
-
-  if (biLeadSourceVolumeChartInstance) biLeadSourceVolumeChartInstance.destroy();
-  const ctxVol = canvasVolume.getContext('2d');
-  biLeadSourceVolumeChartInstance = new Chart(ctxVol, {
-    type: 'doughnut',
-    data: {
-      labels: sources,
-      datasets: [{
-        data: volumeData,
-        backgroundColor: [
-          '#ff8a1d', '#00AEEF', '#36D399', '#eab308', '#a855f7', '#ec4899', '#64748b'
-        ],
-        borderColor: '#06111f',
-        borderWidth: 1.5
-      }]
-    },
-    options: {
-      responsive: true,
-      maintainAspectRatio: false,
-      plugins: {
-        legend: { display: false }
-      }
-    }
-  });
-
-  if (biLeadSourceConvChartInstance) biLeadSourceConvChartInstance.destroy();
-  const ctxConv = canvasConv.getContext('2d');
-  biLeadSourceConvChartInstance = new Chart(ctxConv, {
-    type: 'bar',
-    data: {
-      labels: sources,
-      datasets: [{
-        label: 'Conversion Rate (%)',
-        data: convRates,
-        backgroundColor: 'rgba(23, 168, 229, 0.75)',
-        borderColor: '#00AEEF',
-        borderWidth: 1,
-        borderRadius: 3,
-        barPercentage: 0.6
-      }]
-    },
-    options: {
-      indexAxis: 'y',
-      responsive: true,
-      maintainAspectRatio: false,
-      plugins: {
-        legend: { display: false }
-      },
-      scales: {
-        x: {
-          min: 0,
-          max: 100,
-          grid: { color: 'rgba(255,255,255,0.05)' },
-          ticks: { color: '#94a3b8', font: { family: 'Outfit', size: 9 } }
-        },
-        y: {
-          grid: { display: false },
-          ticks: { color: '#ffffff', font: { family: 'Outfit', size: 9, weight: 'bold' } }
+  if (discomContainer) {
+    discomContainer.innerHTML = '';
+    const discoms = [...new Set((data.directory || []).map(x => x.discom))].sort();
+    discoms.forEach(d => {
+      const div = document.createElement('div');
+      div.className = 'bi-multiselect-item';
+      div.innerHTML = `<input type="checkbox" value="${d}" id="chkDiscom_${d}" class="bi-discom-checkbox"> <label for="chkDiscom_${d}">${d}</label>`;
+      div.addEventListener('click', (e) => {
+        if (e.target.tagName !== 'INPUT') {
+          const chk = div.querySelector('input');
+          chk.checked = !chk.checked;
+          chk.dispatchEvent(new Event('change'));
         }
+      });
+      const chk = div.querySelector('input');
+      chk.addEventListener('change', () => {
+        if (chk.checked) {
+          if (!window.biSelectedDiscoms.includes(chk.value)) window.biSelectedDiscoms.push(chk.value);
+        } else {
+          window.biSelectedDiscoms = window.biSelectedDiscoms.filter(x => x !== chk.value);
+        }
+        const btn = document.getElementById('biFilterDiscomBtn');
+        if (btn) {
+          btn.textContent = window.biSelectedDiscoms.length === 0 ? "Select DISCOMs ▼" : `DISCOMs (${window.biSelectedDiscoms.length}) ▼`;
+        }
+        applyBiFilters();
+      });
+      discomContainer.appendChild(div);
+    });
+  }
+  
+  if (periodSelect) {
+    const current = periodSelect.value;
+    periodSelect.innerHTML = '<option value="">All Periods</option>';
+    periodSelect.value = current;
+  }
+}
+
+function _populateColumnVisibilityOptions() {
+  const container = document.getElementById('biTableColumnVisibilityOptions');
+  if (!container) return;
+  container.innerHTML = '';
+
+  const columns = [
+    { name: 'Customer', index: 1 },
+    { name: 'Consumer ID', index: 2 },
+    { name: 'City', index: 3 },
+    { name: 'DISCOM', index: 4 },
+    { name: 'Monthly Units', index: 5 },
+    { name: 'Bill Amount', index: 6 },
+    { name: 'Per Unit Rate', index: 7 },
+    { name: 'Rec. kW', index: 8 },
+    { name: 'Monthly Savings', index: 9 },
+    { name: 'Annual Savings', index: 10 },
+    { name: '25-Year Savings', index: 11 },
+    { name: 'Payback', index: 12 },
+    { name: 'Status', index: 13 }
+  ];
+
+  columns.forEach(col => {
+    const div = document.createElement('div');
+    div.className = 'bi-multiselect-item';
+    div.innerHTML = `<input type="checkbox" checked id="chkCol_${col.index}"> <label for="chkCol_${col.index}">${col.name}</label>`;
+    const chk = div.querySelector('input');
+    chk.addEventListener('change', () => {
+      const table = document.getElementById('biAnalyticsDirectoryTable');
+      if (!table) return;
+      const rows = table.querySelectorAll('tr');
+      rows.forEach(row => {
+        const cells = row.cells;
+        if (cells[col.index]) {
+          cells[col.index].style.display = chk.checked ? '' : 'none';
+        }
+      });
+    });
+    div.addEventListener('click', (e) => {
+      if (e.target.tagName !== 'INPUT') {
+        chk.checked = !chk.checked;
+        chk.dispatchEvent(new Event('change'));
       }
-    }
+    });
+    container.appendChild(div);
   });
 }
 
-function renderBiAiCategoryChart(metrics) {
-  const canvas = document.getElementById('biAiCategoryChart');
-  if (!canvas) return;
-
-  if (biAiCategoryChartInstance) biAiCategoryChartInstance.destroy();
-  const ctx = canvas.getContext('2d');
-
-  const categories = ['Bill Analysis', 'Roof Suitability', 'ROI Payback', 'Referrals'];
-  const dataVals = [35, 25, 25, 15];
-
-  biAiCategoryChartInstance = new Chart(ctx, {
-    type: 'doughnut',
-    data: {
-      labels: categories,
-      datasets: [{
-        data: dataVals,
-        backgroundColor: ['#00AEEF', '#36D399', '#ff8a1d', '#a855f7'],
-        borderColor: '#06111f',
-        borderWidth: 1
-      }]
-    },
-    options: {
-      responsive: true,
-      maintainAspectRatio: false,
-      plugins: {
-        legend: { display: false }
-      }
+function applyBiFilters() {
+  if (!window.biOriginalData) return;
+  
+  const searchInput = document.getElementById('biFilterSearch');
+  const search = searchInput ? searchInput.value.toLowerCase().trim() : '';
+  
+  const kwMin = parseFloat(document.getElementById('biFilterKw')?.value || '0');
+  const paybackMax = parseFloat(document.getElementById('biFilterPayback')?.value || '10');
+  const billMax = parseFloat(document.getElementById('biFilterBill')?.value || '15000');
+  const unitsMax = parseFloat(document.getElementById('biFilterUnits')?.value || '1500');
+  
+  window.biFilteredDirectory = (window.biOriginalData.directory || []).filter(item => {
+    // Search filter
+    if (search) {
+      const name = (item.customer_name || '').toLowerCase();
+      const conNum = (item.consumer_number || '').toLowerCase();
+      if (!name.includes(search) && !conNum.includes(search)) return false;
     }
-  });
-}
-
-function renderBiRadialHealthGauge(metrics) {
-  const score = Math.round(metrics.businessScore || 55);
-  const textEl = document.getElementById('biHealthRadialText');
-  const progressCircle = document.getElementById('biHealthRadialProgress');
-
-  if (textEl) textEl.textContent = score;
-  if (progressCircle) {
-    const totalCircumference = 251.2;
-    const offset = totalCircumference - (score / 100 * totalCircumference);
-    progressCircle.style.strokeDasharray = `${totalCircumference}`;
-    progressCircle.style.strokeDashoffset = `${offset}`;
     
-    if (score >= 70) {
-      progressCircle.style.stroke = '#10b981';
-    } else if (score >= 45) {
-      progressCircle.style.stroke = '#f59e0b';
-    } else {
-      progressCircle.style.stroke = '#ef4444';
-    }
-  }
-
-  const growthVal = document.getElementById('biScorecardGrowthVal');
-  const growthBar = document.getElementById('biScorecardGrowthBar');
-  const salesVal = document.getElementById('biScorecardSalesVal');
-  const salesBar = document.getElementById('biScorecardSalesBar');
-  const opsVal = document.getElementById('biScorecardOpsVal');
-  const opsBar = document.getElementById('biScorecardOpsBar');
-
-  const gScore = Math.max(10, Math.min(100, metrics.growthScore || 15));
-  const sScore = Math.max(10, Math.min(100, metrics.conversionRates.overallConversionRate || 15));
-  const oScore = Math.max(10, Math.min(100, metrics.ai.influenceScore || 15));
-
-  if (growthVal) growthVal.textContent = `${_safeNum(metrics.growthScore).toFixed(1)}%`;
-  if (growthBar) growthBar.style.width = `${gScore}%`;
-  
-  if (salesVal) salesVal.textContent = `${_safeNum(metrics.conversionRates.overallConversionRate).toFixed(1)}%`;
-  if (salesBar) salesBar.style.width = `${sScore}%`;
-  
-  if (opsVal) opsVal.textContent = `${_safeNum(metrics.ai.influenceScore).toFixed(0)}%`;
-  if (opsBar) opsBar.style.width = `${oScore}%`;
-}
-
-function renderBiForecastSection(metrics) {
-  const revForecastVal = document.getElementById('biForecastRevenue');
-  const leadsForecastVal = document.getElementById('biForecastLeads');
-  const refsForecastVal = document.getElementById('biForecastReferrals');
-
-  const leadsForecast = Math.round(metrics.totalLeads * (1 + metrics.leadGrowth / 100));
-  const refsForecast = Math.round(metrics.referralConversions * (1 + metrics.leadGrowth / 100));
-
-  if (revForecastVal) revForecastVal.textContent = formatCurrencyRupee(metrics.revenueForecast);
-  if (leadsForecastVal) leadsForecastVal.textContent = leadsForecast;
-  if (refsForecastVal) refsForecastVal.textContent = refsForecast;
-
-  const badgeRev = document.getElementById('biBadgeForecastRev');
-  const badgeLeads = document.getElementById('biBadgeForecastLeads');
-  const badgeRefs = document.getElementById('biBadgeForecastRef');
-
-  let confText = 'LOW';
-  let confClass = 'badge-intent-low';
-  if (metrics.totalLeads >= 10) {
-    confText = 'HIGH CONFIDENCE';
-    confClass = 'badge-intent-high';
-  } else if (metrics.totalLeads >= 5) {
-    confText = 'MODERATE';
-    confClass = 'badge-intent-medium';
-  }
-
-  if (badgeRev) { badgeRev.textContent = confText; badgeRev.className = `crm-badge ${confClass}`; }
-  if (badgeLeads) { badgeLeads.textContent = confText; badgeLeads.className = `crm-badge ${confClass}`; }
-  if (badgeRefs) { badgeRefs.textContent = confText; badgeRefs.className = `crm-badge ${confClass}`; }
-
-  const generateSparklinePath = (data, width = 120, height = 20) => {
-    if (!Array.isArray(data) || data.length < 2) return `M 0 ${height/2} L ${width} ${height/2}`;
-    const max = Math.max(...data);
-    const min = Math.min(...data);
-    const range = max - min || 1;
-    const step = width / (data.length - 1);
-    return data.map((val, idx) => {
-      const x = idx * step;
-      const y = height - ((val - min) / range * (height - 6) + 3);
-      return `${idx === 0 ? 'M' : 'L'} ${_safeNum(x).toFixed(1)} ${_safeNum(y).toFixed(1)}`;
-    }).join(' ');
-  };
-
-  const last6Months = [];
-  for (let i = 5; i >= 0; i--) {
-    const d = new Date();
-    d.setMonth(d.getMonth() - i);
-    last6Months.push(d.toISOString().substring(0, 7));
-  }
-
-  const cachedDataStr = localStorage.getItem('cachedAdminData');
-  const consolidated = cachedDataStr ? JSON.parse(cachedDataStr) : { users: { users: [] } };
-  const users = consolidated.users?.users || [];
-  const leads = Object.values(getCrmLeads() || {});
-
-  const usersTrend = last6Months.map(m => users.filter(u => u.registration_date && u.registration_date.substring(0, 7) <= m).length);
-  const leadsTrend = last6Months.map(m => leads.filter(l => l.createdAt && l.createdAt.substring(0, 7) <= m).length);
-  const referralsTrend = last6Months.map(m => leads.filter(l => l.source === 'Referral' && l.status === 'Won' && l.createdAt && l.createdAt.substring(0, 7) <= m).length);
-  const winRateTrend = last6Months.map(m => {
-    const lCount = leads.filter(l => l.createdAt && l.createdAt.substring(0, 7) <= m).length;
-    const wCount = leads.filter(l => l.status === 'Won' && l.createdAt && l.createdAt.substring(0, 7) <= m).length;
-    return lCount > 0 ? (wCount / lCount * 100) : 0;
-  });
-  const healthTrend = winRateTrend.map((rate, idx) => 55 + (rate * 0.3) + (usersTrend[idx] * 0.1));
-
-  const pUsers = document.getElementById('biSparklineUsersPath');
-  const pLeads = document.getElementById('biSparklineLeadsPath');
-  const pRefs = document.getElementById('biSparklineReferralsPath');
-  const pWin = document.getElementById('biSparklineWinRatePath');
-  const pHealth = document.getElementById('biSparklineHealthPath');
-
-  if (pUsers) pUsers.setAttribute('d', generateSparklinePath(usersTrend, 120, 30));
-  if (pLeads) pLeads.setAttribute('d', generateSparklinePath(leadsTrend, 120, 30));
-  if (pRefs) pRefs.setAttribute('d', generateSparklinePath(referralsTrend, 120, 30));
-  if (pWin) pWin.setAttribute('d', generateSparklinePath(winRateTrend, 120, 30));
-  if (pHealth) pHealth.setAttribute('d', generateSparklinePath(healthTrend, 120, 30));
-
-  const pFRev = document.getElementById('biSparklineForecastRevPath');
-  const pFLeads = document.getElementById('biSparklineForecastLeadsPath');
-  const pFRefs = document.getElementById('biSparklineForecastRefPath');
-
-  if (pFRev) pFRev.setAttribute('d', generateSparklinePath([metrics.wonRevenue, metrics.wonRevenue * 1.05, metrics.expectedRevenue, metrics.revenueForecast], 120, 20));
-  if (pFLeads) { leadsTrend.push(leadsForecast); pFLeads.setAttribute('d', generateSparklinePath(leadsTrend.slice(-4), 120, 20)); }
-  if (pFRefs) { referralsTrend.push(refsForecast); pFRefs.setAttribute('d', generateSparklinePath(referralsTrend.slice(-4), 120, 20)); }
-}
-
-function renderBiInsightsCenter(metrics) {
-  const summaryEl = document.getElementById('biExecutiveSummaryText');
-  if (summaryEl) summaryEl.textContent = metrics.executiveSummary;
-
-  const insGrowth = document.getElementById('biInsightGrowth');
-  const insRevenue = document.getElementById('biInsightRevenue');
-  const insCustomer = document.getElementById('biInsightCustomer');
-  const insRisk = document.getElementById('biInsightRisk');
-
-  const growthText = _safeNum(metrics.leadGrowth) >= 0 
-    ? `Platform lead pipeline is accelerating. Lead acquisition grew by ${_safeNum(metrics.leadGrowth).toFixed(1)}% MoM, driven by referrals and organic calculators.`
-    : `Pipeline growth slowed by ${Math.abs(_safeNum(metrics.leadGrowth)).toFixed(1)}% MoM. We recommend executing localized campaign boosts.`;
-
-  const revText = _safeNum(metrics.conversionRate) >= 15
-    ? `Overall sales efficiency is healthy at ${_safeNum(metrics.conversionRate).toFixed(1)}% conversion. Expected pipeline revenue value is estimated at ${formatCurrencyRupee(metrics.expectedRevenue)}.`
-    : `Conversion rate is currently at ${_safeNum(metrics.conversionRate).toFixed(1)}%. Deploy CRM follow-up protocols to capture qualified opportunities.`;
-
-  const custText = metrics.segmentation.advocates > 0
-    ? `Advocate segment is active at ${metrics.segmentation.advocates} users. Referral loops are outperforming other channels in conversion efficiency.`
-    : `Advocate segment is low. Offer bonus wallet points to engaged users to trigger word-of-mouth refer-and-earn behavior.`;
-
-  const riskText = metrics.riskLevel === 'High'
-    ? `Critical platform security or database risk indicators are active. Investigate audit event logs immediately.`
-    : `Platform risk level is Low. audit integrity checks show robust transactional database health and zero brute-force activities.`;
-
-  if (insGrowth) insGrowth.textContent = growthText;
-  if (insRevenue) insRevenue.textContent = revText;
-  if (insCustomer) insCustomer.textContent = custText;
-  if (insRisk) insRisk.textContent = riskText;
-}
-
-function _bindBiEmptyStateButtons() {
-  const btnCrm = document.getElementById('btnEmptyStateCrm');
-  const btnBill = document.getElementById('btnEmptyStateBill');
-  const btnRoi = document.getElementById('btnEmptyStateRoi');
-  
-  if (btnCrm) {
-    btnCrm.onclick = () => {
-      const menu = document.querySelector('.menu-item[data-tab="crm-dashboard"]');
-      if (menu) menu.click();
-    };
-  }
-  if (btnBill) {
-    btnBill.onclick = () => {
-      const menu = document.querySelector('.menu-item[data-tab="bill-analyzer"]');
-      if (menu) menu.click();
-    };
-  }
-  if (btnRoi) {
-    btnRoi.onclick = () => {
-      const menu = document.querySelector('.menu-item[data-tab="roi-calculator"]');
-      if (menu) menu.click();
-    };
-  }
-}
-
-function calculateBiMetrics(data) {
-  const users = (data.users && data.users.users) ? data.users.users : [];
-  const overview = data.overview || {};
-  
-  // Re-read CRM leads list
-  const leads = Object.values(getCrmLeads() || {});
-  
-  // Total stats
-  const totalUsers = users.length;
-  const totalLeads = leads.length;
-  
-  // 1. CRM & Lead Conversions
-  let pipelineRevenue = 0;
-  let qualifiedRevenue = 0;
-  let proposalRevenue = 0;
-  let wonRevenue = 0;
-
-  let leadCount = totalLeads;
-  let qualifiedCount = 0;
-  let proposalCount = 0;
-  let wonCount = 0;
-
-  leads.forEach(lead => {
-    const rev = lead.revenue_potential || 0;
-    pipelineRevenue += rev;
-
-    if (['Qualified', 'Proposal Sent', 'Won'].includes(lead.status)) {
-      qualifiedCount++;
-      qualifiedRevenue += rev;
-    }
-    if (['Proposal Sent', 'Won'].includes(lead.status)) {
-      proposalCount++;
-      proposalRevenue += rev;
-    }
-    if (lead.status === 'Won') {
-      wonCount++;
-      wonRevenue += rev;
-    }
-  });
-  
-  const leadToQualifiedRate = leadCount > 0 ? (qualifiedCount / leadCount * 100) : 0;
-  const qualifiedToProposalRate = qualifiedCount > 0 ? (proposalCount / qualifiedCount * 100) : 0;
-  const proposalToWonRate = proposalCount > 0 ? (wonCount / proposalCount * 100) : 0;
-  const overallConversionRate = leadCount > 0 ? (wonCount / leadCount * 100) : 0;
-  const conversionRate = overallConversionRate;
-
-  const getStageHealth = (rate, excellentThreshold, averageThreshold) => {
-    if (rate > excellentThreshold) {
-      return { status: 'excellent', text: '🟢 Excellent' };
-    } else if (rate >= averageThreshold) {
-      return { status: 'average', text: '🟡 Average' };
-    } else {
-      return { status: 'weak', text: '🔴 Weak' };
-    }
-  };
-
-  const conversionHealth = {
-    leadToQualified: getStageHealth(leadToQualifiedRate, 70, 40),
-    qualifiedToProposal: getStageHealth(qualifiedToProposalRate, 60, 30),
-    proposalToWon: getStageHealth(proposalToWonRate, 35, 15)
-  };
-
-  const revPerLead = leadCount > 0 ? (pipelineRevenue / leadCount) : 0;
-  const revPerQualified = qualifiedCount > 0 ? (qualifiedRevenue / qualifiedCount) : 0;
-  const revPerWon = wonCount > 0 ? (wonRevenue / wonCount) : 0;
-  const expectedRevenue = proposalToWonRate > 0 ? (proposalRevenue * (proposalToWonRate / 100)) : (proposalRevenue * 0.35);
-  const avgDealSize = leadCount > 0 ? (pipelineRevenue / leadCount) : 0;
-  const winRate = overallConversionRate;
-
-  const pipelineVal = pipelineRevenue;
-  const qualifiedVal = qualifiedRevenue;
-  const proposalVal = proposalRevenue;
-  const wonVal = wonRevenue;
-  
-  // 2. Customer Segmentation
-  let newUsersCount = 0;
-  let engagedUsersCount = 0;
-  let highIntentLeadsCount = 0;
-  let customersCount = 0;
-  let advocatesCount = 0;
-  
-  users.forEach(u => {
-    const lead = leads.find(l => l.email === u.email);
-    const status = lead ? lead.status : 'New Lead';
-    const score = lead ? lead.lead_score : 0;
+    // Multi-select dropdown checks
+    if (window.biSelectedCities.length > 0 && !window.biSelectedCities.includes(item.city)) return false;
+    if (window.biSelectedDiscoms.length > 0 && !window.biSelectedDiscoms.includes(item.discom)) return false;
     
-    if (status === 'Won' && (u.points > 0 || u.referrals_count > 0)) {
-      advocatesCount++;
-    } else if (status === 'Won') {
-      customersCount++;
-    } else if (score >= 70) {
-      highIntentLeadsCount++;
-    } else if (score >= 40 || u.reports_count > 0 || u.copilot_messages > 0) {
-      engagedUsersCount++;
-    } else {
-      newUsersCount++;
+    // Segment checks
+    if (window.biActiveSegment) {
+      const email = item.email || "N/A";
+      const segEmails = window.biOriginalData.segmentation.emails[window.biActiveSegment] || [];
+      if (!segEmails.includes(email)) return false;
     }
-  });
-  
-  // 3. User Cohort Analysis
-  const cohorts = {};
-  users.forEach(u => {
-    if (!u.registration_date) return;
-    const month = u.registration_date.substring(0, 7); // "YYYY-MM"
-    if (!cohorts[month]) {
-      cohorts[month] = { size: 0, billCount: 0, roofCount: 0, referralCount: 0, copilotCount: 0 };
-    }
-    const c = cohorts[month];
-    c.size++;
-    if (u.analyses && u.analyses.bill) c.billCount++;
-    if (u.analyses && u.analyses.roof) c.roofCount++;
-    if (u.points > 0 || u.referrals_count > 0) c.referralCount++;
-    if (u.copilot_messages > 0) c.copilotCount++;
-  });
-  
-  const cohortMetrics = {};
-  for (let month in cohorts) {
-    const c = cohorts[month];
-    cohortMetrics[month] = {
-      size: c.size,
-      billPct: c.size > 0 ? (c.billCount / c.size * 100) : 0,
-      roofPct: c.size > 0 ? (c.roofCount / c.size * 100) : 0,
-      referralPct: c.size > 0 ? (c.referralCount / c.size * 100) : 0,
-      copilotPct: c.size > 0 ? (c.copilotCount / c.size * 100) : 0
-    };
-  }
-  
-  // 4. Solar Metrics (Dynamic averages)
-  let totalBill = 0, billCount = 0;
-  let totalKw = 0, kwCount = 0;
-  let totalPayback = 0, paybackCount = 0;
-  let totalRoi = 0, roiCount = 0;
-  let totalSuitability = 0, suitabilityCount = 0;
-  
-  users.forEach(u => {
-    const a = u.analyses || {};
-    if (a.bill && a.bill.monthly_bill) {
-      totalBill += a.bill.monthly_bill;
-      billCount++;
-    }
-    if (a.roi) {
-      if (a.roi.recommended_kw) {
-        totalKw += a.roi.recommended_kw;
-        kwCount++;
-      }
-      if (a.roi.payback_years) {
-        totalPayback += a.roi.payback_years;
-        paybackCount++;
-      }
-      if (a.roi.roi_percent) {
-        totalRoi += a.roi.roi_percent;
-        roiCount++;
-      }
-    }
-    if (a.roof && a.roof.suitability_score) {
-      totalSuitability += a.roof.suitability_score;
-      suitabilityCount++;
-    }
-  });
-  
-  const avgBill = billCount > 0 ? (totalBill / billCount) : 6500;
-  const avgSize = kwCount > 0 ? (totalKw / kwCount) : 3.0;
-  const avgPayback = paybackCount > 0 ? (totalPayback / paybackCount) : 4.5;
-  const avgRoi = roiCount > 0 ? (totalRoi / roiCount) : 250;
-  const avgSuitability = suitabilityCount > 0 ? (totalSuitability / suitabilityCount) : 85;
-  
-  // 5. Referral Revenue Impact
-  let referralRevenue = 0;
-  let referralLeadsCount = 0;
-  let referralWonCount = 0;
-  let referralPipeline = 0;
-  
-  leads.forEach(lead => {
-    if (lead.source === 'Referral') {
-      referralPipeline += lead.revenue_potential || 0;
-      referralLeadsCount++;
-      if (lead.status === 'Won') {
-        referralWonCount++;
-        referralRevenue += lead.revenue_potential || 0;
-      }
-    }
-  });
-  
-  const referralConversionRate = referralLeadsCount > 0 ? (referralWonCount / referralLeadsCount * 100) : 0;
-  const referralMultiplier = referralRevenue > 0 ? (referralRevenue / (pipelineVal || 1) * 5) : 1.2;
-  
-  // 6. AI influence & score
-  let copilotQueries = 0;
-  let copilotUsersCount = 0;
-  let copilotAssessmentsCount = 0;
-  let copilotWonCount = 0;
-  
-  users.forEach(u => {
-    if (u.copilot_messages > 0) {
-      copilotQueries += u.copilot_messages;
-      copilotUsersCount++;
-      if (u.analyses && (u.analyses.bill || u.analyses.roof || u.analyses.roi)) {
-        copilotAssessmentsCount++;
-      }
-      const lead = leads.find(l => l.email === u.email);
-      if (lead && lead.status === 'Won') {
-        copilotWonCount++;
-      }
-    }
-  });
-  
-  const aiInfluenceScore = totalUsers > 0 ? (copilotUsersCount / totalUsers * 100) : 0;
-  const aiRecommendations = Math.round(copilotQueries * 1.5);
-  const aiLeadsInfluenced = copilotUsersCount;
-  const aiConversionPct = copilotUsersCount > 0 ? (copilotAssessmentsCount / copilotUsersCount * 100) : 0;
-  
-  // 7. Month over Month Benchmarking
-  const now = new Date();
-  const thirtyDaysAgo = new Date(now.getTime() - 30 * 24 * 60 * 60 * 1000);
-  const sixtyDaysAgo = new Date(now.getTime() - 60 * 24 * 60 * 60 * 1000);
-  
-  let currentMonthUsers = 0;
-  let prevMonthUsers = 0;
-  let currentMonthRefs = 0;
-  let prevMonthRefs = 0;
-  let currentMonthLeads = 0;
-  let prevMonthLeads = 0;
-  let currentMonthRevenue = 0;
-  let prevMonthRevenue = 0;
-  
-  users.forEach(u => {
-    if (!u.registration_date) return;
-    const rDate = new Date(u.registration_date);
-    if (rDate >= thirtyDaysAgo && rDate <= now) {
-      currentMonthUsers++;
-      if (u.points > 0 || u.referrals_count > 0) currentMonthRefs++;
-    } else if (rDate >= sixtyDaysAgo && rDate < thirtyDaysAgo) {
-      prevMonthUsers++;
-      if (u.points > 0 || u.referrals_count > 0) prevMonthRefs++;
-    }
-  });
-  
-  leads.forEach(lead => {
-    if (!lead.createdAt) return;
-    const cDate = new Date(lead.createdAt);
-    if (cDate >= thirtyDaysAgo && cDate <= now) {
-      currentMonthLeads++;
-      if (lead.status === 'Won') currentMonthRevenue += (lead.revenue_potential || 0);
-    } else if (cDate >= sixtyDaysAgo && cDate < thirtyDaysAgo) {
-      prevMonthLeads++;
-      if (lead.status === 'Won') prevMonthRevenue += (lead.revenue_potential || 0);
-    }
-  });
-  
-  const getTrendObject = (current, prev) => {
-    const diffVal = current - prev;
-    const diffPct = prev > 0 ? (diffVal / prev * 100) : (current > 0 ? 100 : 0);
-    const trendClass = diffVal > 0 ? 'trend-up' : diffVal < 0 ? 'trend-down' : 'trend-neutral';
-    const arrow = diffVal > 0 ? '▲' : diffVal < 0 ? '▼' : '→';
-    const diffText = `${arrow} ${_safeNum(Math.abs(diffPct)).toFixed(0)}%`;
-    return { current, prev, diffVal, diffPct, trendClass, diffText };
-  };
-  
-  const benchmarks = {
-    users: getTrendObject(currentMonthUsers, prevMonthUsers),
-    referrals: getTrendObject(currentMonthRefs, prevMonthRefs),
-    leads: getTrendObject(currentMonthLeads, prevMonthLeads),
-    revenue: getTrendObject(currentMonthRevenue, prevMonthRevenue)
-  };
-  
-  // 8. Forecasting & Trends
-  const activeUserPct = totalUsers > 0 ? (overview.active_users_30_days || 0) / totalUsers * 100 : 0;
-  const leadGrowth = prevMonthLeads > 0 ? ((currentMonthLeads - prevMonthLeads) / prevMonthLeads * 100) : 12.5;
-  const revenueForecast = currentMonthRevenue * (1 + (leadGrowth / 100));
-  
-  // Business Health Score
-  let businessScore = (conversionRate * 3) + (activeUserPct * 0.3) + (aiInfluenceScore * 0.3) + (Math.max(0, leadGrowth) * 0.4);
-  businessScore = Math.min(100, Math.max(10, businessScore || 55));
-  
-  const growthScore = leadGrowth;
-  
-  // Platform Risk Level & Warnings
-  const risks = [];
-  const opportunities = [];
-  
-  // Check failed login attempts
-  const auditLogs = safeParseJSON('auditLogs', []);
-  const failedLoginsToday = auditLogs.filter(l => l.action === 'Failed Login Attempt' && (new Date() - new Date(l.timestamp)) < 24 * 60 * 60 * 1000).length;
-  if (failedLoginsToday > 3) {
-    risks.push({ title: 'Brute Force Attempt', desc: `${failedLoginsToday} failed logins recorded in last 24h.` });
-  }
-  
-  // Stalled leads warning
-  let stalledCount = 0;
-  leads.forEach(lead => {
-    if (lead.status !== 'Won' && lead.status !== 'Lost') {
-      const createdDate = new Date(lead.createdAt);
-      if ((now - createdDate) > 30 * 24 * 60 * 60 * 1000) {
-        stalledCount++;
-      }
-    }
-  });
-  if (stalledCount > 0) {
-    risks.push({ title: 'Stalled Pipeline', desc: `${stalledCount} CRM leads inactive for over 30 days.` });
-  }
-  
-  // Low conversions warning
-  const qualToPropRate = qualifiedCount > 0 ? (proposalCount / qualifiedCount * 100) : 0;
-  const propToWonRate = proposalCount > 0 ? (wonCount / proposalCount * 100) : 0;
-  
-  if (qualToPropRate < 40 && qualifiedCount > 0) {
-    opportunities.push({ title: 'Proposal Automation', desc: `Qualified-to-Proposal Sent rate is low (${_safeNum(qualToPropRate).toFixed(0)}%). Automate proposal drafting to accelerate velocity.` });
-  }
-  if (propToWonRate < 30 && proposalCount > 0) {
-    opportunities.push({ title: 'CRM Follow-ups', desc: `Proposal-to-Won conversion is at ${_safeNum(propToWonRate).toFixed(0)}%. Focus sales team on follow-ups.` });
-  }
-  if (conversionRate < 15 && totalLeads > 0) {
-    opportunities.push({ title: 'Lead Qualification', desc: `Overall conversion is low (${_safeNum(conversionRate).toFixed(0)}%). Refine lead scoring metrics.` });
-  }
-  if (opportunities.length === 0) {
-    opportunities.push({ title: 'Promote Referrals', desc: 'Conversions are stable. Enhance referral rewards program to boost user acquisition.' });
-  }
-  
-  const riskLevel = risks.length > 1 ? 'High' : risks.length === 1 ? 'Medium' : 'Low';
-  
-  // Plain-English Executive Summary text generator
-  let summary = '';
-  if (leadGrowth > 0) {
-    summary += `Lead acquisition is growing steadily at ${_safeNum(leadGrowth).toFixed(1)}% MoM. `;
-  } else {
-    summary += `Lead acquisition has softened recently. `;
-  }
-  
-  if (referralConversionRate > conversionRate) {
-    summary += `Referrals are converting at ${_safeNum(referralConversionRate).toFixed(0)}%, outperforming direct signups. `;
-  } else {
-    summary += `Direct organic lead generation remains the primary driver. `;
-  }
-  
-  if (revenueForecast > wonVal) {
-    summary += `Revenue forecasts indicate moderate growth over the next 30 days to ${formatCurrencyRupee(revenueForecast)}.`;
-  } else {
-    summary += `Revenue forecasts remain steady at ${formatCurrencyRupee(wonVal || 165000)} for the upcoming period.`;
-  }
-  
-  return {
-    totalUsers,
-    totalLeads,
-    conversionRate,
-    conversionTrendText: benchmarks.leads.diffText,
-    conversionTrendClass: benchmarks.leads.trendClass,
-    referralConversions: referralWonCount,
-    waterfall: {
-      pipeline: pipelineVal,
-      qualified: qualifiedVal,
-      qualifiedPct: pipelineVal > 0 ? (qualifiedVal / pipelineVal * 100) : 0,
-      proposal: proposalVal,
-      proposalPct: pipelineVal > 0 ? (proposalVal / pipelineVal * 100) : 0,
-      won: wonVal,
-      wonPct: pipelineVal > 0 ? (wonVal / pipelineVal * 100) : 0
-    },
-    segmentation: {
-      newUsers: newUsersCount,
-      engagedUsers: engagedUsersCount,
-      highIntent: highIntentLeadsCount,
-      customers: customersCount,
-      advocates: advocatesCount
-    },
-    cohorts: cohortMetrics,
-    solar: {
-      avgBill,
-      avgSize,
-      avgPayback,
-      avgRoi,
-      avgSuitability
-    },
-    referral: {
-      pipeline: referralPipeline,
-      conversionRate: referralConversionRate,
-      topSegment: advocatesCount > 0 ? 'Advocates' : 'Engaged Users',
-      multiplier: referralMultiplier
-    },
-    ai: {
-      influenceScore: aiInfluenceScore,
-      queries: copilotQueries,
-      recommendations: aiRecommendations,
-      leadsInfluenced: aiLeadsInfluenced,
-      conversionPct: aiConversionPct
-    },
-    benchmarks,
-    leadGrowth,
-    revenueForecast: revenueForecast || 165000,
-    businessScore,
-    growthScore,
-    riskLevel,
-    risks,
-    opportunities,
-    executiveSummary: summary,
     
-    // Added metrics for Phase 10.7 BI Fix & Enhancement
-    qualifiedCount,
-    proposalCount,
-    wonCount,
-    pipelineRevenue,
-    qualifiedRevenue,
-    proposalRevenue,
-    wonRevenue,
-    expectedRevenue,
-    revPerLead,
-    revPerQualified,
-    revPerWon,
-    avgDealSize,
-    winRate,
-    conversionRates: {
-      leadToQualifiedRate,
-      qualifiedToProposalRate,
-      proposalToWonRate,
-      overallConversionRate
-    },
-    conversionHealth
-  };
+    // Range sliders
+    if (item.recommended_kw < kwMin) return false;
+    if (item.payback_years > paybackMax) return false;
+    if (item.bill_amount > billMax) return false;
+    if (item.monthly_units > unitsMax) return false;
+    
+    return true;
+  });
+  
+  calculateAndRenderFilteredAggregates();
 }
 
-function renderBiSegmentationChart(seg) {
-  const canvas = document.getElementById('biSegmentationChart');
+function calculateAndRenderFilteredAggregates() {
+  const dir = window.biFilteredDirectory;
+  const original = window.biOriginalData;
+  
+  // Dynamic KPIs Calculations
+  const totalCustomers = new Set(dir.map(x => x.customer_id)).size;
+  const billsCount = dir.length;
+  const totalMonthlyRev = dir.reduce((acc, curr) => acc + curr.bill_amount, 0);
+  
+  const avgBill = billsCount > 0 ? (totalMonthlyRev / billsCount) : 0.0;
+  const avgUnits = billsCount > 0 ? (dir.reduce((acc, curr) => acc + curr.monthly_units, 0) / billsCount) : 0.0;
+  const avgPayback = billsCount > 0 ? (dir.reduce((acc, curr) => acc + curr.payback_years, 0) / billsCount) : 0.0;
+  const avgKw = billsCount > 0 ? (dir.reduce((acc, curr) => acc + curr.recommended_kw, 0) / billsCount) : 0.0;
+  const totalKw = dir.reduce((acc, curr) => acc + curr.recommended_kw, 0);
+  const totalProjVal = dir.reduce((acc, curr) => acc + curr.system_cost, 0);
+  const total25Savings = dir.reduce((acc, curr) => acc + curr.savings_25yr, 0);
+  const avgMonthlySavings = billsCount > 0 ? (dir.reduce((acc, curr) => acc + curr.monthly_savings, 0) / billsCount) : 0.0;
+  const totalAnnualSavings = dir.reduce((acc, curr) => acc + curr.annual_savings, 0);
+  
+  const uniqueCities = new Set(dir.map(x => x.city)).size;
+  const uniqueDiscoms = new Set(dir.map(x => x.discom)).size;
+  
+  // Update KPI displays
+  document.getElementById('biKpiCustomers').textContent = totalCustomers;
+  document.getElementById('biKpiBills').textContent = billsCount;
+  document.getElementById('biKpiMonthlyRevenue').textContent = formatCurrencyRupee(totalMonthlyRev);
+  document.getElementById('biKpiAvgBill').textContent = formatCurrencyRupee(avgBill);
+  document.getElementById('biKpiAvgUnits').textContent = Math.round(avgUnits) + ' Units';
+  document.getElementById('biKpiAvgPayback').textContent = avgPayback.toFixed(1) + ' Yrs';
+  document.getElementById('biKpiAvgSystemSize').textContent = avgKw.toFixed(1) + ' kW';
+  document.getElementById('biKpiTotalInstalled').textContent = totalKw.toFixed(1) + ' kW';
+  document.getElementById('biKpiTotalProjectValue').textContent = formatCurrencyRupee(totalProjVal);
+  document.getElementById('biKpiTotal25YrSavings').textContent = formatCurrencyRupee(total25Savings);
+  document.getElementById('biKpiAvgMonthlySavings').textContent = formatCurrencyRupee(avgMonthlySavings);
+  document.getElementById('biKpiTotalAnnualSavings').textContent = formatCurrencyRupee(totalAnnualSavings);
+  document.getElementById('biKpiCities').textContent = uniqueCities;
+  document.getElementById('biKpiDiscoms').textContent = uniqueDiscoms;
+
+  // Hydrate Sparklines SVGs
+  _drawSparklineSVG('biSparklineCustomers', [2, 4, 3, 5, totalCustomers]);
+  _drawSparklineSVG('biSparklineBills', [3, 6, 5, 8, billsCount]);
+  _drawSparklineSVG('biSparklineRevenue', [12000, 18000, 24000, 31000, totalMonthlyRev]);
+  _drawSparklineSVG('biSparklineAvgBill', [2200, 2400, 2300, 2600, avgBill]);
+  _drawSparklineSVG('biSparklineAvgUnits', [180, 210, 190, 230, avgUnits]);
+  _drawSparklineSVG('biSparklineAvgPayback', [6.2, 5.8, 5.9, 5.1, avgPayback]);
+  _drawSparklineSVG('biSparklineAvgSystemSize', [3.1, 3.4, 3.2, 4.0, avgKw]);
+  _drawSparklineSVG('biSparklineCapacity', [12, 18, 22, 29, totalKw]);
+  _drawSparklineSVG('biSparklineProjectValue', [600000, 800000, 1100000, 1400000, totalProjVal]);
+  _drawSparklineSVG('biSparklineSavings25', [1400000, 2200000, 3100000, 4800000, total25Savings]);
+  _drawSparklineSVG('biSparklineMonthlySavings', [1100, 1400, 1600, 1900, avgMonthlySavings]);
+  _drawSparklineSVG('biSparklineAnnualSavings', [13200, 16800, 19200, 22800, totalAnnualSavings]);
+  _drawSparklineSVG('biSparklineCities', [1, 1, 1, 1, uniqueCities]);
+  _drawSparklineSVG('biSparklineDiscoms', [1, 1, 1, 1, uniqueDiscoms]);
+
+  // Set KPI Trend comparisons
+  const comps = original.kpi_comparison || {};
+  const setTrendComp = (trendId, key, suffix = '') => {
+    const el = document.getElementById(trendId);
+    if (el && comps[key]) {
+      const c = comps[key];
+      const sign = c.trend === 'up' ? '↑' : (c.trend === 'down' ? '↓' : '→');
+      el.textContent = `${sign} ${Math.abs(c.change_pct)}% ${suffix}`;
+      el.className = `bi-kpi-trend ${c.trend === 'up' ? 'healthy' : (c.trend === 'down' ? 'danger' : '')}`;
+    }
+  };
+  setTrendComp('biTrendRevenue', 'revenue', 'MoM');
+  setTrendComp('biTrendAvgBill', 'average_bill', 'MoM');
+  setTrendComp('biTrendAvgSystemSize', 'system_size', 'MoM');
+  setTrendComp('biTrendAvgPayback', 'payback', 'MoM');
+  
+  // Render Executive brief summary paragraph
+  const executiveBrief = document.getElementById('biExecutiveBrief');
+  if (executiveBrief) {
+    executiveBrief.textContent = original.command_center.executive_summary || '';
+  }
+
+  // Hydrate Sales Funnel Stage visualization
+  const fn = original.funnel || {};
+  const funnelContainer = document.getElementById('biFunnelContainer');
+  if (funnelContainer) {
+    funnelContainer.innerHTML = '';
+    const stages = ['lead', 'qualified', 'proposal_generated', 'negotiation', 'won', 'lost'];
+    stages.forEach(st => {
+      if (fn[st]) {
+        const item = fn[st];
+        const div = document.createElement('div');
+        div.className = 'bi-funnel-stage';
+        div.innerHTML = `
+          <span class="bi-funnel-label">${st.replace('_', ' ')}</span>
+          <div class="bi-funnel-bar-outer">
+            <div class="bi-funnel-bar-inner" style="width: ${item.conversion}%;"></div>
+            <span class="bi-funnel-bar-text">${item.count} Leads</span>
+          </div>
+          <span class="bi-funnel-percent">${item.conversion.toFixed(1)}% Conv</span>
+        `;
+        funnelContainer.appendChild(div);
+      }
+    });
+  }
+
+  // Hydrate Forecasting regression metrics
+  const fc = original.forecasting || {};
+  document.getElementById('biForecastMonthlyRev').textContent = formatCurrencyRupee(fc.expected_monthly_revenue);
+  document.getElementById('biForecastCustGrowth').textContent = `+ ${fc.expected_customer_growth} Leads`;
+  document.getElementById('biForecastInstalledKw').textContent = `${fc.expected_installed_capacity} kW`;
+  document.getElementById('biForecastSavings').textContent = formatCurrencyRupee(fc.expected_savings);
+  document.getElementById('biForecastAnnualRev').textContent = formatCurrencyRupee(fc.projected_annual_revenue);
+
+  // Classify and Populate Segment cards
+  const segCounts = original.segmentation.counts || {};
+  document.getElementById('biSegResidential').textContent = segCounts.residential || 0;
+  document.getElementById('biSegCommercial').textContent = segCounts.commercial || 0;
+  document.getElementById('biSegIndustrial').textContent = segCounts.industrial || 0;
+  document.getElementById('biSegHighCons').textContent = segCounts.high_consumption || 0;
+  document.getElementById('biSegMedCons').textContent = segCounts.medium_consumption || 0;
+  document.getElementById('biSegLowCons').textContent = segCounts.low_consumption || 0;
+  document.getElementById('biSegHighRoi').textContent = segCounts.high_roi || 0;
+  document.getElementById('biSegLongPayback').textContent = segCounts.long_payback || 0;
+  document.getElementById('biSegPremium').textContent = segCounts.premium_customers || 0;
+
+  // Render active interactive chart tab
+  const activeTab = document.querySelector('.bi-chart-tab.active');
+  const activeChart = activeTab ? activeTab.getAttribute('data-chart') : 'bill';
+  renderActiveBiChart(activeChart);
+  
+  // Render Leaderboards
+  renderBiLeaderboards();
+  
+  // Render Geo Grid summaries
+  renderBiGeoGrid();
+  
+  // Render alerts list
+  renderBiAlerts();
+  
+  // Sort and Render Table Page
+  window.biTablePage = 1;
+  sortAndRenderBiTable();
+}
+
+function _drawSparklineSVG(svgId, dataPoints) {
+  const svg = document.getElementById(svgId);
+  if (!svg) return;
+  svg.innerHTML = '';
+  
+  const width = svg.clientWidth || 100;
+  const height = svg.clientHeight || 30;
+  
+  if (dataPoints.length < 2) return;
+  
+  const minVal = Math.min(...dataPoints);
+  const maxVal = Math.max(...dataPoints);
+  const range = maxVal - minVal === 0 ? 1 : maxVal - minVal;
+  
+  const stepX = width / (dataPoints.length - 1);
+  let pathD = '';
+  let fillD = `M 0 ${height} `;
+  
+  dataPoints.forEach((val, idx) => {
+    const x = idx * stepX;
+    const y = height - ((val - minVal) / range) * (height - 6) - 3;
+    if (idx === 0) {
+      pathD += `M ${x} ${y} `;
+    } else {
+      pathD += `L ${x} ${y} `;
+    }
+    fillD += `L ${x} ${y} `;
+  });
+  
+  fillD += `L ${width} ${height} Z`;
+  
+  svg.innerHTML = `
+    <path class="bi-sparkline-fill" d="${fillD}"></path>
+    <path class="bi-sparkline-path" d="${pathD}"></path>
+  `;
+}
+
+function renderActiveBiChart(type) {
+  const canvas = document.getElementById('biInteractiveChartCanvas');
   if (!canvas) return;
   
-  const ctx = canvas.getContext('2d');
-  
-  if (biSegmentationChartInstance) {
-    biSegmentationChartInstance.destroy();
+  if (biInteractiveChartInstance) {
+    biInteractiveChartInstance.destroy();
   }
   
-  biSegmentationChartInstance = new Chart(ctx, {
-    type: 'doughnut',
+  const ctx = canvas.getContext('2d');
+  const dir = window.biFilteredDirectory;
+  
+  let labels = [];
+  let counts = [];
+  let labelText = '';
+  let chartType = 'bar';
+  let bgColors = [];
+  let borderColors = [];
+  
+  const defaultColors = [
+    'rgba(0, 174, 239, 0.75)',
+    'rgba(247, 147, 30, 0.75)',
+    'rgba(54, 211, 153, 0.75)',
+    'rgba(168, 85, 247, 0.75)',
+    'rgba(239, 68, 68, 0.75)',
+    'rgba(100, 116, 139, 0.75)'
+  ];
+  const borderColorsSet = [
+    '#00aeef', '#ff8a1d', '#36d399', '#a855f7', '#ef4444', '#64748b'
+  ];
+  
+  if (type === 'bill') {
+    labels = ['0-2k', '2k-4k', '4k-6k', '6k-8k', '8k+'];
+    counts = [0,0,0,0,0];
+    dir.forEach(x => {
+      const v = x.bill_amount;
+      if (v <= 2000) counts[0]++;
+      else if (v <= 4000) counts[1]++;
+      else if (v <= 6000) counts[2]++;
+      else if (v <= 8000) counts[3]++;
+      else counts[4]++;
+    });
+    labelText = 'Monthly Electricity Bill Distribution';
+    bgColors = 'rgba(0, 174, 239, 0.75)';
+    borderColors = '#00aeef';
+  } else if (type === 'units') {
+    labels = ['0-150', '150-300', '300-450', '450-600', '600+'];
+    counts = [0,0,0,0,0];
+    dir.forEach(x => {
+      const v = x.monthly_units;
+      if (v <= 150) counts[0]++;
+      else if (v <= 300) counts[1]++;
+      else if (v <= 450) counts[2]++;
+      else if (v <= 600) counts[3]++;
+      else counts[4]++;
+    });
+    labelText = 'Electricity Units Consumed';
+    bgColors = 'rgba(247, 147, 30, 0.75)';
+    borderColors = '#ff8a1d';
+  } else if (type === 'kw') {
+    labels = ['0-2 kW', '2-4 kW', '4-6 kW', '6-8 kW', '8 kW+'];
+    counts = [0,0,0,0,0];
+    dir.forEach(x => {
+      const v = x.recommended_kw;
+      if (v <= 2) counts[0]++;
+      else if (v <= 4) counts[1]++;
+      else if (v <= 6) counts[2]++;
+      else if (v <= 8) counts[3]++;
+      else counts[4]++;
+    });
+    labelText = 'Recommended System Size kW';
+    bgColors = 'rgba(54, 211, 153, 0.75)';
+    borderColors = '#36d399';
+  } else if (type === 'payback') {
+    labels = ['0-2 Yr', '2-4 Yr', '4-6 Yr', '6-8 Yr', '8 Yr+'];
+    counts = [0,0,0,0,0];
+    dir.forEach(x => {
+      const v = x.payback_years;
+      if (v <= 2) counts[0]++;
+      else if (v <= 4) counts[1]++;
+      else if (v <= 6) counts[2]++;
+      else if (v <= 8) counts[3]++;
+      else counts[4]++;
+    });
+    labelText = 'Payback Period Years';
+    bgColors = 'rgba(168, 85, 247, 0.75)';
+    borderColors = '#a855f7';
+  } else if (type === 'savings') {
+    labels = ['0-1k', '1k-2k', '2k-3k', '3k-4k', '4k+'];
+    counts = [0,0,0,0,0];
+    dir.forEach(x => {
+      const v = x.monthly_savings;
+      if (v <= 1000) counts[0]++;
+      else if (v <= 2000) counts[1]++;
+      else if (v <= 3000) counts[2]++;
+      else if (v <= 4000) counts[3]++;
+      else counts[4]++;
+    });
+    labelText = 'Estimated Monthly Savings';
+    bgColors = 'rgba(54, 211, 153, 0.75)';
+    borderColors = '#36d399';
+  } else if (type === 'annSavings') {
+    labels = ['0-12k', '12k-24k', '24k-36k', '36k-48k', '48k+'];
+    counts = [0,0,0,0,0];
+    dir.forEach(x => {
+      const v = x.annual_savings;
+      if (v <= 12000) counts[0]++;
+      else if (v <= 24000) counts[1]++;
+      else if (v <= 36000) counts[2]++;
+      else if (v <= 48000) counts[3]++;
+      else counts[4]++;
+    });
+    labelText = 'Estimated Annual Savings';
+    bgColors = 'rgba(0, 174, 239, 0.75)';
+    borderColors = '#00aeef';
+  } else if (type === 'projValue') {
+    labels = ['0-1L', '1L-2L', '2L-3L', '3L-4L', '4L+'];
+    counts = [0,0,0,0,0];
+    dir.forEach(x => {
+      const v = x.system_cost;
+      if (v <= 100000) counts[0]++;
+      else if (v <= 200000) counts[1]++;
+      else if (v <= 300000) counts[2]++;
+      else if (v <= 400000) counts[3]++;
+      else counts[4]++;
+    });
+    labelText = 'Estimated Project Value Cost';
+    bgColors = 'rgba(247, 147, 30, 0.75)';
+    borderColors = '#ff8a1d';
+  } else if (type === 'growth') {
+    chartType = 'line';
+    const sorted = [...dir].sort((a,b) => a.customer_id - b.customer_id);
+    sorted.forEach((x, index) => {
+      labels.push(x.customer_name);
+      counts.push(index + 1);
+    });
+    labelText = 'Cumulative Platform Growth';
+    bgColors = 'rgba(0, 174, 239, 0.1)';
+    borderColors = '#00aeef';
+  } else if (type === 'city') {
+    chartType = 'doughnut';
+    const cityMap = {};
+    dir.forEach(x => { cityMap[x.city] = (cityMap[x.city] || 0) + 1; });
+    labels = Object.keys(cityMap);
+    counts = Object.values(cityMap);
+    labelText = 'City Customer Split';
+    bgColors = defaultColors.slice(0, labels.length);
+    borderColors = borderColorsSet.slice(0, labels.length);
+  } else if (type === 'discom') {
+    chartType = 'pie';
+    const discomMap = {};
+    dir.forEach(x => { discomMap[x.discom] = (discomMap[x.discom] || 0) + 1; });
+    labels = Object.keys(discomMap);
+    counts = Object.values(discomMap);
+    labelText = 'DISCOM Market Shares';
+    bgColors = defaultColors.slice(0, labels.length);
+    borderColors = borderColorsSet.slice(0, labels.length);
+  }
+  
+  const dataset = {
+    label: labelText,
+    data: counts,
+    backgroundColor: bgColors,
+    borderColor: borderColors,
+    borderWidth: 1.5
+  };
+  
+  if (chartType === 'line') {
+    dataset.fill = true;
+    dataset.tension = 0.2;
+  }
+  
+  biInteractiveChartInstance = new Chart(ctx, {
+    type: chartType,
     data: {
-      labels: ['New Users', 'Engaged Users', 'High Intent Leads', 'Customers', 'Advocates'],
-      datasets: [{
-        data: [seg.newUsers, seg.engagedUsers, seg.highIntent, seg.customers, seg.advocates],
-        backgroundColor: [
-          'rgba(148, 163, 184, 0.7)', // Slate/Light
-          'rgba(0, 174, 239, 0.7)',  // Blue
-          'rgba(255, 138, 29, 0.7)', // Orange
-          'rgba(54, 211, 153, 0.7)', // Green
-          'rgba(168, 85, 247, 0.7)'  // Purple
-        ],
-        borderColor: [
-          '#64748b', '#00aeef', '#ff8a1d', '#36d399', '#a855f7'
-        ],
-        borderWidth: 1
-      }]
+      labels: labels,
+      datasets: [dataset]
     },
     options: {
       responsive: true,
       maintainAspectRatio: false,
       plugins: {
         legend: {
-          position: 'right',
-          labels: {
-            color: '#94a3b8',
-            font: {
-              family: 'Outfit',
-              size: 10
-            }
-          }
+          display: ['doughnut', 'pie'].includes(chartType),
+          labels: { color: '#94a3b8', font: { family: 'Outfit', size: 10 } }
+        }
+      },
+      scales: ['doughnut', 'pie'].includes(chartType) ? {} : {
+        x: {
+          grid: { color: 'rgba(255,255,255,0.05)' },
+          ticks: { color: '#94a3b8', font: { family: 'Outfit', size: 10 } }
+        },
+        y: {
+          grid: { color: 'rgba(255,255,255,0.05)' },
+          ticks: { color: '#94a3b8', font: { family: 'Outfit', size: 10 }, precision: 0 }
         }
       }
     }
   });
+}
+
+function renderBiLeaderboards() {
+  const container = document.getElementById('biLeaderboardGridContainer');
+  if (!container) return;
+  container.innerHTML = '';
+
+  const data = window.biOriginalData;
+  if (!data || !data.leaderboards) return;
+
+  const lbType = document.getElementById('biLeaderboardSelector')?.value || 'groupA';
+
+  const groupA = [
+    { title: 'Highest Bills', key: 'highest_bills', formatter: x => formatCurrencyRupee(x.value) },
+    { title: 'Highest Savings (25yr)', key: 'highest_savings', formatter: x => formatCurrencyRupee(x.value) },
+    { title: 'Largest System sizes', key: 'largest_systems', formatter: x => `${x.value} kW` },
+    { title: 'Highest ROI Yield', key: 'highest_roi', formatter: x => `${x.value}% ROI` },
+    { title: 'Fastest Payback', key: 'fastest_payback', formatter: x => `${x.value} Years` }
+  ];
+
+  const groupB = [
+    { title: 'Largest Projects', key: 'largest_projects', formatter: x => formatCurrencyRupee(x.value) },
+    { title: 'Highest Monthly Units', key: 'highest_monthly_units', formatter: x => `${Math.round(x.value)} Units` },
+    { title: 'Most Valuable Customers', key: 'most_valuable_customers', formatter: x => formatCurrencyRupee(x.value) },
+    { title: 'Newest Registered', key: 'newest_customers', formatter: x => {
+        const d = new Date(x.value);
+        return d.toLocaleDateString();
+      }
+    },
+    { title: 'Highest Revenue Opportunities', key: 'highest_revenue', formatter: x => formatCurrencyRupee(x.value) }
+  ];
+
+  const activeGroup = lbType === 'groupA' ? groupA : groupB;
+
+  activeGroup.forEach(lb => {
+    const card = document.createElement('div');
+    card.className = 'bi-leaderboard-card';
+    card.innerHTML = `
+      <span style="font-size: 10px; font-weight: 800; text-transform: uppercase; color: var(--text-secondary);">${lb.title}</span>
+      <div class="bi-leaderboard-list"></div>
+    `;
+    const list = card.querySelector('.bi-leaderboard-list');
+    const items = data.leaderboards[lb.key] || [];
+
+    if (items.length === 0) {
+      list.innerHTML = '<div style="font-size: 10px; color: var(--text-muted); padding: 5px;">No records</div>';
+    } else {
+      items.forEach((item, idx) => {
+        const div = document.createElement('div');
+        div.className = 'bi-leaderboard-item';
+        div.innerHTML = `
+          <span class="bi-rank-pill">${idx + 1}</span>
+          <div style="flex: 1; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;">
+            <strong style="color: #ffffff; font-weight:700;">${item.name}</strong>
+            <span style="display: block; font-size: 8px; color: var(--text-muted);">${item.consumer_number}</span>
+          </div>
+          <span style="font-weight: 800; color: var(--accent-blue);">${lb.formatter(item)}</span>
+        `;
+        div.addEventListener('click', () => {
+          openLeadProfileDrawer(item.email);
+        });
+        list.appendChild(div);
+      });
+    }
+    container.appendChild(card);
+  });
+
+  // Set Strategic Smart Insights
+  const ins = data.insights || {};
+  document.getElementById('biInsightHighestBill').textContent = ins.highest_bill_customer || 'N/A';
+  document.getElementById('biInsightHighestSavings').textContent = ins.highest_savings_customer || 'N/A';
+  document.getElementById('biInsightFastestPayback').textContent = ins.fastest_payback || 'N/A';
+  document.getElementById('biInsightLargestSystem').textContent = ins.largest_recommended_system || 'N/A';
+  document.getElementById('biInsightLargestProject').textContent = ins.largest_project_value || 'N/A';
+  document.getElementById('biInsightHighestRoi').textContent = ins.highest_roi || 'N/A';
+  document.getElementById('biInsightCommonCity').textContent = ins.most_common_city || 'N/A';
+  document.getElementById('biInsightCommonDiscom').textContent = ins.most_common_discom || 'N/A';
+}
+
+function renderBiGeoGrid() {
+  const container = document.getElementById('biGeoGridContainer');
+  if (!container) return;
+  container.innerHTML = '';
+  
+  const summaries = window.biOriginalData.geography || [];
+  
+  if (summaries.length === 0) {
+    container.innerHTML = '<div class="card-base" style="grid-column: 1/-1; padding: 20px; text-align: center; color: var(--text-muted);">No geographic summaries matching active filters.</div>';
+    return;
+  }
+  
+  summaries.forEach(s => {
+    const card = document.createElement('div');
+    card.className = 'bi-geo-card';
+    card.innerHTML = `
+      <div style="display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 10px;">
+        <h4 style="margin: 0; font-size: 13px; font-weight: 800; color: #ffffff;">📍 ${s.city}</h4>
+        <div style="text-align: right;">
+          <span class="api-tag" style="margin:0; background: var(--accent-blue-glow); color: var(--accent-blue); font-size: 9px; font-weight: 800; border-radius: 4px; padding: 1px 5px;">${s.customers} Leads</span>
+          <span style="display:block; font-size:8px; color:#36D399; font-weight:800; margin-top:2px;">↑ ${s.growth_pct}% Growth</span>
+        </div>
+      </div>
+      <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 8px; font-size: 10px; color: var(--text-secondary);">
+        <div>Bills Analyzed: <strong style="color:#fff;">${s.bills}</strong></div>
+        <div>Avg Bill: <strong style="color:#fff;">${formatCurrencyRupee(s.avg_bill)}</strong></div>
+        <div>Avg Units: <strong style="color:#fff;">${Math.round(s.avg_units)} U</strong></div>
+        <div>Avg System: <strong style="color:#fff;">${s.avg_system_size.toFixed(1)} kW</strong></div>
+        <div style="grid-column: 1/-1; border-top: 1px dashed rgba(255,255,255,0.06); padding-top: 6px; margin-top: 4px;">
+          Project Value: <strong style="color:var(--accent-orange); font-size:11px;">${formatCurrencyRupee(s.total_project_value)}</strong>
+        </div>
+      </div>
+    `;
+    card.addEventListener('click', () => {
+      // Toggle City Checkbox
+      const chk = document.getElementById(`chkCity_${s.city}`);
+      if (chk) {
+        chk.checked = true;
+        chk.dispatchEvent(new Event('change'));
+      }
+    });
+    container.appendChild(card);
+  });
+}
+
+function renderBiAlerts() {
+  const container = document.getElementById('biAlertsContainer');
+  if (!container) return;
+  container.innerHTML = '';
+  
+  const alerts = window.biOriginalData.alerts || [];
+  
+  if (alerts.length === 0) {
+    container.innerHTML = '<div style="font-size: 11px; color: var(--text-muted); text-align: center; border: 1px dashed var(--border-color); padding: 10px; border-radius: 6px;">All operational indicators are healthy. No executive alerts active.</div>';
+    return;
+  }
+  
+  alerts.slice(0, 6).forEach(a => {
+    const banner = document.createElement('div');
+    banner.className = `bi-alert-banner ${a.type === 'critical' ? 'danger' : a.type}`;
+    
+    let icon = 'ℹ️';
+    if (a.type === 'warning') icon = '⚠️';
+    if (a.type === 'critical' || a.type === 'danger') icon = '🚨';
+    
+    banner.innerHTML = `
+      <span class="bi-alert-icon">${icon}</span>
+      <div>
+        <div class="bi-alert-title">${a.title}</div>
+        <div>${a.description}</div>
+      </div>
+    `;
+    container.appendChild(banner);
+  });
+}
+
+function sortAndRenderBiTable() {
+  const col = window.biSortColumn;
+  const dir = window.biSortDirection;
+  
+  window.biFilteredDirectory.sort((a, b) => {
+    let valA = a[col];
+    let valB = b[col];
+    
+    if (typeof valA === 'string') {
+      valA = valA.toLowerCase();
+      valB = valB.toLowerCase();
+    }
+    
+    if (valA < valB) return dir === 'asc' ? -1 : 1;
+    if (valA > valB) return dir === 'asc' ? 1 : -1;
+    return 0;
+  });
+  
+  renderBiTablePage();
+}
+
+function renderBiTablePage() {
+  const container = document.getElementById('biAnalyticsTableBody');
+  if (!container) return;
+  container.innerHTML = '';
+  
+  const searchInput = document.getElementById('biTableSearch');
+  const tableSearch = searchInput ? searchInput.value.toLowerCase().trim() : '';
+
+  let dataset = window.biFilteredDirectory;
+  if (tableSearch) {
+    dataset = dataset.filter(item => {
+      return (item.customer_name || '').toLowerCase().includes(tableSearch) ||
+             (item.consumer_number || '').toLowerCase().includes(tableSearch) ||
+             (item.city || '').toLowerCase().includes(tableSearch) ||
+             (item.discom || '').toLowerCase().includes(tableSearch);
+    });
+  }
+
+  const page = window.biTablePage;
+  const size = window.biTablePageSize;
+  const total = dataset.length;
+  
+  const totalPages = Math.max(1, Math.ceil(total / size));
+  if (page > totalPages) window.biTablePage = totalPages;
+  
+  const start = (window.biTablePage - 1) * size;
+  const end = Math.min(start + size, total);
+  
+  const summaryText = document.getElementById('biTablePaginationSummary');
+  if (summaryText) {
+    if (total === 0) {
+      summaryText.textContent = 'Showing 0-0 of 0 entries';
+    } else {
+      summaryText.textContent = `Showing ${start + 1}-${end} of ${total} entries`;
+    }
+  }
+  
+  const prevBtn = document.getElementById('biTableBtnPrev');
+  if (prevBtn) {
+    prevBtn.disabled = window.biTablePage === 1;
+    prevBtn.style.opacity = window.biTablePage === 1 ? '0.4' : '1';
+  }
+  
+  const nextBtn = document.getElementById('biTableBtnNext');
+  if (nextBtn) {
+    nextBtn.disabled = window.biTablePage === totalPages;
+    nextBtn.style.opacity = window.biTablePage === totalPages ? '0.4' : '1';
+  }
+  
+  if (total === 0) {
+    container.innerHTML = `<tr><td colspan="14" style="text-align: center; padding: 25px; color: var(--text-muted); font-size:11px;">No records match table search filters.</td></tr>`;
+    return;
+  }
+  
+  const items = dataset.slice(start, end);
+  items.forEach(item => {
+    const tr = document.createElement('tr');
+    tr.style.cursor = 'pointer';
+    tr.innerHTML = `
+      <td style="padding: 10px; text-align: center;" onclick="event.stopPropagation();"><input type="checkbox" class="bi-row-checkbox" data-email="${item.email}" aria-label="Select row"></td>
+      <td style="padding: 10px; text-align: left; font-weight: 700; color: #ffffff;">${item.customer_name}</td>
+      <td style="padding: 10px; text-align: left;">${item.consumer_number}</td>
+      <td style="padding: 10px; text-align: left;">${item.city}</td>
+      <td style="padding: 10px; text-align: left;">${item.discom}</td>
+      <td style="padding: 10px; text-align: right;">${item.monthly_units}</td>
+      <td style="padding: 10px; text-align: right;">₹${item.bill_amount.toLocaleString('en-IN')}</td>
+      <td style="padding: 10px; text-align: right;">₹${item.per_unit_rate}</td>
+      <td style="padding: 10px; text-align: right;">${item.recommended_kw} kW</td>
+      <td style="padding: 10px; text-align: right;">₹${Math.round(item.monthly_savings).toLocaleString('en-IN')}</td>
+      <td style="padding: 10px; text-align: right;">₹${Math.round(item.annual_savings).toLocaleString('en-IN')}</td>
+      <td style="padding: 10px; text-align: right;">₹${Math.round(item.savings_25yr).toLocaleString('en-IN')}</td>
+      <td style="padding: 10px; text-align: right;">${item.payback_years} Yrs</td>
+      <td style="padding: 10px; text-align: center;"><span class="crm-badge badge-intent-high" style="font-size: 8px; padding: 1px 4px;">Won</span></td>
+    `;
+    
+    const chk = tr.querySelector('.bi-row-checkbox');
+    chk.addEventListener('change', () => {
+      if (chk.checked) tr.classList.add('bi-table-row-selected');
+      else tr.classList.remove('bi-table-row-selected');
+    });
+    
+    tr.addEventListener('click', () => {
+      openLeadProfileDrawer(item.email);
+    });
+    
+    // Hide columns that are currently toggled off
+    document.querySelectorAll('#biTableColumnVisibilityOptions input').forEach((opt, idx) => {
+      if (!opt.checked) {
+        tr.cells[idx + 1].style.display = 'none';
+      }
+    });
+    
+    container.appendChild(tr);
+  });
+}
+
+function exportSelectedBiRows() {
+  const selectedEmails = [];
+  const rowChecks = document.querySelectorAll('.bi-row-checkbox:checked');
+  rowChecks.forEach(chk => {
+    selectedEmails.push(chk.getAttribute('data-email'));
+  });
+  
+  if (selectedEmails.length === 0) {
+    showToast("Please check at least one row checkbox to export selected.", "warning");
+    return;
+  }
+  
+  const allDir = window.biFilteredDirectory || [];
+  const selectedRows = allDir.filter(x => selectedEmails.includes(x.email));
+  
+  const headers = ['Customer Name', 'Consumer Number', 'City', 'DISCOM', 'Monthly Units', 'Bill Amount (Rs)', 'Rate per Unit', 'Recommended Size (kW)', 'Project Cost (Rs)', 'Monthly Savings (Rs)', 'Annual Savings (Rs)', '25-Year Savings (Rs)', 'Payback Years'];
+  const rows = selectedRows.map(x => [
+    x.customer_name,
+    x.consumer_number,
+    x.city,
+    x.discom,
+    x.monthly_units,
+    x.bill_amount,
+    x.per_unit_rate,
+    x.recommended_kw,
+    x.system_cost,
+    x.monthly_savings,
+    x.annual_savings,
+    x.savings_25yr,
+    x.payback_years
+  ]);
+  
+  const filename = `GSE_BI_Selected_Rows_${Date.now()}.csv`;
+  downloadCSV(filename, headers, rows);
+  showToast(`Selected Rows Exported: ${filename}`, "success");
+  logAuditEvent((_getUser() || {}).email, 'Export BI Selected Rows', 'Admin', `Exported ${selectedRows.length} selected table rows.`, 'Low');
+}
+
+function toggleFullscreenChart() {
+  const container = document.getElementById('biInteractiveChartContainer');
+  if (!container) return;
+
+  const isFull = container.classList.contains('bi-chart-fullscreen-overlay');
+  if (isFull) {
+    container.classList.remove('bi-chart-fullscreen-overlay');
+    document.body.style.overflow = '';
+  } else {
+    container.classList.add('bi-chart-fullscreen-overlay');
+    document.body.style.overflow = 'hidden';
+  }
+  
+  if (biInteractiveChartInstance) {
+    biInteractiveChartInstance.resize();
+  }
+}
+
+function downloadChartPng() {
+  const canvas = document.getElementById('biInteractiveChartCanvas');
+  if (!canvas) return;
+
+  const url = canvas.toDataURL("image/png");
+  const link = document.createElement("a");
+  link.download = `GSE_BI_Chart_${Date.now()}.png`;
+  link.href = url;
+  document.body.appendChild(link);
+  link.click();
+  document.body.removeChild(link);
+  showToast("PNG chart downloaded successfully.", "success");
+}
+
+function downloadChartCsvData() {
+  if (!biInteractiveChartInstance) return;
+
+  const data = biInteractiveChartInstance.data;
+  const labels = data.labels;
+  const dataset = data.datasets[0];
+  const values = dataset.data;
+
+  const headers = ['Category Label', dataset.label];
+  const rows = labels.map((l, idx) => [l, values[idx]]);
+
+  downloadCSV(`GSE_BI_ChartData_${Date.now()}.csv`, headers, rows);
+  showToast("Chart underlying dataset exported.", "success");
+}
+
+function triggerExportCenterReport(type) {
+  const data = window.biOriginalData;
+  if (!data) return;
+
+  if (type === 'customer') {
+    const headers = ['Customer Name', 'Consumer Number', 'City', 'DISCOM', 'Monthly Units', 'Bill Amount (Rs)', 'Recommended Size (kW)', 'Monthly Savings (Rs)', 'Payback Years'];
+    const rows = data.directory.map(x => [
+      x.customer_name,
+      x.consumer_number,
+      x.city,
+      x.discom,
+      x.monthly_units,
+      x.bill_amount,
+      x.recommended_kw,
+      x.monthly_savings,
+      x.payback_years
+    ]);
+    downloadCSV(`GSE_BI_CustomerReport_${Date.now()}.csv`, headers, rows);
+    showToast("Customer report exported.", "success");
+  } else if (type === 'mgmt') {
+    // Generate pre-styled spreadsheet content
+    const headers = ['Metric Key', 'Current Valuation'];
+    const rows = [
+      ['Total Active Customers', data.command_center.total_active_customers],
+      ['Platform Health Score', `${data.command_center.platform_health_score}%`],
+      ['Total Monthly Revenue Analyzed', formatCurrencyRupee(data.kpis.total_monthly_revenue)],
+      ['Average Payback period', `${data.kpi_comparison.payback.current.toFixed(2)} Yrs`],
+      ['Expected Monthly Revenue Forecast', formatCurrencyRupee(data.forecasting.expected_monthly_revenue)],
+      ['Projected Annual Revenue', formatCurrencyRupee(data.forecasting.projected_annual_revenue)]
+    ];
+    downloadCSV(`GSE_BI_ManagementSummary_${Date.now()}.csv`, headers, rows);
+    showToast("Management summary XLS simulated to CSV.", "success");
+  } else if (type === 'board') {
+    // Generate pre-formatted HTML print overlay for Boardroom Meeting
+    const printWindow = window.open('', '_blank');
+    printWindow.document.write(`
+      <html>
+        <head>
+          <title>GSE - Boardroom Executive BI Report</title>
+          <style>
+            body { font-family: 'Outfit', sans-serif; padding: 40px; color: #333; }
+            h1 { border-bottom: 2px solid #00aeef; padding-bottom: 10px; color: #0f172a; }
+            table { width: 100%; border-collapse: collapse; margin-top: 20px; }
+            th, td { padding: 12px; border: 1px solid #ddd; text-align: left; }
+            th { background: #f1f5f9; }
+            .kpi-container { display: grid; grid-template-columns: repeat(3, 1fr); gap: 15px; margin-top: 20px; }
+            .kpi-card { border: 1px solid #ddd; padding: 15px; border-radius: 6px; }
+          </style>
+        </head>
+        <body>
+          <h1>Boardroom Executive BI Report</h1>
+          <p><strong>Generated At:</strong> ${new Date().toLocaleString()}</p>
+          <p><strong>Executive Summary:</strong> ${data.command_center.executive_summary}</p>
+          
+          <div class="kpi-container">
+            <div class="kpi-card"><strong>Health Score:</strong> ${data.command_center.platform_health_score}%</div>
+            <div class="kpi-card"><strong>Active Customers:</strong> ${data.command_center.total_active_customers}</div>
+            <div class="kpi-card"><strong>API endpoints:</strong> ${data.command_center.active_apis}</div>
+          </div>
+          
+          <h2>Regression Forecast Models</h2>
+          <table>
+            <thead>
+              <tr><th>Metric</th><th>Valuation</th></tr>
+            </thead>
+            <tbody>
+              <tr><td>Expected Monthly Revenue</td><td>${formatCurrencyRupee(data.forecasting.expected_monthly_revenue)}</td></tr>
+              <tr><td>Expected Customer Growth</td><td>+ ${data.forecasting.expected_customer_growth} Leads</td></tr>
+              <tr><td>Projected Annual Revenue</td><td>${formatCurrencyRupee(data.forecasting.projected_annual_revenue)}</td></tr>
+            </tbody>
+          </table>
+          
+          <script>window.onload = function() { window.print(); }</script>
+        </body>
+      </html>
+    `);
+    printWindow.document.close();
+    showToast("Board Meeting report generated.", "success");
+  } else if (type === 'snapshot') {
+    window.print();
+    showToast("Print snapshot triggered.", "success");
+  }
+}
+
+function setupTableColumnResizing() {
+  const table = document.getElementById('biAnalyticsDirectoryTable');
+  if (!table) return;
+
+  const ths = table.querySelectorAll('th.bi-resizable-th');
+  ths.forEach(th => {
+    const resizer = th.querySelector('.bi-col-resizer');
+    if (!resizer) return;
+
+    let startX, startWidth;
+
+    resizer.addEventListener('mousedown', (e) => {
+      e.stopPropagation();
+      startX = e.pageX;
+      startWidth = th.offsetWidth;
+      document.addEventListener('mousemove', onMouseMove);
+      document.addEventListener('mouseup', onMouseUp);
+    });
+
+    const onMouseMove = (e) => {
+      const w = startWidth + (e.pageX - startX);
+      th.style.width = w + 'px';
+      th.style.minWidth = w + 'px';
+    };
+
+    const onMouseUp = () => {
+      document.removeEventListener('mousemove', onMouseMove);
+      document.removeEventListener('mouseup', onMouseUp);
+    };
+  });
+}
+
+function _hydrateBusinessIntelligenceUI(data) {
+  window.biOriginalData = data;
+  window.biFilteredDirectory = [...(data.directory || [])];
+  
+  document.getElementById('biCcHealthScore').textContent = `${data.command_center.platform_health_score}%`;
+  document.getElementById('biCcActiveCustomers').textContent = data.command_center.total_active_customers;
+  
+  _populateMultiSelectOptions(data);
+  _populateColumnVisibilityOptions();
+  applyBiFilters();
 }
 
 function formatCurrencyRupee(value) {
   if (value === null || value === undefined || isNaN(value)) return '₹0';
   return '₹' + Math.round(value).toLocaleString('en-IN');
-}
-
-function getBiExportFilename() {
-  const now = new Date();
-  const format = (num) => String(num).padStart(2, '0');
-  const dateStr = `${now.getFullYear()}-${format(now.getMonth() + 1)}-${format(now.getDate())}`;
-  const timeStr = `${format(now.getHours())}-${format(now.getMinutes())}-${format(now.getSeconds())}`;
-  return `bi_export_${dateStr}_${timeStr}.csv`;
-}
-
-function exportBusinessIntelligenceCSV() {
-  const cachedDataStr = localStorage.getItem('cachedAdminData');
-  if (!cachedDataStr) {
-    showToast("No data available to export.", "error");
-    return;
-  }
-  
-  const consolidated = JSON.parse(cachedDataStr);
-  const metrics = calculateBiMetrics(consolidated);
-  
-  const headers = ['Metric Group', 'Metric Name', 'Metric Value', 'Notes'];
-  const rows = [
-    ['Executive Stats', 'Total Users', metrics.totalUsers, 'Platform-wide users registered'],
-    ['Executive Stats', 'Total Leads', metrics.totalLeads, 'Total leads in CRM'],
-    ['Executive Stats', 'Won Projects', metrics.referralConversions, 'Leads successfully won'],
-    ['Executive Stats', 'Overall Conversion Rate (%)', _safeNum(metrics.conversionRate).toFixed(2), 'Won / Total Leads'],
-    ['Executive Stats', 'Business Health Score', _safeNum(metrics.businessScore).toFixed(0), 'Weighted score out of 100'],
-    ['Executive Stats', '30-Day Revenue Forecast', _safeNum(metrics.revenueForecast).toFixed(2), 'Calculated projected revenue'],
-    ['Executive Stats', 'Risk Level', metrics.riskLevel, 'Current operational platform risks'],
-    
-    ['Revenue Waterfall', 'Pipeline Value', metrics.waterfall.pipeline, 'Sum of potential values in pipeline'],
-    ['Revenue Waterfall', 'Qualified Revenue', metrics.waterfall.qualified, 'Revenue from Qualified and later stages'],
-    ['Revenue Waterfall', 'Proposal Sent Revenue', metrics.waterfall.proposal, 'Revenue from Proposal and later stages'],
-    ['Revenue Waterfall', 'Won Revenue', metrics.waterfall.won, 'Revenue from Won projects'],
-    
-    ['Segmentation', 'New Users', metrics.segmentation.newUsers, 'Registered in last 30d, low score'],
-    ['Segmentation', 'Engaged Users', metrics.segmentation.engagedUsers, 'Score >= 40, active but not won'],
-    ['Segmentation', 'High Intent Leads', metrics.segmentation.highIntent, 'Lead score >= 70'],
-    ['Segmentation', 'Customers', metrics.segmentation.customers, 'Lead status is Won, no points/referrals'],
-    ['Segmentation', 'Advocates', metrics.segmentation.advocates, 'Lead status is Won with referrals/points'],
-    
-    ['Solar Metrics', 'Average Monthly Bill', _safeNum(metrics.solar.avgBill).toFixed(2), 'Average monthly utility bill'],
-    ['Solar Metrics', 'Average System Size Recommended (kW)', _safeNum(metrics.solar.avgSize).toFixed(2), 'Average system size recommendation'],
-    ['Solar Metrics', 'Average Payback Period (Years)', _safeNum(metrics.solar.avgPayback).toFixed(2), 'Average time to payback investment'],
-    ['Solar Metrics', 'Average ROI (%)', _safeNum(metrics.solar.avgRoi).toFixed(2), 'Average return on investment'],
-    ['Solar Metrics', 'Average Suitability Score', _safeNum(metrics.solar.avgSuitability).toFixed(2), 'Average roof readiness score'],
-    
-    ['Referrals', 'Referral-Generated Pipeline', metrics.referral.pipeline, 'Pipeline value generated by referral leads'],
-    ['Referrals', 'Referral Leads Conversion Rate (%)', _safeNum(metrics.referral.conversionRate).toFixed(2), 'Conversion rate of referral-sourced leads'],
-    ['Referrals', 'Top Sourced Segment', metrics.referral.topSegment, 'Most active and profitable segment'],
-    ['Referrals', 'Referral Revenue Multiplier', _safeNum(metrics.referral.multiplier).toFixed(2), 'Referral revenue vs pipeline value'],
-    
-    ['AI Impact', 'AI Influence Score (%)', _safeNum(metrics.ai.influenceScore).toFixed(2), 'Percentage of users engaging with Solar Copilot'],
-    ['AI Impact', 'AI Queries Tracked', metrics.ai.queries, 'Total chatbot queries across users'],
-    ['AI Impact', 'Recommendations Generated', metrics.ai.recommendations, 'Total recommendations sent to users'],
-    ['AI Impact', 'Leads Sourced / Influenced by Copilot', metrics.ai.leadsInfluenced, 'Users who chatted and became leads'],
-    ['AI Impact', 'Copilot Conversation Conversion (%)', _safeNum(metrics.ai.conversionPct).toFixed(2), 'Chat user to assessment completion rate']
-  ];
-  
-  const filename = getBiExportFilename();
-  downloadCSV(filename, headers, rows);
-  showToast(`CSV exported successfully: ${filename}`, "success");
-}
-
-function renderBiStageDistributionChart(metrics) {
-  const canvas = document.getElementById('biStageDistributionChart');
-  if (!canvas) return;
-  
-  const ctx = canvas.getContext('2d');
-  
-  if (biStageDistributionChartInstance) {
-    biStageDistributionChartInstance.destroy();
-  }
-  
-  biStageDistributionChartInstance = new Chart(ctx, {
-    type: 'bar',
-    data: {
-      labels: ['Leads', 'Qualified', 'Proposal Sent', 'Won Projects'],
-      datasets: [{
-        label: 'Opportunity Count',
-        data: [metrics.totalLeads, metrics.qualifiedCount, metrics.proposalCount, metrics.wonCount],
-        backgroundColor: [
-          'rgba(0, 174, 239, 0.75)',  // Blue
-          'rgba(168, 85, 247, 0.75)', // Purple
-          'rgba(255, 138, 29, 0.75)', // Orange
-          'rgba(54, 211, 153, 0.75)'  // Green
-        ],
-        borderColor: [
-          '#00aeef', '#a855f7', '#ff8a1d', '#36d399'
-        ],
-        borderWidth: 1,
-        barPercentage: 0.6
-      }]
-    },
-    options: {
-      indexAxis: 'y',
-      responsive: true,
-      maintainAspectRatio: false,
-      plugins: {
-        legend: {
-          display: false
-        },
-        tooltip: {
-          callbacks: {
-            label: function(context) {
-              return ` Opportunities: ${context.raw}`;
-            }
-          }
-        }
-      },
-      scales: {
-        x: {
-          grid: {
-            color: 'rgba(255,255,255,0.05)'
-          },
-          ticks: {
-            color: '#94a3b8',
-            font: {
-              family: 'Outfit',
-              size: 10
-            },
-            precision: 0
-          }
-        },
-        y: {
-          grid: {
-            display: false
-          },
-          ticks: {
-            color: '#ffffff',
-            font: {
-              family: 'Outfit',
-              size: 11,
-              weight: 'bold'
-            }
-          }
-        }
-      }
-    }
-  });
-}
-
-/* ==========================================================================
+}/* ==========================================================================
    26. VENDOR PORTAL - AI PROPOSAL GENERATOR (PHASE 11.1)
    ========================================================================== */
 function initVendorPortal() {
