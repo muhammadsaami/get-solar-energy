@@ -1,0 +1,688 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>GET Solar Energy | India's Solar Intelligence Platform</title>
+  <!-- GET Solar Energy Design System v1.0.0 -->
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link rel="stylesheet" href="styles/design-system.css">
+  <link rel="stylesheet" href="styles/landing.css">
+  <script src="landing.js" defer></script>
+</head>
+<body class="dark-theme">
+
+  <!-- Skip Navigation (Accessibility) -->
+  <a href="#heroSection" class="skip-nav">Skip to main content</a>
+
+  <!-- Scroll Progress Indicator -->
+  <div class="scroll-progress-indicator" id="scrollProgress"></div>
+
+  <!-- --- SECTION 1: STICKY NAVIGATION BAR --- -->
+  <header class="navbar-header" id="navbarHeader">
+    <div class="nav-container">
+      <div class="logo-container" onclick="window.location.reload();">
+        <div class="logo-badge">
+          <svg class="logo-badge-svg" viewBox="0 0 100 100" xmlns="http://www.w3.org/2000/svg">
+            <defs>
+              <clipPath id="left-half">
+                <rect x="0" y="0" width="50" height="100"/>
+              </clipPath>
+              <clipPath id="right-half">
+                <rect x="50" y="0" width="50" height="100"/>
+              </clipPath>
+            </defs>
+            <rect width="100" height="100" rx="20" fill="#000000"/>
+            <!-- Left Half (Blue segments) -->
+            <g clip-path="url(#left-half)">
+              <circle cx="50" cy="50" r="38" stroke="#00aeef" stroke-width="4.5" stroke-dasharray="6 4.5"/>
+              <circle cx="50" cy="50" r="30" stroke="#00aeef" stroke-width="4.5" stroke-dasharray="5.5 4"/>
+              <circle cx="50" cy="50" r="22" stroke="#00aeef" stroke-width="4.5" stroke-dasharray="4.5 4"/>
+            </g>
+            <!-- Right Half (Orange segments) -->
+            <g clip-path="url(#right-half)">
+              <circle cx="50" cy="50" r="38" stroke="#f7931e" stroke-width="4.5" stroke-dasharray="6 4.5"/>
+              <circle cx="50" cy="50" r="30" stroke="#f7931e" stroke-width="4.5" stroke-dasharray="5.5 4"/>
+              <circle cx="50" cy="50" r="22" stroke="#f7931e" stroke-width="4.5" stroke-dasharray="4.5 4"/>
+            </g>
+            <!-- Central solid white circle with letter G -->
+            <circle cx="50" cy="50" r="14" fill="#ffffff"/>
+            <text x="50" y="55" text-anchor="middle" font-family="'Outfit', sans-serif" font-weight="900" font-size="16" fill="#000000">G</text>
+          </svg>
+        </div>
+        <div class="logo-text-block">
+          <span class="logo-title-text">GET SOLAR ENERGY</span>
+          <span class="logo-sub-text">SOLAR INTELLIGENCE PLATFORM</span>
+        </div>
+      </div>
+
+      <nav class="nav-links">
+        <a href="#why-choose-solar" class="nav-link-item">Why Solar</a>
+        <a href="#features" class="nav-link-item">Services</a>
+        <a href="#how-it-works" class="nav-link-item">How It Works</a>
+        <a href="#testimonials" class="nav-link-item">Success Stories</a>
+      </nav>
+
+      <div class="nav-auth-buttons">
+        <a href="login.html" class="btn-login" onclick="trackCTA('login_nav');">Login</a>
+        <a href="signup.html" class="btn-signup" onclick="trackCTA('signup_nav');">Start Free Assessment</a>
+      </div>
+
+      <!-- Mobile menu toggle -->
+      <button class="mobile-menu-toggle" aria-label="Toggle navigation menu" id="mobileMenuToggle">
+        <span></span>
+        <span></span>
+        <span></span>
+      </button>
+    </div>
+  </header>
+
+  <!-- Mobile Navigation Drawer -->
+  <div class="mobile-nav-drawer" id="mobileNavDrawer">
+    <div class="drawer-header">
+      <div class="logo-container">
+        <div class="logo-text-block">
+          <span class="logo-title-text">GET SOLAR ENERGY</span>
+        </div>
+      </div>
+      <button class="drawer-close-btn" id="drawerCloseBtn" aria-label="Close menu">&times;</button>
+    </div>
+    <div class="drawer-links">
+      <a href="#why-choose-solar" class="drawer-link-item">Why Solar</a>
+      <a href="#features" class="drawer-link-item">Services</a>
+      <a href="#how-it-works" class="drawer-link-item">How It Works</a>
+      <a href="#testimonials" class="drawer-link-item">Success Stories</a>
+      <hr class="drawer-divider">
+      <a href="login.html" class="drawer-btn-login">Login</a>
+      <a href="signup.html" class="drawer-btn-signup">Start Free Assessment</a>
+    </div>
+  </div>
+
+
+  <!-- BACKGROUND ATMOSPHERE (6.8 Enhancements) -->
+  <div class="background-glow-atmosphere">
+    <div class="solar-glow-left"></div>
+    <div class="energy-glow-right"></div>
+    <div class="particle-ambient-container" id="ambientParticles"></div>
+  </div>
+
+  <!-- --- SCENE 1: ARRIVAL --- -->
+  <article class="cinematic-scene scene-hero" id="sceneHero" data-camera="arrival">
+    <div class="cinematic-color-grade"></div>
+    <div class="scene-transition-mask top"></div>
+    <div class="scene-transition-mask bottom"></div>
+    <div class="layer-bg">
+      <img src="assets/Cinematic/Asset 1.webp" alt="Premium solar home" fetchpriority="high">
+    </div>
+    <div class="lighting-overlay lighting-warm"></div>
+    
+    <div class="hero-container layer-fg scene-element" style="width: 100%; max-width: 1200px; padding: 0 5%; position: relative; z-index: 2;">
+      <!-- Left Column: Typography & CTAs -->
+      <div class="hero-left-col" style="max-width: 600px; position: relative; padding: 40px; border-radius: var(--radius-lg);">
+        <div class="text-scrim-overlay"></div>
+        <div class="hero-badge-container">
+          <div class="hero-accent-badge"><span class="badge-check-icon">&#10003;</span> Trusted Solar Solutions Across India</div>
+        </div>
+        <h1 class="hero-main-title">
+          Analyze. Plan. <br>
+          <span class="highlight-orange">Save</span> with Solar.
+        </h1>
+        <p class="hero-description-paragraph">
+          Design your custom solar layout, calculate your exact savings, and verify government subsidies.
+        </p>
+        
+        <div class="hero-action-ctas">
+          <a href="#sceneEstimate" class="btn-hero-primary" onclick="trackCTA('hero_primary');">Start Free Assessment</a>
+          <a href="#how-it-works" class="btn-hero-secondary" onclick="trackCTA('hero_secondary');">See How It Works</a>
+        </div>
+        
+        <!-- Trust Pills -->
+        <div class="hero-trust-pills">
+          <span class="trust-pill">&#127470;&#127475; PM Surya Ghar Ready</span>
+          <span class="trust-pill">Government Subsidy Support</span>
+          <span class="trust-pill">PAN India Coverage</span>
+        </div>
+
+        <!-- Platform Metrics Strip -->
+        <div class="hero-stats-grid" id="metricsStrip" style="margin-top: 40px;">
+          <div class="hero-stat-item" id="metricCard1">
+            <span class="stat-num" id="metricBillsCount">-</span>
+            <span class="stat-lbl">Bills Analyzed</span>
+          </div>
+          <div class="hero-stat-item" id="metricCard2">
+            <span class="stat-num" id="metricSavingsCount">-</span>
+            <span class="stat-lbl">Customer Savings</span>
+          </div>
+          <div class="hero-stat-item" id="metricCard3">
+            <span class="stat-num" id="metricCitiesCount">-</span>
+            <span class="stat-lbl">Cities Served</span>
+          </div>
+        </div>
+      </div>
+    </div>
+  </article>
+
+  <article class="cinematic-scene scene-estimate" id="sceneEstimate" data-camera="estimate">
+    <div class="cinematic-color-grade"></div>
+    <div class="scene-transition-mask top"></div>
+    <div class="layer-bg">
+      <img src="assets/Cinematic/Asset 2.webp" alt="Home solar potential" loading="lazy">
+    </div>
+    <div class="lighting-overlay lighting-warm"></div>
+
+    <div class="hero-container layer-fg scene-element" style="width: 100%; max-width: 1200px; padding: 0 5%; position: relative; z-index: 2; display: flex; justify-content: flex-end;">
+      
+      <!-- Right Column: Quick Estimate Card -->
+      <div class="hero-right-col" style="max-width: 500px; width: 100%;">
+        <div class="quick-estimate-card" style="position: relative; transform: none; right: auto; top: auto; width: 100%; margin: 0; box-shadow: var(--card-shadow);">
+          <div class="estimate-card-header">
+            <h3 class="card-title">Instant Solar Estimate</h3>
+            <span class="estimate-powered-text">powered by GET Solar</span>
+          </div>
+          
+          <div class="form-group">
+            <label for="estCity">Select Your City</label>
+            <select id="estCity" aria-label="Select your city for solar estimate">
+              <option value="" disabled selected>Select your city</option>
+              <option value="Lucknow">Lucknow</option>
+              <option value="Noida">Noida</option>
+              <option value="Delhi">Delhi</option>
+              <option value="Mumbai">Mumbai</option>
+              <option value="Bengaluru">Bengaluru</option>
+              <option value="Jaipur">Jaipur</option>
+            </select>
+          </div>
+
+          <div class="form-group">
+            <label for="estBill">Monthly Electricity Bill</label>
+            <div class="input-wrapper">
+              <span class="currency-prefix" aria-hidden="true">₹</span>
+              <input type="number" id="estBill" placeholder="Enter amount (₹)" min="500" aria-label="Monthly electricity bill amount in rupees">
+            </div>
+          </div>
+
+          <p class="form-validation-msg" id="validationMsgCity" role="alert" aria-live="assertive" style="display:none;">Please select your city first.</p>
+          <p class="form-validation-msg" id="validationMsgBill" role="alert" aria-live="assertive" style="display:none;">Please enter a valid bill amount (₹500 or more).</p>
+
+          <button type="button" class="btn-calculate" id="quickEstimateCTA">Calculate My Savings</button>
+
+          <p class="card-footer-note">Instant estimate · No sign-up required</p>
+
+          <div class="estimate-output-container" id="estimateOutput" style="display: none;" aria-live="polite" role="region" aria-label="Solar savings estimate results">
+
+            <div class="shimmer-loading-block" id="shimmerLoader" style="display: none;" aria-hidden="true">
+              <div class="shimmer-skeleton">
+                <div class="skeleton-line skeleton-wide"></div>
+                <div class="skeleton-line skeleton-narrow"></div>
+                <div class="skeleton-block"></div>
+                <div class="skeleton-grid">
+                  <div class="skeleton-cell"></div>
+                  <div class="skeleton-cell"></div>
+                  <div class="skeleton-cell"></div>
+                  <div class="skeleton-cell"></div>
+                </div>
+              </div>
+            </div>
+
+            <div class="estimate-result-header result-reveal" id="estimateResultHeader">
+              <div class="result-city-badge">
+                <span class="result-city-icon" aria-hidden="true">☀</span>
+                <span class="result-city-name" id="estimateResultCity">Your Solar Estimate</span>
+              </div>
+              <p class="result-personalized-note" id="estimateResultSubtitle">Personalized for your usage</p>
+            </div>
+
+            <div class="primary-savings-card result-reveal" style="animation-delay: 0.08s;">
+              <div class="primary-savings-label">Estimated Monthly Savings</div>
+              <div class="primary-savings-value cyan" id="outEstSavings">-</div>
+              <div class="primary-savings-note">vs your current electricity bill</div>
+            </div>
+
+            <div class="result-metrics-grid">
+              <div class="result-metric-item result-reveal" style="animation-delay: 0.14s;">
+                <span class="metric-label">System Size</span>
+                <span class="metric-value" id="outEstSize">-</span>
+              </div>
+              <div class="result-metric-item result-reveal" style="animation-delay: 0.18s;">
+                <span class="metric-label">Annual Savings</span>
+                <span class="metric-value orange" id="outEstAnnualSavings">-</span>
+              </div>
+              <div class="result-metric-item result-reveal" style="animation-delay: 0.22s;">
+                <span class="metric-label">Payback Period</span>
+                <span class="metric-value" id="outEstPayback">-</span>
+              </div>
+              <div class="result-metric-item result-reveal" style="animation-delay: 0.26s;">
+                <span class="metric-label">25-yr Returns</span>
+                <span class="metric-value green" id="outEstLifetime">-</span>
+              </div>
+            </div>
+
+            <div class="subsidy-eligibility-card result-reveal" id="subsidyCard" style="animation-delay: 0.32s;">
+              <div class="subsidy-card-left">
+                <span class="subsidy-icon" aria-hidden="true">🏛️</span>
+                <div class="subsidy-body">
+                  <div class="subsidy-title">PM Surya Ghar Subsidy</div>
+                  <div class="subsidy-amount" id="outSubsidyAmount">-</div>
+                </div>
+              </div>
+              <div class="subsidy-eligible-badge">
+                <span class="eligible-dot" aria-hidden="true"></span>
+                Eligible
+              </div>
+            </div>
+
+            <p class="result-insight-note result-reveal" id="calcInsightText" style="animation-delay: 0.36s;">-</p>
+
+            <span id="calcInsightPanel" style="display:none;" aria-hidden="true"></span>
+            <span id="aiConfidenceContainer" style="display:none;" aria-hidden="true"></span>
+            <span id="confidenceBadge" style="display:none;" aria-hidden="true"></span>
+
+            <a href="signup.html" class="btn-post-estimate-cta result-reveal" id="postEstimateCTA"
+               onclick="trackCTA({ action: 'post_estimate_cta', location: 'hero_estimate', timestamp: Date.now() });"
+               style="animation-delay: 0.42s;">
+              Get Your Full Assessment
+              <svg viewBox="0 0 20 20" fill="currentColor" aria-hidden="true" style="width:16px;height:16px;flex-shrink:0;"><path fill-rule="evenodd" d="M10.293 3.293a1 1 0 011.414 0l6 6a1 1 0 010 1.414l-6 6a1 1 0 01-1.414-1.414L14.586 11H3a1 1 0 110-2h11.586l-4.293-4.293a1 1 0 010-1.414z" clip-rule="evenodd"/></svg>
+            </a>
+
+            <p class="results-source-text">Estimate based on standard solar irradiance & regional DISCOM tariffs. Subject to on-site assessment.</p>
+          </div>
+        </div>
+      </div>
+    </div>
+  </article>
+
+  <!-- --- SCENE 3: ROOF SUITABILITY --- -->
+  <article class="cinematic-scene scene-roof" id="sceneRoof" data-camera="roof">
+    <div class="cinematic-color-grade"></div>
+    <div class="scene-transition-mask top"></div>
+    <div class="scene-transition-mask bottom"></div>
+    <div class="layer-bg">
+      <img src="assets/Cinematic/Asset 3.webp" alt="Roof suitability analysis" loading="lazy">
+    </div>
+    <div class="lighting-overlay lighting-warm"></div>
+    
+    <div class="suitability-container layer-fg scene-element" style="position: relative; z-index: 2; display: flex; width: 100%; max-width: 1200px; padding: 0 5%; gap: 60px; align-items: center;">
+      
+      <!-- Left Column: Cinematic Architectural Visualization -->
+      <div class="suitability-visual-column" style="flex: 1;">
+        <div class="cinematic-roof-scene" id="cinematicRoofScene">
+          <!-- The Home is now the background Asset 3, so we only overlay the SVG/Highlights here -->
+          
+          <!-- 2. The Sunlight -->
+          <div class="scene-sunlight-sweep"></div>
+          
+          <!-- 3. The Roof Highlight -->
+          <div class="scene-roof-highlight">
+            <svg viewBox="0 0 400 300" class="roof-polygon-svg" preserveAspectRatio="none">
+              <!-- Approximate polygon matching a roof plane -->
+              <polygon points="120,80 280,60 350,140 100,180" class="roof-plane-fill" />
+            </svg>
+          </div>
+          
+          <!-- 4. The Solar Panels (Progressively revealed) -->
+          <div class="scene-solar-panels">
+            <div class="panel-grid-overlay"></div>
+          </div>
+          
+          <!-- 5. Energy Flow (Animated particles/lines down to house) -->
+          <div class="scene-energy-flow">
+            <div class="energy-line line-1"></div>
+            <div class="energy-line line-2"></div>
+            <div class="energy-line line-3"></div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Right Column: Storytelling & Insights -->
+      <div class="suitability-story-column" style="flex: 1;">
+        <div class="story-header scene-element step-6">
+          <h2 class="section-title" style="text-align: left;">Your Roof Has Great Solar Potential</h2>
+          <p class="section-subtitle" style="text-align: left;">We analyzed your location for sunlight exposure and roof space.</p>
+        </div>
+
+        <!-- 6. Suitability Metrics -->
+        <div class="suitability-insights-grid scene-element step-6">
+          <div class="insight-card">
+            <div class="insight-icon">☀️</div>
+            <div class="insight-content">
+              <span class="insight-label">Sunlight Available</span>
+              <span class="insight-value">High Exposure</span>
+            </div>
+          </div>
+          <div class="insight-card">
+            <div class="insight-icon">📐</div>
+            <div class="insight-content">
+              <span class="insight-label">Suitable Roof Space</span>
+              <span class="insight-value">~380 sq ft</span>
+            </div>
+          </div>
+          <div class="insight-card">
+            <div class="insight-icon">🧭</div>
+            <div class="insight-content">
+              <span class="insight-label">Roof Direction</span>
+              <span class="insight-value">South-Facing Ideal</span>
+            </div>
+          </div>
+          <div class="insight-card">
+            <div class="insight-icon">⚡</div>
+            <div class="insight-content">
+              <span class="insight-label">Estimated Energy Production</span>
+              <span class="insight-value">6,000 kWh/yr</span>
+            </div>
+          </div>
+        </div>
+
+        <!-- 7. Recommendation -->
+        <div class="suitability-recommendation scene-element step-7">
+          <div class="recommendation-badge">
+            <span class="pulse-dot green" aria-hidden="true"></span>
+            Highly Suitable
+          </div>
+          <p class="recommendation-text">Based on your estimate, <strong>12-14 panels</strong> will fit comfortably on your roof, offseting 90% of your energy needs.</p>
+        </div>
+
+        <!-- 8. Continue to Subsidy -->
+        <div class="suitability-action scene-element step-8">
+          <a href="#sceneInstallation" class="btn-hero-primary btn-icon">
+            Explore Installation
+            <svg viewBox="0 0 20 20" fill="currentColor" style="width:18px;height:18px;margin-left:6px;"><path fill-rule="evenodd" d="M10.293 3.293a1 1 0 011.414 0l6 6a1 1 0 010 1.414l-6 6a1 1 0 01-1.414-1.414L14.586 11H3a1 1 0 110-2h11.586l-4.293-4.293a1 1 0 010-1.414z" clip-rule="evenodd"/></svg>
+          </a>
+        </div>
+      </div>
+      
+    </div>
+  </article>
+
+  <!-- --- SCENE 4: INSTALLATION PRECISION --- -->
+  <article class="cinematic-scene scene-installation" id="sceneInstallation" data-camera="installation">
+    <div class="cinematic-color-grade"></div>
+    <div class="scene-transition-mask top"></div>
+    <div class="scene-transition-mask bottom"></div>
+    <div class="layer-bg">
+      <!-- Asset 4: Installation focus, documentary pan -->
+      <img src="assets/Cinematic/Asset 4.webp" alt="Professional solar installation" loading="lazy" style="transform-origin: center right;">
+    </div>
+    <div class="lighting-overlay"></div>
+    
+    <div class="hero-container layer-fg scene-element" style="width: 100%; max-width: 1200px; padding: 0 5%; position: relative; z-index: 2; display: flex; justify-content: flex-end;">
+      <!-- Right aligned text for installation scene -->
+      <div class="hero-left-col" style="max-width: 500px;">
+        <h2 class="section-title" style="text-align: left;">Precision Engineering. <br>Flawless Execution.</h2>
+        <p class="section-subtitle" style="text-align: left; margin-bottom: 30px;">
+          From structural roof assessments to premium hardware mounting, our certified EPC partners ensure your system is built to last 25+ years in the toughest Indian climates.
+        </p>
+        
+        <div class="why-grid" style="grid-template-columns: 1fr; gap: 20px;">
+          <!-- Condensed why factors -->
+          <div class="why-card" style="background: rgba(13,33,54,0.7); backdrop-filter: blur(10px); padding: 24px; border: 1px solid rgba(255,255,255,0.05);">
+            <h3 class="why-card-title" style="margin-bottom: 8px;">Accurate Technology</h3>
+            <p class="why-card-desc" style="font-size: 14px;">Deep learning obstruction detection ensures every panel is placed for maximum yield.</p>
+          </div>
+          <div class="why-card" style="background: rgba(13,33,54,0.7); backdrop-filter: blur(10px); padding: 24px; border: 1px solid rgba(255,255,255,0.05);">
+            <h3 class="why-card-title" style="margin-bottom: 8px;">End-to-End Guidance</h3>
+            <p class="why-card-desc" style="font-size: 14px;">We handle DISCOM approvals, net metering setup, and PM Surya Ghar subsidies on your behalf.</p>
+          </div>
+        </div>
+      </div>
+    </div>
+  </article>
+
+
+  <!-- --- SCENE 5: TECHNOLOGY & INSPECTION --- -->
+  <article class="cinematic-scene scene-technology" id="sceneTechnology" data-camera="technology">
+    <div class="cinematic-color-grade"></div>
+    <div class="scene-transition-mask top"></div>
+    <div class="scene-transition-mask bottom"></div>
+    <div class="layer-bg">
+      <!-- Asset 5: QA/Technology focus -->
+      <img src="assets/Cinematic/Asset 5.webp" alt="Technology and QA Inspection" loading="lazy">
+    </div>
+    <div class="lighting-overlay lighting-cool"></div>
+    
+    <div class="qa-container layer-fg scene-element">
+      <!-- Left side: Architectural documentary text and description -->
+      <div class="qa-content-block">
+        <div class="hero-badge-container" style="margin-bottom: 16px;">
+          <div class="hero-accent-badge"><span class="badge-check-icon">✓</span> Precision Verified</div>
+        </div>
+        <h2 class="qa-heading">Every Installation.<br><span class="highlight-orange">Professionally Verified.</span></h2>
+        <p class="qa-paragraph">
+          GET Solar Energy conducts comprehensive field assessments on every installation. Our certified engineers inspect panel alignment, perform micro-inverter diagnostic mapping, and verify electrical integrity. We ensure premium craftsmanship built to withstand Indian climates for over 25 years.
+        </p>
+      </div>
+      
+      <!-- Right side: Integrated glass HUD diagnostics -->
+      <div class="qa-diagnostics-grid">
+        <div class="qa-hud-card">
+          <span class="hud-check">✓</span>
+          <div class="hud-info">
+            <span class="hud-value">99.9%</span>
+            <span class="hud-label">Verified System Reliability</span>
+          </div>
+        </div>
+        <div class="qa-hud-card">
+          <span class="hud-check">✓</span>
+          <div class="hud-info">
+            <span class="hud-value">Tier 1</span>
+            <span class="hud-label">Certified Components</span>
+          </div>
+        </div>
+        <div class="qa-hud-card">
+          <span class="hud-check">✓</span>
+          <div class="hud-info">
+            <span class="hud-value">25 Years</span>
+            <span class="hud-label">Performance Warranty</span>
+          </div>
+        </div>
+        <div class="qa-hud-card">
+          <span class="hud-check">✓</span>
+          <div class="hud-info">
+            <span class="hud-value">Multi-Point</span>
+            <span class="hud-label">Rooftop Inspection</span>
+          </div>
+        </div>
+      </div>
+    </div>
+  </article>
+
+  <!-- --- SCENE 6: SCALE & SAVINGS (DRONE VIEW) --- -->
+  <article class="cinematic-scene scene-savings" id="sceneSavings" data-camera="savings">
+    <div class="cinematic-color-grade"></div>
+    <div class="scene-transition-mask top"></div>
+    <div class="scene-transition-mask bottom"></div>
+    <div class="layer-bg">
+      <!-- Asset 6: Drone View Parallax -->
+      <img src="assets/Cinematic/Asset 6.webp" alt="Neighborhood Solar Scale" loading="lazy" id="savingsParallaxImg">
+    </div>
+    <div class="lighting-overlay lighting-cool"></div>
+    
+    <div class="hero-container layer-fg scene-element" style="width: 100%; max-width: 1200px; padding: 0 5%; position: relative; z-index: 2;">
+      <div style="background: rgba(13,33,54,0.6); backdrop-filter: blur(16px); padding: 50px; border-radius: var(--radius-lg); max-width: 550px; border: 1px solid rgba(255,255,255,0.05);">
+        <h2 class="section-title" style="text-align: left; font-size: 42px;">Scale Your Savings.</h2>
+        <p class="section-subtitle" style="text-align: left; margin-bottom: 30px;">
+          Join thousands of Indian families who have eliminated their electricity bills and secured their energy independence.
+        </p>
+        <div style="display: flex; gap: 40px; margin-bottom: 30px;">
+          <div>
+            <div style="font-size: 32px; font-weight: 900; color: var(--text-primary);">₹4.2 Cr+</div>
+            <div style="font-size: 14px; color: var(--text-secondary);">Total Customer Savings</div>
+          </div>
+          <div>
+            <div style="font-size: 32px; font-weight: 900; color: var(--accent-green);">120 MW</div>
+            <div style="font-size: 14px; color: var(--text-secondary);">Clean Energy Deployed</div>
+          </div>
+        </div>
+        <a href="#sceneFinal" class="btn-hero-primary" onclick="trackCTA('savings_scene_cta');">Calculate Your Share</a>
+      </div>
+    </div>
+  </article>
+
+
+  <!-- --- SCENE 7: LIFESTYLE & CONFIDENCE (GALLERY) --- -->
+  <article class="cinematic-scene scene-lifestyle" id="sceneLifestyle" data-camera="lifestyle" style="padding: 100px 0; background: var(--bg-deep-blue); display: flex; flex-direction: column; align-items: center;">
+    <div class="cinematic-color-grade"></div>
+    <div class="scene-transition-mask top"></div>
+    <div class="scene-transition-mask bottom"></div>
+    <div class="hero-container layer-fg scene-element" style="width: 100%; max-width: 1400px; padding: 0 5%; position: relative; z-index: 2; text-align: center; margin-bottom: 60px;">
+      <h2 class="section-title">Powering the Modern Indian Home</h2>
+      <p class="section-subtitle" style="max-width: 600px; margin: 0 auto;">
+        From EV charging to uninterrupted AC during summer outages. Experience the peace of mind that comes with complete energy independence.
+      </p>
+    </div>
+    
+    <div class="lifestyle-gallery layer-fg scene-element" style="display: grid; grid-template-columns: repeat(3, 1fr); gap: 20px; width: 100%; max-width: 1400px; padding: 0 5%;">
+      <!-- Asset 7: Smart Home Integration -->
+      <div style="border-radius: 16px; overflow: hidden; position: relative; aspect-ratio: 4/5;">
+        <img src="assets/Cinematic/Asset 7.webp" alt="Smart Home Integration" loading="lazy" style="width: 100%; height: 100%; object-fit: cover;">
+        <div style="position: absolute; bottom: 0; width: 100%; padding: 30px; background: linear-gradient(0deg, rgba(6,15,31,0.9) 0%, transparent 100%); text-align: left;">
+          <h3 style="font-size: 20px; font-weight: 700; margin-bottom: 8px;">Smart Home Ready</h3>
+          <p style="font-size: 14px; color: var(--text-secondary); margin: 0;">Seamlessly integrate with your existing smart devices.</p>
+        </div>
+      </div>
+      
+      <!-- Asset 8: Family Comfort -->
+      <div style="border-radius: 16px; overflow: hidden; position: relative; aspect-ratio: 4/5;">
+        <img src="assets/Cinematic/Asset 8.webp" alt="Family Comfort" loading="lazy" style="width: 100%; height: 100%; object-fit: cover;">
+        <div style="position: absolute; bottom: 0; width: 100%; padding: 30px; background: linear-gradient(0deg, rgba(6,15,31,0.9) 0%, transparent 100%); text-align: left;">
+          <h3 style="font-size: 20px; font-weight: 700; margin-bottom: 8px;">24/7 Comfort</h3>
+          <p style="font-size: 14px; color: var(--text-secondary); margin: 0;">Run your heavy appliances without worrying about the bill.</p>
+        </div>
+      </div>
+
+      <!-- Asset 9: Real-time Monitoring -->
+      <div style="border-radius: 16px; overflow: hidden; position: relative; aspect-ratio: 4/5;">
+        <img src="assets/Cinematic/Asset 9.webp" alt="Real-time Monitoring" loading="lazy" style="width: 100%; height: 100%; object-fit: cover;">
+        <div style="position: absolute; bottom: 0; width: 100%; padding: 30px; background: linear-gradient(0deg, rgba(6,15,31,0.9) 0%, transparent 100%); text-align: left;">
+          <h3 style="font-size: 20px; font-weight: 700; margin-bottom: 8px;">Live Monitoring</h3>
+          <p style="font-size: 14px; color: var(--text-secondary); margin: 0;">Track generation and consumption in real-time.</p>
+        </div>
+      </div>
+
+      <!-- Asset 10: Battery Storage -->
+      <div style="border-radius: 16px; overflow: hidden; position: relative; aspect-ratio: 4/5;">
+        <img src="assets/Cinematic/Asset 10.webp" alt="Battery Storage" loading="lazy" style="width: 100%; height: 100%; object-fit: cover;">
+        <div style="position: absolute; bottom: 0; width: 100%; padding: 30px; background: linear-gradient(0deg, rgba(6,15,31,0.9) 0%, transparent 100%); text-align: left;">
+          <h3 style="font-size: 20px; font-weight: 700; margin-bottom: 8px;">Battery Backup</h3>
+          <p style="font-size: 14px; color: var(--text-secondary); margin: 0;">Optional storage solutions for true independence.</p>
+        </div>
+      </div>
+
+      <!-- Asset 11: Weather Resilience -->
+      <div style="border-radius: 16px; overflow: hidden; position: relative; aspect-ratio: 4/5;">
+        <img src="assets/Cinematic/Asset 11.webp" alt="Weather Resilience" loading="lazy" style="width: 100%; height: 100%; object-fit: cover;">
+        <div style="position: absolute; bottom: 0; width: 100%; padding: 30px; background: linear-gradient(0deg, rgba(6,15,31,0.9) 0%, transparent 100%); text-align: left;">
+          <h3 style="font-size: 20px; font-weight: 700; margin-bottom: 8px;">Weather Proof</h3>
+          <p style="font-size: 14px; color: var(--text-secondary); margin: 0;">Engineered to withstand monsoons and high winds.</p>
+        </div>
+      </div>
+
+      <!-- Asset 13: Evening Transition -->
+      <div style="border-radius: 16px; overflow: hidden; position: relative; aspect-ratio: 4/5;">
+        <img src="assets/Cinematic/Asset 13.webp" alt="Evening Transition" loading="lazy" style="width: 100%; height: 100%; object-fit: cover;">
+        <div style="position: absolute; bottom: 0; width: 100%; padding: 30px; background: linear-gradient(0deg, rgba(6,15,31,0.9) 0%, transparent 100%); text-align: left;">
+          <h3 style="font-size: 20px; font-weight: 700; margin-bottom: 8px;">Grid Sync</h3>
+          <p style="font-size: 14px; color: var(--text-secondary); margin: 0;">Seamless net-metering ensures you never lose power.</p>
+        </div>
+      </div>
+    </div>
+  </article>
+
+
+
+  <!-- --- SCENE 8: FINAL CONVERSION --- -->
+  <article class="cinematic-scene scene-final" id="sceneFinal" data-camera="conversion">
+    <div class="cinematic-color-grade"></div>
+    <div class="scene-transition-mask top"></div>
+    <div class="scene-transition-mask bottom"></div>
+    <div class="layer-bg">
+      <!-- Asset 15: Beautiful sunset / evening completion -->
+      <img src="assets/Cinematic/Asset 15.webp" alt="Your Solar Journey" loading="lazy">
+    </div>
+    <div class="lighting-overlay lighting-warm" style="background: linear-gradient(0deg, rgba(6,15,31,0.95) 0%, rgba(6,15,31,0.4) 100%);"></div>
+    
+    <div class="hero-container layer-fg scene-element" style="width: 100%; max-width: 1200px; padding: 0 5%; position: relative; z-index: 2; text-align: center;">
+      <h2 class="section-title" style="font-size: 56px; margin-bottom: 20px;">Your Solar Journey Starts Here.</h2>
+      <p class="section-subtitle" style="max-width: 600px; margin: 0 auto 40px auto; font-size: 20px;">
+        Upload a bill, scan your roof, and get a complete engineering and financial assessment instantly.
+      </p>
+      
+      <div class="final-buttons" style="display: flex; justify-content: center; gap: 20px;">
+        <a href="signup.html" class="btn-hero-primary" onclick="trackCTA({ action: 'final_assessment', location: 'scene_final', timestamp: Date.now() });" style="font-size: 18px; padding: 18px 40px;">
+          Start Free Assessment
+        </a>
+        <a href="login.html" class="btn-hero-secondary" id="demoDashboardCTA" onclick="trackCTA({ action: 'demo_dashboard', location: 'scene_final', timestamp: Date.now() });" style="font-size: 18px; padding: 18px 40px; background: rgba(255,255,255,0.1); backdrop-filter: blur(10px);">
+          View Demo Dashboard
+        </a>
+      </div>
+    </div>
+  </article>
+
+  <!-- --- SECTION 13: FOOTER --- -->
+  <footer class="footer-block">
+    <div class="footer-container">
+      <div class="footer-about">
+        <div class="logo-container logo-footer" onclick="window.location.reload();">
+          <div class="logo-badge">
+            <svg class="logo-badge-svg" viewBox="0 0 100 100" xmlns="http://www.w3.org/2000/svg">
+              <rect width="100" height="100" rx="20" fill="#ffffff"/>
+              <text x="50" y="62" text-anchor="middle" font-family="'Outfit', sans-serif" font-weight="900" font-size="42" fill="#0f172a">G</text>
+            </svg>
+          </div>
+          <span class="logo-title-text text-light">GET SOLAR ENERGY</span>
+        </div>
+        <p class="footer-about-text">India's premier solar intelligence platform helping residential homeowners navigate solar sizing, subsidy checks, and vendor connections.</p>
+        <p class="footer-statement-text">Built for Indian homeowners, businesses, solar partners, and financial institutions.</p>
+        
+        <div class="footer-socials">
+          <a href="#" aria-label="LinkedIn"><svg class="soc-icon" viewBox="0 0 24 24" fill="currentColor"><path d="M19 0h-14c-2.761 0-5 2.239-5 5v14c0 2.761 2.239 5 5 5h14c2.762 0 5-2.239 5-5v-14c0-2.761-2.238-5-5-5zm-11 19h-3v-11h3v11zm-1.5-12.268c-.966 0-1.75-.779-1.75-1.75s.784-1.75 1.75-1.75 1.75.779 1.75 1.75-.784 1.75-1.75 1.75zm13.5 12.268h-3v-5.604c0-3.368-4-3.113-4 0v5.604h-3v-11h3v1.765c1.396-2.586 7-2.777 7 2.476v6.759z"/></svg></a>
+          <a href="#" aria-label="Instagram"><svg class="soc-icon" viewBox="0 0 24 24" fill="currentColor"><path d="M12 2.163c3.204 0 3.584.012 4.85.07 3.252.148 4.771 1.691 4.919 4.919.058 1.265.069 1.645.069 4.849 0 3.205-.012 3.584-.069 4.849-.149 3.225-1.664 4.771-4.919 4.919-1.266.058-1.644.07-4.85.07-3.204 0-3.584-.012-4.849-.07-3.26-.149-4.771-1.699-4.919-4.92-.058-1.265-.07-1.644-.07-4.849 0-3.204.013-3.583.07-4.849.149-3.227 1.664-4.771 4.919-4.919 1.266-.057 1.645-.069 4.849-.069zm0-2c-3.259 0-3.667.014-4.947.072-4.358.2-6.78 2.618-6.98 6.98-.059 1.281-.073 1.689-.073 4.948 0 3.259.014 3.668.072 4.948.2 4.358 2.618 6.78 6.98 6.98 1.281.058 1.689.072 4.948.072 3.259 0 3.668-.014 4.948-.072 4.354-.2 6.782-2.618 6.979-6.98.059-1.28.073-1.689.073-4.948 0-3.259-.014-3.667-.072-4.947-.196-4.354-2.617-6.78-6.979-6.98-1.281-.059-1.69-.073-4.949-.073zm0 5.838c-3.403 0-6.162 2.759-6.162 6.162s2.759 6.163 6.162 6.163 6.162-2.759 6.162-6.163c0-3.403-2.759-6.162-6.162-6.162zm0 10.162c-2.209 0-4-1.79-4-4 0-2.209 1.791-4 4-4s4 1.791 4 4c0 2.21-1.791 4-4 4zm6.406-11.845c-.796 0-1.441.645-1.441 1.44s.645 1.44 1.441 1.44c.795 0 1.439-.645 1.439-1.44s-.644-1.44-1.439-1.44z"/></svg></a>
+          <a href="#" aria-label="YouTube"><svg class="soc-icon" viewBox="0 0 24 24" fill="currentColor"><path d="M23.498 6.163c-.272-1.022-1.074-1.826-2.099-2.098C19.542 3.5 12 3.5 12 3.5s-7.543 0-9.4.565c-1.025.272-1.826 1.076-2.098 2.098C0 8.02 0 12 0 12s0 3.98.502 5.837c.272 1.023 1.073 1.826 2.098 2.098C4.457 20.5 12 20.5 12 20.5s7.542 0 9.4-.565c1.025-.272 1.827-1.075 2.1-2.098C24 15.98 24 12 24 12s0-3.98-.502-5.837zM9.545 15.568V8.432L15.818 12l-6.273 3.568z"/></svg></a>
+          <a href="#" aria-label="X (Twitter)"><svg class="soc-icon" viewBox="0 0 24 24" fill="currentColor"><path d="M18.244 2.25h3.308l-7.227 8.26 8.502 11.24H16.17l-5.214-6.817L4.99 21.75H1.68l7.73-8.835L1.254 2.25H8.08l4.713 6.231zm-1.161 17.52h1.833L7.084 4.126H5.117z"/></svg></a>
+        </div>
+      </div>
+
+      <div class="footer-nav-col">
+        <h5 class="footer-nav-title">Quick Links</h5>
+        <a href="signup.html" onclick="trackCTA({ action: 'link_bill_analyzer', location: 'footer', timestamp: Date.now() });">Energy Bill Analyzer</a>
+        <a href="signup.html" onclick="trackCTA({ action: 'link_roof_analyzer', location: 'footer', timestamp: Date.now() });">Solar Roof Analyzer</a>
+        <a href="signup.html" onclick="trackCTA({ action: 'link_roi_calculator', location: 'footer', timestamp: Date.now() });">ROI Calculator</a>
+        <a href="signup.html" onclick="trackCTA({ action: 'link_solar_assistant', location: 'footer', timestamp: Date.now() });">Solar Intelligence Assistant</a>
+        <a href="signup.html" onclick="trackCTA({ action: 'link_rewards', location: 'footer', timestamp: Date.now() });">Rewards Program</a>
+      </div>
+
+      <div class="footer-nav-col">
+        <h5 class="footer-nav-title">Platform Metrics</h5>
+        <span class="footer-metric-item">25,000+ Bills Processed</span>
+        <span class="footer-metric-item">8,000+ Homes Assessed</span>
+        <span class="footer-metric-item">120 MW Potential Identified</span>
+      </div>
+
+      <div class="footer-nav-col">
+        <h5 class="footer-nav-title">Trust & Security</h5>
+        <span class="footer-trust-badge">✓ Secure</span>
+        <span class="footer-trust-badge">✓ Private</span>
+        <span class="footer-trust-badge">✓ Trusted Across India</span>
+      </div>
+
+      <div class="footer-nav-col">
+        <h5 class="footer-nav-title">Legal</h5>
+        <a href="#">Privacy Policy</a>
+        <a href="#">Terms of Service</a>
+      </div>
+    </div>
+    
+    <div class="footer-boilerplate-section">
+      <div class="footer-boilerplate-container">
+        <span class="boilerplate-tagline">GET Solar Energy &mdash; India's Solar Intelligence & Service Ecosystem</span>
+        <p class="boilerplate-subtext">Helping homeowners make smarter solar decisions through advanced analysis, rooftop intelligence, and financial forecasting.</p>
+      </div>
+    </div>
+    
+    <div class="footer-bottom">
+      <p>&copy; 2026 GET Solar Energy. All rights reserved.</p>
+    </div>
+  </footer>
+
+</body>
+</html>

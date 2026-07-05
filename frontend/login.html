@@ -1,0 +1,304 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="description" content="GET Solar Energy – Login to access your personal Solar Intelligence Dashboard with personalized insights, savings analysis, and government subsidy tracking.">
+  <title>Login – GET Solar Energy</title>
+  <!-- GET Solar Energy Design System v1.0.0 -->
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link rel="stylesheet" href="styles/design-system.css">
+  <link rel="stylesheet" href="styles/auth.css">
+  <link rel="shortcut icon" href="assets/sidebar_solar_house.png" type="image/x-icon">
+</head>
+<body class="auth-body">
+
+  <!-- ── FULL-SCREEN BACKGROUND ── -->
+  <div class="auth-bg" aria-hidden="true">
+    <div class="auth-bg-img" style="background-image: url('assets/auth_showcase_right.png');"></div>
+    <div class="auth-bg-overlay"></div>
+    <div class="auth-bg-grid"></div>
+    <!-- Animated ambient orbs -->
+    <div class="orb orb-orange"></div>
+    <div class="orb orb-blue"></div>
+    <div class="orb orb-green"></div>
+    <!-- Floating particles -->
+    <div class="particles" id="particles"></div>
+  </div>
+
+  <!-- ── FLOATING KPI WIDGETS ── -->
+  <div class="floating-kpi kpi-top-left float-a" aria-hidden="true">
+    <div class="fkpi-icon">🏆</div>
+    <div class="fkpi-body">
+      <span class="fkpi-value">92%</span>
+      <span class="fkpi-label">Solar Readiness</span>
+    </div>
+  </div>
+
+  <div class="floating-kpi kpi-top-right float-b" aria-hidden="true">
+    <div class="fkpi-icon">⚡</div>
+    <div class="fkpi-body">
+      <span class="fkpi-value">5.2 kW</span>
+      <span class="fkpi-label">Recommended System</span>
+    </div>
+  </div>
+
+  <div class="floating-kpi kpi-bottom-left float-c" aria-hidden="true">
+    <div class="fkpi-icon">💰</div>
+    <div class="fkpi-body">
+      <span class="fkpi-value">₹58,400</span>
+      <span class="fkpi-label">Annual Savings</span>
+    </div>
+  </div>
+
+  <div class="floating-kpi kpi-bottom-right float-d" aria-hidden="true">
+    <div class="fkpi-icon">📈</div>
+    <div class="fkpi-body">
+      <span class="fkpi-value">3.8 Years</span>
+      <span class="fkpi-label">Payback</span>
+    </div>
+  </div>
+
+  <!-- ── AUTH WRAPPER ── -->
+  <main class="auth-wrapper" id="authWrapper">
+
+    <!-- ── LOGIN CARD ── -->
+    <div class="auth-card" id="loginCard">
+      
+      <!-- Logo -->
+      <div class="auth-logo">
+        <div class="auth-logo-badge">
+          <svg class="auth-logo-svg" viewBox="0 0 100 100" xmlns="http://www.w3.org/2000/svg" aria-label="GET Solar Energy Logo">
+            <defs>
+              <clipPath id="lh-login"><rect x="0" y="0" width="50" height="100"/></clipPath>
+              <clipPath id="rh-login"><rect x="50" y="0" width="50" height="100"/></clipPath>
+            </defs>
+            <rect width="100" height="100" rx="20" fill="#000000"/>
+            <g clip-path="url(#lh-login)">
+              <circle cx="50" cy="50" r="38" stroke="#00aeef" stroke-width="4.5" stroke-dasharray="6 4.5"/>
+              <circle cx="50" cy="50" r="30" stroke="#00aeef" stroke-width="4.5" stroke-dasharray="5.5 4"/>
+              <circle cx="50" cy="50" r="22" stroke="#00aeef" stroke-width="4.5" stroke-dasharray="4.5 4"/>
+            </g>
+            <g clip-path="url(#rh-login)">
+              <circle cx="50" cy="50" r="38" stroke="#f7931e" stroke-width="4.5" stroke-dasharray="6 4.5"/>
+              <circle cx="50" cy="50" r="30" stroke="#f7931e" stroke-width="4.5" stroke-dasharray="5.5 4"/>
+              <circle cx="50" cy="50" r="22" stroke="#f7931e" stroke-width="4.5" stroke-dasharray="4.5 4"/>
+            </g>
+            <circle cx="50" cy="50" r="14" fill="#ffffff"/>
+            <text x="50" y="55" text-anchor="middle" font-family="'Outfit', sans-serif" font-weight="900" font-size="16" fill="#000000">G</text>
+          </svg>
+        </div>
+        <div class="auth-logo-text">
+          <span class="auth-brand-name">GET SOLAR ENERGY</span>
+          <span class="auth-brand-tagline">SOLAR INTELLIGENCE PLATFORM</span>
+        </div>
+      </div>
+
+      <!-- Welcome Heading -->
+      <div class="auth-heading-block">
+        <h1 class="auth-heading">Welcome Back</h1>
+        <p class="auth-subheading">Login to access your Solar Intelligence Dashboard</p>
+      </div>
+
+      <!-- Error Banner (maintained for compatibility, styled as display:none by default) -->
+      <div class="auth-error-banner" id="loginError" role="alert" aria-live="polite"></div>
+
+      <!-- Login Form -->
+      <form class="auth-form" id="loginForm" novalidate>
+        
+        <div class="form-group">
+          <label class="form-label" for="loginEmail">Email Address / Mobile Number</label>
+          <div class="input-wrapper">
+            <svg class="input-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>
+            <input
+              class="form-input"
+              type="text"
+              id="loginEmail"
+              name="email"
+              placeholder="you@example.com or 9XXXXXXXXX"
+              autocomplete="username"
+              required
+            >
+          </div>
+          <div class="input-feedback" id="loginEmailFeedback"></div>
+        </div>
+
+        <div class="form-group">
+          <div class="form-label-row">
+            <label class="form-label" for="loginPassword">Password</label>
+            <button type="button" class="forgot-link" id="forgotPasswordBtn">Forgot Password?</button>
+          </div>
+          <div class="input-wrapper">
+            <svg class="input-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="11" width="18" height="11" rx="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></svg>
+            <input
+              class="form-input"
+              type="password"
+              id="loginPassword"
+              name="password"
+              placeholder="••••••••"
+              autocomplete="current-password"
+              required
+            >
+            <button type="button" class="toggle-password" id="toggleLoginPwd" aria-label="Toggle password visibility">
+              <svg id="eyeIconLogin" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/></svg>
+            </button>
+          </div>
+          <div class="input-feedback" id="loginPasswordFeedback"></div>
+        </div>
+
+        <div class="form-options-row">
+          <label class="checkbox-label" for="rememberMe">
+            <input type="checkbox" id="rememberMe" name="remember">
+            <span class="custom-checkbox"></span>
+            <span>Remember Me</span>
+          </label>
+        </div>
+
+        <button class="btn-primary-auth" type="submit" id="loginBtn">
+          <span class="btn-text">Login &amp; Continue →</span>
+          <span class="btn-spinner" id="loginSpinner" aria-hidden="true"></span>
+          <svg class="btn-arrow" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><line x1="5" y1="12" x2="19" y2="12"/><polyline points="12 5 19 12 12 19"/></svg>
+        </button>
+
+      </form>
+
+      <!-- Divider -->
+      <div class="auth-divider"><span>or continue with</span></div>
+
+      <!-- Social Buttons -->
+      <div class="social-buttons">
+        <button class="btn-social" id="googleBtn" type="button">
+          <svg viewBox="0 0 24 24" aria-hidden="true">
+            <path d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z" fill="#4285F4"/>
+            <path d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z" fill="#34A853"/>
+            <path d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.07H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.93l2.85-2.22.81-.62z" fill="#FBBC05"/>
+            <path d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.07l3.66 2.84c.87-2.6 3.3-4.53 6.16-4.53z" fill="#EA4335"/>
+          </svg>
+          Google
+        </button>
+        <button class="btn-social" id="microsoftBtn" type="button">
+          <svg viewBox="0 0 24 24" aria-hidden="true">
+            <path d="M11.4 2H2v9.4h9.4V2z" fill="#F25022"/>
+            <path d="M22 2h-9.4v9.4H22V2z" fill="#7FBA00"/>
+            <path d="M11.4 12.6H2V22h9.4v-9.4z" fill="#00A4EF"/>
+            <path d="M22 12.6h-9.4V22H22v-9.4z" fill="#FFB900"/>
+          </svg>
+          Microsoft
+        </button>
+      </div>
+
+      <!-- Trust Badges -->
+      <div class="trust-badges">
+        <div class="trust-badge">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/><path d="m9 11 2 2 4-4"/></svg>
+          Secure Login
+        </div>
+        <div class="trust-badge">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="7" r="4"/><path d="M12 2v1M12 11v1M7 7H6M18 7h-1"/><path d="M4 17h16v4H4z"/></svg>
+          Solar Intelligence
+        </div>
+        <div class="trust-badge">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="2" y="4" width="20" height="16" rx="2"/><line x1="12" y1="4" x2="12" y2="20"/><line x1="2" y1="12" x2="22" y2="12"/></svg>
+          Govt Subsidy Ready
+        </div>
+        <div class="trust-badge">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M22 16.92v3a2 2 0 0 1-2.18 2 19.79 19.79 0 0 1-8.63-3.07A19.5 19.5 0 0 1 4.69 12 19.79 19.79 0 0 1 1.61 3.42a2 2 0 0 1 2-2.18h3a2 2 0 0 1 2 1.72c.127.96.361 1.903.7 2.81a2 2 0 0 1-.45 2.11L8.09 8.91a16 16 0 0 0 6 6l1.27-1.27a2 2 0 0 1 2.11-.45c.907.339 1.85.573 2.81.7A2 2 0 0 1 22 16.92z"/></svg>
+          24/7 Support
+        </div>
+        <div class="trust-badge">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="11" width="18" height="11" rx="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></svg>
+          Enterprise Security
+        </div>
+      </div>
+
+      <!-- Footer -->
+      <p class="auth-footer-text">
+        New to GET Solar Energy?
+        <a href="signup.html" class="auth-link" id="goToSignup">Create Account</a>
+      </p>
+
+    </div>
+  </main>
+
+  <!-- ── FORGOT PASSWORD MODAL ── -->
+  <div class="auth-modal-overlay" id="forgotPasswordModal" aria-hidden="true" role="dialog" aria-modal="true" aria-labelledby="forgotModalTitle">
+    <div class="auth-modal-card">
+      <button type="button" class="auth-modal-close" id="closeForgotModalBtn" aria-label="Close modal">×</button>
+      
+      <!-- Logo -->
+      <div class="auth-logo">
+        <div class="auth-logo-badge">
+          <svg class="auth-logo-svg" viewBox="0 0 100 100" xmlns="http://www.w3.org/2000/svg" aria-label="GET Solar Energy Logo">
+            <defs>
+              <clipPath id="lh-forgot"><rect x="0" y="0" width="50" height="100"/></clipPath>
+              <clipPath id="rh-forgot"><rect x="50" y="0" width="50" height="100"/></clipPath>
+            </defs>
+            <rect width="100" height="100" rx="20" fill="#000000"/>
+            <g clip-path="url(#lh-forgot)">
+              <circle cx="50" cy="50" r="38" stroke="#00aeef" stroke-width="4.5" stroke-dasharray="6 4.5"/>
+              <circle cx="50" cy="50" r="30" stroke="#00aeef" stroke-width="4.5" stroke-dasharray="5.5 4"/>
+              <circle cx="50" cy="50" r="22" stroke="#00aeef" stroke-width="4.5" stroke-dasharray="4.5 4"/>
+            </g>
+            <g clip-path="url(#rh-forgot)">
+              <circle cx="50" cy="50" r="38" stroke="#f7931e" stroke-width="4.5" stroke-dasharray="6 4.5"/>
+              <circle cx="50" cy="50" r="30" stroke="#f7931e" stroke-width="4.5" stroke-dasharray="5.5 4"/>
+              <circle cx="50" cy="50" r="22" stroke="#f7931e" stroke-width="4.5" stroke-dasharray="4.5 4"/>
+            </g>
+            <circle cx="50" cy="50" r="14" fill="#ffffff"/>
+            <text x="50" y="55" text-anchor="middle" font-family="'Outfit', sans-serif" font-weight="900" font-size="16" fill="#000000">G</text>
+          </svg>
+        </div>
+        <div class="auth-logo-text">
+          <span class="auth-brand-name">GET SOLAR ENERGY</span>
+        </div>
+      </div>
+
+      <div class="auth-heading-block">
+        <h2 class="auth-heading" id="forgotModalTitle">Forgot your password?</h2>
+        <p class="auth-subheading">Enter your registered email address and we'll send you a secure password reset link.</p>
+      </div>
+
+      <form class="auth-form" id="forgotPasswordForm" novalidate>
+        <div class="form-group">
+          <label class="form-label" for="forgotEmail">Email Address</label>
+          <div class="input-wrapper">
+            <svg class="input-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z"/><polyline points="22,6 12,13 2,6"/></svg>
+            <input
+              class="form-input"
+              type="email"
+              id="forgotEmail"
+              name="email"
+              placeholder="you@example.com"
+              required
+            >
+          </div>
+          <div class="input-feedback" id="forgotEmailFeedback"></div>
+        </div>
+
+        <button class="btn-primary-auth" type="submit" id="sendResetBtn">
+          <span class="btn-text">Send Reset Link →</span>
+          <span class="btn-spinner" id="forgotSpinner" aria-hidden="true"></span>
+          <svg class="btn-arrow" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><line x1="5" y1="12" x2="19" y2="12"/><polyline points="12 5 19 12 12 19"/></svg>
+        </button>
+      </form>
+
+      <!-- Success Experience UI inside card (hidden by default) -->
+      <div class="forgot-success-card" id="forgotSuccessCard" style="display: none;">
+        <div class="success-icon-badge">✓</div>
+        <h3 class="success-title">Email Sent</h3>
+        <p class="success-desc">If an account exists for this email address, a password reset link has been sent. Please check your inbox and spam folder.</p>
+      </div>
+
+      <p class="auth-footer-text" style="margin-top: 24px;">
+        <a href="#" class="auth-link" id="backToLoginLink">Back to Login</a>
+      </p>
+    </div>
+  </div>
+
+  <!-- TOAST NOTIFICATION -->
+  <div class="auth-toast" id="authToast" role="status" aria-live="polite"></div>
+
+  <script src="auth.js"></script>
+</body>
+</html>

@@ -34,6 +34,10 @@ from chat import router as chat_router
 from referral import router as referral_router
 from auth import router as auth_router
 from generation import router as generation_router
+from proposal import router as proposal_router
+from amc import router as amc_router
+from site_survey import router as site_survey_router
+from customer_routes import router as customer_router
 
 app.include_router(roof_router)
 app.include_router(roi_router)
@@ -41,6 +45,26 @@ app.include_router(chat_router)
 app.include_router(referral_router)
 app.include_router(auth_router)
 app.include_router(generation_router)
+app.include_router(proposal_router)
+app.include_router(amc_router)
+app.include_router(site_survey_router)
+app.include_router(customer_router)
+
+@app.on_event("startup")
+async def startup_event():
+    from security import run_startup_health_check
+    run_startup_health_check()
+    
+    # Initialize SQLite database & import dataset automatically
+    from database_sqlite import engine_sqlite, BaseSqlite, SessionLocalSqlite
+    from customer_service import import_csv_if_empty
+    BaseSqlite.metadata.create_all(bind=engine_sqlite)
+    db = SessionLocalSqlite()
+    try:
+        import_csv_if_empty(db)
+    finally:
+        db.close()
+
 
 # ═════════════════════════════════════════════════════════════
 # ADMINISTRATOR CONFIGURATION HARDENING & SEEDING

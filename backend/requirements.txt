@@ -5,5 +5,9 @@ google-genai
 sqlalchemy
 psycopg2-binary
 python-multipart
-python-jose
-passlib
+python-jose[cryptography]
+passlib[bcrypt]
+bcrypt>=3.2,<5
+aiosmtplib
+email-validator
+jinja2

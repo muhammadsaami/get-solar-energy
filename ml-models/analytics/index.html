@@ -1,0 +1,219 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>GET Solar Energy | Solar Intelligence Analytics Platform</title>
+  <link rel="preconnect" href="https://cdn.jsdelivr.net">
+  <link rel="stylesheet" href="styles.css">
+  <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/papaparse@5.4.1/papaparse.min.js"></script>
+</head>
+<body>
+  <div class="app-shell">
+    <header class="topbar">
+      <div class="brand">
+        <img src="logo.png" alt="GET Solar Energy logo" class="brand-logo">
+        <div>
+          <p class="eyebrow">GET Solar Energy</p>
+          <h1>Solar Intelligence Analytics Platform</h1>
+          <p class="subtitle">Electricity Consumption, Solar Savings &amp; ROI Intelligence</p>
+        </div>
+      </div>
+      <div class="topbar-meta">
+        <span>Last updated</span>
+        <strong id="lastUpdated">Loading...</strong>
+      </div>
+    </header>
+
+    <nav class="page-nav" aria-label="Dashboard pages">
+      <button class="nav-tab active" data-page="overview">Executive Overview</button>
+      <button class="nav-tab" data-page="consumption">Consumption Analytics</button>
+      <button class="nav-tab" data-page="solar">Solar Opportunity</button>
+      <button class="nav-tab" data-page="insights">ML &amp; Business Insights</button>
+    </nav>
+
+    <section class="filter-bar" aria-label="Dashboard filters">
+      <label>
+        <span>Month</span>
+        <select id="monthFilter"></select>
+      </label>
+      <label>
+        <span>Segment</span>
+        <select id="segmentFilter"></select>
+      </label>
+      <label>
+        <span>Customer</span>
+        <select id="customerFilter"></select>
+      </label>
+      <label>
+        <span>City</span>
+        <select id="cityFilter"></select>
+      </label>
+      <label>
+        <span>DISCOM</span>
+        <select id="discomFilter"></select>
+      </label>
+    </section>
+
+    <main>
+      <section class="page active" id="overview">
+        <div class="hero-grid">
+          <article class="hero-card">
+            <div>
+              <p class="section-kicker">Potential Annual Solar Savings</p>
+              <h2 id="totalAnnualSavings">--</h2>
+              <p id="trendIndicator" class="trend-pill">Calculating trend</p>
+            </div>
+            <div class="hero-metrics">
+              <div>
+                <span>Total Monthly Savings</span>
+                <strong id="totalMonthlySavings">--</strong>
+              </div>
+              <div>
+                <span>Average Payback Period</span>
+                <strong id="heroPayback">--</strong>
+              </div>
+            </div>
+          </article>
+          <article class="data-health">
+            <span class="status-dot"></span>
+            <div>
+              <strong id="filteredCount">--</strong>
+              <p>Filtered bills powering this view</p>
+            </div>
+          </article>
+        </div>
+
+        <section class="kpi-grid" id="overviewKpis"></section>
+        <section class="insight-grid" id="overviewInsights"></section>
+
+        <section class="chart-grid three">
+          <article class="chart-card">
+            <div class="card-heading">
+              <h3>Monthly Consumption Trend</h3>
+              <span>KWH</span>
+            </div>
+            <canvas id="monthlyConsumptionChart"></canvas>
+          </article>
+          <article class="chart-card">
+            <div class="card-heading">
+              <h3>Bill Amount Distribution</h3>
+              <span>INR</span>
+            </div>
+            <canvas id="billDistributionChart"></canvas>
+          </article>
+          <article class="chart-card">
+            <div class="card-heading">
+              <h3>Consumer Segmentation</h3>
+              <span>Bills</span>
+            </div>
+            <canvas id="segmentChart"></canvas>
+          </article>
+        </section>
+      </section>
+
+      <section class="page" id="consumption">
+        <section class="chart-grid two">
+          <article class="chart-card wide">
+            <div class="card-heading">
+              <h3>Monthly Units Trend</h3>
+              <span>Average KWH</span>
+            </div>
+            <canvas id="monthlyUnitsTrendChart"></canvas>
+          </article>
+          <article class="chart-card">
+            <div class="card-heading">
+              <h3>Units by Segment</h3>
+              <span>Total KWH</span>
+            </div>
+            <canvas id="unitsBySegmentChart"></canvas>
+          </article>
+          <article class="chart-card">
+            <div class="card-heading">
+              <h3>Bill Amount by Segment</h3>
+              <span>Average INR</span>
+            </div>
+            <canvas id="billBySegmentChart"></canvas>
+          </article>
+          <article class="chart-card wide">
+            <div class="card-heading">
+              <h3>Units vs Bill Amount Scatter Plot</h3>
+              <span>Customer bills</span>
+            </div>
+            <canvas id="unitsBillScatterChart"></canvas>
+          </article>
+        </section>
+      </section>
+
+      <section class="page" id="solar">
+        <section class="kpi-grid compact" id="solarKpis"></section>
+        <section class="chart-grid two">
+          <article class="chart-card wide">
+            <div class="card-heading">
+              <h3>Solar Savings vs Units Consumed</h3>
+              <span>Opportunity curve</span>
+            </div>
+            <canvas id="savingsUnitsScatterChart"></canvas>
+          </article>
+          <article class="chart-card">
+            <div class="card-heading">
+              <h3>Payback Distribution</h3>
+              <span>Years</span>
+            </div>
+            <canvas id="paybackDistributionChart"></canvas>
+          </article>
+          <article class="chart-card wide">
+            <div class="card-heading">
+              <h3>Top Consumers by Savings</h3>
+              <span>Monthly INR</span>
+            </div>
+            <canvas id="topSavingsChart"></canvas>
+          </article>
+          <article class="chart-card">
+            <div class="card-heading">
+              <h3>Recommended System Size Distribution</h3>
+              <span>kW</span>
+            </div>
+            <canvas id="kwDistributionChart"></canvas>
+          </article>
+        </section>
+      </section>
+
+      <section class="page" id="insights">
+        <section class="ai-panel">
+          <div class="ai-panel-copy">
+            <p class="section-kicker">AI Insights Panel</p>
+            <h2>Machine-generated commercial recommendations</h2>
+            <p>Insights refresh instantly as filters change, using consumption, savings, payback, segment, and month patterns from the CSV.</p>
+          </div>
+          <div class="ai-score">
+            <span>Priority Accounts</span>
+            <strong id="priorityScore">--</strong>
+          </div>
+        </section>
+        <section class="insight-grid business" id="businessInsights"></section>
+      </section>
+    </main>
+  </div>
+
+  <template id="kpiTemplate">
+    <article class="kpi-card">
+      <span class="kpi-icon"></span>
+      <p></p>
+      <strong></strong>
+      <small></small>
+    </article>
+  </template>
+
+  <template id="insightTemplate">
+    <article class="insight-card">
+      <span></span>
+      <h3></h3>
+      <p></p>
+    </article>
+  </template>
+
+  <script src="app.js"></script>
+</body>
+</html>

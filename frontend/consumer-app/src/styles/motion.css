@@ -1,0 +1,258 @@
+/*
+ * ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+ *  GET SOLAR ENERGY — MOTION SYSTEM
+ *  Version: 1.0.0
+ *  Defines all animation keyframes and motion utilities.
+ *  Every animation must reference tokens from tokens.css.
+ *  Never define raw timing values in page CSS.
+ * ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+ */
+
+/* ═══════════════════════════════════════════════════════
+   KEYFRAMES
+   ═══════════════════════════════════════════════════════ */
+
+/* Fade in — universal enter animation */
+@keyframes gs-fade-in {
+  from { opacity: 0; }
+  to   { opacity: 1; }
+}
+
+/* Slide up + fade — card & section entrance */
+@keyframes gs-slide-up {
+  from { opacity: 0; transform: translateY(24px); }
+  to   { opacity: 1; transform: translateY(0); }
+}
+
+/* Slide down + fade — dropdown/drawer entrance */
+@keyframes gs-slide-down {
+  from { opacity: 0; transform: translateY(-16px); }
+  to   { opacity: 1; transform: translateY(0); }
+}
+
+/* Slide left + fade — right-panel entrance */
+@keyframes gs-slide-left {
+  from { opacity: 0; transform: translateX(24px); }
+  to   { opacity: 1; transform: translateX(0); }
+}
+
+/* Slide right + fade — left-panel entrance */
+@keyframes gs-slide-right {
+  from { opacity: 0; transform: translateX(-24px); }
+  to   { opacity: 1; transform: translateX(0); }
+}
+
+/* Scale in + fade — modal/popover entrance */
+@keyframes gs-scale-in {
+  from { opacity: 0; transform: scale(0.94); }
+  to   { opacity: 1; transform: scale(1); }
+}
+
+/* Scale out — modal dismiss */
+@keyframes gs-scale-out {
+  from { opacity: 1; transform: scale(1); }
+  to   { opacity: 0; transform: scale(0.94); }
+}
+
+/* Float — idle hover animation for cards/icons */
+@keyframes gs-float {
+  0%   { transform: translateY(0); }
+  50%  { transform: translateY(-6px); }
+  100% { transform: translateY(0); }
+}
+
+/* Pulse — status dot, live indicator */
+@keyframes gs-pulse {
+  0%, 100% { opacity: 1; transform: scale(1); }
+  50%       { opacity: 0.5; transform: scale(0.85); }
+}
+
+/* Pulse ring — alert / active status */
+@keyframes gs-pulse-ring {
+  0%   { transform: scale(1); opacity: 0.8; }
+  100% { transform: scale(2.2); opacity: 0; }
+}
+
+/* Shimmer — skeleton loading animation */
+@keyframes gs-shimmer {
+  0%   { background-position: -400px 0; }
+  100% { background-position: 400px 0; }
+}
+
+/* Spin — loading spinner */
+@keyframes gs-spin {
+  from { transform: rotate(0deg); }
+  to   { transform: rotate(360deg); }
+}
+
+/* Bounce — success confirmation */
+@keyframes gs-bounce {
+  0%, 100% { transform: translateY(0); }
+  30%       { transform: translateY(-8px); }
+  60%       { transform: translateY(-3px); }
+}
+
+/* Shake — error/validation failure */
+@keyframes gs-shake {
+  0%, 100% { transform: translateX(0); }
+  20%       { transform: translateX(-6px); }
+  40%       { transform: translateX(6px); }
+  60%       { transform: translateX(-4px); }
+  80%       { transform: translateX(4px); }
+}
+
+/* Glow pulse — for CTA buttons and metric highlights */
+@keyframes gs-glow-pulse {
+  0%, 100% { box-shadow: 0 0 0 0 var(--color-orange-glow); }
+  50%       { box-shadow: 0 0 0 8px transparent; }
+}
+
+/* Glow pulse blue — for accent elements */
+@keyframes gs-glow-pulse-blue {
+  0%, 100% { box-shadow: 0 0 0 0 var(--color-blue-glow); }
+  50%       { box-shadow: 0 0 0 8px transparent; }
+}
+
+/* Counter — count-up trigger (purely CSS, must pair with JS) */
+@keyframes gs-count-reveal {
+  from { opacity: 0; transform: translateY(8px); }
+  to   { opacity: 1; transform: translateY(0); }
+}
+
+/* Particle drift — ambient background particles */
+@keyframes gs-drift {
+  0%   { transform: translateY(0) translateX(0) scale(1); opacity: 0; }
+  10%  { opacity: 0.6; }
+  90%  { opacity: 0.3; }
+  100% { transform: translateY(-120px) translateX(30px) scale(0.5); opacity: 0; }
+}
+
+/* Scan line — loading indicator for tech UI */
+@keyframes gs-scan {
+  from { transform: translateX(-100%); }
+  to   { transform: translateX(100%); }
+}
+
+/* Progress bar fill */
+@keyframes gs-progress {
+  from { width: 0%; }
+}
+
+/* ═══════════════════════════════════════════════════════
+   ANIMATION UTILITY CLASSES
+   ═══════════════════════════════════════════════════════ */
+
+.animate-fade-in {
+  animation: gs-fade-in var(--duration-normal) var(--ease-decelerate) both;
+}
+
+.animate-slide-up {
+  animation: gs-slide-up var(--duration-slow) var(--ease-decelerate) both;
+}
+
+.animate-slide-down {
+  animation: gs-slide-down var(--duration-normal) var(--ease-decelerate) both;
+}
+
+.animate-slide-left {
+  animation: gs-slide-left var(--duration-slow) var(--ease-decelerate) both;
+}
+
+.animate-slide-right {
+  animation: gs-slide-right var(--duration-slow) var(--ease-decelerate) both;
+}
+
+.animate-scale-in {
+  animation: gs-scale-in var(--duration-normal) var(--ease-bounce) both;
+}
+
+.animate-float {
+  animation: gs-float 4s var(--ease-spring) infinite;
+}
+
+.animate-pulse {
+  animation: gs-pulse 2s var(--ease-standard) infinite;
+}
+
+.animate-spin {
+  animation: gs-spin 0.8s var(--ease-linear) infinite;
+}
+
+.animate-bounce {
+  animation: gs-bounce 0.5s var(--ease-bounce);
+}
+
+.animate-shake {
+  animation: gs-shake 0.4s var(--ease-standard);
+}
+
+/* ── ANIMATION DELAY UTILITIES ──────────────────────────── */
+.delay-50   { animation-delay: 50ms; }
+.delay-100  { animation-delay: 100ms; }
+.delay-150  { animation-delay: 150ms; }
+.delay-200  { animation-delay: 200ms; }
+.delay-300  { animation-delay: 300ms; }
+.delay-400  { animation-delay: 400ms; }
+.delay-500  { animation-delay: 500ms; }
+.delay-600  { animation-delay: 600ms; }
+.delay-700  { animation-delay: 700ms; }
+.delay-800  { animation-delay: 800ms; }
+
+/* ── TRANSITION UTILITIES ───────────────────────────────── */
+.transition-fast    { transition: all var(--transition-fast); }
+.transition-normal  { transition: all var(--transition-normal); }
+.transition-slow    { transition: all var(--transition-slow); }
+.transition-colors  { transition: color var(--transition-fast), background-color var(--transition-fast), border-color var(--transition-fast); }
+.transition-opacity { transition: opacity var(--transition-normal); }
+.transition-transform { transition: transform var(--transition-normal); }
+.transition-shadow  { transition: box-shadow var(--transition-normal); }
+.transition-none    { transition: none !important; }
+
+/* ── HOVER LIFT UTILITIES ───────────────────────────────── */
+.hover-lift {
+  transition: transform var(--transition-normal), box-shadow var(--transition-normal);
+}
+.hover-lift:hover {
+  transform: translateY(-3px);
+  box-shadow: var(--shadow-float);
+}
+
+.hover-lift-sm {
+  transition: transform var(--transition-fast), box-shadow var(--transition-fast);
+}
+.hover-lift-sm:hover {
+  transform: translateY(-2px);
+}
+
+/* ── STAGGER ANIMATION SYSTEM ───────────────────────────── */
+/* Applied to parent, children animate sequentially */
+.stagger-children > * {
+  animation: gs-slide-up var(--duration-slow) var(--ease-decelerate) both;
+}
+.stagger-children > *:nth-child(1) { animation-delay: 0ms; }
+.stagger-children > *:nth-child(2) { animation-delay: 80ms; }
+.stagger-children > *:nth-child(3) { animation-delay: 160ms; }
+.stagger-children > *:nth-child(4) { animation-delay: 240ms; }
+.stagger-children > *:nth-child(5) { animation-delay: 320ms; }
+.stagger-children > *:nth-child(6) { animation-delay: 400ms; }
+
+/* ── REDUCED MOTION OVERRIDE ────────────────────────────── */
+@media (prefers-reduced-motion: reduce) {
+  .animate-fade-in,
+  .animate-slide-up,
+  .animate-slide-down,
+  .animate-slide-left,
+  .animate-slide-right,
+  .animate-scale-in,
+  .animate-float,
+  .animate-pulse,
+  .animate-spin,
+  .animate-bounce,
+  .animate-shake,
+  .stagger-children > * {
+    animation: none !important;
+    transition: none !important;
+    opacity: 1 !important;
+    transform: none !important;
+  }
+}

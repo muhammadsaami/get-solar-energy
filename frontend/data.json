@@ -1,0 +1,72 @@
+{
+  "heroKPIs": {
+    "potentialAnnualSavingsMin": 45000,
+    "potentialAnnualSavingsMax": 120000,
+    "monthlySavingsMin": 3500,
+    "monthlySavingsMax": 10000,
+    "paybackPeriodMin": 3.5,
+    "paybackPeriodMax": 6.5,
+    "solarReadinessMin": 75,
+    "solarReadinessMax": 98
+  },
+  "primaryKPIs": {
+    "solarReadinessScore": 92,
+    "recommendedSystemSize": 5.2,
+    "monthlyBillReduction": 4850,
+    "annualSavings": 58400,
+    "paybackPeriod": 4.8,
+    "lifetimeSavings": 14.2,
+    "carbonOffset": 2.8,
+    "energyIndependence": 84
+  },
+  "secondaryKPIs": {
+    "monthlyUnitsConsumed": 450,
+    "currentMonthlyBill": 6500,
+    "solarGeneration": 580,
+    "solarConsumption": 480,
+    "importUnits": 120,
+    "exportUnits": 250,
+    "prRatio": 82.5,
+    "systemEfficiency": 89.2
+  },
+  "chartData": {
+    "months": ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"],
+    "energyProduction": [380, 420, 490, 520, 560, 510, 440, 460, 480, 510, 440, 400],
+    "electricityConsumption": [420, 410, 430, 480, 520, 490, 460, 470, 450, 430, 410, 430],
+    "solarSavings": [3500, 4000, 4800, 5100, 5500, 5000, 4200, 4400, 4600, 5000, 4300, 3900],
+    "monthlyROI": [1.8, 2.1, 2.5, 2.8, 3.2, 2.9, 2.3, 2.4, 2.5, 2.8, 2.2, 1.9],
+    "importUnits": [150, 120, 90, 80, 70, 90, 130, 120, 110, 90, 120, 140],
+    "exportUnits": [80, 110, 170, 200, 220, 180, 130, 140, 150, 175, 125, 90],
+    "systemPerformance": [81.5, 82.0, 82.8, 83.1, 83.5, 82.9, 81.8, 82.2, 82.6, 83.0, 82.4, 81.9],
+    "carbonReduction": [0.22, 0.25, 0.29, 0.31, 0.34, 0.31, 0.26, 0.28, 0.29, 0.31, 0.26, 0.24]
+  },
+  "featureCards": {
+    "billAnalyzer": {
+      "billsProcessed": 1250,
+      "accuracy": 98.2
+    },
+    "roofAnalysis": {
+      "roofsAnalyzed": 850,
+      "averageReadiness": 92.0
+    },
+    "roiCalculator": {
+      "savingsIdentified": 42000000,
+      "averagePayback": 4.9
+    },
+    "aiAssistant": {
+      "queriesAnswered": 3500,
+      "satisfaction": 96.0
+    },
+    "rewardsReferrals": {
+      "referrals": 420,
+      "rewardsDistributed": 280000
+    }
+  },
+  "insights": [
+    "Customers consuming above 350 kWh/month achieve the highest solar ROI.",
+    "Average payback period decreased by 8% this quarter.",
+    "North-facing roofs show lower solar efficiency.",
+    "Solar adoption potential is highest among high-consumption households.",
+    "Energy independence increased by 12% compared to last year."
+  ]
+}

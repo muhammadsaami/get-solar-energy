@@ -1,0 +1,218 @@
+/*
+ * ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+ *  GET SOLAR ENERGY — TABLE COMPONENT LIBRARY
+ *  Version: 1.0.0
+ * ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+ */
+
+/* ── TABLE WRAPPER ──────────────────────────────────────── */
+.table-container {
+  width: 100%;
+  overflow-x: auto;
+  border-radius: var(--radius-lg);
+  border: 1px solid var(--border-color);
+  background: var(--bg-card);
+  scrollbar-width: thin;
+  scrollbar-color: var(--border-color) transparent;
+}
+
+.table-container::-webkit-scrollbar {
+  height: 6px;
+}
+.table-container::-webkit-scrollbar-track { background: transparent; }
+.table-container::-webkit-scrollbar-thumb {
+  background: var(--border-color);
+  border-radius: var(--radius-full);
+}
+
+/* ── BASE TABLE ─────────────────────────────────────────── */
+.table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: var(--font-size-sm);
+  color: var(--text-primary);
+}
+
+.table th {
+  padding: var(--space-4) var(--space-5);
+  text-align: left;
+  font-size: var(--font-size-xs);
+  font-weight: var(--font-weight-semibold);
+  color: var(--text-muted);
+  text-transform: uppercase;
+  letter-spacing: var(--letter-spacing-wider);
+  background: rgba(255, 255, 255, 0.02);
+  border-bottom: 1px solid var(--border-color);
+  white-space: nowrap;
+}
+
+.table td {
+  padding: var(--space-4) var(--space-5);
+  border-bottom: 1px solid var(--border-subtle);
+  vertical-align: middle;
+  color: var(--text-secondary);
+}
+
+.table tr:last-child td {
+  border-bottom: none;
+}
+
+/* ── HOVER ROWS ─────────────────────────────────────────── */
+.table-hover tbody tr {
+  transition: background var(--transition-fast);
+  cursor: pointer;
+}
+
+.table-hover tbody tr:hover {
+  background: rgba(255, 255, 255, 0.03);
+}
+
+.table-hover tbody tr:hover td {
+  color: var(--text-primary);
+}
+
+/* ── STRIPED ────────────────────────────────────────────── */
+.table-striped tbody tr:nth-child(even) {
+  background: rgba(255, 255, 255, 0.02);
+}
+
+/* ── COMPACT ────────────────────────────────────────────── */
+.table-compact th,
+.table-compact td {
+  padding: var(--space-3) var(--space-4);
+}
+
+/* ── SORTABLE HEADERS ───────────────────────────────────── */
+.table th.sortable {
+  cursor: pointer;
+  position: relative;
+  transition: color var(--transition-fast);
+}
+
+.table th.sortable:hover {
+  color: var(--text-primary);
+}
+
+.table th.sortable::after {
+  content: ' ↕';
+  opacity: 0.4;
+  font-size: 10px;
+}
+
+.table th.sort-asc::after  { content: ' ↑'; opacity: 1; color: var(--color-blue); }
+.table th.sort-desc::after { content: ' ↓'; opacity: 1; color: var(--color-blue); }
+
+/* ── TABLE TOOLBAR ──────────────────────────────────────── */
+.table-toolbar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: var(--space-4) var(--space-5);
+  border-bottom: 1px solid var(--border-subtle);
+  gap: var(--space-4);
+  flex-wrap: wrap;
+}
+
+.table-toolbar-left,
+.table-toolbar-right {
+  display: flex;
+  align-items: center;
+  gap: var(--space-3);
+}
+
+/* ── TABLE PAGINATION ───────────────────────────────────── */
+.table-pagination {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: var(--space-4) var(--space-5);
+  border-top: 1px solid var(--border-subtle);
+  font-size: var(--font-size-sm);
+  color: var(--text-muted);
+}
+
+.table-pagination-controls {
+  display: flex;
+  align-items: center;
+  gap: var(--space-1);
+}
+
+.pagination-btn {
+  width: 32px;
+  height: 32px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: var(--radius-sm);
+  border: 1px solid var(--border-color);
+  background: transparent;
+  color: var(--text-secondary);
+  cursor: pointer;
+  font-size: var(--font-size-sm);
+  font-family: var(--font-family);
+  transition: all var(--transition-fast);
+}
+
+.pagination-btn:hover {
+  background: rgba(255, 255, 255, 0.06);
+  color: var(--text-primary);
+  border-color: var(--border-strong);
+}
+
+.pagination-btn.active {
+  background: var(--color-blue-surface);
+  border-color: var(--border-glow);
+  color: var(--color-blue);
+  font-weight: var(--font-weight-bold);
+}
+
+.pagination-btn:disabled {
+  opacity: 0.35;
+  pointer-events: none;
+}
+
+/* ── EMPTY STATE ────────────────────────────────────────── */
+.table-empty {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  padding: var(--space-16) var(--space-8);
+  text-align: center;
+  gap: var(--space-4);
+}
+
+.table-empty-icon {
+  font-size: 40px;
+  opacity: 0.4;
+}
+
+.table-empty-title {
+  font-size: var(--font-size-lg);
+  font-weight: var(--font-weight-semibold);
+  color: var(--text-secondary);
+}
+
+.table-empty-desc {
+  font-size: var(--font-size-sm);
+  color: var(--text-muted);
+  max-width: 340px;
+}
+
+/* ── CELL TYPES ─────────────────────────────────────────── */
+.td-primary {
+  color: var(--text-primary) !important;
+  font-weight: var(--font-weight-medium);
+}
+
+.td-mono {
+  font-family: 'Courier New', monospace;
+  font-size: var(--font-size-xs);
+  color: var(--text-muted);
+}
+
+.td-actions {
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
+}

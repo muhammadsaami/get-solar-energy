@@ -1,0 +1,326 @@
+/*
+ * ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+ *  GET SOLAR ENERGY — BUTTON COMPONENT LIBRARY
+ *  Version: 1.0.0
+ *  All button variants, sizes, states, and icon buttons.
+ *  Buttons must inherit styles from this file only.
+ *  Never create ad-hoc button styles in page CSS.
+ * ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+ */
+
+/* ── BASE BUTTON RESET ──────────────────────────────────── */
+.btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: var(--space-2);
+  padding: 12px var(--space-6);
+  font-family: var(--font-family);
+  font-size: var(--font-size-md);
+  font-weight: var(--font-weight-semibold);
+  line-height: 1;
+  letter-spacing: var(--letter-spacing-wide);
+  border: 2px solid transparent;
+  border-radius: var(--radius-md);
+  cursor: pointer;
+  text-decoration: none;
+  white-space: nowrap;
+  position: relative;
+  overflow: hidden;
+  transition:
+    background-color var(--transition-fast),
+    border-color var(--transition-fast),
+    color var(--transition-fast),
+    box-shadow var(--transition-normal),
+    transform var(--transition-fast);
+  user-select: none;
+  -webkit-user-select: none;
+  outline: none;
+}
+
+.btn:active {
+  transform: scale(0.97);
+}
+
+.btn:focus-visible {
+  outline: 2px solid var(--color-blue);
+  outline-offset: 3px;
+}
+
+/* Ripple effect base */
+.btn::after {
+  content: '';
+  position: absolute;
+  inset: 0;
+  background: rgba(255, 255, 255, 0.08);
+  opacity: 0;
+  transition: opacity var(--transition-fast);
+}
+
+.btn:active::after {
+  opacity: 1;
+}
+
+/* ── BUTTON VARIANTS ────────────────────────────────────── */
+
+/* Primary — orange CTA (most prominent action) */
+.btn-primary {
+  background: linear-gradient(135deg, var(--color-orange) 0%, #ff9d3d 100%);
+  color: var(--text-inverse);
+  border-color: transparent;
+  box-shadow: 0 4px 16px var(--color-orange-glow), var(--shadow-inset);
+}
+
+.btn-primary:hover {
+  background: linear-gradient(135deg, var(--color-orange-hover) 0%, var(--color-orange) 100%);
+  box-shadow: 0 8px 28px var(--color-orange-glow-strong), var(--shadow-inset);
+  transform: translateY(-1px);
+}
+
+.btn-primary:active {
+  transform: translateY(0) scale(0.97);
+  box-shadow: 0 4px 12px var(--color-orange-glow);
+}
+
+/* Secondary — blue accent (secondary action) */
+.btn-secondary {
+  background: linear-gradient(135deg, var(--color-blue) 0%, #3ac4f5 100%);
+  color: var(--text-inverse);
+  border-color: transparent;
+  box-shadow: 0 4px 16px var(--color-blue-glow), var(--shadow-inset);
+}
+
+.btn-secondary:hover {
+  background: linear-gradient(135deg, var(--color-blue-hover) 0%, var(--color-blue) 100%);
+  box-shadow: 0 8px 28px var(--color-blue-glow-strong), var(--shadow-inset);
+  transform: translateY(-1px);
+}
+
+/* Ghost — transparent, for secondary/tertiary actions */
+.btn-ghost {
+  background: transparent;
+  color: var(--text-secondary);
+  border-color: transparent;
+}
+
+.btn-ghost:hover {
+  background: rgba(255, 255, 255, 0.06);
+  color: var(--text-primary);
+}
+
+/* Outline — bordered, no fill */
+.btn-outline {
+  background: transparent;
+  color: var(--color-blue);
+  border-color: var(--border-glow);
+}
+
+.btn-outline:hover {
+  background: var(--color-blue-surface);
+  border-color: var(--color-blue);
+  box-shadow: var(--shadow-glow-blue);
+}
+
+/* Outline Orange */
+.btn-outline-orange {
+  background: transparent;
+  color: var(--color-orange);
+  border-color: var(--border-orange-glow);
+}
+
+.btn-outline-orange:hover {
+  background: var(--color-orange-surface);
+  border-color: var(--color-orange);
+  box-shadow: var(--shadow-glow-orange);
+}
+
+/* Danger — destructive actions */
+.btn-danger {
+  background: linear-gradient(135deg, var(--color-red) 0%, #ff6b85 100%);
+  color: #ffffff;
+  border-color: transparent;
+  box-shadow: 0 4px 16px var(--color-red-glow);
+}
+
+.btn-danger:hover {
+  background: linear-gradient(135deg, var(--color-red-hover) 0%, var(--color-red) 100%);
+  box-shadow: 0 8px 28px rgba(244, 63, 94, 0.35);
+  transform: translateY(-1px);
+}
+
+/* Success */
+.btn-success {
+  background: linear-gradient(135deg, var(--color-green) 0%, #5ce8b4 100%);
+  color: var(--text-inverse);
+  border-color: transparent;
+  box-shadow: 0 4px 16px var(--color-green-glow);
+}
+
+.btn-success:hover {
+  box-shadow: 0 8px 28px var(--color-green-border);
+  transform: translateY(-1px);
+}
+
+/* Glass button — for use over cinematic backgrounds */
+.btn-glass {
+  background: rgba(255, 255, 255, 0.10);
+  backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(12px);
+  color: var(--text-primary);
+  border-color: rgba(255, 255, 255, 0.20);
+}
+
+.btn-glass:hover {
+  background: rgba(255, 255, 255, 0.16);
+  border-color: rgba(255, 255, 255, 0.30);
+}
+
+/* ── BUTTON SIZES ───────────────────────────────────────── */
+
+.btn-xs {
+  padding: 6px 12px;
+  font-size: var(--font-size-xs);
+  border-radius: var(--radius-sm);
+  gap: var(--space-1);
+}
+
+.btn-sm {
+  padding: 8px 16px;
+  font-size: var(--font-size-sm);
+  border-radius: var(--radius-sm);
+}
+
+.btn-lg {
+  padding: 16px 32px;
+  font-size: var(--font-size-lg);
+  border-radius: var(--radius-lg);
+  gap: var(--space-3);
+}
+
+.btn-xl {
+  padding: 20px 48px;
+  font-size: var(--font-size-xl);
+  border-radius: var(--radius-xl);
+  gap: var(--space-3);
+}
+
+/* Full width */
+.btn-full { width: 100%; }
+
+/* ── ICON BUTTON ────────────────────────────────────────── */
+
+/* Square icon-only button */
+.btn-icon {
+  padding: 10px;
+  border-radius: var(--radius-md);
+  min-width: 40px;
+  min-height: 40px;
+  gap: 0;
+}
+
+.btn-icon.btn-sm {
+  padding: 7px;
+  min-width: 32px;
+  min-height: 32px;
+}
+
+.btn-icon.btn-lg {
+  padding: 13px;
+  min-width: 48px;
+  min-height: 48px;
+}
+
+/* Round icon button */
+.btn-icon-round {
+  border-radius: var(--radius-full);
+  padding: 10px;
+  min-width: 40px;
+  min-height: 40px;
+  gap: 0;
+}
+
+/* Icon + label button */
+.btn-with-icon {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--space-2);
+}
+
+.btn-with-icon svg,
+.btn-with-icon img {
+  width: 18px;
+  height: 18px;
+  flex-shrink: 0;
+}
+
+/* ── BUTTON STATES ──────────────────────────────────────── */
+
+/* Loading state */
+.btn.loading {
+  pointer-events: none;
+  opacity: 0.75;
+  cursor: not-allowed;
+}
+
+.btn.loading::before {
+  content: '';
+  width: 16px;
+  height: 16px;
+  border: 2px solid rgba(255, 255, 255, 0.35);
+  border-top-color: currentColor;
+  border-radius: var(--radius-full);
+  animation: gs-spin 0.7s linear infinite;
+  flex-shrink: 0;
+}
+
+/* Disabled state */
+.btn:disabled,
+.btn[disabled] {
+  pointer-events: none;
+  opacity: 0.40;
+  cursor: not-allowed;
+  transform: none !important;
+  box-shadow: none !important;
+}
+
+/* ── BUTTON GROUP ───────────────────────────────────────── */
+
+.btn-group {
+  display: inline-flex;
+  gap: 0;
+}
+
+.btn-group .btn {
+  border-radius: 0;
+}
+
+.btn-group .btn:first-child {
+  border-radius: var(--radius-md) 0 0 var(--radius-md);
+}
+
+.btn-group .btn:last-child {
+  border-radius: 0 var(--radius-md) var(--radius-md) 0;
+}
+
+.btn-group .btn + .btn {
+  border-left-color: rgba(255, 255, 255, 0.15);
+}
+
+/* ── LINK BUTTON ────────────────────────────────────────── */
+
+.btn-link {
+  background: none;
+  border: none;
+  padding: 0;
+  color: var(--text-link);
+  font-weight: var(--font-weight-semibold);
+  font-size: inherit;
+  cursor: pointer;
+  text-decoration: underline;
+  text-underline-offset: 3px;
+  transition: color var(--transition-fast);
+}
+
+.btn-link:hover {
+  color: var(--text-link-hover);
+}

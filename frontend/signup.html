@@ -1,0 +1,222 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="description" content="Create your GET Solar Energy account and start your journey to solar independence with personalized insights.">
+  <title>Create Account – GET Solar Energy</title>
+  <!-- GET Solar Energy Design System v1.0.0 -->
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link rel="stylesheet" href="styles/design-system.css">
+  <link rel="stylesheet" href="styles/auth.css">
+  <link rel="shortcut icon" href="assets/sidebar_solar_house.png" type="image/x-icon">
+</head>
+<body class="auth-body">
+
+  <!-- ── FULL-SCREEN BACKGROUND ── -->
+  <div class="auth-bg" aria-hidden="true">
+    <div class="auth-bg-img" style="background-image: url('assets/auth_showcase_right.png');"></div>
+    <div class="auth-bg-overlay"></div>
+    <div class="auth-bg-grid"></div>
+    <!-- Animated ambient orbs -->
+    <div class="orb orb-orange"></div>
+    <div class="orb orb-blue"></div>
+    <div class="orb orb-green"></div>
+    <!-- Floating particles -->
+    <div class="particles" id="particles"></div>
+  </div>
+
+  <!-- ── FLOATING KPI WIDGETS ── -->
+  <div class="floating-kpi kpi-top-left float-a" aria-hidden="true">
+    <div class="fkpi-icon">🏆</div>
+    <div class="fkpi-body">
+      <span class="fkpi-value">92%</span>
+      <span class="fkpi-label">Solar Readiness</span>
+    </div>
+  </div>
+
+  <div class="floating-kpi kpi-top-right float-b" aria-hidden="true">
+    <div class="fkpi-icon">⚡</div>
+    <div class="fkpi-body">
+      <span class="fkpi-value">5.2 kW</span>
+      <span class="fkpi-label">Recommended System</span>
+    </div>
+  </div>
+
+  <div class="floating-kpi kpi-bottom-left float-c" aria-hidden="true">
+    <div class="fkpi-icon">💰</div>
+    <div class="fkpi-body">
+      <span class="fkpi-value">₹58,400</span>
+      <span class="fkpi-label">Annual Savings</span>
+    </div>
+  </div>
+
+  <div class="floating-kpi kpi-bottom-right float-d" aria-hidden="true">
+    <div class="fkpi-icon">📈</div>
+    <div class="fkpi-body">
+      <span class="fkpi-value">3.8 Years</span>
+      <span class="fkpi-label">Payback</span>
+    </div>
+  </div>
+
+  <!-- ── AUTH WRAPPER ── -->
+  <main class="auth-wrapper" id="authWrapper">
+
+    <!-- ── SIGNUP CARD ── -->
+    <div class="auth-card auth-card-wide" id="signupCard">
+      
+      <!-- Logo -->
+      <div class="auth-logo">
+        <div class="auth-logo-badge">
+          <svg class="auth-logo-svg" viewBox="0 0 100 100" xmlns="http://www.w3.org/2000/svg" aria-label="GET Solar Energy Logo">
+            <defs>
+              <clipPath id="lh-signup"><rect x="0" y="0" width="50" height="100"/></clipPath>
+              <clipPath id="rh-signup"><rect x="50" y="0" width="50" height="100"/></clipPath>
+            </defs>
+            <rect width="100" height="100" rx="20" fill="#000000"/>
+            <g clip-path="url(#lh-signup)">
+              <circle cx="50" cy="50" r="38" stroke="#00aeef" stroke-width="4.5" stroke-dasharray="6 4.5"/>
+              <circle cx="50" cy="50" r="30" stroke="#00aeef" stroke-width="4.5" stroke-dasharray="5.5 4"/>
+              <circle cx="50" cy="50" r="22" stroke="#00aeef" stroke-width="4.5" stroke-dasharray="4.5 4"/>
+            </g>
+            <g clip-path="url(#rh-signup)">
+              <circle cx="50" cy="50" r="38" stroke="#f7931e" stroke-width="4.5" stroke-dasharray="6 4.5"/>
+              <circle cx="50" cy="50" r="30" stroke="#f7931e" stroke-width="4.5" stroke-dasharray="5.5 4"/>
+              <circle cx="50" cy="50" r="22" stroke="#f7931e" stroke-width="4.5" stroke-dasharray="4.5 4"/>
+            </g>
+            <circle cx="50" cy="50" r="14" fill="#ffffff"/>
+            <text x="50" y="55" text-anchor="middle" font-family="'Outfit', sans-serif" font-weight="900" font-size="16" fill="#000000">G</text>
+          </svg>
+        </div>
+        <div class="auth-logo-text">
+          <span class="auth-brand-name">GET SOLAR ENERGY</span>
+          <span class="auth-brand-tagline">SOLAR INTELLIGENCE PLATFORM</span>
+        </div>
+      </div>
+
+      <!-- Heading -->
+      <div class="auth-heading-block">
+        <h1 class="auth-heading">Create Account</h1>
+        <p class="auth-subheading">Start your solar intelligence journey today</p>
+      </div>
+
+      <!-- Error Banner (maintained for compatibility, styled as display:none by default) -->
+      <div class="auth-error-banner" id="signupError" role="alert" aria-live="polite"></div>
+
+      <!-- Form -->
+      <form class="auth-form" id="signupForm" novalidate>
+
+        <div class="form-row-2col">
+          <div class="form-group">
+            <label class="form-label" for="signupName">Full Name</label>
+            <div class="input-wrapper">
+              <svg class="input-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>
+              <input class="form-input" type="text" id="signupName" name="name" placeholder="Muhammad Haq" autocomplete="name" required>
+            </div>
+            <div class="input-feedback" id="signupNameFeedback"></div>
+          </div>
+
+          <div class="form-group">
+            <label class="form-label" for="signupMobile">Mobile Number</label>
+            <div class="input-wrapper">
+              <svg class="input-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="5" y="2" width="14" height="20" rx="2" ry="2"/><path d="M12 18h.01"/></svg>
+              <input class="form-input" type="tel" id="signupMobile" name="mobile" placeholder="9XXXXXXXXX" autocomplete="tel" required>
+            </div>
+            <div class="input-feedback" id="signupMobileFeedback"></div>
+          </div>
+        </div>
+
+        <div class="form-group">
+          <label class="form-label" for="signupEmail">Email Address</label>
+          <div class="input-wrapper">
+            <svg class="input-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z"/><polyline points="22,6 12,13 2,6"/></svg>
+            <input class="form-input" type="email" id="signupEmail" name="email" placeholder="you@example.com" autocomplete="email" required>
+          </div>
+          <div class="input-feedback" id="signupEmailFeedback"></div>
+        </div>
+
+        <div class="form-row-2col">
+          <div class="form-group">
+            <label class="form-label" for="signupPassword">Password</label>
+            <div class="input-wrapper">
+              <svg class="input-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="11" width="18" height="11" rx="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></svg>
+              <input class="form-input" type="password" id="signupPassword" name="password" placeholder="Min 8 characters" autocomplete="new-password" required>
+              <button type="button" class="toggle-password" id="toggleSignupPwd" aria-label="Toggle password visibility">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/></svg>
+              </button>
+            </div>
+            <div class="input-feedback" id="signupPasswordFeedback"></div>
+          </div>
+
+          <div class="form-group">
+            <label class="form-label" for="signupConfirm">Confirm Password</label>
+            <div class="input-wrapper">
+              <svg class="input-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/><path d="m9 11 2 2 4-4"/></svg>
+              <input class="form-input" type="password" id="signupConfirm" name="confirmPassword" placeholder="Re-enter password" autocomplete="new-password" required>
+              <button type="button" class="toggle-password" id="toggleSignupConfirm" aria-label="Toggle confirm password visibility">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/></svg>
+              </button>
+            </div>
+            <div class="input-feedback" id="signupConfirmFeedback"></div>
+          </div>
+        </div>
+
+        <!-- Password Strength -->
+        <div class="password-strength" id="passwordStrength">
+          <div class="strength-bars">
+            <span class="strength-bar" id="sb1"></span>
+            <span class="strength-bar" id="sb2"></span>
+            <span class="strength-bar" id="sb3"></span>
+            <span class="strength-bar" id="sb4"></span>
+          </div>
+          <span class="strength-label" id="strengthLabel">Strength</span>
+        </div>
+
+        <button class="btn-primary-auth" type="submit" id="signupBtn">
+          <span class="btn-text">Create My Account &rarr;</span>
+          <span class="btn-spinner" id="signupSpinner" aria-hidden="true"></span>
+          <svg class="btn-arrow" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><line x1="5" y1="12" x2="19" y2="12"/><polyline points="12 5 19 12 12 19"/></svg>
+        </button>
+
+      </form>
+
+      <!-- Trust Badges -->
+      <div class="trust-badges">
+        <div class="trust-badge">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/><path d="m9 11 2 2 4-4"/></svg>
+          Secure Login
+        </div>
+        <div class="trust-badge">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="7" r="4"/><path d="M12 2v1M12 11v1M7 7H6M18 7h-1"/><path d="M4 17h16v4H4z"/></svg>
+          Solar Intelligence
+        </div>
+        <div class="trust-badge">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="2" y="4" width="20" height="16" rx="2"/><line x1="12" y1="4" x2="12" y2="20"/><line x1="2" y1="12" x2="22" y2="12"/></svg>
+          Govt Subsidy Ready
+        </div>
+        <div class="trust-badge">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M22 16.92v3a2 2 0 0 1-2.18 2 19.79 19.79 0 0 1-8.63-3.07A19.5 19.5 0 0 1 4.69 12 19.79 19.79 0 0 1 1.61 3.42a2 2 0 0 1 2-2.18h3a2 2 0 0 1 2 1.72c.127.96.361 1.903.7 2.81a2 2 0 0 1-.45 2.11L8.09 8.91a16 16 0 0 0 6 6l1.27-1.27a2 2 0 0 1 2.11-.45c.907.339 1.85.573 2.81.7A2 2 0 0 1 22 16.92z"/></svg>
+          24/7 Support
+        </div>
+        <div class="trust-badge">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="11" width="18" height="11" rx="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></svg>
+          Enterprise Security
+        </div>
+      </div>
+
+      <!-- Footer -->
+      <p class="auth-footer-text">
+        Already have an account?
+        <a href="login.html" class="auth-link">Login</a>
+      </p>
+
+    </div>
+  </main>
+
+  <!-- TOAST NOTIFICATION -->
+  <div class="auth-toast" id="authToast" role="status" aria-live="polite"></div>
+
+  <script src="auth.js"></script>
+</body>
+</html>

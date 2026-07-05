@@ -1,0 +1,274 @@
+/*
+ * ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+ *  GET SOLAR ENERGY — CARD COMPONENT LIBRARY
+ *  Version: 1.0.0
+ * ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+ */
+
+/* ── BASE CARD ──────────────────────────────────────────── */
+.card {
+  background: var(--bg-card);
+  border: 1px solid var(--border-color);
+  border-radius: var(--radius-lg);
+  padding: var(--space-6);
+  position: relative;
+  overflow: hidden;
+  transition: box-shadow var(--transition-normal), border-color var(--transition-normal);
+}
+
+.card:hover {
+  border-color: var(--border-strong);
+  box-shadow: var(--shadow-card);
+}
+
+/* Card sub-elements */
+.card-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: var(--space-4);
+  gap: var(--space-3);
+}
+
+.card-title {
+  font-size: var(--font-size-md);
+  font-weight: var(--font-weight-semibold);
+  color: var(--text-primary);
+  margin: 0;
+}
+
+.card-subtitle {
+  font-size: var(--font-size-sm);
+  color: var(--text-secondary);
+  margin: var(--space-1) 0 0;
+}
+
+.card-body {
+  position: relative;
+  z-index: 1;
+}
+
+.card-footer {
+  margin-top: var(--space-4);
+  padding-top: var(--space-4);
+  border-top: 1px solid var(--border-subtle);
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--space-3);
+}
+
+/* ── GLASS CARD ─────────────────────────────────────────── */
+.card-glass {
+  background: var(--glass-bg);
+  backdrop-filter: blur(var(--blur-glass));
+  -webkit-backdrop-filter: blur(var(--blur-glass));
+  border: 1px solid var(--glass-border);
+  border-radius: var(--radius-lg);
+  padding: var(--space-6);
+  box-shadow: var(--glass-shadow), var(--shadow-inset);
+  position: relative;
+  overflow: hidden;
+  transition: box-shadow var(--transition-normal), border-color var(--transition-normal), transform var(--transition-normal);
+}
+
+.card-glass::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(135deg, var(--glass-highlight-strong) 0%, transparent 60%);
+  pointer-events: none;
+  z-index: 0;
+}
+
+.card-glass:hover {
+  border-color: var(--glass-border-active);
+  box-shadow: var(--shadow-hover), var(--shadow-inset);
+}
+
+/* ── METRIC / KPI CARD ──────────────────────────────────── */
+.card-metric {
+  background: var(--bg-card);
+  border: 1px solid var(--border-color);
+  border-radius: var(--radius-lg);
+  padding: var(--space-6);
+  position: relative;
+  overflow: hidden;
+  transition: all var(--transition-normal);
+}
+
+.card-metric:hover {
+  border-color: var(--border-strong);
+  box-shadow: var(--shadow-card);
+  transform: translateY(-2px);
+}
+
+.card-metric-value {
+  font-size: var(--font-size-4xl);
+  font-weight: var(--font-weight-black);
+  color: var(--text-primary);
+  line-height: 1;
+  margin-bottom: var(--space-2);
+}
+
+.card-metric-label {
+  font-size: var(--font-size-sm);
+  font-weight: var(--font-weight-medium);
+  color: var(--text-secondary);
+  text-transform: uppercase;
+  letter-spacing: var(--letter-spacing-wide);
+}
+
+.card-metric-change {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  font-size: var(--font-size-sm);
+  font-weight: var(--font-weight-semibold);
+  margin-top: var(--space-2);
+}
+
+.card-metric-change.positive { color: var(--color-green); }
+.card-metric-change.negative { color: var(--color-red); }
+.card-metric-change.neutral  { color: var(--text-muted); }
+
+/* Colored accent bar at top */
+.card-metric.accent-orange  { border-top: 3px solid var(--color-orange); }
+.card-metric.accent-blue    { border-top: 3px solid var(--color-blue); }
+.card-metric.accent-green   { border-top: 3px solid var(--color-green); }
+.card-metric.accent-purple  { border-top: 3px solid var(--color-purple); }
+
+/* ── DASHBOARD CARD ─────────────────────────────────────── */
+.card-dashboard {
+  background: var(--bg-card);
+  border: 1px solid var(--border-color);
+  border-radius: var(--radius-lg);
+  overflow: hidden;
+  transition: box-shadow var(--transition-normal), border-color var(--transition-normal);
+}
+
+.card-dashboard:hover {
+  border-color: rgba(23, 168, 229, 0.2);
+  box-shadow: var(--shadow-card);
+}
+
+.card-dashboard .card-header {
+  padding: var(--space-5) var(--space-6);
+  border-bottom: 1px solid var(--border-subtle);
+  margin-bottom: 0;
+  background: rgba(255, 255, 255, 0.02);
+}
+
+.card-dashboard .card-body {
+  padding: var(--space-6);
+}
+
+/* ── FEATURE CARD ───────────────────────────────────────── */
+.card-feature {
+  background: var(--bg-card);
+  border: 1px solid var(--border-color);
+  border-radius: var(--radius-xl);
+  padding: var(--space-8);
+  text-align: center;
+  transition: all var(--transition-normal);
+  cursor: default;
+}
+
+.card-feature:hover {
+  border-color: var(--border-glow);
+  box-shadow: var(--shadow-hover);
+  transform: translateY(-4px);
+}
+
+.card-feature-icon {
+  width: 56px;
+  height: 56px;
+  border-radius: var(--radius-lg);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  margin: 0 auto var(--space-4);
+  font-size: 24px;
+}
+
+.card-feature-icon.orange { background: var(--color-orange-surface); color: var(--color-orange); }
+.card-feature-icon.blue   { background: var(--color-blue-surface); color: var(--color-blue); }
+.card-feature-icon.green  { background: var(--color-green-surface); color: var(--color-green); }
+.card-feature-icon.purple { background: var(--color-purple-surface); color: var(--color-purple); }
+
+.card-feature-title {
+  font-size: var(--font-size-lg);
+  font-weight: var(--font-weight-bold);
+  color: var(--text-primary);
+  margin-bottom: var(--space-2);
+}
+
+.card-feature-desc {
+  font-size: var(--font-size-sm);
+  color: var(--text-secondary);
+  line-height: var(--line-height-relaxed);
+}
+
+/* ── INSIGHT CARD ───────────────────────────────────────── */
+.card-insight {
+  background: var(--bg-card);
+  border: 1px solid var(--border-color);
+  border-radius: var(--radius-md);
+  padding: var(--space-4) var(--space-5);
+  display: flex;
+  align-items: center;
+  gap: var(--space-4);
+  transition: all var(--transition-fast);
+}
+
+.card-insight:hover {
+  border-color: var(--border-strong);
+  background: var(--bg-card-hover);
+}
+
+/* ── STAT STRIP CARD ────────────────────────────────────── */
+.card-stat {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-1);
+  padding: var(--space-4) var(--space-5);
+  background: var(--bg-card);
+  border: 1px solid var(--border-color);
+  border-radius: var(--radius-md);
+}
+
+.card-stat-num {
+  font-size: var(--font-size-3xl);
+  font-weight: var(--font-weight-black);
+  color: var(--text-primary);
+  line-height: 1;
+}
+
+.card-stat-label {
+  font-size: var(--font-size-xs);
+  font-weight: var(--font-weight-medium);
+  color: var(--text-muted);
+  text-transform: uppercase;
+  letter-spacing: var(--letter-spacing-wide);
+}
+
+/* ── CARD GRID LAYOUTS ──────────────────────────────────── */
+.card-grid {
+  display: grid;
+  gap: var(--space-6);
+}
+
+.card-grid-2 { grid-template-columns: repeat(2, 1fr); }
+.card-grid-3 { grid-template-columns: repeat(3, 1fr); }
+.card-grid-4 { grid-template-columns: repeat(4, 1fr); }
+
+@media (max-width: 1024px) {
+  .card-grid-4 { grid-template-columns: repeat(2, 1fr); }
+  .card-grid-3 { grid-template-columns: repeat(2, 1fr); }
+}
+
+@media (max-width: 640px) {
+  .card-grid-2,
+  .card-grid-3,
+  .card-grid-4 { grid-template-columns: 1fr; }
+}

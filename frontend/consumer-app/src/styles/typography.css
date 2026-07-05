@@ -1,0 +1,249 @@
+/*
+ * ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+ *  GET SOLAR ENERGY — TYPOGRAPHY SYSTEM
+ *  Version: 1.0.0
+ *  Defines the platform's typographic scale, font loading,
+ *  semantic text utilities, and responsive heading sizes.
+ *  All pages must use these classes and tokens.
+ * ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+ */
+
+/* ── FONT LOADING ─────────────────────────────────────────
+   Outfit is the ONLY approved typeface for the platform.
+   Weights: 300 (light), 400 (regular), 500 (medium),
+            600 (semibold), 700 (bold), 800 (extrabold),
+            900 (black)
+   ────────────────────────────────────────────────────── */
+@import url('https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700;800;900&display=swap');
+
+/* ── GLOBAL FONT RESET ─────────────────────────────────── */
+*,
+*::before,
+*::after {
+  font-family: var(--font-family);
+}
+
+/* ── TYPOGRAPHIC SCALE UTILITIES ───────────────────────────
+   Usage: <h1 class="text-display"> or <p class="text-body">
+   Sizes pair with landing page and dashboard context.
+   ────────────────────────────────────────────────────── */
+
+.text-display {
+  font-size: var(--font-size-display);
+  font-weight: var(--font-weight-black);
+  line-height: var(--line-height-tight);
+  letter-spacing: var(--letter-spacing-tight);
+}
+
+.text-h1 {
+  font-size: var(--font-size-7xl);
+  font-weight: var(--font-weight-black);
+  line-height: var(--line-height-tight);
+  letter-spacing: var(--letter-spacing-tight);
+}
+
+.text-h2 {
+  font-size: var(--font-size-5xl);
+  font-weight: var(--font-weight-extrabold);
+  line-height: var(--line-height-snug);
+  letter-spacing: var(--letter-spacing-snug);
+}
+
+.text-h3 {
+  font-size: var(--font-size-3xl);
+  font-weight: var(--font-weight-bold);
+  line-height: var(--line-height-snug);
+}
+
+.text-h4 {
+  font-size: var(--font-size-2xl);
+  font-weight: var(--font-weight-semibold);
+  line-height: var(--line-height-normal);
+}
+
+.text-h5 {
+  font-size: var(--font-size-xl);
+  font-weight: var(--font-weight-semibold);
+  line-height: var(--line-height-normal);
+}
+
+.text-h6 {
+  font-size: var(--font-size-lg);
+  font-weight: var(--font-weight-semibold);
+  line-height: var(--line-height-normal);
+}
+
+.text-body-lg {
+  font-size: var(--font-size-lg);
+  font-weight: var(--font-weight-regular);
+  line-height: var(--line-height-relaxed);
+}
+
+.text-body {
+  font-size: var(--font-size-base);
+  font-weight: var(--font-weight-regular);
+  line-height: var(--line-height-relaxed);
+}
+
+.text-body-sm {
+  font-size: var(--font-size-sm);
+  font-weight: var(--font-weight-regular);
+  line-height: var(--line-height-normal);
+}
+
+.text-caption {
+  font-size: var(--font-size-xs);
+  font-weight: var(--font-weight-medium);
+  line-height: var(--line-height-normal);
+  letter-spacing: var(--letter-spacing-wide);
+}
+
+.text-label {
+  font-size: var(--font-size-sm);
+  font-weight: var(--font-weight-semibold);
+  line-height: var(--line-height-tight);
+  letter-spacing: var(--letter-spacing-wide);
+  text-transform: uppercase;
+}
+
+.text-overline {
+  font-size: var(--font-size-xs);
+  font-weight: var(--font-weight-bold);
+  line-height: var(--line-height-tight);
+  letter-spacing: var(--letter-spacing-widest);
+  text-transform: uppercase;
+}
+
+/* Metric / KPI values */
+.text-metric-xl {
+  font-size: var(--font-size-5xl);
+  font-weight: var(--font-weight-black);
+  line-height: 1;
+  letter-spacing: var(--letter-spacing-tight);
+}
+
+.text-metric-lg {
+  font-size: var(--font-size-4xl);
+  font-weight: var(--font-weight-black);
+  line-height: 1;
+  letter-spacing: var(--letter-spacing-tight);
+}
+
+.text-metric {
+  font-size: var(--font-size-3xl);
+  font-weight: var(--font-weight-extrabold);
+  line-height: 1;
+}
+
+.text-metric-sm {
+  font-size: var(--font-size-2xl);
+  font-weight: var(--font-weight-bold);
+  line-height: 1;
+}
+
+/* Button text */
+.text-btn {
+  font-size: var(--font-size-md);
+  font-weight: var(--font-weight-semibold);
+  letter-spacing: var(--letter-spacing-wide);
+  line-height: 1;
+}
+
+.text-btn-sm {
+  font-size: var(--font-size-sm);
+  font-weight: var(--font-weight-semibold);
+  letter-spacing: var(--letter-spacing-wide);
+  line-height: 1;
+}
+
+/* ── FONT WEIGHT UTILITIES ─────────────────────────────── */
+.font-light      { font-weight: var(--font-weight-light); }
+.font-regular    { font-weight: var(--font-weight-regular); }
+.font-medium     { font-weight: var(--font-weight-medium); }
+.font-semibold   { font-weight: var(--font-weight-semibold); }
+.font-bold       { font-weight: var(--font-weight-bold); }
+.font-extrabold  { font-weight: var(--font-weight-extrabold); }
+.font-black      { font-weight: var(--font-weight-black); }
+
+/* ── TEXT ALIGNMENT UTILITIES ──────────────────────────── */
+.text-left    { text-align: left; }
+.text-center  { text-align: center; }
+.text-right   { text-align: right; }
+
+/* ── TEXT COLOR UTILITIES ──────────────────────────────── */
+.text-primary-color   { color: var(--text-primary); }
+.text-secondary-color { color: var(--text-secondary); }
+.text-muted-color     { color: var(--text-muted); }
+.text-orange          { color: var(--color-orange); }
+.text-blue            { color: var(--color-blue); }
+.text-green           { color: var(--color-green); }
+.text-red             { color: var(--color-red); }
+.text-yellow          { color: var(--color-yellow); }
+.text-purple          { color: var(--color-purple); }
+.text-white           { color: #ffffff; }
+.text-inverse-color   { color: var(--text-inverse); }
+
+/* ── RESPONSIVE HEADING SCALE ──────────────────────────── */
+@media (max-width: 1280px) {
+  .text-display { font-size: var(--font-size-7xl); }
+  .text-h1      { font-size: var(--font-size-6xl); }
+  .text-h2      { font-size: var(--font-size-4xl); }
+}
+
+@media (max-width: 768px) {
+  .text-display { font-size: var(--font-size-5xl); }
+  .text-h1      { font-size: var(--font-size-4xl); }
+  .text-h2      { font-size: var(--font-size-3xl); }
+  .text-h3      { font-size: var(--font-size-2xl); }
+}
+
+@media (max-width: 480px) {
+  .text-display { font-size: var(--font-size-4xl); }
+  .text-h1      { font-size: var(--font-size-3xl); }
+  .text-h2      { font-size: var(--font-size-2xl); }
+  .text-h3      { font-size: var(--font-size-xl); }
+}
+
+/* ── SPECIAL TEXT TREATMENTS ───────────────────────────── */
+
+/* Orange gradient accent — for hero headings */
+.text-gradient-orange {
+  background: linear-gradient(135deg, var(--color-orange) 0%, #ffb84d 100%);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+}
+
+/* Blue gradient accent */
+.text-gradient-blue {
+  background: linear-gradient(135deg, var(--color-blue) 0%, #5dd5ff 100%);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+}
+
+/* Highlight spans — used in landing page headings */
+.highlight-orange { color: var(--color-orange); }
+.highlight-blue   { color: var(--color-blue); }
+.highlight-green  { color: var(--color-green); }
+
+/* Truncation utilities */
+.text-truncate {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.text-clamp-2 {
+  display: -webkit-box;
+  -webkit-line-clamp: 2;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+}
+
+.text-clamp-3 {
+  display: -webkit-box;
+  -webkit-line-clamp: 3;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+}

@@ -1,0 +1,54 @@
+/*
+ * ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+ *  GET SOLAR ENERGY — DESIGN SYSTEM v1.0.0
+ *  Aggregator Entry Point
+ *
+ *  This file is the ONLY design system file that should be
+ *  linked from HTML pages. It imports all sub-modules in
+ *  correct dependency order.
+ *
+ *  Usage in HTML:
+ *    <link rel="stylesheet" href="styles/design-system.css">
+ *    <link rel="stylesheet" href="styles/dashboard.css">
+ *
+ *  DO NOT add component styles to this file.
+ *  DO NOT import this file from other CSS files.
+ *  Only HTML pages should link to this file.
+ *
+ *  Sub-module load order:
+ *  1. tokens      — CSS custom properties (must load first)
+ *  2. typography  — Font + type scale (depends on tokens)
+ *  3. utilities   — Reset + layout primitives (depends on tokens)
+ *  4. glass       — Glass design language (depends on tokens)
+ *  5. motion      — Keyframes + animation utils (depends on tokens)
+ *  6. buttons     — Button components (depends on tokens + motion)
+ *  7. cards       — Card components (depends on tokens + glass)
+ *  8. forms       — Form components (depends on tokens + glass)
+ *  9. tables      — Table components (depends on tokens)
+ * 10. badges      — Badge + avatar components (depends on tokens + motion)
+ * 11. navigation  — Nav + modal + toast (depends on tokens + motion + glass)
+ * 12. loading     — Skeleton + spinner + progress (depends on tokens + motion)
+ * 13. layout      — Page layout templates (depends on all above)
+ * ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+ */
+
+/* 1. Foundation */
+@import "./tokens.css";
+@import "./typography.css";
+@import "./utilities.css";
+
+/* 2. Visual Language */
+@import "./glass.css";
+@import "./motion.css";
+
+/* 3. Components */
+@import "./buttons.css";
+@import "./cards.css";
+@import "./forms.css";
+@import "./tables.css";
+@import "./badges.css";
+@import "./navigation.css";
+@import "./loading.css";
+
+/* 4. Layout Templates */
+@import "./layout.css";

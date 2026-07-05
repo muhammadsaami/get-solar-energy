@@ -1,0 +1,238 @@
+/*
+ * ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+ *  GET SOLAR ENERGY — BADGE COMPONENT LIBRARY
+ *  Version: 1.0.0
+ * ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+ */
+
+/* ── BASE BADGE ─────────────────────────────────────────── */
+.badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  padding: 3px 10px;
+  font-size: var(--font-size-xs);
+  font-weight: var(--font-weight-semibold);
+  line-height: 1;
+  letter-spacing: var(--letter-spacing-wide);
+  border-radius: var(--radius-full);
+  border: 1px solid transparent;
+  white-space: nowrap;
+  user-select: none;
+}
+
+/* ── SEMANTIC VARIANTS ──────────────────────────────────── */
+
+.badge-success {
+  background: var(--color-green-surface);
+  color: var(--color-green);
+  border-color: var(--color-green-border);
+}
+
+.badge-warning {
+  background: var(--color-yellow-surface);
+  color: var(--color-yellow);
+  border-color: var(--color-yellow-border);
+}
+
+.badge-error {
+  background: var(--color-red-surface);
+  color: var(--color-red);
+  border-color: var(--color-red-border);
+}
+
+.badge-info {
+  background: var(--color-blue-surface);
+  color: var(--color-blue);
+  border-color: var(--color-blue-border);
+}
+
+.badge-neutral {
+  background: rgba(255, 255, 255, 0.06);
+  color: var(--text-secondary);
+  border-color: var(--border-color);
+}
+
+.badge-orange {
+  background: var(--color-orange-surface);
+  color: var(--color-orange);
+  border-color: var(--color-orange-border);
+}
+
+.badge-purple {
+  background: var(--color-purple-surface);
+  color: var(--color-purple);
+  border-color: var(--color-purple-border);
+}
+
+/* ── SOLID VARIANTS ─────────────────────────────────────── */
+
+.badge-solid-orange {
+  background: var(--color-orange);
+  color: var(--text-inverse);
+  border-color: transparent;
+}
+
+.badge-solid-blue {
+  background: var(--color-blue);
+  color: var(--text-inverse);
+  border-color: transparent;
+}
+
+.badge-solid-green {
+  background: var(--color-green);
+  color: var(--text-inverse);
+  border-color: transparent;
+}
+
+/* ── SIZES ──────────────────────────────────────────────── */
+
+.badge-sm {
+  padding: 2px 7px;
+  font-size: 10px;
+  gap: 3px;
+}
+
+.badge-lg {
+  padding: 5px 14px;
+  font-size: var(--font-size-sm);
+  gap: 6px;
+}
+
+/* ── STATUS DOT ─────────────────────────────────────────── */
+.status-dot {
+  display: inline-block;
+  width: 8px;
+  height: 8px;
+  border-radius: var(--radius-full);
+  flex-shrink: 0;
+}
+
+.status-dot.active,
+.status-dot.online,
+.status-dot.success { background: var(--color-green); }
+
+.status-dot.warning { background: var(--color-yellow); }
+
+.status-dot.error,
+.status-dot.offline { background: var(--color-red); }
+
+.status-dot.idle,
+.status-dot.neutral { background: var(--text-muted); }
+
+.status-dot.info,
+.status-dot.processing { background: var(--color-blue); }
+
+/* Animated pulse variant */
+.status-dot.pulse {
+  position: relative;
+}
+
+.status-dot.pulse::before {
+  content: '';
+  position: absolute;
+  inset: -3px;
+  border-radius: var(--radius-full);
+  background: inherit;
+  opacity: 0.4;
+  animation: gs-pulse-ring 1.5s var(--ease-standard) infinite;
+}
+
+/* ── INLINE STATUS BADGE ────────────────────────────────── */
+.status-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 4px 10px;
+  background: rgba(255, 255, 255, 0.04);
+  border: 1px solid var(--border-color);
+  border-radius: var(--radius-full);
+  font-size: var(--font-size-sm);
+  font-weight: var(--font-weight-medium);
+  color: var(--text-secondary);
+}
+
+/* ── TAG ────────────────────────────────────────────────── */
+.tag {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--space-2);
+  padding: 5px 12px;
+  background: rgba(255, 255, 255, 0.05);
+  border: 1px solid var(--border-color);
+  border-radius: var(--radius-sm);
+  font-size: var(--font-size-sm);
+  font-weight: var(--font-weight-medium);
+  color: var(--text-secondary);
+  transition: all var(--transition-fast);
+  cursor: default;
+}
+
+.tag:hover {
+  background: rgba(255, 255, 255, 0.08);
+  border-color: var(--border-strong);
+  color: var(--text-primary);
+}
+
+/* Tag close button */
+.tag-remove {
+  width: 14px;
+  height: 14px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: var(--radius-full);
+  cursor: pointer;
+  color: var(--text-muted);
+  transition: all var(--transition-fast);
+  background: none;
+  border: none;
+  padding: 0;
+  font-size: 12px;
+}
+
+.tag-remove:hover {
+  background: var(--color-red-surface);
+  color: var(--color-red);
+}
+
+/* ── AVATAR ─────────────────────────────────────────────── */
+.avatar {
+  width: 40px;
+  height: 40px;
+  border-radius: var(--radius-full);
+  background: linear-gradient(135deg, var(--color-blue) 0%, var(--color-purple) 100%);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: var(--font-size-sm);
+  font-weight: var(--font-weight-bold);
+  color: #ffffff;
+  flex-shrink: 0;
+  overflow: hidden;
+  border: 2px solid var(--border-color);
+  user-select: none;
+}
+
+.avatar img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  border-radius: var(--radius-full);
+}
+
+.avatar-xs { width: 24px; height: 24px; font-size: 10px; }
+.avatar-sm { width: 32px; height: 32px; font-size: var(--font-size-xs); }
+.avatar-lg { width: 56px; height: 56px; font-size: var(--font-size-xl); }
+.avatar-xl { width: 72px; height: 72px; font-size: var(--font-size-2xl); }
+
+.avatar-group {
+  display: flex;
+}
+
+.avatar-group .avatar {
+  margin-left: -8px;
+  box-shadow: 0 0 0 2px var(--bg-card);
+}
+
+.avatar-group .avatar:first-child { margin-left: 0; }

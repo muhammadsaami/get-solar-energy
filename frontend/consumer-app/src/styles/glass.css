@@ -1,0 +1,203 @@
+/*
+ * ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+ *  GET SOLAR ENERGY — GLASS DESIGN LANGUAGE
+ *  Version: 1.0.0
+ *  Standardizes all glassmorphism usage across the platform.
+ *  No page may implement glass independently.
+ *  All glass effects must inherit from this file.
+ * ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+ */
+
+/* ── GLASS MIXIN LAYERS ─────────────────────────────────── */
+
+/* Standard glass card — most common glass surface */
+.glass-card {
+  background: var(--glass-bg);
+  backdrop-filter: blur(var(--blur-glass));
+  -webkit-backdrop-filter: blur(var(--blur-glass));
+  border: 1px solid var(--glass-border);
+  border-radius: var(--radius-lg);
+  box-shadow: var(--glass-shadow), var(--shadow-inset);
+  position: relative;
+  overflow: hidden;
+}
+
+/* Top highlight line — subtle lens flare effect */
+.glass-card::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  border-radius: inherit;
+  background: linear-gradient(135deg, var(--glass-highlight-strong) 0%, transparent 50%);
+  pointer-events: none;
+  z-index: 0;
+}
+
+/* Hover state */
+.glass-card:hover {
+  border-color: var(--glass-border-active);
+  box-shadow: var(--shadow-hover), var(--shadow-inset);
+  transition: border-color var(--transition-normal), box-shadow var(--transition-normal);
+}
+
+/* ── GLASS VARIANTS ─────────────────────────────────────── */
+
+/* Light glass — lighter blur, more transparent */
+.glass-light {
+  background: var(--glass-bg-light);
+  backdrop-filter: blur(var(--blur-md));
+  -webkit-backdrop-filter: blur(var(--blur-md));
+  border: 1px solid var(--glass-border);
+  border-radius: var(--radius-lg);
+  box-shadow: var(--shadow-sm);
+}
+
+/* Heavy glass — near-opaque, strong blur */
+.glass-heavy {
+  background: var(--glass-bg-heavy);
+  backdrop-filter: blur(var(--blur-lg));
+  -webkit-backdrop-filter: blur(var(--blur-lg));
+  border: 1px solid var(--glass-border);
+  border-radius: var(--radius-lg);
+  box-shadow: var(--shadow-card);
+}
+
+/* Ultra glass — auth card level, maximum depth */
+.glass-ultra {
+  background: var(--glass-bg-ultra);
+  backdrop-filter: blur(var(--blur-auth));
+  -webkit-backdrop-filter: blur(var(--blur-auth));
+  border: 1px solid var(--glass-border);
+  border-radius: var(--radius-xl);
+  box-shadow: var(--shadow-modal), var(--shadow-inset);
+}
+
+/* ── GLASS NAVIGATION ───────────────────────────────────── */
+
+/* Navigation bar glass surface */
+.glass-nav {
+  background: rgba(6, 15, 31, 0.92);
+  backdrop-filter: blur(var(--blur-nav));
+  -webkit-backdrop-filter: blur(var(--blur-nav));
+  border-bottom: 1px solid var(--glass-border);
+}
+
+/* Sidebar glass */
+.glass-sidebar {
+  background: rgba(8, 22, 37, 0.92);
+  backdrop-filter: blur(var(--blur-lg));
+  -webkit-backdrop-filter: blur(var(--blur-lg));
+  border-right: 1px solid rgba(255, 255, 255, 0.07);
+}
+
+/* ── GLASS INPUTS ───────────────────────────────────────── */
+
+.glass-input {
+  background: var(--bg-input);
+  backdrop-filter: blur(var(--blur-hud));
+  -webkit-backdrop-filter: blur(var(--blur-hud));
+  border: 1px solid var(--border-color);
+  border-radius: var(--radius-md);
+  color: var(--text-primary);
+  transition: border-color var(--transition-fast), box-shadow var(--transition-fast);
+}
+
+.glass-input:focus {
+  outline: none;
+  border-color: var(--border-glow);
+  box-shadow: 0 0 0 3px var(--color-blue-surface);
+}
+
+.glass-input::placeholder {
+  color: var(--text-muted);
+}
+
+/* ── GLASS MODAL ────────────────────────────────────────── */
+
+.glass-modal {
+  background: var(--glass-bg-heavy);
+  backdrop-filter: blur(var(--blur-modal));
+  -webkit-backdrop-filter: blur(var(--blur-modal));
+  border: 1px solid var(--glass-border);
+  border-radius: var(--radius-2xl);
+  box-shadow: var(--shadow-modal);
+}
+
+/* Modal overlay scrim */
+.glass-modal-overlay {
+  background: rgba(4, 10, 20, 0.75);
+  backdrop-filter: blur(4px);
+  -webkit-backdrop-filter: blur(4px);
+}
+
+/* ── GLASS HUD ──────────────────────────────────────────── */
+
+/* Dashboard data panel — crisp, minimal blur */
+.glass-hud {
+  background: rgba(8, 24, 42, 0.85);
+  backdrop-filter: blur(var(--blur-hud));
+  -webkit-backdrop-filter: blur(var(--blur-hud));
+  border: 1px solid var(--glass-border);
+  border-radius: var(--radius-md);
+}
+
+/* ── GLASS ACTIVE STATES ────────────────────────────────── */
+
+/* Blue glow active — for focused/selected glass elements */
+.glass-active-blue {
+  border-color: var(--glass-border-active) !important;
+  box-shadow: var(--shadow-hover), 0 0 0 1px var(--color-blue-border) !important;
+}
+
+/* Orange glow active — for CTA glass elements */
+.glass-active-orange {
+  border-color: var(--glass-border-orange) !important;
+  box-shadow: var(--shadow-hover-orange), 0 0 0 1px var(--color-orange-border) !important;
+}
+
+/* ── GLASS PANEL SYSTEM ─────────────────────────────────── */
+
+/* Full section glass panel — for landing page overlays */
+.glass-panel {
+  background: rgba(13, 33, 54, 0.60);
+  backdrop-filter: blur(var(--blur-glass));
+  -webkit-backdrop-filter: blur(var(--blur-glass));
+  padding: var(--space-12) var(--space-12);
+  border-radius: var(--radius-lg);
+  border: 1px solid var(--border-color-light);
+}
+
+/* Transparent glass strip — for inline dashboard info */
+.glass-strip {
+  background: rgba(255, 255, 255, 0.03);
+  border: 1px solid var(--border-subtle);
+  border-radius: var(--radius-sm);
+  padding: var(--space-3) var(--space-4);
+}
+
+/* ── GLOW EFFECTS ───────────────────────────────────────── */
+
+.glow-blue   { box-shadow: var(--shadow-glow-blue); }
+.glow-orange { box-shadow: var(--shadow-glow-orange); }
+.glow-green  { box-shadow: var(--shadow-glow-green); }
+
+/* ── REFLECTION HIGHLIGHT ──────────────────────────────── */
+/* Use inside glass cards for the top-edge highlight line */
+.glass-reflect::after {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 16px;
+  right: 16px;
+  height: 1px;
+  background: linear-gradient(
+    90deg,
+    transparent 0%,
+    rgba(255, 255, 255, 0.12) 30%,
+    rgba(255, 255, 255, 0.20) 50%,
+    rgba(255, 255, 255, 0.12) 70%,
+    transparent 100%
+  );
+  border-radius: var(--radius-full);
+  pointer-events: none;
+}

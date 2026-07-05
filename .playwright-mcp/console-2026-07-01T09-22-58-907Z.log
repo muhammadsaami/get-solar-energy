@@ -1,0 +1,7 @@
+[   23113ms] [ERROR] API ROI calculation failed: TypeError: Failed to fetch
+    at window.fetch (eval at <anonymous> (eval at evaluate (:303:30)), <anonymous>:5:29)
+    at HTMLButtonElement.<anonymous> (http://127.0.0.1:8000/frontend/app.js?v=1.0.1:1365:27)
+    at eval (eval at <anonymous> (eval at evaluate (:303:30)), <anonymous>:12:9)
+    at eval (eval at evaluate (:303:30), <anonymous>:4:50)
+    at UtilityScript.evaluate (<anonymous>:305:16)
+    at UtilityScript.<anonymous> (<anonymous>:1:44) @ http://127.0.0.1:8000/frontend/app.js?v=1.0.1:1397

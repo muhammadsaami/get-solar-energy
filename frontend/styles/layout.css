@@ -1,0 +1,301 @@
+/*
+ * ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+ *  GET SOLAR ENERGY — LAYOUT SYSTEM
+ *  Version: 1.0.0
+ *  Reusable page-level layout templates.
+ *  Every authenticated page uses one of these layouts.
+ * ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+ */
+
+/* ── LAYOUT: AUTHENTICATION ─────────────────────────────── */
+/* Centered single-card layout for login, signup, reset */
+.layout-auth {
+  min-height: 100vh;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  padding: var(--space-6);
+  position: relative;
+}
+
+.layout-auth-card {
+  width: 100%;
+  max-width: 460px;
+  position: relative;
+  z-index: var(--z-raised);
+}
+
+/* ── LAYOUT: DASHBOARD ──────────────────────────────────── */
+/* Sidebar + main content — standard app shell */
+.layout-dashboard {
+  display: flex;
+  min-height: 100vh;
+  background: var(--bg-primary);
+}
+
+.layout-dashboard-main {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  margin-left: var(--sidebar-width);
+  transition: margin-left var(--transition-sidebar);
+  overflow-x: hidden;
+}
+
+.layout-dashboard-main.collapsed {
+  margin-left: var(--sidebar-collapsed-width);
+}
+
+.layout-dashboard-header {
+  height: var(--header-height);
+  position: sticky;
+  top: 0;
+  z-index: var(--z-header);
+}
+
+.layout-dashboard-content {
+  flex: 1;
+  padding: var(--content-padding-y) var(--content-padding-x);
+  max-width: var(--content-max-width);
+  width: 100%;
+}
+
+/* ── LAYOUT: SPLIT VIEW ─────────────────────────────────── */
+/* Two-panel: detail view on left, map/chart on right */
+.layout-split {
+  display: grid;
+  grid-template-columns: 380px 1fr;
+  min-height: 100vh;
+  overflow: hidden;
+}
+
+.layout-split-panel {
+  overflow-y: auto;
+  height: 100vh;
+  scrollbar-width: thin;
+  scrollbar-color: var(--border-color) transparent;
+}
+
+.layout-split-main {
+  position: relative;
+  overflow: hidden;
+}
+
+/* ── LAYOUT: ANALYTICS ──────────────────────────────────── */
+/* Full data grid — for reports, analytics views */
+.layout-analytics {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-6);
+  padding: var(--content-padding-y) var(--content-padding-x);
+}
+
+.layout-analytics-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--space-4);
+  flex-wrap: wrap;
+}
+
+.layout-analytics-kpis {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: var(--space-5);
+}
+
+.layout-analytics-body {
+  display: grid;
+  grid-template-columns: 1fr;
+  gap: var(--space-6);
+}
+
+/* ── LAYOUT: SETTINGS ───────────────────────────────────── */
+/* Settings sidebar nav + content area */
+.layout-settings {
+  display: grid;
+  grid-template-columns: 240px 1fr;
+  gap: var(--space-8);
+  padding: var(--content-padding-y) var(--content-padding-x);
+  max-width: 1100px;
+}
+
+.layout-settings-nav {
+  position: sticky;
+  top: var(--header-height);
+  align-self: start;
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-1);
+}
+
+.layout-settings-content {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-8);
+  min-width: 0;
+}
+
+/* ── LAYOUT: WIZARD ─────────────────────────────────────── */
+/* Stepped workflow — roof assessment, ROI calculator */
+.layout-wizard {
+  max-width: 760px;
+  margin: 0 auto;
+  padding: var(--content-padding-y) var(--content-padding-x);
+}
+
+.layout-wizard-steps {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  margin-bottom: var(--space-10);
+  gap: 0;
+}
+
+.wizard-step {
+  display: flex;
+  align-items: center;
+  flex: 1;
+}
+
+.wizard-step-circle {
+  width: 36px;
+  height: 36px;
+  border-radius: var(--radius-full);
+  border: 2px solid var(--border-color);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: var(--font-size-sm);
+  font-weight: var(--font-weight-bold);
+  color: var(--text-muted);
+  background: var(--bg-card);
+  flex-shrink: 0;
+  transition: all var(--transition-normal);
+}
+
+.wizard-step.active .wizard-step-circle {
+  border-color: var(--color-blue);
+  background: var(--color-blue-surface);
+  color: var(--color-blue);
+  box-shadow: var(--shadow-glow-blue);
+}
+
+.wizard-step.completed .wizard-step-circle {
+  border-color: var(--color-green);
+  background: var(--color-green-surface);
+  color: var(--color-green);
+}
+
+.wizard-step-line {
+  flex: 1;
+  height: 2px;
+  background: var(--border-color);
+  transition: background var(--transition-normal);
+}
+
+.wizard-step.completed + .wizard-step .wizard-step-line,
+.wizard-step.completed .wizard-step-line {
+  background: var(--color-green);
+}
+
+/* ── LAYOUT: MASTER DETAIL ──────────────────────────────── */
+/* List on left, detail on right — CRM, reports */
+.layout-master-detail {
+  display: grid;
+  grid-template-columns: 360px 1fr;
+  min-height: calc(100vh - var(--header-height));
+  overflow: hidden;
+}
+
+.layout-master-list {
+  border-right: 1px solid var(--border-color);
+  overflow-y: auto;
+  height: calc(100vh - var(--header-height));
+}
+
+.layout-detail-pane {
+  overflow-y: auto;
+  height: calc(100vh - var(--header-height));
+  padding: var(--space-8);
+}
+
+/* ── CONTENT CONTAINER ──────────────────────────────────── */
+.container {
+  width: 100%;
+  max-width: var(--content-max-width);
+  margin: 0 auto;
+  padding-left: var(--content-padding-x);
+  padding-right: var(--content-padding-x);
+}
+
+.container-narrow {
+  max-width: 760px;
+  margin: 0 auto;
+}
+
+.container-wide {
+  max-width: 1600px;
+  margin: 0 auto;
+}
+
+/* ── PAGE HEADER ────────────────────────────────────────── */
+.page-header {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: var(--space-6);
+  margin-bottom: var(--space-8);
+  flex-wrap: wrap;
+}
+
+.page-header-left {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-2);
+}
+
+.page-title {
+  font-size: var(--font-size-3xl);
+  font-weight: var(--font-weight-bold);
+  color: var(--text-primary);
+  line-height: var(--line-height-tight);
+}
+
+.page-subtitle {
+  font-size: var(--font-size-md);
+  color: var(--text-secondary);
+}
+
+/* ── RESPONSIVE BREAKPOINTS ─────────────────────────────── */
+@media (max-width: 1280px) {
+  .layout-analytics-kpis { grid-template-columns: repeat(2, 1fr); }
+  .layout-split          { grid-template-columns: 320px 1fr; }
+}
+
+@media (max-width: 1024px) {
+  .layout-settings      { grid-template-columns: 1fr; }
+  .layout-master-detail { grid-template-columns: 1fr; }
+  .layout-master-list   { height: auto; border-right: none; border-bottom: 1px solid var(--border-color); }
+  .layout-split         { grid-template-columns: 1fr; }
+  .layout-dashboard-main { margin-left: 0; }
+}
+
+@media (max-width: 768px) {
+  .layout-analytics-kpis  { grid-template-columns: repeat(2, 1fr); }
+  .layout-analytics-header { flex-direction: column; align-items: flex-start; }
+  .container { padding-left: var(--space-5); padding-right: var(--space-5); }
+  :root {
+    --content-padding-x: 20px;
+    --content-padding-y: 24px;
+  }
+}
+
+@media (max-width: 480px) {
+  .layout-analytics-kpis { grid-template-columns: 1fr; }
+  :root {
+    --content-padding-x: 16px;
+    --content-padding-y: 16px;
+  }
+}
