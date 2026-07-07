@@ -6676,3 +6676,224 @@ div[style*="display: grid"] {
   outline: 2px solid var(--accent-blue) !important;
   outline-offset: 2px;
 }
+
+/* CRM 2.0 & Phase 12.4A+ Production Architecture Layouts */
+.kanban-board-wrapper {
+  display: flex !important;
+  overflow-x: auto !important;
+  gap: 16px !important;
+  padding-bottom: 12px;
+  scroll-behavior: smooth;
+  scrollbar-width: thin;
+}
+.kanban-column {
+  flex: 0 0 265px !important;
+  min-width: 265px !important;
+}
+.crm-drawer-tabs-nav {
+  display: flex;
+  gap: 4px;
+  border-bottom: 1px solid var(--border-color);
+  margin-bottom: 15px;
+  padding-bottom: 5px;
+  overflow-x: auto;
+  scrollbar-width: none;
+}
+.crm-drawer-tabs-nav::-webkit-scrollbar {
+  display: none;
+}
+.crm-drawer-tab-btn {
+  background: none;
+  border: none;
+  padding: 8px 12px;
+  font-family: 'Outfit', sans-serif;
+  font-size: 11px;
+  font-weight: 700;
+  color: var(--text-secondary);
+  cursor: pointer;
+  border-radius: 4px;
+  white-space: nowrap;
+  transition: background 0.2s, color 0.2s;
+}
+.crm-drawer-tab-btn:hover {
+  background: rgba(255, 255, 255, 0.03);
+  color: #ffffff;
+}
+.crm-drawer-tab-btn.active {
+  background: rgba(0, 174, 239, 0.12);
+  color: var(--accent-blue);
+}
+.crm-drawer-tab-pane {
+  display: none;
+}
+.crm-drawer-tab-pane.active {
+  display: block;
+}
+.badge-priority-high {
+  background: rgba(239, 68, 68, 0.12) !important;
+  color: #ef4444 !important;
+  border: 1px solid rgba(239, 68, 68, 0.2) !important;
+}
+.badge-priority-medium {
+  background: rgba(247, 147, 30, 0.12) !important;
+  color: var(--accent-orange) !important;
+  border: 1px solid rgba(247, 147, 30, 0.2) !important;
+}
+.badge-priority-low {
+  background: rgba(54, 211, 153, 0.12) !important;
+  color: var(--accent-green) !important;
+  border: 1px solid rgba(54, 211, 153, 0.2) !important;
+}
+mark.crm-search-highlight {
+  background: rgba(234, 179, 8, 0.35);
+  color: #ffffff;
+  border-radius: 2px;
+  padding: 0 2px;
+}
+
+/* ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+   Phase 12.4A+++ CRM Production Excellence — CSS Extensions
+   ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ */
+
+/* ── CRM Avatar ────────────────────────────────────────── */
+.crm-avatar {
+  width: 48px;
+  height: 48px;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 17px;
+  font-weight: 800;
+  color: #fff;
+  letter-spacing: .5px;
+  flex-shrink: 0;
+  user-select: none;
+}
+
+/* ── CRM Score Rings ───────────────────────────────────── */
+.crm-score-ring-wrap {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 2px;
+}
+.crm-score-ring-label {
+  font-size: 8px;
+  color: var(--text-muted);
+  text-transform: uppercase;
+  letter-spacing: .4px;
+}
+.crm-score-ring svg circle:nth-child(2) {
+  transition: stroke-dasharray 0.6s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+/* ── Pipeline Progress Bar ─────────────────────────────── */
+.crm-pipeline-progress {
+  width: 100%;
+  padding: 6px 0;
+}
+
+/* ── Status Badge in Drawer ────────────────────────────── */
+.crm-drawer-status-badge {
+  display: inline-block;
+  font-size: 9px;
+  font-weight: 700;
+  padding: 2px 10px;
+  border-radius: 20px;
+  letter-spacing: .4px;
+}
+
+/* ── Next Follow-up Countdown ──────────────────────────── */
+.crm-next-followup-countdown {
+  font-size: 11px;
+  font-weight: 700;
+  transition: color 0.2s;
+}
+
+/* ── Kanban Card Drag States ───────────────────────────── */
+.kanban-card.dragging {
+  opacity: 0.55;
+  transform: scale(0.97);
+  border: 1px dashed rgba(59, 130, 246, 0.5) !important;
+  box-shadow: 0 8px 32px rgba(0, 0, 0, 0.45);
+}
+.kanban-column.drag-over {
+  background: rgba(59, 130, 246, 0.06);
+  border: 1px solid rgba(59, 130, 246, 0.25);
+  transition: background 0.15s, border 0.15s;
+}
+
+/* ── Accessibility: Visible Focus Rings ────────────────── */
+.kanban-card:focus-visible,
+.crm-search-item:focus-visible,
+.crm-drawer-tab-btn:focus-visible {
+  outline: 2px solid rgba(59, 130, 246, 0.8);
+  outline-offset: 2px;
+  border-radius: 6px;
+}
+
+/* ── Search Item keyboard focus highlight ──────────────── */
+.crm-search-item.crm-search-focused {
+  background: rgba(59, 130, 246, 0.12) !important;
+  border-color: rgba(59, 130, 246, 0.4) !important;
+  outline: none;
+}
+.crm-search-item {
+  transition: background 0.1s, border-color 0.1s;
+}
+.crm-search-item:hover {
+  background: rgba(255, 255, 255, 0.04) !important;
+}
+
+/* ── Reduced-Motion: disable all CRM animations ───────── */
+@media (prefers-reduced-motion: reduce) {
+  .kanban-card,
+  .crm-score-ring svg circle,
+  .crm-pipeline-progress div div {
+    transition: none !important;
+    animation: none !important;
+  }
+  .kanban-card.dragging {
+    opacity: 1;
+    transform: none;
+  }
+}
+
+/* ── Responsive: Kanban on Tablet ──────────────────────── */
+@media (max-width: 1280px) {
+  .crm-kanban-board {
+    overflow-x: auto;
+    -webkit-overflow-scrolling: touch;
+    scroll-snap-type: x mandatory;
+    padding-bottom: 12px;
+  }
+  .kanban-column {
+    min-width: 200px;
+    scroll-snap-align: start;
+    flex-shrink: 0;
+  }
+}
+
+/* ── Responsive: Profile Drawer on Mobile ──────────────── */
+@media (max-width: 768px) {
+  #crmLeadProfileDrawer .drawer-panel {
+    width: 100vw !important;
+    max-width: 100vw !important;
+    border-radius: 0;
+  }
+  .crm-drawer-header-scores {
+    flex-wrap: wrap;
+    gap: 8px;
+  }
+}
+
+/* ── Responsive: CRM Search Results ───────────────────── */
+@media (max-width: 600px) {
+  #crmGlobalSearchResults {
+    left: 0 !important;
+    right: 0 !important;
+    width: 100vw !important;
+    border-radius: 0 0 8px 8px !important;
+  }
+}

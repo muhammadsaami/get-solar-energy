@@ -4208,114 +4208,230 @@
 
       <!-- --- CRM & LEAD MANAGEMENT TAB CONTENT --- -->
       <div class="tab-content" id="tab-crm-dashboard">
-        <div class="tab-header-block" style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 15px;">
+        <div class="tab-header-block" style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 15px; margin-bottom: 20px;">
           <div>
-            <h2 class="tab-heading">Solar CRM & Lead Operations</h2>
-            <p class="tab-subheading">Track customer conversions, calculate revenue potential, manage sales follow-ups, and view engagement status.</p>
+            <h2 class="tab-heading">Solar Enterprise CRM &amp; Sales Operations</h2>
+            <p class="tab-subheading">Manage client lifecycles, schedule site surveys, assign tasks, and analyze pipeline metrics with smart automation.</p>
+          </div>
+          <!-- Global CRM Search Input Box -->
+          <div style="display: flex; gap: 10px; align-items: center;">
+            <div style="position: relative;">
+              <input type="text" id="crmGlobalSearch" placeholder="Global CRM Search..." style="padding: 8px 14px; border-radius: 6px; background-color: var(--bg-input); border: 1px solid var(--border-color); color: #ffffff; font-size: 11px; outline: none; width: 250px; font-family: 'Outfit';">
+              <div id="crmGlobalSearchResults" class="card-base" style="display: none; position: absolute; top: 38px; right: 0; width: 350px; max-height: 400px; overflow-y: auto; z-index: 1000; padding: 15px; --card-theme: 23, 168, 229; box-shadow: 0 10px 30px rgba(0,0,0,0.5); border: 1px solid rgba(0, 181, 226, 0.25);"></div>
+            </div>
+            <button id="crmBtnPrintReport" class="table-action-btn" style="padding: 8px 14px;"><svg style="width:12px;height:12px;vertical-align:middle;margin-right:4px;"><use href="#icon-export"></use></svg>Print Workspace</button>
           </div>
         </div>
 
-        <!-- CRM KPI Overview Cards -->
-        <div style="display: grid; grid-template-columns: repeat(6, 1fr); gap: 12px; margin-bottom: 20px;">
-          <div class="card-base shadow-lift" style="--card-theme: 23, 168, 229; padding: 14px 10px;">
-            <span class="kpi-title" style="font-size: 10px;">Total Leads</span>
-            <div class="kpi-value-block" style="margin: 4px 0 2px 0;">
-              <span class="kpi-value-text" id="crmKpiTotalLeads" style="font-size: 18px;">0</span>
-            </div>
-            <span class="kpi-card-subdesc" style="font-size: 8px;">Registered users</span>
+        <!-- CRM KPI Dashboard Widgets (14 metrics) -->
+        <div style="display: grid; grid-template-columns: repeat(7, 1fr); gap: 10px; margin-bottom: 20px;">
+          <div class="card-base shadow-lift" style="--card-theme: 23, 168, 229; padding: 12px 10px;">
+            <span class="kpi-title" style="font-size: 9px; text-transform: uppercase;">Total Leads</span>
+            <div class="kpi-value-block" style="margin: 4px 0 2px 0;"><span class="kpi-value-text" id="crmKpiTotalLeads" style="font-size: 16px;">0</span></div>
+            <span class="kpi-card-subdesc" style="font-size: 7px; color: var(--text-muted);">Registered clients</span>
           </div>
-          <div class="card-base shadow-lift" style="--card-theme: 255, 138, 29; padding: 14px 10px;">
-            <span class="kpi-title" style="font-size: 10px;">Total Pipeline Value</span>
-            <div class="kpi-value-block" style="margin: 4px 0 2px 0;">
-              <span class="kpi-value-text" id="crmKpiPipelineValue" style="font-size: 18px;">₹0</span>
-            </div>
-            <span class="kpi-card-subdesc" style="font-size: 8px;">Active opportunities</span>
+          <div class="card-base shadow-lift" style="--card-theme: 255, 138, 29; padding: 12px 10px;">
+            <span class="kpi-title" style="font-size: 9px; text-transform: uppercase;">Qualified</span>
+            <div class="kpi-value-block" style="margin: 4px 0 2px 0;"><span class="kpi-value-text" id="crmKpiQualifiedLeads" style="font-size: 16px;">0</span></div>
+            <span class="kpi-card-subdesc" style="font-size: 7px; color: var(--text-muted);">Feasibility passed</span>
           </div>
-          <div class="card-base shadow-lift" style="--card-theme: 54, 211, 153; padding: 14px 10px;">
-            <span class="kpi-title" style="font-size: 10px;">Won Revenue</span>
-            <div class="kpi-value-block" style="margin: 4px 0 2px 0;">
-              <span class="kpi-value-text" id="crmKpiWonRevenue" style="font-size: 18px;">₹0</span>
-            </div>
-            <span class="kpi-card-subdesc" style="font-size: 8px;">Completed solar sales</span>
+          <div class="card-base shadow-lift" style="--card-theme: 54, 211, 153; padding: 12px 10px;">
+            <span class="kpi-title" style="font-size: 9px; text-transform: uppercase;">Won Deals</span>
+            <div class="kpi-value-block" style="margin: 4px 0 2px 0;"><span class="kpi-value-text" id="crmKpiWonDeals" style="font-size: 16px;">0</span></div>
+            <span class="kpi-card-subdesc" style="font-size: 7px; color: var(--text-muted);">Closed transactions</span>
           </div>
-          <div class="card-base shadow-lift" style="--card-theme: 234, 179, 8; padding: 14px 10px;">
-            <span class="kpi-title" style="font-size: 10px;">High Intent Leads</span>
-            <div class="kpi-value-block" style="margin: 4px 0 2px 0;">
-              <span class="kpi-value-text" id="crmKpiHighIntent" style="font-size: 18px;">0</span>
-            </div>
-            <span class="kpi-card-subdesc" style="font-size: 8px;">Score &ge; 70</span>
+          <div class="card-base shadow-lift" style="--card-theme: 239, 68, 68; padding: 12px 10px;">
+            <span class="kpi-title" style="font-size: 9px; text-transform: uppercase;">Lost Opportunities</span>
+            <div class="kpi-value-block" style="margin: 4px 0 2px 0;"><span class="kpi-value-text" id="crmKpiLostDeals" style="font-size: 16px;">0</span></div>
+            <span class="kpi-card-subdesc" style="font-size: 7px; color: var(--text-muted);">Archived/Dropped</span>
           </div>
-          <div class="card-base shadow-lift" style="--card-theme: 167, 139, 250; padding: 14px 10px;">
-            <span class="kpi-title" style="font-size: 10px;">Most Effective Lead Source</span>
-            <div class="kpi-value-block" style="margin: 4px 0 2px 0;">
-              <span class="kpi-value-text" id="crmKpiBestSource" style="font-size: 11px; font-weight: 800; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; display: block; margin-top: 5px;">None</span>
-            </div>
-            <span class="kpi-card-subdesc" style="font-size: 8px;">Most effective source</span>
+          <div class="card-base shadow-lift" style="--card-theme: 255, 138, 29; padding: 12px 10px;">
+            <span class="kpi-title" style="font-size: 9px; text-transform: uppercase;">Pipeline Value</span>
+            <div class="kpi-value-block" style="margin: 4px 0 2px 0;"><span class="kpi-value-text" id="crmKpiPipelineValue" style="font-size: 15px;">₹0</span></div>
+            <span class="kpi-card-subdesc" style="font-size: 7px; color: var(--text-muted);">Total pipeline value</span>
           </div>
-          <div class="card-base shadow-lift" style="--card-theme: 54, 211, 153; padding: 14px 10px;">
-            <span class="kpi-title" style="font-size: 10px;">Conversion Rate</span>
-            <div class="kpi-value-block" style="margin: 4px 0 2px 0;">
-              <span class="kpi-value-text" id="crmKpiConversionRate" style="font-size: 18px;">0%</span>
-            </div>
-            <span class="kpi-card-subdesc" style="font-size: 8px;">Won / Total leads</span>
+          <div class="card-base shadow-lift" style="--card-theme: 54, 211, 153; padding: 12px 10px;">
+            <span class="kpi-title" style="font-size: 9px; text-transform: uppercase;">Expected Rev</span>
+            <div class="kpi-value-block" style="margin: 4px 0 2px 0;"><span class="kpi-value-text" id="crmKpiExpectedRevenue" style="font-size: 15px;">₹0</span></div>
+            <span class="kpi-card-subdesc" style="font-size: 7px; color: var(--text-muted);">Weighted projections</span>
+          </div>
+          <div class="card-base shadow-lift" style="--card-theme: 167, 139, 250; padding: 12px 10px;">
+            <span class="kpi-title" style="font-size: 9px; text-transform: uppercase;">Proposal Conv</span>
+            <div class="kpi-value-block" style="margin: 4px 0 2px 0;"><span class="kpi-value-text" id="crmKpiProposalConversion" style="font-size: 16px;">0%</span></div>
+            <span class="kpi-card-subdesc" style="font-size: 7px; color: var(--text-muted);">Won / Proposals</span>
           </div>
         </div>
 
-        <!-- CRM Dashboard Sub-Navigation -->
-        <div class="crm-sub-nav" style="display: flex; gap: 10px; margin-bottom: 20px; border-bottom: 1px solid var(--border-color-light); padding-bottom: 10px;">
+        <div style="display: grid; grid-template-columns: repeat(7, 1fr); gap: 10px; margin-bottom: 25px;">
+          <div class="card-base shadow-lift" style="--card-theme: 23, 168, 229; padding: 12px 10px;">
+            <span class="kpi-title" style="font-size: 9px; text-transform: uppercase;">Avg Deal Size</span>
+            <div class="kpi-value-block" style="margin: 4px 0 2px 0;"><span class="kpi-value-text" id="crmKpiAvgDealSize" style="font-size: 15px;">₹0</span></div>
+            <span class="kpi-card-subdesc" style="font-size: 7px; color: var(--text-muted);">Mean project cost</span>
+          </div>
+          <div class="card-base shadow-lift" style="--card-theme: 234, 179, 8; padding: 12px 10px;">
+            <span class="kpi-title" style="font-size: 9px; text-transform: uppercase;">Follow-ups Today</span>
+            <div class="kpi-value-block" style="margin: 4px 0 2px 0;"><span class="kpi-value-text" id="crmKpiFollowUps" style="font-size: 16px;">0</span></div>
+            <span class="kpi-card-subdesc" style="font-size: 7px; color: var(--text-muted);">Pending calls/tasks</span>
+          </div>
+          <div class="card-base shadow-lift" style="--card-theme: 167, 139, 250; padding: 12px 10px;">
+            <span class="kpi-title" style="font-size: 9px; text-transform: uppercase;">Open Tasks</span>
+            <div class="kpi-value-block" style="margin: 4px 0 2px 0;"><span class="kpi-value-text" id="crmKpiOpenTasks" style="font-size: 16px;">0</span></div>
+            <span class="kpi-card-subdesc" style="font-size: 7px; color: var(--text-muted);">Active action items</span>
+          </div>
+          <div class="card-base shadow-lift" style="--card-theme: 54, 211, 153; padding: 12px 10px;">
+            <span class="kpi-title" style="font-size: 9px; text-transform: uppercase;">Meetings</span>
+            <div class="kpi-value-block" style="margin: 4px 0 2px 0;"><span class="kpi-value-text" id="crmKpiUpcomingMeetings" style="font-size: 16px;">0</span></div>
+            <span class="kpi-card-subdesc" style="font-size: 7px; color: var(--text-muted);">Scheduled site visits</span>
+          </div>
+          <div class="card-base shadow-lift" style="--card-theme: 239, 68, 68; padding: 12px 10px;">
+            <span class="kpi-title" style="font-size: 9px; text-transform: uppercase;">Overdue Alerts</span>
+            <div class="kpi-value-block" style="margin: 4px 0 2px 0;"><span class="kpi-value-text" id="crmKpiOverdue" style="font-size: 16px; color:#ef4444;">0</span></div>
+            <span class="kpi-card-subdesc" style="font-size: 7px; color: var(--text-muted);">Action callback delay</span>
+          </div>
+          <div class="card-base shadow-lift" style="--card-theme: 23, 168, 229; padding: 12px 10px;">
+            <span class="kpi-title" style="font-size: 9px; text-transform: uppercase;">Avg Lead Score</span>
+            <div class="kpi-value-block" style="margin: 4px 0 2px 0;"><span class="kpi-value-text" id="crmKpiAvgLeadScore" style="font-size: 16px;">0</span></div>
+            <span class="kpi-card-subdesc" style="font-size: 7px; color: var(--text-muted);">System value quality</span>
+          </div>
+          <div class="card-base shadow-lift" style="--card-theme: 54, 211, 153; padding: 12px 10px;">
+            <span class="kpi-title" style="font-size: 9px; text-transform: uppercase;">Avg Health</span>
+            <div class="kpi-value-block" style="margin: 4px 0 2px 0;"><span class="kpi-value-text" id="crmKpiAvgHealthScore" style="font-size: 16px;">0%</span></div>
+            <span class="kpi-card-subdesc" style="font-size: 7px; color: var(--text-muted);">Customer relations</span>
+          </div>
+        </div>
+
+        <!-- CRM Subsections Navigation -->
+        <div class="crm-sub-nav" style="display: flex; gap: 8px; margin-bottom: 20px; border-bottom: 1px solid var(--border-color-light); padding-bottom: 10px; overflow-x: auto; scrollbar-width: none;">
           <button class="sub-nav-btn active" id="btnCrmSectionKanban" data-crm-section="kanban">Pipeline Kanban</button>
           <button class="sub-nav-btn" id="btnCrmSectionDirectory" data-crm-section="directory">Leads Directory</button>
-          <button class="sub-nav-btn" id="btnCrmSectionActivity" data-crm-section="activity">CRM Activity Feed</button>
+          <button class="sub-nav-btn" id="btnCrmSectionFollowup" data-crm-section="followup">Follow-up Center</button>
+          <button class="sub-nav-btn" id="btnCrmSectionTasks" data-crm-section="tasks">Tasks Board</button>
+          <button class="sub-nav-btn" id="btnCrmSectionMeetings" data-crm-section="meetings">Meeting Center</button>
+          <button class="sub-nav-btn" id="btnCrmSectionAlerts" data-crm-section="alerts">Operational Alerts</button>
+          <button class="sub-nav-btn" id="btnCrmSectionActivity" data-crm-section="activity">Timeline Log</button>
+          <button class="sub-nav-btn" id="btnCrmSectionReports" data-crm-section="reports">CRM Report Center</button>
         </div>
 
-        <!-- Section 1: Pipeline Kanban -->
+        <!-- Section 1: Sales Operations Workspace (Pipeline Kanban) -->
         <div class="crm-section" id="crm-section-kanban" style="display: block;">
-          <div class="kanban-board-wrapper" style="display: grid; grid-template-columns: repeat(6, 1fr); gap: 12px; overflow-x: auto; padding-bottom: 10px;">
+          <div class="kanban-board-wrapper" style="display: flex; gap: 16px; overflow-x: auto; padding-bottom: 12px;">
             <!-- Column 1: New Lead -->
             <div class="kanban-column" data-status="New Lead">
               <div class="kanban-column-header">
                 <span>New Lead</span>
                 <span class="kanban-count-badge" id="count-new-lead">0</span>
               </div>
+              <div style="padding:5px 10px; font-size:8px; color:var(--text-muted); display:flex; justify-content:space-between; border-bottom:1px solid var(--border-color-light);">
+                <span id="value-new-lead">₹0</span>
+                <span id="expected-new-lead">Exp: ₹0</span>
+              </div>
               <div class="kanban-cards-container" id="container-new-lead"></div>
             </div>
-            <!-- Column 2: Contacted -->
-            <div class="kanban-column" data-status="Contacted">
-              <div class="kanban-column-header">
-                <span>Contacted</span>
-                <span class="kanban-count-badge" id="count-contacted">0</span>
-              </div>
-              <div class="kanban-cards-container" id="container-contacted"></div>
-            </div>
-            <!-- Column 3: Qualified -->
+            <!-- Column 2: Qualified -->
             <div class="kanban-column" data-status="Qualified">
               <div class="kanban-column-header">
                 <span>Qualified</span>
                 <span class="kanban-count-badge" id="count-qualified">0</span>
               </div>
+              <div style="padding:5px 10px; font-size:8px; color:var(--text-muted); display:flex; justify-content:space-between; border-bottom:1px solid var(--border-color-light);">
+                <span id="value-qualified">₹0</span>
+                <span id="expected-qualified">Exp: ₹0</span>
+              </div>
               <div class="kanban-cards-container" id="container-qualified"></div>
             </div>
-            <!-- Column 4: Proposal Sent -->
+            <!-- Column 3: Site Survey Scheduled -->
+            <div class="kanban-column" data-status="Site Survey Scheduled">
+              <div class="kanban-column-header">
+                <span>Survey Sched.</span>
+                <span class="kanban-count-badge" id="count-site-survey-scheduled">0</span>
+              </div>
+              <div style="padding:5px 10px; font-size:8px; color:var(--text-muted); display:flex; justify-content:space-between; border-bottom:1px solid var(--border-color-light);">
+                <span id="value-site-survey-scheduled">₹0</span>
+                <span id="expected-site-survey-scheduled">Exp: ₹0</span>
+              </div>
+              <div class="kanban-cards-container" id="container-site-survey-scheduled"></div>
+            </div>
+            <!-- Column 4: Survey Completed -->
+            <div class="kanban-column" data-status="Survey Completed">
+              <div class="kanban-column-header">
+                <span>Survey Comp.</span>
+                <span class="kanban-count-badge" id="count-survey-completed">0</span>
+              </div>
+              <div style="padding:5px 10px; font-size:8px; color:var(--text-muted); display:flex; justify-content:space-between; border-bottom:1px solid var(--border-color-light);">
+                <span id="value-survey-completed">₹0</span>
+                <span id="expected-survey-completed">Exp: ₹0</span>
+              </div>
+              <div class="kanban-cards-container" id="container-survey-completed"></div>
+            </div>
+            <!-- Column 5: Proposal Generated -->
+            <div class="kanban-column" data-status="Proposal Generated">
+              <div class="kanban-column-header">
+                <span>Proposal Gen.</span>
+                <span class="kanban-count-badge" id="count-proposal-generated">0</span>
+              </div>
+              <div style="padding:5px 10px; font-size:8px; color:var(--text-muted); display:flex; justify-content:space-between; border-bottom:1px solid var(--border-color-light);">
+                <span id="value-proposal-generated">₹0</span>
+                <span id="expected-proposal-generated">Exp: ₹0</span>
+              </div>
+              <div class="kanban-cards-container" id="container-proposal-generated"></div>
+            </div>
+            <!-- Column 6: Proposal Sent -->
             <div class="kanban-column" data-status="Proposal Sent">
               <div class="kanban-column-header">
                 <span>Proposal Sent</span>
                 <span class="kanban-count-badge" id="count-proposal-sent">0</span>
               </div>
+              <div style="padding:5px 10px; font-size:8px; color:var(--text-muted); display:flex; justify-content:space-between; border-bottom:1px solid var(--border-color-light);">
+                <span id="value-proposal-sent">₹0</span>
+                <span id="expected-proposal-sent">Exp: ₹0</span>
+              </div>
               <div class="kanban-cards-container" id="container-proposal-sent"></div>
             </div>
-            <!-- Column 5: Won -->
+            <!-- Column 7: Negotiation -->
+            <div class="kanban-column" data-status="Negotiation">
+              <div class="kanban-column-header">
+                <span>Negotiation</span>
+                <span class="kanban-count-badge" id="count-negotiation">0</span>
+              </div>
+              <div style="padding:5px 10px; font-size:8px; color:var(--text-muted); display:flex; justify-content:space-between; border-bottom:1px solid var(--border-color-light);">
+                <span id="value-negotiation">₹0</span>
+                <span id="expected-negotiation">Exp: ₹0</span>
+              </div>
+              <div class="kanban-cards-container" id="container-negotiation"></div>
+            </div>
+            <!-- Column 8: Won -->
             <div class="kanban-column" data-status="Won">
               <div class="kanban-column-header" style="border-top-color: var(--accent-green);">
                 <span>Won</span>
                 <span class="kanban-count-badge" id="count-won" style="background-color: rgba(54, 211, 153, 0.16); color: var(--accent-green);">0</span>
               </div>
+              <div style="padding:5px 10px; font-size:8px; color:var(--text-muted); display:flex; justify-content:space-between; border-bottom:1px solid var(--border-color-light);">
+                <span id="value-won">₹0</span>
+                <span id="expected-won">Exp: ₹0</span>
+              </div>
               <div class="kanban-cards-container" id="container-won"></div>
             </div>
-            <!-- Column 6: Lost -->
+            <!-- Column 9: Closed -->
+            <div class="kanban-column" data-status="Closed">
+              <div class="kanban-column-header" style="border-top-color: var(--accent-blue);">
+                <span>Closed</span>
+                <span class="kanban-count-badge" id="count-closed">0</span>
+              </div>
+              <div style="padding:5px 10px; font-size:8px; color:var(--text-muted); display:flex; justify-content:space-between; border-bottom:1px solid var(--border-color-light);">
+                <span id="value-closed">₹0</span>
+                <span id="expected-closed">Exp: ₹0</span>
+              </div>
+              <div class="kanban-cards-container" id="container-closed"></div>
+            </div>
+            <!-- Column 10: Lost (Separate opportunities branch) -->
             <div class="kanban-column" data-status="Lost">
               <div class="kanban-column-header" style="border-top-color: #ef4444;">
                 <span>Lost</span>
                 <span class="kanban-count-badge" id="count-lost" style="background-color: rgba(239, 68, 68, 0.16); color: #ef4444;">0</span>
+              </div>
+              <div style="padding:5px 10px; font-size:8px; color:var(--text-muted); display:flex; justify-content:space-between; border-bottom:1px solid var(--border-color-light);">
+                <span id="value-lost">₹0</span>
+                <span id="expected-lost">Exp: ₹0</span>
               </div>
               <div class="kanban-cards-container" id="container-lost"></div>
             </div>
@@ -4326,21 +4442,23 @@
         <div class="crm-section" id="crm-section-directory" style="display: none;">
           <div class="card-base" style="--card-theme: 23, 168, 229;">
             <div class="saas-table-header" style="margin-bottom: 20px;">
-              <div>
-                <span class="kpi-title">CRM Lead Directory</span>
-              </div>
+              <div><span class="kpi-title">CRM Lead Directory</span></div>
               <div style="display: flex; gap: 12px; align-items: center; flex-wrap: wrap;">
-                <input type="text" id="crmLeadSearchInput" placeholder="Search by name, email, source..." style="padding: 6px 12px; border-radius: 6px; background-color: var(--bg-input); border: 1px solid var(--border-color); color: var(--text-navy); font-size: 11px; outline: none; width: 220px;">
+                <input type="text" id="crmLeadSearchInput" placeholder="Search leads..." style="padding: 6px 12px; border-radius: 6px; background-color: var(--bg-input); border: 1px solid var(--border-color); color: var(--text-navy); font-size: 11px; outline: none; width: 220px;">
                 <select id="crmLeadStatusFilter" style="padding: 6px 12px; border-radius: 6px; background-color: var(--bg-input); border: 1px solid var(--border-color); color: var(--text-navy); font-size: 11px; outline: none;">
                   <option value="">All Statuses</option>
                   <option value="New Lead">New Lead</option>
-                  <option value="Contacted">Contacted</option>
                   <option value="Qualified">Qualified</option>
+                  <option value="Site Survey Scheduled">Site Survey Scheduled</option>
+                  <option value="Survey Completed">Survey Completed</option>
+                  <option value="Proposal Generated">Proposal Generated</option>
                   <option value="Proposal Sent">Proposal Sent</option>
+                  <option value="Negotiation">Negotiation</option>
                   <option value="Won">Won</option>
+                  <option value="Closed">Closed</option>
                   <option value="Lost">Lost</option>
                 </select>
-                <button id="btnExportCrmCSV" class="table-action-btn" style="padding: 6px 12px; background: rgba(0, 174, 239, 0.12); color: var(--accent-blue); border: 1px solid rgba(0, 174, 239, 0.2);">Export Leads CSV</button>
+                <button id="btnExportCrmCSV" class="table-action-btn" style="padding: 6px 12px; background: rgba(0, 174, 239, 0.12); color: var(--accent-blue); border: 1px solid rgba(0, 174, 239, 0.2);">Export Directory</button>
               </div>
             </div>
             <div class="table-responsive-wrapper" style="overflow-x: auto; max-height: 500px; overflow-y: auto;">
@@ -4353,32 +4471,232 @@
                     <th style="padding: 10px 8px;">City</th>
                     <th style="padding: 10px 8px; text-align: center;">Recommended kW</th>
                     <th style="padding: 10px 8px; text-align: right;">Latest Bill</th>
+                    <th style="padding: 10px 8px; text-align: center;">Salesperson</th>
+                    <th style="padding: 10px 8px; text-align: center;">Lead Score</th>
+                    <th style="padding: 10px 8px; text-align: center;">Health Score</th>
                     <th style="padding: 10px 8px; text-align: center;">Action</th>
                   </tr>
                 </thead>
-                <tbody id="crmLeadsTableBody" style="color: var(--text-navy);">
-                  <!-- Leads list will populate dynamically -->
-                </tbody>
+                <tbody id="crmLeadsTableBody" style="color: var(--text-navy);"></tbody>
               </table>
             </div>
           </div>
         </div>
 
-        <!-- Section 3: CRM Activity Feed -->
+        <!-- Section 3: Follow-up Center -->
+        <div class="crm-section" id="crm-section-followup" style="display: none;">
+          <div style="display: grid; grid-template-columns: 1fr 2fr; gap: 20px;">
+            <div class="card-base" style="--card-theme: 234, 179, 8; padding: 15px;">
+              <h4 style="margin:0 0 12px 0; font-size: 12px; color: #ffffff;">Schedule New Follow-up</h4>
+              <form id="crmFormScheduleFollowup" onsubmit="return false;" style="display: flex; flex-direction: column; gap: 10px;">
+                <div>
+                  <label style="font-size: 9px; color: var(--text-secondary); display: block; margin-bottom: 2px;">Customer Account</label>
+                  <select id="crmFollowupCustomerSelect" style="width: 100%; padding: 6px; border-radius: 4px; background-color: var(--bg-input); border: 1px solid var(--border-color); color: var(--text-navy); font-size: 11px; outline: none;"></select>
+                </div>
+                <div>
+                  <label style="font-size: 9px; color: var(--text-secondary); display: block; margin-bottom: 2px;">Follow-up Description</label>
+                  <input type="text" id="crmFollowupTitle" placeholder="Call client, send documents..." style="width: 100%; padding: 6px; border-radius: 4px; background-color: var(--bg-input); border: 1px solid var(--border-color); color: var(--text-navy); font-size: 11px; outline: none; box-sizing: border-box;" required>
+                </div>
+                <div style="display: flex; gap: 8px;">
+                  <div style="flex: 1;">
+                    <label style="font-size: 9px; color: var(--text-secondary); display: block; margin-bottom: 2px;">Due Date &amp; Time</label>
+                    <input type="datetime-local" id="crmFollowupDueDate" style="width: 100%; padding: 5px; border-radius: 4px; background-color: var(--bg-input); border: 1px solid var(--border-color); color: var(--text-navy); font-size: 11px; outline: none; box-sizing: border-box;" required>
+                  </div>
+                  <div style="flex: 1;">
+                    <label style="font-size: 9px; color: var(--text-secondary); display: block; margin-bottom: 2px;">Priority</label>
+                    <select id="crmFollowupPriority" style="width: 100%; padding: 6px; border-radius: 4px; background-color: var(--bg-input); border: 1px solid var(--border-color); color: var(--text-navy); font-size: 11px; outline: none;">
+                      <option value="Low">Low</option>
+                      <option value="Medium" selected>Medium</option>
+                      <option value="High">High</option>
+                    </select>
+                  </div>
+                </div>
+                <div>
+                  <label style="font-size: 9px; color: var(--text-secondary); display: block; margin-bottom: 2px;">Internal Notes</label>
+                  <textarea id="crmFollowupNotes" placeholder="Context details..." style="width: 100%; height: 50px; padding: 6px; border-radius: 4px; background-color: var(--bg-input); border: 1px solid var(--border-color); color: var(--text-navy); font-size: 11px; outline: none; resize: none; box-sizing: border-box;"></textarea>
+                </div>
+                <button type="button" id="crmBtnCreateFollowup" class="calc-btn" style="padding: 8px; font-size: 11px; margin-top: 5px; width: 100%; height: auto;">Schedule Action</button>
+              </form>
+            </div>
+            
+            <div class="card-base" style="--card-theme: 23, 168, 229; padding: 15px;">
+              <div style="display: flex; justify-content: space-between; align-items: center; border-bottom:1px solid var(--border-color-light); padding-bottom:10px; margin-bottom: 12px;">
+                <h4 style="margin:0; font-size: 12px; color: #ffffff;">Action Callback Reminders</h4>
+                <div style="display: flex; gap: 6px;" id="crmFollowupViewFilters">
+                  <button class="table-action-btn active" data-filter="today">Today</button>
+                  <button class="table-action-btn" data-filter="tomorrow">Tomorrow</button>
+                  <button class="table-action-btn" data-filter="week">This Week</button>
+                  <button class="table-action-btn" data-filter="overdue">Overdue</button>
+                  <button class="table-action-btn" data-filter="completed">Completed</button>
+                </div>
+              </div>
+              <div id="crmFollowupBoxList" style="display: flex; flex-direction: column; gap: 8px; max-height: 400px; overflow-y: auto; padding-right: 5px;"></div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Section 4: CRM Task Board -->
+        <div class="crm-section" id="crm-section-tasks" style="display: none;">
+          <div style="display: grid; grid-template-columns: 1fr 2fr; gap: 20px;">
+            <div class="card-base" style="--card-theme: 167, 139, 250; padding: 15px;">
+              <h4 style="margin:0 0 12px 0; font-size: 12px; color: #ffffff;">Assign Operational Task</h4>
+              <form id="crmFormCreateTask" onsubmit="return false;" style="display: flex; flex-direction: column; gap: 10px;">
+                <div>
+                  <label style="font-size: 9px; color: var(--text-secondary); display: block; margin-bottom: 2px;">Customer Association (Optional)</label>
+                  <select id="crmTaskCustomerSelect" style="width: 100%; padding: 6px; border-radius: 4px; background-color: var(--bg-input); border: 1px solid var(--border-color); color: var(--text-navy); font-size: 11px; outline: none;"></select>
+                </div>
+                <div>
+                  <label style="font-size: 9px; color: var(--text-secondary); display: block; margin-bottom: 2px;">Task Title</label>
+                  <input type="text" id="crmTaskTitle" placeholder="Inspect roof, calculate net cost..." style="width: 100%; padding: 6px; border-radius: 4px; background-color: var(--bg-input); border: 1px solid var(--border-color); color: var(--text-navy); font-size: 11px; outline: none; box-sizing: border-box;" required>
+                </div>
+                <div style="display: flex; gap: 8px;">
+                  <div style="flex: 1;">
+                    <label style="font-size: 9px; color: var(--text-secondary); display: block; margin-bottom: 2px;">Department</label>
+                    <select id="crmTaskDepartment" style="width: 100%; padding: 6px; border-radius: 4px; background-color: var(--bg-input); border: 1px solid var(--border-color); color: var(--text-navy); font-size: 11px; outline: none;">
+                      <option value="Sales">Sales</option>
+                      <option value="Survey">Survey</option>
+                      <option value="Installation">Installation</option>
+                      <option value="Finance">Finance</option>
+                      <option value="AMC">AMC</option>
+                      <option value="Support">Support</option>
+                    </select>
+                  </div>
+                  <div style="flex: 1;">
+                    <label style="font-size: 9px; color: var(--text-secondary); display: block; margin-bottom: 2px;">Assignee User</label>
+                    <input type="text" id="crmTaskAssignee" placeholder="Engineer name..." style="width: 100%; padding: 6px; border-radius: 4px; background-color: var(--bg-input); border: 1px solid var(--border-color); color: var(--text-navy); font-size: 11px; outline: none; box-sizing: border-box;">
+                  </div>
+                </div>
+                <div style="display: flex; gap: 8px;">
+                  <div style="flex: 1;">
+                    <label style="font-size: 9px; color: var(--text-secondary); display: block; margin-bottom: 2px;">Due Date</label>
+                    <input type="date" id="crmTaskDueDate" style="width: 100%; padding: 5px; border-radius: 4px; background-color: var(--bg-input); border: 1px solid var(--border-color); color: var(--text-navy); font-size: 11px; outline: none; box-sizing: border-box;" required>
+                  </div>
+                  <div style="flex: 1;">
+                    <label style="font-size: 9px; color: var(--text-secondary); display: block; margin-bottom: 2px;">Priority</label>
+                    <select id="crmTaskPriority" style="width: 100%; padding: 6px; border-radius: 4px; background-color: var(--bg-input); border: 1px solid var(--border-color); color: var(--text-navy); font-size: 11px; outline: none;">
+                      <option value="Low">Low</option>
+                      <option value="Medium" selected>Medium</option>
+                      <option value="High">High</option>
+                    </select>
+                  </div>
+                </div>
+                <button type="button" id="crmBtnCreateTask" class="calc-btn" style="padding: 8px; font-size: 11px; margin-top: 5px; width: 100%; height: auto;">Create Task</button>
+              </form>
+            </div>
+            
+            <div class="card-base" style="--card-theme: 23, 168, 229; padding: 15px;">
+              <h4 style="margin:0 0 12px 0; font-size: 12px; color: #ffffff; border-bottom:1px solid var(--border-color-light); padding-bottom:10px;">CRM Task Board</h4>
+              <div id="crmTaskGridList" style="display: grid; grid-template-columns: 1fr 1fr; gap: 10px; max-height: 400px; overflow-y: auto; padding-right: 5px;"></div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Section 5: Meeting Center -->
+        <div class="crm-section" id="crm-section-meetings" style="display: none;">
+          <div style="display: grid; grid-template-columns: 1fr 2fr; gap: 20px;">
+            <div class="card-base" style="--card-theme: 54, 211, 153; padding: 15px;">
+              <h4 style="margin:0 0 12px 0; font-size: 12px; color: #ffffff;">Schedule Meeting</h4>
+              <form id="crmFormCreateMeeting" onsubmit="return false;" style="display: flex; flex-direction: column; gap: 10px;">
+                <div>
+                  <label style="font-size: 9px; color: var(--text-secondary); display: block; margin-bottom: 2px;">Customer Account</label>
+                  <select id="crmMeetingCustomerSelect" style="width: 100%; padding: 6px; border-radius: 4px; background-color: var(--bg-input); border: 1px solid var(--border-color); color: var(--text-navy); font-size: 11px; outline: none;"></select>
+                </div>
+                <div>
+                  <label style="font-size: 9px; color: var(--text-secondary); display: block; margin-bottom: 2px;">Meeting Title</label>
+                  <input type="text" id="crmMeetingTitle" placeholder="Technical site review, ROI breakdown..." style="width: 100%; padding: 6px; border-radius: 4px; background-color: var(--bg-input); border: 1px solid var(--border-color); color: var(--text-navy); font-size: 11px; outline: none; box-sizing: border-box;" required>
+                </div>
+                <div style="display: flex; gap: 8px;">
+                  <div style="flex: 1;">
+                    <label style="font-size: 9px; color: var(--text-secondary); display: block; margin-bottom: 2px;">Meeting Type</label>
+                    <select id="crmMeetingType" style="width: 100%; padding: 6px; border-radius: 4px; background-color: var(--bg-input); border: 1px solid var(--border-color); color: var(--text-navy); font-size: 11px; outline: none;">
+                      <option value="Phone">Phone Call</option>
+                      <option value="Video">Video Meeting</option>
+                      <option value="Office">Office Meeting</option>
+                      <option value="Site Visit">Site Visit</option>
+                    </select>
+                  </div>
+                  <div style="flex: 1;">
+                    <label style="font-size: 9px; color: var(--text-secondary); display: block; margin-bottom: 2px;">Scheduled Date</label>
+                    <input type="date" id="crmMeetingDate" style="width: 100%; padding: 5px; border-radius: 4px; background-color: var(--bg-input); border: 1px solid var(--border-color); color: var(--text-navy); font-size: 11px; outline: none; box-sizing: border-box;" required>
+                  </div>
+                </div>
+                <div style="display: flex; gap: 8px;">
+                  <div style="flex: 1;">
+                    <label style="font-size: 9px; color: var(--text-secondary); display: block; margin-bottom: 2px;">Scheduled Time</label>
+                    <input type="time" id="crmMeetingTime" style="width: 100%; padding: 5px; border-radius: 4px; background-color: var(--bg-input); border: 1px solid var(--border-color); color: var(--text-navy); font-size: 11px; outline: none; box-sizing: border-box;" required>
+                  </div>
+                  <div style="flex: 1;">
+                    <label style="font-size: 9px; color: var(--text-secondary); display: block; margin-bottom: 2px;">Representative</label>
+                    <input type="text" id="crmMeetingAssignee" placeholder="Sales agent name..." style="width: 100%; padding: 6px; border-radius: 4px; background-color: var(--bg-input); border: 1px solid var(--border-color); color: var(--text-navy); font-size: 11px; outline: none; box-sizing: border-box;">
+                  </div>
+                </div>
+                <button type="button" id="crmBtnCreateMeeting" class="calc-btn" style="padding: 8px; font-size: 11px; margin-top: 5px; width: 100%; height: auto;">Schedule Event</button>
+              </form>
+            </div>
+            
+            <div class="card-base" style="--card-theme: 23, 168, 229; padding: 15px;">
+              <h4 style="margin:0 0 12px 0; font-size: 12px; color: #ffffff; border-bottom:1px solid var(--border-color-light); padding-bottom:10px;">Scheduled Boardroom Events</h4>
+              <div id="crmMeetingListBox" style="display: flex; flex-direction: column; gap: 8px; max-height: 400px; overflow-y: auto; padding-right: 5px;"></div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Section 6: Operational Alerts Panel -->
+        <div class="crm-section" id="crm-section-alerts" style="display: none;">
+          <div class="card-base" style="--card-theme: 239, 68, 68;">
+            <div style="display: flex; justify-content: space-between; align-items: center; border-bottom:1px solid var(--border-color-light); padding-bottom:10px; margin-bottom: 15px;">
+              <span class="kpi-title">Operational Warning Center</span>
+              <div style="display: flex; gap: 6px;" id="crmAlertSeverityFilters">
+                <button class="table-action-btn active" data-severity="all">All Alerts</button>
+                <button class="table-action-btn" data-severity="critical">Critical</button>
+                <button class="table-action-btn" data-severity="warning">Warnings</button>
+              </div>
+            </div>
+            <div id="crmAlertsListBox" style="display: flex; flex-direction: column; gap: 10px; max-height: 450px; overflow-y: auto; padding-right: 5px;"></div>
+          </div>
+        </div>
+
+        <!-- Section 7: CRM Unified Activity Log -->
         <div class="crm-section" id="crm-section-activity" style="display: none;">
           <div class="card-base" style="--card-theme: 23, 168, 229;">
             <div class="kpi-header-row" style="border-bottom: 1px solid var(--border-color-light); padding-bottom: 12px; margin-bottom: 15px;">
               <span class="kpi-title">Recent CRM Activity Log</span>
               <span class="api-tag" style="margin-top: 0;">Limit: 500 Events</span>
             </div>
-            <div id="crmActivityFeedBox" style="display: flex; flex-direction: column; gap: 10px; max-height: 500px; overflow-y: auto; padding-right: 5px;">
-              <!-- CRM activities list -->
+            <div id="crmActivityFeedBox" style="display: flex; flex-direction: column; gap: 10px; max-height: 500px; overflow-y: auto; padding-right: 5px;"></div>
+          </div>
+        </div>
+
+        <!-- Section 8: Exporters & Report Center -->
+        <div class="crm-section" id="crm-section-reports" style="display: none;">
+          <div class="card-base" style="--card-theme: 23, 168, 229; padding: 25px;">
+            <h3 style="margin: 0 0 10px 0; font-size: 15px; color: #ffffff; font-weight: 800;">CRM Report Exporter</h3>
+            <p style="font-size: 11px; color: var(--text-secondary); margin-bottom: 20px;">Download certified sales metrics, client activity logs, and pipeline conversion datasets in CSV format for executive reviews.</p>
+            <div style="display: grid; grid-template-columns: repeat(4, 1fr); gap: 15px;">
+              <div class="card-base" style="padding: 15px; text-align: center; background: rgba(255,255,255,0.02); border: 1px solid var(--border-color);">
+                <strong style="display: block; font-size: 12px; color: #fff; margin-bottom: 5px;">Sales Report</strong>
+                <span style="display: block; font-size: 9px; color: var(--text-muted); margin-bottom: 15px;">Conversion rates and totals</span>
+                <button class="calc-btn" onclick="triggerCrmReportDownload('sales')" style="font-size: 10px; padding: 6px 12px; height:auto; width:100%;">Download CSV</button>
+              </div>
+              <div class="card-base" style="padding: 15px; text-align: center; background: rgba(255,255,255,0.02); border: 1px solid var(--border-color);">
+                <strong style="display: block; font-size: 12px; color: #fff; margin-bottom: 5px;">CRM Lead Performance</strong>
+                <span style="display: block; font-size: 9px; color: var(--text-muted); margin-bottom: 15px;">Customer profiles &amp; stages</span>
+                <button class="calc-btn" onclick="triggerCrmReportDownload('crm')" style="font-size: 10px; padding: 6px 12px; height:auto; width:100%;">Download CSV</button>
+              </div>
+              <div class="card-base" style="padding: 15px; text-align: center; background: rgba(255,255,255,0.02); border: 1px solid var(--border-color);">
+                <strong style="display: block; font-size: 12px; color: #fff; margin-bottom: 5px;">Pipeline Metrics</strong>
+                <span style="display: block; font-size: 9px; color: var(--text-muted); margin-bottom: 15px;">Values per sales stage</span>
+                <button class="calc-btn" onclick="triggerCrmReportDownload('pipeline')" style="font-size: 10px; padding: 6px 12px; height:auto; width:100%;">Download CSV</button>
+              </div>
+              <div class="card-base" style="padding: 15px; text-align: center; background: rgba(255,255,255,0.02); border: 1px solid var(--border-color);">
+                <strong style="display: block; font-size: 12px; color: #fff; margin-bottom: 5px;">Customer Activity Logs</strong>
+                <span style="display: block; font-size: 9px; color: var(--text-muted); margin-bottom: 15px;">Timeline log event history</span>
+                <button class="calc-btn" onclick="triggerCrmReportDownload('activity')" style="font-size: 10px; padding: 6px 12px; height:auto; width:100%;">Download CSV</button>
+              </div>
             </div>
           </div>
         </div>
-      </div>
-
-      <!-- --- ADMIN ANALYTICS DASHBOARD TAB CONTENT --- -->
+      </div><!-- --- ADMIN ANALYTICS DASHBOARD TAB CONTENT --- -->
       <div class="tab-content" id="tab-admin-dashboard">
         <div class="tab-header-block" style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 15px;">
           <div>
@@ -6029,148 +6347,175 @@
 
   <!-- --- CRM LEAD PROFILE DRAWER --- -->
   <div class="drawer-overlay" id="crmLeadProfileDrawer" style="display: none; position: fixed; top: 0; left: 0; right: 0; bottom: 0; background: rgba(4, 11, 23, 0.5); z-index: 1100;">
-    <div class="drawer-content" style="position: absolute; right: 0; top: 0; bottom: 0; width: 460px; background: rgba(6, 15, 31, 0.98); border-left: 1px solid rgba(0, 181, 226, 0.3); display: flex; flex-direction: column; box-shadow: -10px 0 30px rgba(0,0,0,0.5);">
+    <div class="drawer-content" style="position: absolute; right: 0; top: 0; bottom: 0; width: 500px; background: rgba(6, 15, 31, 0.98); border-left: 1px solid rgba(0, 181, 226, 0.3); display: flex; flex-direction: column; box-shadow: -10px 0 30px rgba(0,0,0,0.5);">
       
-      <!-- Drawer Header -->
-      <div style="display: flex; justify-content: space-between; align-items: center; padding: 15px 20px; border-bottom: 1px solid var(--border-color); background: rgba(255,255,255,0.01);">
-        <div>
-          <h3 id="crmDrawerLeadName" style="margin: 0; font-size: 14px; font-weight: 800; color: #ffffff;">Lead Profile</h3>
-          <span id="crmDrawerLeadEmail" style="font-size: 10px; color: var(--text-secondary);">lead@example.com</span>
+      <!-- Drawer Header & Customer Profile 2.0 Summaries -->
+      <div style="padding: 15px 20px; border-bottom: 1px solid var(--border-color); background: rgba(255,255,255,0.01);">
+        <div style="display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 12px;">
+          <div style="display: flex; align-items: center; gap: 12px;">
+            <div style="width: 38px; height: 38px; border-radius: 50%; background: var(--accent-blue-glow); border:1px solid var(--accent-blue); display:flex; align-items:center; justify-content:center; font-family:'Outfit'; font-weight:800; color:#fff; font-size:16px;" id="crmDrawerAvatar">U</div>
+            <div>
+              <h3 id="crmDrawerLeadName" style="margin: 0; font-size: 13px; font-weight: 800; color: #ffffff;">Lead Profile</h3>
+              <span id="crmDrawerLeadEmail" style="font-size: 9px; color: var(--text-muted); display:block; margin-top:2px;">lead@example.com</span>
+            </div>
+          </div>
+          <button id="btnCloseCrmDrawer" style="background: none; border: none; color: var(--text-muted); font-size: 20px; cursor: pointer; padding: 0; line-height: 1;">&times;</button>
         </div>
-        <button id="btnCloseCrmDrawer" style="background: none; border: none; color: var(--text-muted); font-size: 20px; cursor: pointer; padding: 0; line-height: 1;">&times;</button>
+
+        <!-- Metric Grid Telemetry Header -->
+        <div style="display: grid; grid-template-columns: repeat(4, 1fr); gap: 6px; font-size: 8px; color: var(--text-secondary); text-align: center; border-top: 1px dashed rgba(255,255,255,0.06); padding-top: 8px;">
+          <div>
+            <span style="display:block;color:var(--text-muted);">Lead Score</span>
+            <strong id="crmDrawerLeadScore" style="color:var(--accent-orange); font-size:10px; font-weight:800;">—</strong>
+          </div>
+          <div>
+            <span style="display:block;color:var(--text-muted);">Health Score</span>
+            <strong id="crmDrawerLeadHealth" style="color:var(--accent-green); font-size:10px; font-weight:800;">—</strong>
+          </div>
+          <div>
+            <span style="display:block;color:var(--text-muted);">Pipeline Stage</span>
+            <strong id="crmDrawerLeadStage" style="color:#fff; font-size:9px; font-weight:800; text-transform:uppercase;">—</strong>
+          </div>
+          <div>
+            <span style="display:block;color:var(--text-muted);">Salesperson</span>
+            <strong id="crmDrawerLeadSalesperson" style="color:var(--accent-blue); font-size:9px; font-weight:800;">—</strong>
+          </div>
+        </div>
+
+        <div style="display: grid; grid-template-columns: repeat(4, 1fr); gap: 6px; font-size: 8px; color: var(--text-secondary); text-align: center; margin-top: 6px;">
+          <div>
+            <span style="display:block;color:var(--text-muted);">Expected Rev</span>
+            <strong id="crmDrawerLeadExpectedRevenue" style="color:#fff; font-size:9px; font-weight:800;">—</strong>
+          </div>
+          <div>
+            <span style="display:block;color:var(--text-muted);">Pipeline Value</span>
+            <strong id="crmDrawerLeadProjValue" style="color:#fff; font-size:9px; font-weight:800;">—</strong>
+          </div>
+          <div>
+            <span style="display:block;color:var(--text-muted);">Consumer ID</span>
+            <strong id="crmDrawerLeadConsumer" style="color:#fff; font-size:9px; font-weight:800;">—</strong>
+          </div>
+          <div>
+            <span style="display:block;color:var(--text-muted);">Next Callback</span>
+            <strong id="crmDrawerLeadNextFollowup" style="color:#fff; font-size:8px; font-weight:800; white-space:nowrap; overflow:hidden; text-overflow:ellipsis;">—</strong>
+          </div>
+        </div>
       </div>
 
-      <!-- Drawer Body (Scrollable) -->
-      <div style="flex: 1; overflow-y: auto; padding: 20px; display: flex; flex-direction: column; gap: 20px;">
+      <!-- Drawer Sub-Navigation Tabs -->
+      <div class="crm-drawer-tabs-nav" style="padding: 5px 20px 0 20px;">
+        <button class="crm-drawer-tab-btn active" data-tab="overview">Overview</button>
+        <button class="crm-drawer-tab-btn" data-tab="bills">Bills</button>
+        <button class="crm-drawer-tab-btn" data-tab="roof">Roof Suitability</button>
+        <button class="crm-drawer-tab-btn" data-tab="survey">Site Survey</button>
+        <button class="crm-drawer-tab-btn" data-tab="proposal">Proposal</button>
+        <button class="crm-drawer-tab-btn" data-tab="tasks">Tasks</button>
+        <button class="crm-drawer-tab-btn" data-tab="meetings">Meetings</button>
+        <button class="crm-drawer-tab-btn" data-tab="timeline">Timeline</button>
+        <button class="crm-drawer-tab-btn" data-tab="notes">Notes</button>
+      </div>
+
+      <!-- Drawer Body (Scrollable tab views) -->
+      <div style="flex: 1; overflow-y: auto; padding: 0 20px 20px 20px; display: flex; flex-direction: column;">
         
-        <!-- Demographics & System Info -->
-        <div class="card-base" style="--card-theme: 23, 168, 229; padding: 14px;">
-          <div style="display: flex; flex-direction: column; gap: 10px;">
-            <div style="display: flex; justify-content: space-between; align-items: center;">
-              <span style="font-size: 11px; color: var(--text-secondary);">Consumer Number</span>
-              <strong id="cdpDrawerConsumerNumber" style="font-size: 11px; color: var(--text-navy);">—</strong>
-            </div>
-            <div style="display: flex; justify-content: space-between; align-items: center; border-top: 1px solid var(--border-color-light); padding-top: 8px;">
-              <span style="font-size: 11px; color: var(--text-secondary);">City</span>
-              <strong id="cdpDrawerCity" style="font-size: 11px; color: var(--text-navy);">—</strong>
-            </div>
-            <div style="display: flex; justify-content: space-between; align-items: center; border-top: 1px solid var(--border-color-light); padding-top: 8px;">
-              <span style="font-size: 11px; color: var(--text-secondary);">DISCOM</span>
-              <strong id="cdpDrawerDiscom" style="font-size: 11px; color: var(--text-navy);">—</strong>
-            </div>
-          </div>
-        </div>
-
-        <!-- Latest Bill Details -->
-        <div>
-          <h4 style="font-size: 11px; font-weight: 700; color: var(--text-muted); text-transform: uppercase; margin-bottom: 8px; letter-spacing: 0.3px;">Latest Bill Analysis</h4>
-          <div class="card-base" style="--card-theme: 255, 138, 29; padding: 14px;">
-            <div style="display: flex; flex-direction: column; gap: 10px;">
-              <div style="display: flex; justify-content: space-between; align-items: center;">
-                <span style="font-size: 11px; color: var(--text-secondary);">Billing Period</span>
-                <strong id="cdpDrawerBillPeriod" style="font-size: 11px; color: var(--text-navy);">—</strong>
-              </div>
-              <div style="display: flex; justify-content: space-between; align-items: center; border-top: 1px solid var(--border-color-light); padding-top: 8px;">
-                <span style="font-size: 11px; color: var(--text-secondary);">Monthly Units</span>
-                <strong id="cdpDrawerBillUnits" style="font-size: 11px; color: var(--text-navy);">—</strong>
-              </div>
-              <div style="display: flex; justify-content: space-between; align-items: center; border-top: 1px solid var(--border-color-light); padding-top: 8px;">
-                <span style="font-size: 11px; color: var(--text-secondary);">Bill Amount</span>
-                <strong id="cdpDrawerBillAmount" style="font-size: 11px; color: var(--text-navy);">—</strong>
-              </div>
-              <div style="display: flex; justify-content: space-between; align-items: center; border-top: 1px solid var(--border-color-light); padding-top: 8px;">
-                <span style="font-size: 11px; color: var(--text-secondary);">Per Unit Rate</span>
-                <strong id="cdpDrawerUnitRate" style="font-size: 11px; color: var(--text-navy);">—</strong>
+        <!-- Tab 1: Overview -->
+        <div class="crm-drawer-tab-pane active" id="pane-overview">
+          <div style="display:flex; flex-direction:column; gap:12px; margin-top:10px;">
+            <div class="card-base" style="--card-theme: 23, 168, 229; padding: 12px;">
+              <h4 style="margin:0 0 8px 0; font-size:10px; text-transform:uppercase; color:var(--text-muted);">Contact Details</h4>
+              <div style="display:flex; flex-direction:column; gap:6px; font-size:11px;">
+                <div style="display:flex; justify-content:space-between;"><span style="color:var(--text-secondary);">Phone Number:</span><strong id="crmOverviewPhone" style="color:#fff;">—</strong></div>
+                <div style="display:flex; justify-content:space-between;"><span style="color:var(--text-secondary);">Email Address:</span><strong id="crmOverviewEmail" style="color:#fff;">—</strong></div>
+                <div style="display:flex; justify-content:space-between;"><span style="color:var(--text-secondary);">City Location:</span><strong id="crmOverviewCity" style="color:#fff;">—</strong></div>
+                <div style="display:flex; justify-content:space-between;"><span style="color:var(--text-secondary);">Utility DISCOM:</span><strong id="crmOverviewDiscom" style="color:#fff;">—</strong></div>
+                <div style="display:flex; justify-content:space-between;"><span style="color:var(--text-secondary);">Demographic State:</span><strong id="crmOverviewState" style="color:#fff;">—</strong></div>
               </div>
             </div>
-          </div>
-        </div>
-
-        <!-- Solar Feasibility Specs -->
-        <div>
-          <h4 style="font-size: 11px; font-weight: 700; color: var(--text-muted); text-transform: uppercase; margin-bottom: 8px; letter-spacing: 0.3px;">Solar Sizing &amp; Financials</h4>
-          <div class="card-base" style="--card-theme: 54, 211, 153; padding: 14px;">
-            <div style="display: flex; flex-direction: column; gap: 10px;">
-              <div style="display: flex; justify-content: space-between; align-items: center;">
-                <span style="font-size: 11px; color: var(--text-secondary);">Recommended Solar Size</span>
-                <strong id="cdpDrawerSolarSize" style="font-size: 11px; color: var(--text-navy);">—</strong>
-              </div>
-              <div style="display: flex; justify-content: space-between; align-items: center; border-top: 1px solid var(--border-color-light); padding-top: 8px;">
-                <span style="font-size: 11px; color: var(--text-secondary);">Monthly Savings</span>
-                <strong id="cdpDrawerMonthlySavings" style="font-size: 11px; color: var(--text-navy);">—</strong>
-              </div>
-              <div style="display: flex; justify-content: space-between; align-items: center; border-top: 1px solid var(--border-color-light); padding-top: 8px;">
-                <span style="font-size: 11px; color: var(--text-secondary);">System Cost</span>
-                <strong id="cdpDrawerSystemCost" style="font-size: 11px; color: var(--text-navy);">—</strong>
-              </div>
-              <div style="display: flex; justify-content: space-between; align-items: center; border-top: 1px solid var(--border-color-light); padding-top: 8px;">
-                <span style="font-size: 11px; color: var(--text-secondary);">Payback Period</span>
-                <strong id="cdpDrawerPayback" style="font-size: 11px; color: var(--text-navy);">—</strong>
-              </div>
-              <div style="display: flex; justify-content: space-between; align-items: center; border-top: 1px solid var(--border-color-light); padding-top: 8px;">
-                <span style="font-size: 11px; color: var(--text-secondary);">25-Year Savings</span>
-                <strong id="cdpDrawerSavings25yr" style="font-size: 11px; color: var(--accent-green);">—</strong>
-              </div>
-            </div>
-          </div>
-        </div>
-
-        <!-- Customer Activity Timeline -->
-        <div>
-          <h4 style="font-size: 11px; font-weight: 700; color: var(--text-muted); text-transform: uppercase; margin-bottom: 8px; letter-spacing: 0.3px;">Customer Activity Timeline</h4>
-          <div class="card-base" style="--card-theme: 23, 168, 229; padding: 14px;">
-            <div id="crmDrawerTimeline" style="display: flex; flex-direction: column; gap: 10px;">
-              <!-- Timeline items -->
-            </div>
-          </div>
-        </div>
-
-        <!-- Follow-up Scheduler -->
-        <div>
-          <h4 style="font-size: 11px; font-weight: 700; color: var(--text-muted); text-transform: uppercase; margin-bottom: 8px; letter-spacing: 0.3px;">Follow-Up Management</h4>
-          <div class="card-base" style="--card-theme: 234, 179, 8; padding: 14px; margin-bottom: 10px;">
-            <form id="crmFollowUpForm" onsubmit="return false;" style="display: flex; flex-direction: column; gap: 8px;">
-              <div style="display: flex; gap: 8px;">
-                <div style="flex: 1;">
-                  <label style="font-size: 9px; color: var(--text-secondary); display: block; margin-bottom: 2px;">Action Type</label>
-                  <select id="crmFollowUpType" style="width: 100%; padding: 6px; border-radius: 4px; background-color: var(--bg-input); border: 1px solid var(--border-color); color: var(--text-navy); font-size: 11px; outline: none;">
-                    <option value="Call">Phone Call</option>
-                    <option value="WhatsApp">WhatsApp Message</option>
-                    <option value="Email">Email Follow-Up</option>
-                    <option value="Consultation">Site Consultation</option>
+            
+            <div class="card-base" style="--card-theme: 167, 139, 250; padding: 12px;">
+              <h4 style="margin:0 0 8px 0; font-size:10px; text-transform:uppercase; color:var(--text-muted);">Sales Operations Configuration</h4>
+              <div style="display:flex; flex-direction:column; gap:10px;">
+                <div>
+                  <label style="font-size:9px; color:var(--text-secondary); display:block; margin-bottom:2px;">Assigned Sales Representative</label>
+                  <input type="text" id="crmDrawerSalespersonInput" style="width:100%; padding:5px; border-radius:4px; background:var(--bg-input); border:1px solid var(--border-color); color:#fff; font-size:11px; outline:none; box-sizing:border-box;">
+                </div>
+                <div>
+                  <label style="font-size:9px; color:var(--text-secondary); display:block; margin-bottom:2px;">Sales Funnel Stage</label>
+                  <select id="crmDrawerStatusSelect" style="width:100%; padding:5px; border-radius:4px; background:var(--bg-input); border:1px solid var(--border-color); color:var(--text-navy); font-size:11px; outline:none;">
+                    <option value="New Lead">New Lead</option>
+                    <option value="Qualified">Qualified</option>
+                    <option value="Site Survey Scheduled">Site Survey Scheduled</option>
+                    <option value="Survey Completed">Survey Completed</option>
+                    <option value="Proposal Generated">Proposal Generated</option>
+                    <option value="Proposal Sent">Proposal Sent</option>
+                    <option value="Negotiation">Negotiation</option>
+                    <option value="Won">Won</option>
+                    <option value="Closed">Closed</option>
+                    <option value="Lost">Lost</option>
                   </select>
                 </div>
-                <div style="flex: 1;">
-                  <label style="font-size: 9px; color: var(--text-secondary); display: block; margin-bottom: 2px;">Date &amp; Time</label>
-                  <input type="datetime-local" id="crmFollowUpTime" style="width: 100%; padding: 5px; border-radius: 4px; background-color: var(--bg-input); border: 1px solid var(--border-color); color: var(--text-navy); font-size: 11px; outline: none; box-sizing: border-box;" required>
+                <div>
+                  <label style="font-size:9px; color:var(--text-secondary); display:block; margin-bottom:2px;">Est. Pipeline Opportunity Value</label>
+                  <input type="number" id="crmDrawerPipelineValInput" style="width:100%; padding:5px; border-radius:4px; background:var(--bg-input); border:1px solid var(--border-color); color:#fff; font-size:11px; outline:none; box-sizing:border-box;">
                 </div>
+                <button type="button" id="crmBtnSaveOverviewOps" class="calc-btn" style="padding:6px; font-size:10px; width:100%; height:auto;">Save Configurations</button>
               </div>
-              <button type="button" id="btnScheduleFollowUp" class="calc-btn" style="padding: 6px 12px; font-size: 11px; margin-top: 4px; width: 100%; height: auto;">Schedule Action</button>
-            </form>
-          </div>
-          <div id="crmFollowUpList" style="display: flex; flex-direction: column; gap: 8px;">
-            <!-- Follow-up list items -->
+            </div>
           </div>
         </div>
 
-        <!-- Sales Notes -->
-        <div>
-          <h4 style="font-size: 11px; font-weight: 700; color: var(--text-muted); text-transform: uppercase; margin-bottom: 8px; letter-spacing: 0.3px;">Sales &amp; Consult Notes</h4>
-          <div class="card-base" style="--card-theme: 23, 168, 229; padding: 14px;">
-            <div style="display: flex; flex-direction: column; gap: 8px;">
-              <textarea id="crmDrawerNoteText" placeholder="Write internal sales notes here..." style="width: 100%; height: 60px; padding: 8px; border-radius: 4px; background-color: var(--bg-input); border: 1px solid var(--border-color); color: var(--text-navy); font-size: 11px; outline: none; resize: none; box-sizing: border-box;"></textarea>
-              <button type="button" id="btnSaveCrmNote" class="calc-btn" style="padding: 6px 12px; font-size: 11px; width: auto; align-self: flex-end; height: auto;">Add Note</button>
-            </div>
-            <div id="crmDrawerNotesList" style="display: flex; flex-direction: column; gap: 8px; margin-top: 12px; border-top: 1px solid var(--border-color-light); padding-top: 10px; max-height: 200px; overflow-y: auto;">
-              <!-- Saved notes list -->
-            </div>
+        <!-- Tab 2: Bills -->
+        <div class="crm-drawer-tab-pane" id="pane-bills">
+          <div style="display:flex; flex-direction:column; gap:10px; margin-top:10px;" id="crmDrawerBillsList"></div>
+        </div>
+
+        <!-- Tab 3: Roof Analysis -->
+        <div class="crm-drawer-tab-pane" id="pane-roof">
+          <div style="display:flex; flex-direction:column; gap:10px; margin-top:10px;" id="crmDrawerRoofData"></div>
+        </div>
+
+        <!-- Tab 4: Site Survey -->
+        <div class="crm-drawer-tab-pane" id="pane-survey">
+          <div style="display:flex; flex-direction:column; gap:10px; margin-top:10px;" id="crmDrawerSurveyData"></div>
+        </div>
+
+        <!-- Tab 5: Proposal -->
+        <div class="crm-drawer-tab-pane" id="pane-proposal">
+          <div style="display:flex; flex-direction:column; gap:10px; margin-top:10px;" id="crmDrawerProposalData"></div>
+        </div>
+
+        <!-- Tab 6: Tasks -->
+        <div class="crm-drawer-tab-pane" id="pane-tasks">
+          <div style="display:flex; flex-direction:column; gap:10px; margin-top:10px;">
+            <h4 style="margin:0 0 5px 0; font-size:10px; text-transform:uppercase; color:var(--text-muted);">Tasks Assigned to Client</h4>
+            <div id="crmDrawerTasksList" style="display:flex; flex-direction:column; gap:8px;"></div>
+          </div>
+        </div>
+
+        <!-- Tab 7: Meetings -->
+        <div class="crm-drawer-tab-pane" id="pane-meetings">
+          <div style="display:flex; flex-direction:column; gap:10px; margin-top:10px;">
+            <h4 style="margin:0 0 5px 0; font-size:10px; text-transform:uppercase; color:var(--text-muted);">Scheduled Customer Meetings</h4>
+            <div id="crmDrawerMeetingsList" style="display:flex; flex-direction:column; gap:8px;"></div>
+          </div>
+        </div>
+
+        <!-- Tab 8: Timeline -->
+        <div class="crm-drawer-tab-pane" id="pane-timeline">
+          <div style="display:flex; flex-direction:column; gap:10px; margin-top:10px;" id="crmDrawerTimelineList"></div>
+        </div>
+
+        <!-- Tab 9: Notes -->
+        <div class="crm-drawer-tab-pane" id="pane-notes">
+          <div style="display:flex; flex-direction:column; gap:10px; margin-top:10px;">
+            <textarea id="crmDrawerNoteText" placeholder="Write internal sales note here..." style="width:100%; height:80px; padding:8px; border-radius:4px; background:var(--bg-input); border:1px solid var(--border-color); color:#fff; font-size:11px; outline:none; resize:none; box-sizing:border-box; font-family:'Outfit';"></textarea>
+            <button type="button" id="btnSaveCrmNote" class="calc-btn" style="padding:6px 12px; font-size:10px; align-self:flex-end; width:auto; height:auto;">Add Sales Note</button>
+            <div id="crmDrawerNotesList" style="display:flex; flex-direction:column; gap:8px; border-top:1px solid var(--border-color-light); padding-top:10px; margin-top:5px; max-height:220px; overflow-y:auto;"></div>
           </div>
         </div>
       </div>
     </div>
-  </div>
-
-  <!-- --- AUDIT EVENT DETAILS DRAWER --- -->
+  </div>  <!-- --- AUDIT EVENT DETAILS DRAWER --- -->
   <div class="drawer-overlay" id="auditEventDrawer" style="display: none; position: fixed; top: 0; left: 0; right: 0; bottom: 0; background: rgba(4, 11, 23, 0.5); z-index: 1100;">
     <div class="drawer-content" style="position: absolute; right: 0; top: 0; bottom: 0; width: 400px; background: rgba(6, 15, 31, 0.98); border-left: 1px solid rgba(0, 181, 226, 0.3); display: flex; flex-direction: column; box-shadow: -10px 0 30px rgba(0,0,0,0.5);">
       <!-- Drawer Header -->

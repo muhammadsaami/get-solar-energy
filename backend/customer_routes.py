@@ -62,6 +62,17 @@ class CustomerResponse(CustomerBase):
     created_at: datetime
     updated_at: datetime
     bills: List[BillResponse] = []
+    
+    # CRM fields
+    status: Optional[str] = "New Lead"
+    salesperson: Optional[str] = None
+    lead_score: Optional[int] = 0
+    health_score: Optional[int] = 100
+    pipeline_value: Optional[float] = 0.0
+    expected_revenue: Optional[float] = 0.0
+    next_followup: Optional[str] = None
+    last_activity: Optional[str] = None
+    created_by: Optional[str] = None
 
     class Config:
         from_attributes = True
