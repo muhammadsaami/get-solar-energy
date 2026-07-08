@@ -18,10 +18,11 @@ in scoring never prevents the primary CRM write from succeeding.
 """
 
 from datetime import datetime
+import json
 from sqlalchemy.orm import Session
 
 from database_sqlite import CustomerModel
-from crm_models import CRMFollowUpModel, CRMMeetingModel
+from crm_models import CRMFollowUpModel, CRMMeetingModel, CRMAMCModel, CRMPaymentModel
 from crm_scoring import calculate_lead_score, calculate_health_score
 import crm_service
 from utils.logger import get_logger, log_automation
@@ -120,6 +121,63 @@ def run_crm_automations(db: Session, customer_id: int) -> None:
 
         customer.lead_score   = l_score
         customer.health_score = h_score
+
+        # ── Step 4: Auto AMC creation ─────────────────────────────────────────
+        if customer.status in ("Won", "Completed"):
+            amc = db.query(CRMAMCModel).filter(CRMAMCModel.customer_id == customer_id).first()
+            if not amc:
+                import random
+                from datetime import timedelta
+                contract_number = f"AMC-{customer_id}-{random.randint(1000, 9999)}"
+                expiry = (datetime.now() + timedelta(days=365)).strftime("%Y-%m-%d")
+                next_srv = (datetime.now() + timedelta(days=90)).strftime("%Y-%m-%d")
+                amc = CRMAMCModel(
+                    customer_id=customer_id,
+                    contract_number=contract_number,
+                    warranty_status="Active",
+                    service_frequency="Quarterly",
+                    next_service=next_srv,
+                    expiry_date=expiry,
+                    status="Active",
+                    visits=json.dumps([{
+                        "visit_type": "Installation Setup",
+                        "visit_date": datetime.now().strftime("%Y-%m-%d"),
+                        "remarks": "System registered and initial warranty activated.",
+                        "engineer": "System"
+                    }])
+                )
+                db.add(amc)
+                db.flush()
+                crm_service.add_timeline_event(
+                    db,
+                    customer_id=customer_id,
+                    event_type="AMC Contract Created",
+                    user="System",
+                    status="Active",
+                    notes=f"Auto AMC contract generated: {contract_number}. Next service: {next_srv}",
+                    module="AMC"
+                )
+
+        # ── Step 5: Overdue payment checks ────────────────────────────────────
+        overdue_payments = db.query(CRMPaymentModel).filter(
+            CRMPaymentModel.customer_id == customer_id,
+            CRMPaymentModel.payment_status != "Paid",
+            CRMPaymentModel.due_date < now.strftime("%Y-%m-%d")
+        ).all()
+        
+        for p in overdue_payments:
+            if p.payment_status != "Overdue":
+                p.payment_status = "Overdue"
+                db.add(p)
+                crm_service.add_timeline_event(
+                    db,
+                    customer_id=customer_id,
+                    event_type="Payment Overdue Warning",
+                    user="System",
+                    status="Overdue",
+                    notes=f"Invoice {p.invoice_number} for {p.stage} milestone is OVERDUE (Due: {p.due_date}). Outstanding: ₹{p.outstanding_amount}",
+                    module="Finance"
+                )
 
         db.add(customer)
         db.commit()

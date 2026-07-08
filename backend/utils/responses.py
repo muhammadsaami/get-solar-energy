@@ -102,3 +102,32 @@ def serialise(obj) -> Any:
             result[col.name] = val
         return result
     return obj
+
+def ok_paginated(
+    data: Any,
+    page: int,
+    limit: int,
+    total_count: int,
+    message: str = "Request successful"
+) -> JSONResponse:
+    """Return a standard 200 OK paginated envelope."""
+    import math
+    total_pages = math.ceil(total_count / limit) if limit > 0 else 1
+    return JSONResponse(
+        status_code=200,
+        content={
+            "success": True,
+            "message": message,
+            "data": data,
+            "pagination": {
+                "page": page,
+                "limit": limit,
+                "total_count": total_count,
+                "total_pages": total_pages,
+                "has_next": page < total_pages,
+                "has_prev": page > 1,
+            },
+            "timestamp": datetime.now(timezone.utc).strftime("%Y-%m-%dT%H:%M:%SZ"),
+        },
+    )
+

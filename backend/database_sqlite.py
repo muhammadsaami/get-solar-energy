@@ -168,9 +168,20 @@ def run_cdp_migrations(engine) -> None:
         conn.commit()
         _log.info("Migration applied successfully", extra={"migration": "phase_12_4a_core_crm"})
 
-    # Create all tables: crm_timeline, crm_tasks, crm_followups, crm_meetings, crm_audit_log
+        # ── Phase 12.4B Migration ──────────────────────────────────────────────
+        already_run_b = conn.execute(
+            text("SELECT id FROM crm_migrations WHERE migration_name = 'phase_12_4b_crm_ops'")
+        ).fetchone()
+
+        if not already_run_b:
+            BaseSqlite.metadata.create_all(bind=engine)
+            conn.execute(text("INSERT INTO crm_migrations (migration_name) VALUES ('phase_12_4b_crm_ops')"))
+            conn.commit()
+            _log.info("Migration applied successfully", extra={"migration": "phase_12_4b_crm_ops"})
+
+    # Create all tables: crm_timeline, crm_tasks, crm_followups, crm_meetings, crm_audit_log, and operations tables
     BaseSqlite.metadata.create_all(bind=engine)
-    _log.info("All CRM tables verified / created via create_all")
+    _log.info("All CRM and operations tables verified / created via create_all")
 
 def get_sqlite_db():
     db = SessionLocalSqlite()

@@ -77,8 +77,24 @@ from schemas.crm_task     import TaskCreateSchema, TaskUpdateSchema
 from schemas.crm_meeting  import MeetingCreateSchema, MeetingUpdateSchema
 from schemas.crm_followup import FollowUpCreateSchema, FollowUpUpdateSchema
 from schemas.crm_pipeline import CustomerCrmUpdateSchema, PIPELINE_STAGES, STAGE_PROBABILITIES
+from schemas.crm_ops import (
+    DocumentUpdateSchema,
+    CommunicationCreateSchema,
+    InstallationUpdateSchema,
+    AMCUpdateSchema,
+    PaymentCreateSchema,
+    PaymentUpdateSchema,
+)
+from crm_models import (
+    CRMDocumentModel,
+    CRMCommunicationModel,
+    CRMInstallationModel,
+    CRMAMCModel,
+    CRMPaymentModel,
+)
 from utils.logger   import get_logger, log_api_request, log_api_response
-from utils.responses import ok, created, not_found, bad_request, server_error, serialise
+from utils.responses import ok, created, not_found, bad_request, server_error, serialise, ok_paginated
+from fastapi import UploadFile, File, Form
 from utils.security import sanitise_text_input
 
 logger = get_logger(__name__)
@@ -707,4 +723,381 @@ def get_audit_log(
         return ok(data=serialise(records), message=f"{len(records)} audit records")
     except Exception:
         logger.error("get_audit_log failed", exc_info=True)
+        return server_error()
+
+# ══════════════════════════════════════════════════════════════════════════════
+# Customer 360 & Unified Operations
+# ══════════════════════════════════════════════════════════════════════════════
+
+@router.get("/api/crm/customers/{id}/360")
+def get_customer_360(id: int, db: Session = Depends(get_sqlite_db)):
+    """Return consolidated customer data envelope."""
+    log_api_request(logger, "GET", f"/api/crm/customers/{id}/360")
+    try:
+        data = crm_service.get_customer_360(db, id)
+        if not data:
+            return not_found("Customer", id)
+        return ok(data=data, message="Customer 360 profile compiled successfully")
+    except Exception:
+        logger.error("get_customer_360 failed", extra={"customer_id": id}, exc_info=True)
+        return server_error()
+
+@router.get("/api/crm/customers/{id}/timeline-paginated")
+def get_customer_timeline_paginated(
+    id: int,
+    page: int = Query(1, ge=1),
+    limit: int = Query(10, ge=1, le=100),
+    db: Session = Depends(get_sqlite_db)
+):
+    """Return paginated timeline events."""
+    log_api_request(logger, "GET", f"/api/crm/customers/{id}/timeline-paginated", {"page": page, "limit": limit})
+    try:
+        events, total = crm_service.get_unified_timeline(db, id, page, limit)
+        return ok_paginated(
+            data=serialise(events),
+            page=page,
+            limit=limit,
+            total_count=total,
+            message="Timeline events retrieved successfully"
+        )
+    except Exception:
+        logger.error("get_customer_timeline_paginated failed", extra={"customer_id": id}, exc_info=True)
+        return server_error()
+
+# ══════════════════════════════════════════════════════════════════════════════
+# Document Center
+# ══════════════════════════════════════════════════════════════════════════════
+
+@router.get("/api/crm/customers/{id}/documents")
+def get_customer_documents(
+    id: int,
+    page: int = Query(1, ge=1),
+    limit: int = Query(10, ge=1, le=100),
+    search: Optional[str] = Query(None),
+    sort_by: str = Query("uploaded_at"),
+    sort_order: str = Query("desc"),
+    filter_status: Optional[str] = Query(None),
+    db: Session = Depends(get_sqlite_db)
+):
+    """Retrieve paginated, filterable, sortable customer documents."""
+    log_api_request(logger, "GET", f"/api/crm/customers/{id}/documents")
+    try:
+        query = db.query(CRMDocumentModel).filter(CRMDocumentModel.customer_id == id)
+        if search:
+            query = query.filter(CRMDocumentModel.original_filename.like(f"%{search}%"))
+        if filter_status:
+            query = query.filter(CRMDocumentModel.verification_status == filter_status)
+
+        sort_col = getattr(CRMDocumentModel, sort_by, CRMDocumentModel.uploaded_at)
+        if sort_order == "desc":
+            query = query.order_by(sort_col.desc())
+        else:
+            query = query.order_by(sort_col.asc())
+
+        total = query.count()
+        docs = query.offset((page - 1) * limit).limit(limit).all()
+        return ok_paginated(
+            data=serialise(docs),
+            page=page,
+            limit=limit,
+            total_count=total,
+            message="Documents retrieved successfully"
+        )
+    except Exception:
+        logger.error("get_customer_documents failed", extra={"customer_id": id}, exc_info=True)
+        return server_error()
+
+@router.post("/api/crm/documents")
+async def upload_document(
+    customer_id: int = Form(...),
+    document_type: str = Form(...),
+    document_name: str = Form(...),
+    uploaded_by: str = Form("System"),
+    remarks: Optional[str] = Form(None),
+    file: UploadFile = File(...),
+    db: Session = Depends(get_sqlite_db)
+):
+    """Upload and secure a new customer document."""
+    log_api_request(logger, "POST", "/api/crm/documents", {"customer_id": customer_id, "document_type": document_type})
+    try:
+        from utils.crm_storage import save_uploaded_file
+        # Save file securely and return metadata
+        file_uuid, stored_name, relative_path, file_size, checksum = save_uploaded_file(file, document_type)
+
+        # Check for duplicates using checksum
+        duplicate = db.query(CRMDocumentModel).filter(
+            CRMDocumentModel.customer_id == customer_id,
+            CRMDocumentModel.checksum == checksum
+        ).first()
+        if duplicate:
+            # Clean up the newly saved file since it is a duplicate
+            from utils.crm_storage import delete_stored_file
+            delete_stored_file(relative_path)
+            return bad_request(message="A document with identical content has already been uploaded for this customer.")
+
+        doc_data = {
+            "customer_id": customer_id,
+            "document_type": document_type,
+            "document_name": document_name,
+            "uuid": file_uuid,
+            "original_filename": file.filename or "file",
+            "stored_filename": stored_name,
+            "file_path": relative_path,
+            "mime_type": file.content_type or "application/octet-stream",
+            "file_size": file_size,
+            "uploaded_by": uploaded_by,
+            "checksum": checksum,
+            "remarks": remarks
+        }
+
+        doc = crm_service.create_document(db, doc_data)
+        return created(data=serialise(doc), message="Document uploaded and saved successfully")
+    except Exception as exc:
+        logger.error("upload_document failed", exc_info=True)
+        return server_error(message=f"Document upload failed: {str(exc)}")
+
+@router.put("/api/crm/documents/{id}")
+def update_document(
+    id: int,
+    payload: DocumentUpdateSchema,
+    db: Session = Depends(get_sqlite_db)
+):
+    """Update document verification status and remarks."""
+    log_api_request(logger, "PUT", f"/api/crm/documents/{id}")
+    try:
+        doc = crm_service.update_document_status(
+            db,
+            id,
+            status=payload.verification_status,
+            remarks=payload.remarks
+        )
+        if not doc:
+            return not_found("Document", id)
+        return ok(data=serialise(doc), message="Document status updated successfully")
+    except Exception:
+        logger.error("update_document failed", extra={"document_id": id}, exc_info=True)
+        return server_error()
+
+@router.delete("/api/crm/documents/{id}")
+def delete_document(id: int, db: Session = Depends(get_sqlite_db)):
+    """Delete a customer document and its associated file."""
+    log_api_request(logger, "DELETE", f"/api/crm/documents/{id}")
+    try:
+        success = crm_service.delete_document(db, id)
+        if not success:
+            return not_found("Document", id)
+        return ok(message="Document deleted successfully")
+    except Exception:
+        logger.error("delete_document failed", extra={"document_id": id}, exc_info=True)
+        return server_error()
+
+# ══════════════════════════════════════════════════════════════════════════════
+# Communication Center
+# ══════════════════════════════════════════════════════════════════════════════
+
+@router.get("/api/crm/customers/{id}/communications")
+def get_customer_communications(
+    id: int,
+    page: int = Query(1, ge=1),
+    limit: int = Query(10, ge=1, le=100),
+    search: Optional[str] = Query(None),
+    sort_by: str = Query("created_at"),
+    sort_order: str = Query("desc"),
+    filter_status: Optional[str] = Query(None), # maps to channel filter
+    db: Session = Depends(get_sqlite_db)
+):
+    """Retrieve paginated, filterable communication logs."""
+    log_api_request(logger, "GET", f"/api/crm/customers/{id}/communications")
+    try:
+        query = db.query(CRMCommunicationModel).filter(CRMCommunicationModel.customer_id == id)
+        if search:
+            query = query.filter(
+                (CRMCommunicationModel.subject.like(f"%{search}%")) |
+                (CRMCommunicationModel.message.like(f"%{search}%"))
+            )
+        if filter_status:
+            query = query.filter(CRMCommunicationModel.channel == filter_status)
+
+        sort_col = getattr(CRMCommunicationModel, sort_by, CRMCommunicationModel.created_at)
+        if sort_order == "desc":
+            query = query.order_by(sort_col.desc())
+        else:
+            query = query.order_by(sort_col.asc())
+
+        total = query.count()
+        comms = query.offset((page - 1) * limit).limit(limit).all()
+        return ok_paginated(
+            data=serialise(comms),
+            page=page,
+            limit=limit,
+            total_count=total,
+            message="Communications retrieved successfully"
+        )
+    except Exception:
+        logger.error("get_customer_communications failed", extra={"customer_id": id}, exc_info=True)
+        return server_error()
+
+@router.post("/api/crm/communications", status_code=201)
+def create_communication(
+    payload: CommunicationCreateSchema,
+    db: Session = Depends(get_sqlite_db)
+):
+    """Log a new customer communication record."""
+    log_api_request(logger, "POST", "/api/crm/communications")
+    try:
+        comm = crm_service.create_communication(db, payload.model_dump())
+        return created(data=serialise(comm), message="Communication logged successfully")
+    except Exception:
+        logger.error("create_communication failed", exc_info=True)
+        return server_error()
+
+# ══════════════════════════════════════════════════════════════════════════════
+# Installation Workspace
+# ══════════════════════════════════════════════════════════════════════════════
+
+@router.get("/api/crm/customers/{id}/installation")
+def get_customer_installation(id: int, db: Session = Depends(get_sqlite_db)):
+    """Retrieve customer installation details."""
+    log_api_request(logger, "GET", f"/api/crm/customers/{id}/installation")
+    try:
+        install = crm_service.get_installation(db, id)
+        if not install:
+            # Return empty skeleton structure rather than 404 to support UI load
+            return ok(data=None, message="No installation record found")
+        return ok(data=serialise(install), message="Installation record retrieved")
+    except Exception:
+        logger.error("get_customer_installation failed", extra={"customer_id": id}, exc_info=True)
+        return server_error()
+
+@router.put("/api/crm/customers/{id}/installation")
+def update_customer_installation(
+    id: int,
+    payload: InstallationUpdateSchema,
+    db: Session = Depends(get_sqlite_db)
+):
+    """Update installation details and step workflow."""
+    log_api_request(logger, "PUT", f"/api/crm/customers/{id}/installation")
+    try:
+        install = crm_service.create_or_update_installation(
+            db,
+            id,
+            payload.model_dump(exclude_unset=True)
+        )
+        return ok(data=serialise(install), message="Installation workflow updated successfully")
+    except Exception:
+        logger.error("update_customer_installation failed", extra={"customer_id": id}, exc_info=True)
+        return server_error()
+
+# ══════════════════════════════════════════════════════════════════════════════
+# AMC Workspace
+# ══════════════════════════════════════════════════════════════════════════════
+
+@router.get("/api/crm/customers/{id}/amc")
+def get_customer_amc(id: int, db: Session = Depends(get_sqlite_db)):
+    """Retrieve customer AMC contract details."""
+    log_api_request(logger, "GET", f"/api/crm/customers/{id}/amc")
+    try:
+        amc = crm_service.get_amc(db, id)
+        if not amc:
+            return ok(data=None, message="No AMC contract record found")
+        return ok(data=serialise(amc), message="AMC contract retrieved")
+    except Exception:
+        logger.error("get_customer_amc failed", extra={"customer_id": id}, exc_info=True)
+        return server_error()
+
+@router.put("/api/crm/customers/{id}/amc")
+def update_customer_amc(
+    id: int,
+    payload: AMCUpdateSchema,
+    db: Session = Depends(get_sqlite_db)
+):
+    """Update AMC contract specifications or add visits."""
+    log_api_request(logger, "PUT", f"/api/crm/customers/{id}/amc")
+    try:
+        amc = crm_service.create_or_update_amc(
+            db,
+            id,
+            payload.model_dump(exclude_unset=True)
+        )
+        return ok(data=serialise(amc), message="AMC record updated successfully")
+    except Exception:
+        logger.error("update_customer_amc failed", extra={"customer_id": id}, exc_info=True)
+        return server_error()
+
+# ══════════════════════════════════════════════════════════════════════════════
+# Payment Dashboard
+# ══════════════════════════════════════════════════════════════════════════════
+
+@router.get("/api/crm/customers/{id}/payments")
+def get_customer_payments(
+    id: int,
+    page: int = Query(1, ge=1),
+    limit: int = Query(10, ge=1, le=100),
+    search: Optional[str] = Query(None),
+    sort_by: str = Query("due_date"),
+    sort_order: str = Query("desc"),
+    filter_status: Optional[str] = Query(None), # Unpaid | Partially Paid | Paid | Overdue
+    db: Session = Depends(get_sqlite_db)
+):
+    """Retrieve paginated invoice statements for a customer."""
+    log_api_request(logger, "GET", f"/api/crm/customers/{id}/payments")
+    try:
+        query = db.query(CRMPaymentModel).filter(CRMPaymentModel.customer_id == id)
+        if search:
+            query = query.filter(CRMPaymentModel.invoice_number.like(f"%{search}%"))
+        if filter_status:
+            query = query.filter(CRMPaymentModel.payment_status == filter_status)
+
+        sort_col = getattr(CRMPaymentModel, sort_by, CRMPaymentModel.due_date)
+        if sort_order == "desc":
+            query = query.order_by(sort_col.desc())
+        else:
+            query = query.order_by(sort_col.asc())
+
+        total = query.count()
+        payments = query.offset((page - 1) * limit).limit(limit).all()
+        return ok_paginated(
+            data=serialise(payments),
+            page=page,
+            limit=limit,
+            total_count=total,
+            message="Payments invoices retrieved successfully"
+        )
+    except Exception:
+        logger.error("get_customer_payments failed", extra={"customer_id": id}, exc_info=True)
+        return server_error()
+
+@router.post("/api/crm/payments", status_code=201)
+def create_payment(
+    payload: PaymentCreateSchema,
+    db: Session = Depends(get_sqlite_db)
+):
+    """Generate a new payment invoice milestone."""
+    log_api_request(logger, "POST", "/api/crm/payments")
+    try:
+        pay = crm_service.create_payment(db, payload.model_dump())
+        return created(data=serialise(pay), message="Payment milestone invoice created successfully")
+    except Exception:
+        logger.error("create_payment failed", exc_info=True)
+        return server_error()
+
+@router.put("/api/crm/payments/{id}")
+def update_payment(
+    id: int,
+    payload: PaymentUpdateSchema,
+    db: Session = Depends(get_sqlite_db)
+):
+    """Record payment collection or update invoice status."""
+    log_api_request(logger, "PUT", f"/api/crm/payments/{id}")
+    try:
+        pay = crm_service.update_payment(
+            db,
+            id,
+            payload.model_dump(exclude_unset=True)
+        )
+        if not pay:
+            return not_found("Payment", id)
+        return ok(data=serialise(pay), message="Payment invoice updated successfully")
+    except Exception:
+        logger.error("update_payment failed", extra={"payment_id": id}, exc_info=True)
         return server_error()

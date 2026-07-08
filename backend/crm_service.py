@@ -20,12 +20,17 @@ Every write function:
 from datetime import datetime
 from sqlalchemy.orm import Session
 
-from database_sqlite import CustomerModel
+from database_sqlite import CustomerModel, BillModel
 from crm_models import (
     CRMActivityTimelineModel,
     CRMTaskModel,
     CRMFollowUpModel,
     CRMMeetingModel,
+    CRMDocumentModel,
+    CRMCommunicationModel,
+    CRMInstallationModel,
+    CRMAMCModel,
+    CRMPaymentModel,
 )
 from crm_scoring import calculate_lead_score, calculate_health_score
 from utils.logger import get_logger, log_crm_event
@@ -349,3 +354,451 @@ def delete_followup(db: Session, followup_id: int) -> bool:
     db.commit()
     logger.info("Follow-up deleted", extra={"followup_id": followup_id})
     return True
+
+import json
+from typing import Tuple
+from utils.responses import serialise
+
+# --- Documents ---
+def get_documents(db: Session, customer_id: int, skip: int = 0, limit: int = 50):
+    return db.query(CRMDocumentModel).filter(CRMDocumentModel.customer_id == customer_id).offset(skip).limit(limit).all()
+
+def get_documents_count(db: Session, customer_id: int) -> int:
+    return db.query(CRMDocumentModel).filter(CRMDocumentModel.customer_id == customer_id).count()
+
+def create_document(db: Session, data: dict) -> CRMDocumentModel:
+    doc = CRMDocumentModel(**data)
+    db.add(doc)
+    db.commit()
+    db.refresh(doc)
+    add_timeline_event(
+        db,
+        customer_id=doc.customer_id,
+        event_type="Document Uploaded",
+        user=doc.uploaded_by,
+        status="Pending",
+        notes=f"Uploaded {doc.document_type}: {doc.original_filename}",
+        module="CRM"
+    )
+    return doc
+
+def update_document_status(db: Session, doc_id: int, status: str, remarks: str | None = None, user: str = "System") -> CRMDocumentModel | None:
+    doc = db.query(CRMDocumentModel).filter(CRMDocumentModel.id == doc_id).first()
+    if not doc:
+        return None
+    old_status = doc.verification_status
+    doc.verification_status = status
+    if remarks is not None:
+        doc.remarks = remarks
+    db.commit()
+    db.refresh(doc)
+    if old_status != status:
+        add_timeline_event(
+            db,
+            customer_id=doc.customer_id,
+            event_type="Document Verified" if status == "Verified" else "Document Rejected",
+            user=user,
+            status=status,
+            notes=f"Document {doc.document_type} status updated from {old_status} to {status}. Remarks: {remarks or 'None'}",
+            module="CRM"
+        )
+    return doc
+
+def delete_document(db: Session, doc_id: int) -> bool:
+    doc = db.query(CRMDocumentModel).filter(CRMDocumentModel.id == doc_id).first()
+    if not doc:
+        return False
+    # Also delete actual file using storage helper
+    from utils.crm_storage import delete_stored_file
+    delete_stored_file(doc.file_path)
+    
+    cust_id = doc.customer_id
+    doc_type = doc.document_type
+    doc_name = doc.original_filename
+    db.delete(doc)
+    db.commit()
+    
+    add_timeline_event(
+        db,
+        customer_id=cust_id,
+        event_type="Document Deleted",
+        user="System",
+        notes=f"Deleted document {doc_type}: {doc_name}",
+        module="CRM"
+    )
+    return True
+
+# --- Communications ---
+def get_communications(db: Session, customer_id: int, skip: int = 0, limit: int = 50):
+    return db.query(CRMCommunicationModel).filter(CRMCommunicationModel.customer_id == customer_id).order_by(CRMCommunicationModel.created_at.desc()).offset(skip).limit(limit).all()
+
+def get_communications_count(db: Session, customer_id: int) -> int:
+    return db.query(CRMCommunicationModel).filter(CRMCommunicationModel.customer_id == customer_id).count()
+
+def create_communication(db: Session, data: dict) -> CRMCommunicationModel:
+    comm = CRMCommunicationModel(**data)
+    db.add(comm)
+    db.commit()
+    db.refresh(comm)
+    add_timeline_event(
+        db,
+        customer_id=comm.customer_id,
+        event_type="Communication Logged",
+        user=comm.sender,
+        status=comm.delivery_status,
+        notes=f"Logged {comm.channel} interaction. Subject: {comm.subject or 'N/A'}",
+        module="CRM"
+    )
+    return comm
+
+# --- Installations ---
+STAGE_PROGRESS_MAP = {
+    "Lead Won": 0,
+    "Engineering Review": 10,
+    "Material Ordered": 20,
+    "Installation Scheduled": 30,
+    "Panels Installed": 50,
+    "Inverter Installed": 70,
+    "Inspection": 80,
+    "Net Meter Applied": 90,
+    "Net Meter Approved": 95,
+    "Commissioned": 98,
+    "Completed": 100
+}
+
+def get_installation(db: Session, customer_id: int) -> CRMInstallationModel | None:
+    return db.query(CRMInstallationModel).filter(CRMInstallationModel.customer_id == customer_id).first()
+
+def create_or_update_installation(db: Session, customer_id: int, data: dict, user: str = "System") -> CRMInstallationModel:
+    install = db.query(CRMInstallationModel).filter(CRMInstallationModel.customer_id == customer_id).first()
+    if not install:
+        install = CRMInstallationModel(customer_id=customer_id)
+        db.add(install)
+        db.flush()
+
+    old_stage = install.current_stage or "Lead Won"
+    
+    for key, val in data.items():
+        if val is not None:
+            setattr(install, key, val)
+            
+    # Auto progress mapping
+    if "current_stage" in data:
+        install.completion_percentage = STAGE_PROGRESS_MAP.get(install.current_stage, 0)
+        
+    # Append history log
+    history_list = []
+    if install.history:
+        try:
+            history_list = json.loads(install.history)
+        except Exception:
+            pass
+            
+    if "current_stage" in data or "remarks" in data:
+        history_list.append({
+            "stage": install.current_stage,
+            "timestamp": datetime.now().isoformat(),
+            "completed_by": user,
+            "remarks": data.get("remarks") or f"Stage updated to {install.current_stage}",
+            "completion_percentage": install.completion_percentage
+        })
+        install.history = json.dumps(history_list)
+
+    db.commit()
+    db.refresh(install)
+    
+    if old_stage != install.current_stage:
+        add_timeline_event(
+            db,
+            customer_id=customer_id,
+            event_type="Installation Stage Updated",
+            user=user,
+            status=install.current_stage,
+            notes=f"Installation transitioned: {old_stage} → {install.current_stage} ({install.completion_percentage}% Completed)",
+            module="Installation"
+        )
+    return install
+
+# --- AMC ---
+def get_amc(db: Session, customer_id: int) -> CRMAMCModel | None:
+    return db.query(CRMAMCModel).filter(CRMAMCModel.customer_id == customer_id).first()
+
+def create_or_update_amc(db: Session, customer_id: int, data: dict, user: str = "System") -> CRMAMCModel:
+    amc = db.query(CRMAMCModel).filter(CRMAMCModel.customer_id == customer_id).first()
+    if not amc:
+        import random
+        contract_number = f"AMC-{customer_id}-{random.randint(1000, 9999)}"
+        amc = CRMAMCModel(customer_id=customer_id, contract_number=contract_number)
+        db.add(amc)
+        db.flush()
+
+    old_status = amc.status
+    
+    for key, val in data.items():
+        if val is not None:
+            setattr(amc, key, val)
+            
+    # Parse and validate visits if provided
+    if "visits_json" in data and data["visits_json"]:
+        amc.visits = data["visits_json"]
+
+    db.commit()
+    db.refresh(amc)
+    
+    if old_status != amc.status:
+        add_timeline_event(
+            db,
+            customer_id=customer_id,
+            event_type="AMC Status Updated",
+            user=user,
+            status=amc.status,
+            notes=f"AMC contract status updated to {amc.status}. Contract: {amc.contract_number}",
+            module="AMC"
+        )
+    return amc
+
+# --- Payments ---
+def get_payments(db: Session, customer_id: int, skip: int = 0, limit: int = 50):
+    return db.query(CRMPaymentModel).filter(CRMPaymentModel.customer_id == customer_id).offset(skip).limit(limit).all()
+
+def get_payments_count(db: Session, customer_id: int) -> int:
+    return db.query(CRMPaymentModel).filter(CRMPaymentModel.customer_id == customer_id).count()
+
+def create_payment(db: Session, data: dict) -> CRMPaymentModel:
+    # Ensure outstanding is auto calculated
+    data["outstanding_amount"] = data["invoice_amount"] - data.get("paid_amount", 0.0)
+    if data["outstanding_amount"] <= 0:
+        data["payment_status"] = "Paid"
+    elif data.get("paid_amount", 0.0) > 0:
+        data["payment_status"] = "Partially Paid"
+    else:
+        data["payment_status"] = "Unpaid"
+        
+    pay = CRMPaymentModel(**data)
+    
+    # Save default history
+    pay.history = json.dumps([{
+        "stage": pay.stage,
+        "amount": pay.invoice_amount,
+        "timestamp": datetime.now().isoformat(),
+        "notes": f"Invoice created for {pay.stage} milestone."
+    }])
+    
+    db.add(pay)
+    db.commit()
+    db.refresh(pay)
+    
+    add_timeline_event(
+        db,
+        customer_id=pay.customer_id,
+        event_type="Payment Invoice Created",
+        user="System",
+        status=pay.payment_status,
+        notes=f"Invoice {pay.invoice_number} created for {pay.stage} milestone: ₹{pay.invoice_amount}",
+        module="Finance"
+    )
+    return pay
+
+def update_payment(db: Session, pay_id: int, data: dict, user: str = "System") -> CRMPaymentModel | None:
+    pay = db.query(CRMPaymentModel).filter(CRMPaymentModel.id == pay_id).first()
+    if not pay:
+        return None
+        
+    old_status = pay.payment_status
+    
+    for key, val in data.items():
+        if val is not None:
+            setattr(pay, key, val)
+            
+    # Re-calculate outstanding
+    pay.outstanding_amount = pay.invoice_amount - (pay.paid_amount or 0.0)
+    if pay.outstanding_amount <= 0:
+        pay.payment_status = "Paid"
+    elif (pay.paid_amount or 0.0) > 0:
+        pay.payment_status = "Partially Paid"
+    else:
+        pay.payment_status = "Unpaid"
+        
+    # Append history
+    history_list = []
+    if pay.history:
+        try:
+            history_list = json.loads(pay.history)
+        except Exception:
+            pass
+    history_list.append({
+        "stage": pay.stage,
+        "paid_amount": pay.paid_amount,
+        "status": pay.payment_status,
+        "timestamp": datetime.now().isoformat(),
+        "notes": f"Payment updated to {pay.payment_status} via {pay.payment_method or 'N/A'}"
+    })
+    pay.history = json.dumps(history_list)
+    
+    db.commit()
+    db.refresh(pay)
+    
+    if old_status != pay.payment_status:
+        add_timeline_event(
+            db,
+            customer_id=pay.customer_id,
+            event_type="Payment Updated" if pay.payment_status != "Paid" else "Payment Received",
+            user=user,
+            status=pay.payment_status,
+            notes=f"Invoice {pay.invoice_number} transition: {old_status} → {pay.payment_status}. Collected: ₹{pay.paid_amount}",
+            module="Finance"
+        )
+    return pay
+
+# --- Unified Calculations ---
+def calculate_customer_lifetime_value(db: Session, customer_id: int) -> float:
+    from sqlalchemy import func
+    total_paid = db.query(func.sum(CRMPaymentModel.paid_amount)).filter(CRMPaymentModel.customer_id == customer_id).scalar()
+    if total_paid is not None:
+        return float(total_paid)
+    # Fallback to Net Cost of first bill
+    bill = db.query(BillModel).filter(BillModel.customer_id == customer_id).first()
+    if bill and hasattr(bill, "net_cost") and bill.net_cost is not None:
+        return float(bill.net_cost)
+    return 0.0
+
+def calculate_project_progress(db: Session, customer_id: int) -> int:
+    customer = db.query(CustomerModel).filter(CustomerModel.id == customer_id).first()
+    if not customer:
+        return 0
+    stage = customer.status
+    if stage in ("Completed", "Closed"):
+        return 100
+    if stage == "Lost":
+        return 0
+        
+    base_progress = 0
+    if stage == "New Lead":
+        base_progress = 5
+    elif stage == "Qualified":
+        base_progress = 15
+    elif stage == "Site Survey Scheduled":
+        base_progress = 25
+    elif stage == "Survey Completed":
+        base_progress = 40
+    elif stage == "Proposal Generated":
+        base_progress = 50
+    elif stage == "Proposal Sent":
+        base_progress = 55
+    elif stage == "Negotiation":
+        base_progress = 60
+    elif stage == "Won":
+        base_progress = 70
+        
+    if stage == "Won":
+        install = get_installation(db, customer_id)
+        if install:
+            # Scale remaining 30% of project progress based on installation progress
+            base_progress = int(70 + (install.completion_percentage * 0.3))
+            
+    return min(100, max(0, base_progress))
+
+def calculate_payment_progress(db: Session, customer_id: int) -> int:
+    from sqlalchemy import func
+    invoice_sum = db.query(func.sum(CRMPaymentModel.invoice_amount)).filter(CRMPaymentModel.customer_id == customer_id).scalar() or 0.0
+    paid_sum = db.query(func.sum(CRMPaymentModel.paid_amount)).filter(CRMPaymentModel.customer_id == customer_id).scalar() or 0.0
+    if invoice_sum > 0:
+        return int(paid_sum / invoice_sum * 100)
+    return 0
+
+def calculate_installation_progress(db: Session, customer_id: int) -> int:
+    install = get_installation(db, customer_id)
+    return install.completion_percentage if install else 0
+
+# --- Unified Timeline Engine ---
+def get_unified_timeline(db: Session, customer_id: int, page: int = 1, limit: int = 10) -> Tuple[list, int]:
+    """Retrieve chronologically sorted activity events."""
+    query = db.query(CRMActivityTimelineModel).filter(CRMActivityTimelineModel.customer_id == customer_id)
+    total_count = query.count()
+    offset = (page - 1) * limit
+    events = query.order_by(CRMActivityTimelineModel.created_at.desc()).offset(offset).limit(limit).all()
+    return events, total_count
+
+# --- Customer 360 Aggregator ---
+def get_customer_360(db: Session, customer_id: int) -> dict:
+    customer = db.query(CustomerModel).filter(CustomerModel.id == customer_id).first()
+    if not customer:
+        return {}
+        
+    bills = db.query(BillModel).filter(BillModel.customer_id == customer_id).all()
+    
+    # Derive roof analysis
+    roof_analysis = None
+    if bills:
+        bill = bills[0]
+        roof_analysis = {
+            "usable_area_sqft": int(bill.recommended_kw * 100),
+            "suitability_score": 92,
+            "obstruction_factor": "Minimal Obstruction (8%)",
+            "azimuth_direction": "South-Facing (180°)"
+        }
+        
+    # Derive proposal
+    proposal = None
+    if bills:
+        bill = bills[0]
+        proposal = {
+            "proposal_ref": f"PROP-{customer.consumer_number}",
+            "recommended_kw": bill.recommended_kw,
+            "net_system_cost": bill.system_cost,
+            "payback_years": bill.payback_years,
+            "savings_25yr": bill.savings_25yr
+        }
+        
+    # Derive site survey mock based on lead stage
+    site_survey = None
+    if customer.status in ("Survey Completed", "Site Survey Scheduled", "Proposal Generated", "Proposal Sent", "Negotiation", "Won", "Completed"):
+        site_survey = {
+            "id": customer_id,
+            "status": "Completed" if customer.status != "Site Survey Scheduled" else "Scheduled",
+            "scheduled_date": "2026-07-06",
+            "surveyor_name": "Ramesh Patel",
+            "findings": "Roof in excellent condition, minor shadow from east tree."
+        }
+
+    # Standard entities
+    tasks = get_tasks(db, customer_id)
+    meetings = get_meetings(db, customer_id)
+    follow_ups = get_followups(db, customer_id)
+    
+    installation = get_installation(db, customer_id)
+    amc = get_amc(db, customer_id)
+    
+    # Standard calculations
+    clv = calculate_customer_lifetime_value(db, customer_id)
+    project_progress = calculate_project_progress(db, customer_id)
+    payment_progress = calculate_payment_progress(db, customer_id)
+    installation_progress = calculate_installation_progress(db, customer_id)
+    
+    # Last communications and timeline
+    last_comm_obj = db.query(CRMCommunicationModel).filter(CRMCommunicationModel.customer_id == customer_id).order_by(CRMCommunicationModel.created_at.desc()).first()
+    last_comm = last_comm_obj.created_at.isoformat() if last_comm_obj else None
+    
+    return {
+        "customer": serialise(customer),
+        "bills": serialise(bills),
+        "roof_analysis": roof_analysis,
+        "site_survey": site_survey,
+        "proposal": proposal,
+        "tasks": serialise(tasks),
+        "meetings": serialise(meetings),
+        "follow_ups": serialise(follow_ups),
+        "installation": serialise(installation),
+        "amc": serialise(amc),
+        "clv": clv,
+        "project_progress": project_progress,
+        "payment_progress": payment_progress,
+        "installation_progress": installation_progress,
+        "last_communication": last_comm,
+        "last_activity": customer.last_activity,
+        "next_followup": customer.next_followup,
+        "lead_score": customer.lead_score,
+        "health_score": customer.health_score,
+        "pipeline_status": customer.status
+    }
+

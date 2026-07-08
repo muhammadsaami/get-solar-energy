@@ -8051,11 +8051,19 @@ function initCrmDashboard() {
     btnCloseCrmDrawer.addEventListener('click', () => {
       crmLeadProfileDrawer.classList.remove('active');
       setTimeout(() => crmLeadProfileDrawer.style.display = 'none', 300);
+      if (window.crmDrawerSavingsChartInstance) {
+        window.crmDrawerSavingsChartInstance.destroy();
+        window.crmDrawerSavingsChartInstance = null;
+      }
     });
     crmLeadProfileDrawer.addEventListener('click', (e) => {
       if (e.target === crmLeadProfileDrawer) {
         crmLeadProfileDrawer.classList.remove('active');
         setTimeout(() => crmLeadProfileDrawer.style.display = 'none', 300);
+        if (window.crmDrawerSavingsChartInstance) {
+          window.crmDrawerSavingsChartInstance.destroy();
+          window.crmDrawerSavingsChartInstance = null;
+        }
       }
     });
   }
@@ -9205,7 +9213,15 @@ function loadActivityFeedCenter() {
     });
 }
 
-// Drawer Customer Profile 2.0 — enriched implementation
+// Drawer Customer Profile 3.0 — enriched implementation with caching, lazy-loading, and SVG progress rings
+window.customer360Cache = window.customer360Cache || {};
+window.crmDrawerPages = window.crmDrawerPages || {
+  documents: 1,
+  communications: 1,
+  payments: 1,
+  timeline: 1
+};
+
 function openLeadProfileDrawer(customerId) {
   const drawer = document.getElementById('crmLeadProfileDrawer');
   if (!drawer) return;
@@ -9213,156 +9229,165 @@ function openLeadProfileDrawer(customerId) {
   drawer.style.display = 'block';
   setTimeout(() => drawer.classList.add('active'), 10);
 
-  safeFetch(`${API_BASE}/api/customers/${customerId}`)
-    .then(res => res.json())
-    .then(customer => {
-      // ── Avatar (initials + deterministic colour) ───────────────────────────
-      const initials = (customer.customer_name || '?').split(' ').map(n => n[0]).join('').toUpperCase().slice(0, 2);
-      const avatarEl = document.getElementById('crmDrawerAvatar');
-      if (avatarEl) {
-        avatarEl.textContent = initials;
-        avatarEl.style.background = crmAvatarColor(customer.customer_name || 'X');
-      }
+  // Invalidate any old charts
+  if (window.crmDrawerSavingsChartInstance) {
+    window.crmDrawerSavingsChartInstance.destroy();
+    window.crmDrawerSavingsChartInstance = null;
+  }
 
-      // ── Score Rings ────────────────────────────────────────────────────────
-      const leadRingEl = document.getElementById('crmDrawerLeadRing');
-      const healthRingEl = document.getElementById('crmDrawerHealthRing');
-      const leadScore = customer.lead_score || 0;
-      const healthScore = customer.health_score || 100;
-      if (leadRingEl) leadRingEl.innerHTML = crmScoreRing(leadScore, '#3b82f6', 'Lead Score');
-      if (healthRingEl) healthRingEl.innerHTML = crmScoreRing(healthScore, '#22c55e', 'Health Score');
-
-      // ── Pipeline Progress Bar ─────────────────────────────────────────────
-      const progressEl = document.getElementById('crmDrawerPipelineProgress');
-      if (progressEl) {
-        const stageIdx = CRM_STAGES.indexOf(customer.status);
-        const pct = stageIdx >= 0 ? Math.round(((stageIdx + 1) / CRM_STAGES.length) * 100) : 0;
-        progressEl.innerHTML = `
-          <div style="font-size:9px; color:var(--text-muted); margin-bottom:4px;">Pipeline Progress</div>
-          <div style="height:4px; background:rgba(255,255,255,0.08); border-radius:4px; overflow:hidden;">
-            <div style="height:4px; width:${pct}%; background:linear-gradient(90deg,#3b82f6,#06b6d4); border-radius:4px; transition:width .4s ease;"></div>
-          </div>
-          <div style="font-size:8px; color:var(--text-muted); margin-top:3px; display:flex; justify-content:space-between;">
-            <span>${escapeHtml(customer.status || 'New Lead')}</span><span>${pct}%</span>
-          </div>`;
-      }
-
-      // ── Next Follow-up Countdown ──────────────────────────────────────────
-      const countdown = crmCountdown(customer.next_followup);
-      const countdownColor = countdown.startsWith('Overdue') ? '#ef4444'
-        : countdown === 'Today' ? '#f59e0b'
-          : '#94a3b8';
-
-      // ── Header Text Fields ────────────────────────────────────────────────
-      _setText('crmDrawerLeadName', customer.customer_name);
-      _setText('crmDrawerLeadEmail', customer.email || `${customer.consumer_number}@getsolar.in`);
-      _setText('crmDrawerLeadScore', leadScore);
-      _setText('crmDrawerLeadHealth', `${healthScore}%`);
-      _setText('crmDrawerLeadStage', customer.status || 'New Lead');
-      _setText('crmDrawerLeadSalesperson', customer.salesperson || 'Unassigned');
-      _setText('crmDrawerLeadExpectedRevenue', `₹${(customer.expected_revenue || 0).toLocaleString('en-IN')}`);
-      _setText('crmDrawerLeadProjValue', `₹${(customer.pipeline_value || 0).toLocaleString('en-IN')}`);
-      _setText('crmDrawerLeadConsumer', customer.consumer_number);
-      _setText('crmDrawerLeadNextFollowup', countdown);
-      const nextFollowupEl = document.getElementById('crmDrawerLeadNextFollowup');
-      if (nextFollowupEl) nextFollowupEl.style.color = countdownColor;
-
-      // Customer Since
-      _setText('crmDrawerCustomerSince', customer.created_at
-        ? new Date(customer.created_at).toLocaleDateString('en-IN', { year: 'numeric', month: 'short', day: 'numeric' })
-        : '—');
-      // Last Activity
-      _setText('crmDrawerLastActivity', customer.last_activity
-        ? getRelativeTime(new Date(customer.last_activity))
-        : 'No activity recorded');
-
-      // Status Badge
-      const statusBadgeEl = document.getElementById('crmDrawerStatusBadge');
-      if (statusBadgeEl) {
-        const won = customer.status === 'Won' || customer.status === 'Closed';
-        const lost = customer.status === 'Lost';
-        statusBadgeEl.textContent = customer.status || 'New Lead';
-        statusBadgeEl.style.background = won ? 'rgba(34,197,94,.2)' : lost ? 'rgba(239,68,68,.2)' : 'rgba(59,130,246,.15)';
-        statusBadgeEl.style.color = won ? '#22c55e' : lost ? '#ef4444' : '#93c5fd';
-      }
-
-      // ── Overview Form ─────────────────────────────────────────────────────
-      const salespersonInput = document.getElementById('crmDrawerSalespersonInput');
-      const statusSelect = document.getElementById('crmDrawerStatusSelect');
-      const pipelineValInput = document.getElementById('crmDrawerPipelineValInput');
-      if (salespersonInput) salespersonInput.value = customer.salesperson || '';
-      if (statusSelect) statusSelect.value = customer.status || 'New Lead';
-      if (pipelineValInput) pipelineValInput.value = customer.pipeline_value || 0.0;
-
-      _setText('crmOverviewPhone', customer.phone || '—');
-      _setText('crmOverviewEmail', customer.email || '—');
-      _setText('crmOverviewCity', customer.city || '—');
-      _setText('crmOverviewDiscom', customer.discom || '—');
-      _setText('crmOverviewState', customer.state || '—');
-
-      // ── Save CRM Config Button ────────────────────────────────────────────
-      const btnSaveOps = document.getElementById('crmBtnSaveOverviewOps');
-      if (btnSaveOps) {
-        btnSaveOps.onclick = () => {
-          const payload = {
-            salesperson: salespersonInput?.value.trim() || null,
-            status: statusSelect?.value || 'New Lead',
-            pipeline_value: parseFloat(pipelineValInput?.value) || 0.0,
-          };
-          btnSaveOps.disabled = true;
-          btnSaveOps.textContent = 'Saving…';
-          safeFetch(`${API_BASE}/api/crm/customers/${customer.id}`, {
-            method: 'PUT',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify(payload),
-          })
-            .then(r => r.json())
-            .then(resp => {
-              const updated = resp.data || resp;
-              showToast('Sales configuration updated successfully.', 'success');
-              openLeadProfileDrawer(updated.id || customer.id);
-              refreshCrmDashboardUI();
-            })
-            .catch(() => showToast('Failed to update. Please try again.', 'error'))
-            .finally(() => { btnSaveOps.disabled = false; btnSaveOps.textContent = 'Save Changes'; });
-        };
-      }
-
-      // ── Tab Navigation ────────────────────────────────────────────────────
-      const tabBtns = document.querySelectorAll('.crm-drawer-tab-btn');
-      const tabPanes = document.querySelectorAll('.crm-drawer-tab-pane');
-
-      tabBtns.forEach(btn => {
-        btn.onclick = () => {
-          tabBtns.forEach(b => { b.classList.remove('active'); b.setAttribute('aria-selected', 'false'); });
-          btn.classList.add('active');
-          btn.setAttribute('aria-selected', 'true');
-          const tab = btn.getAttribute('data-tab');
-          tabPanes.forEach(p => {
-            p.classList.toggle('active', p.id === `pane-${tab}`);
-          });
-          loadDrawerTabContent(tab, customer);
-        };
-      });
-      if (tabBtns.length > 0) tabBtns[0].click();
-    })
-    .catch(() => showToast('Could not load customer profile. Please retry.', 'error'));
+  // Load from session cache if available
+  if (window.customer360Cache[customerId]) {
+    renderLeadProfileFrom360(window.customer360Cache[customerId], customerId);
+  } else {
+    safeFetch(`${API_BASE}/api/crm/customers/${customerId}/360`)
+      .then(res => res.json())
+      .then(envelope => {
+        const data = envelope.data || envelope;
+        window.customer360Cache[customerId] = data;
+        renderLeadProfileFrom360(data, customerId);
+      })
+      .catch(() => showToast('Could not load customer 360 profile. Please retry.', 'error'));
+  }
 }
 
-function loadDrawerTabContent(tab, customer) {
+function renderLeadProfileFrom360(data, customerId) {
+  const customer = data.customer || {};
+  const bills = data.bills || [];
+
+  // Avatar Initials & Color
+  const initials = (customer.customer_name || '?').split(' ').map(n => n[0]).join('').toUpperCase().slice(0, 2);
+  const avatarEl = document.getElementById('crmDrawerAvatar');
+  if (avatarEl) {
+    avatarEl.textContent = initials;
+    avatarEl.style.background = crmAvatarColor(customer.customer_name || 'X');
+  }
+
+  // Next Follow-up Countdown
+  const countdown = crmCountdown(customer.next_followup);
+  const countdownColor = countdown.startsWith('Overdue') ? '#ef4444' : countdown === 'Today' ? '#f59e0b' : '#94a3b8';
+
+  // Header Text Fields
+  _setText('crmDrawerLeadName', customer.customer_name);
+  _setText('crmDrawerLeadEmail', customer.email || `${customer.consumer_number}@getsolar.in`);
+  _setText('crmDrawerLeadScore', customer.lead_score || 0);
+  _setText('crmDrawerLeadHealth', `${customer.health_score || 100}%`);
+  _setText('crmDrawerLeadStage', customer.status || 'New Lead');
+  _setText('crmDrawerLeadSalesperson', customer.salesperson || 'Unassigned');
+  _setText('crmDrawerLeadExpectedRevenue', `₹${(customer.expected_revenue || 0).toLocaleString('en-IN')}`);
+  _setText('crmDrawerLeadProjValue', `₹${(customer.pipeline_value || 0).toLocaleString('en-IN')}`);
+  _setText('crmDrawerLeadConsumer', customer.consumer_number);
+  _setText('crmDrawerLeadNextFollowup', countdown);
+  const nextFollowupEl = document.getElementById('crmDrawerLeadNextFollowup');
+  if (nextFollowupEl) nextFollowupEl.style.color = countdownColor;
+
+  // Hydrate Overview tab progress values
+  _setText('crmOverviewHealthText', `${customer.health_score || 100}%`);
+  _setText('crmOverviewLeadText', customer.lead_score || 0);
+  
+  // Set stroke-dashoffset on animated SVG rings (circumference = 2 * PI * r = 2 * 3.14159 * 14 = 87.96)
+  const setRingValue = (id, score) => {
+    const ring = document.getElementById(id);
+    if (ring) {
+      const offset = 87.96 - (score / 100) * 87.96;
+      ring.style.strokeDashoffset = offset;
+    }
+  };
+  setRingValue('ringOverviewHealth', customer.health_score || 100);
+  setRingValue('ringOverviewLead', customer.lead_score || 0);
+
+  // Overview progress percentages
+  _setText('crmOverviewProjProgress', `${data.project_progress || 0}%`);
+  _setText('crmOverviewPayProgress', `${data.payment_progress || 0}%`);
+  _setText('crmOverviewInstallProgress', `${data.installation_progress || 0}%`);
+
+  // Operations Metadata
+  _setText('crmOverviewCLV', `₹${(data.clv || 0).toLocaleString('en-IN')}`);
+  _setText('crmOverviewAmcStatus', data.amc ? data.amc.status : 'No Contract');
+  _setText('crmOverviewLastComm', data.last_communication ? getRelativeTime(new Date(data.last_communication)) : 'None');
+  _setText('crmOverviewLastActivity', customer.last_activity ? getRelativeTime(new Date(customer.last_activity)) : 'No activity recorded');
+  _setText('crmOverviewNextFollowup', customer.next_followup ? new Date(customer.next_followup).toLocaleDateString('en-IN') : 'None');
+  _setText('crmOverviewEngineer', data.installation ? (data.installation.assigned_engineer || 'Unassigned') : 'Unassigned');
+
+  // Contact Details
+  _setText('crmOverviewPhone', customer.phone || '—');
+  _setText('crmOverviewEmail', customer.email || '—');
+  _setText('crmOverviewCity', customer.city || '—');
+  _setText('crmOverviewDiscom', customer.discom || '—');
+  _setText('crmOverviewState', customer.state || '—');
+
+  // Sales Configuration form inputs
+  const salespersonInput = document.getElementById('crmDrawerSalespersonInput');
+  const statusSelect = document.getElementById('crmDrawerStatusSelect');
+  const pipelineValInput = document.getElementById('crmDrawerPipelineValInput');
+  if (salespersonInput) salespersonInput.value = customer.salesperson || '';
+  if (statusSelect) statusSelect.value = customer.status || 'New Lead';
+  if (pipelineValInput) pipelineValInput.value = customer.pipeline_value || 0.0;
+
+  // Save CRM Config Button
+  const btnSaveOps = document.getElementById('crmBtnSaveOverviewOps');
+  if (btnSaveOps) {
+    btnSaveOps.onclick = () => {
+      const payload = {
+        salesperson: salespersonInput?.value.trim() || null,
+        status: statusSelect?.value || 'New Lead',
+        pipeline_value: parseFloat(pipelineValInput?.value) || 0.0,
+      };
+      btnSaveOps.disabled = true;
+      btnSaveOps.textContent = 'Saving…';
+      safeFetch(`${API_BASE}/api/crm/customers/${customer.id}`, {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(payload),
+      })
+        .then(r => r.json())
+        .then(resp => {
+          showToast('Sales configuration updated successfully.', 'success');
+          delete window.customer360Cache[customerId];
+          openLeadProfileDrawer(customerId);
+          refreshCrmDashboardUI();
+        })
+        .catch(() => showToast('Failed to update sales config.', 'error'))
+        .finally(() => { btnSaveOps.disabled = false; btnSaveOps.textContent = 'Save Configurations'; });
+    };
+  }
+
+  // Tab Navigation Setup
+  const tabBtns = document.querySelectorAll('.crm-drawer-tab-btn');
+  const tabPanes = document.querySelectorAll('.crm-drawer-tab-pane');
+
+  tabBtns.forEach(btn => {
+    btn.onclick = () => {
+      tabBtns.forEach(b => { b.classList.remove('active'); b.setAttribute('aria-selected', 'false'); });
+      btn.classList.add('active');
+      btn.setAttribute('aria-selected', 'true');
+      const tab = btn.getAttribute('data-tab');
+      tabPanes.forEach(p => {
+        p.classList.toggle('active', p.id === `pane-${tab}`);
+      });
+      loadDrawerTabContent(tab, customer, data);
+    };
+  });
+  
+  // Default to overview tab
+  const activeTabBtn = document.querySelector('.crm-drawer-tab-btn.active');
+  if (activeTabBtn) {
+    loadDrawerTabContent(activeTabBtn.getAttribute('data-tab'), customer, data);
+  }
+}
+
+function loadDrawerTabContent(tab, customer, data360) {
   const host = API_BASE;
+  const customerId = customer.id;
 
   if (tab === 'bills') {
     const list = document.getElementById('crmDrawerBillsList');
     if (!list) return;
-    list.innerHTML = '';
-
-    if (!customer.bills || customer.bills.length === 0) {
+    const bills = data360.bills || [];
+    if (bills.length === 0) {
       list.innerHTML = `<div style="text-align:center; padding:15px; font-size:10px; color:var(--text-muted);">No bills uploaded.</div>`;
       return;
     }
-
-    list.innerHTML = customer.bills.map(b => `
+    list.innerHTML = bills.map(b => `
       <div class="card-base" style="--card-theme: 23, 168, 229; padding: 12px; font-size:11px;">
         <div style="font-weight:bold; color:#fff; display:flex; justify-content:space-between;">
           <span>Period: ${b.billing_period}</span>
@@ -9379,140 +9404,114 @@ function loadDrawerTabContent(tab, customer) {
   } else if (tab === 'roof') {
     const box = document.getElementById('crmDrawerRoofData');
     if (!box) return;
-    box.innerHTML = '';
-
-    if (!customer.bills || customer.bills.length === 0) {
+    const roof = data360.roof_analysis;
+    if (!roof) {
       box.innerHTML = `<div style="text-align:center; padding:15px; font-size:10px; color:var(--text-muted);">No roof analysis found. Analyze a bill first.</div>`;
       return;
     }
-
-    const bill = customer.bills[0];
     box.innerHTML = `
       <div class="card-base" style="--card-theme: 23, 168, 229; padding: 12px; font-size:11px; display:flex; flex-direction:column; gap:6px;">
-        <div style="display:flex; justify-content:space-between;"><span style="color:var(--text-secondary);">Usable Area (Sqft):</span><strong style="color:#fff;">${Math.round(bill.recommended_kw * 100)} sqft</strong></div>
-        <div style="display:flex; justify-content:space-between;"><span style="color:var(--text-secondary);">Suitability Rating:</span><strong style="color:var(--accent-green);">92% Suitability</strong></div>
-        <div style="display:flex; justify-content:space-between;"><span style="color:var(--text-secondary);">Obstruction Factor:</span><strong style="color:#fff;">Minimal Obstruction (8%)</strong></div>
-        <div style="display:flex; justify-content:space-between;"><span style="color:var(--text-secondary);">Azimuth Direction:</span><strong style="color:#fff;">South-Facing (180°)</strong></div>
+        <div style="display:flex; justify-content:space-between;"><span style="color:var(--text-secondary);">Usable Area (Sqft):</span><strong style="color:#fff;">${roof.usable_area_sqft} sqft</strong></div>
+        <div style="display:flex; justify-content:space-between;"><span style="color:var(--text-secondary);">Suitability Rating:</span><strong style="color:var(--accent-green);">${roof.suitability_score}% Suitability</strong></div>
+        <div style="display:flex; justify-content:space-between;"><span style="color:var(--text-secondary);">Obstruction Factor:</span><strong style="color:#fff;">${escapeHtml(roof.obstruction_factor)}</strong></div>
+        <div style="display:flex; justify-content:space-between;"><span style="color:var(--text-secondary);">Azimuth Direction:</span><strong style="color:#fff;">${escapeHtml(roof.azimuth_direction)}</strong></div>
       </div>
     `;
 
   } else if (tab === 'survey') {
     const box = document.getElementById('crmDrawerSurveyData');
     if (!box) return;
-    box.innerHTML = '';
-
-    // Check if site surveys are scheduled/completed for this customer
-    safeFetch(`${host}/api/site-surveys`)
-      .then(res => res.json())
-      .then(surveys => {
-        const match = surveys.find(s => s.customer_id === customer.id);
-        if (!match) {
-          box.innerHTML = `<div style="text-align:center; padding:15px; font-size:10px; color:var(--text-muted);">No Site Survey scheduled. Move lead to Site Survey Scheduled stage.</div>`;
-          return;
-        }
-
-        box.innerHTML = `
-          <div class="card-base" style="--card-theme: 255, 138, 29; padding: 12px; font-size:11px; display:flex; flex-direction:column; gap:6px;">
-            <div style="display:flex; justify-content:space-between;"><span style="color:var(--text-secondary);">Survey ID:</span><strong style="color:#fff;">SRV-${match.id}</strong></div>
-            <div style="display:flex; justify-content:space-between;"><span style="color:var(--text-secondary);">Status:</span><strong style="color:var(--accent-orange);">${match.status}</strong></div>
-            <div style="display:flex; justify-content:space-between;"><span style="color:var(--text-secondary);">Scheduled Date:</span><strong style="color:#fff;">${match.scheduled_date}</strong></div>
-            <div style="display:flex; justify-content:space-between;"><span style="color:var(--text-secondary);">Surveyor:</span><strong style="color:#fff;">${match.surveyor_name || 'Unassigned'}</strong></div>
-            <div style="display:flex; justify-content:space-between;"><span style="color:var(--text-secondary);">Findings:</span><strong style="color:#fff;">${match.findings || 'Pending Site visit'}</strong></div>
-          </div>
-        `;
-      });
+    const match = data360.site_survey;
+    if (!match) {
+      box.innerHTML = `<div style="text-align:center; padding:15px; font-size:10px; color:var(--text-muted);">No Site Survey scheduled. Move lead to Site Survey Scheduled stage.</div>`;
+      return;
+    }
+    box.innerHTML = `
+      <div class="card-base" style="--card-theme: 255, 138, 29; padding: 12px; font-size:11px; display:flex; flex-direction:column; gap:6px;">
+        <div style="display:flex; justify-content:space-between;"><span style="color:var(--text-secondary);">Survey ID:</span><strong style="color:#fff;">SRV-${match.id}</strong></div>
+        <div style="display:flex; justify-content:space-between;"><span style="color:var(--text-secondary);">Status:</span><strong style="color:var(--accent-orange);">${match.status}</strong></div>
+        <div style="display:flex; justify-content:space-between;"><span style="color:var(--text-secondary);">Scheduled Date:</span><strong style="color:#fff;">${match.scheduled_date}</strong></div>
+        <div style="display:flex; justify-content:space-between;"><span style="color:var(--text-secondary);">Surveyor:</span><strong style="color:#fff;">${escapeHtml(match.surveyor_name || 'Unassigned')}</strong></div>
+        <div style="display:flex; justify-content:space-between;"><span style="color:var(--text-secondary);">Findings:</span><strong style="color:#fff;">${escapeHtml(match.findings || 'Pending Site visit')}</strong></div>
+      </div>
+    `;
 
   } else if (tab === 'proposal') {
     const box = document.getElementById('crmDrawerProposalData');
     if (!box) return;
-    box.innerHTML = '';
-
-    if (!customer.bills || customer.bills.length === 0) {
+    const prop = data360.proposal;
+    if (!prop) {
       box.innerHTML = `<div style="text-align:center; padding:15px; font-size:10px; color:var(--text-muted);">No proposal generated. Generate proposal via Proposal Generator.</div>`;
       return;
     }
-
-    const bill = customer.bills[0];
     box.innerHTML = `
       <div class="card-base" style="--card-theme: 54, 211, 153; padding: 12px; font-size:11px; display:flex; flex-direction:column; gap:6px;">
         <div style="display:flex; justify-content:space-between;"><span style="color:var(--text-secondary);">Proposal Ref:</span><strong style="color:#fff;">PROP-${customer.consumer_number}</strong></div>
-        <div style="display:flex; justify-content:space-between;"><span style="color:var(--text-secondary);">Recommended kW:</span><strong style="color:#fff;">${bill.recommended_kw} kW</strong></div>
-        <div style="display:flex; justify-content:space-between;"><span style="color:var(--text-secondary);">Net System Cost:</span><strong style="color:var(--accent-green);">₹${bill.system_cost.toLocaleString('en-IN')}</strong></div>
-        <div style="display:flex; justify-content:space-between;"><span style="color:var(--text-secondary);">Payback Period:</span><strong style="color:#fff;">${bill.payback_years} Years</strong></div>
-        <div style="display:flex; justify-content:space-between;"><span style="color:var(--text-secondary);">25-Year Savings:</span><strong style="color:var(--accent-green);">₹${Math.round(bill.savings_25yr).toLocaleString('en-IN')}</strong></div>
+        <div style="display:flex; justify-content:space-between;"><span style="color:var(--text-secondary);">Recommended kW:</span><strong style="color:#fff;">${prop.recommended_kw} kW</strong></div>
+        <div style="display:flex; justify-content:space-between;"><span style="color:var(--text-secondary);">Net System Cost:</span><strong style="color:var(--accent-green);">₹${prop.net_system_cost.toLocaleString('en-IN')}</strong></div>
+        <div style="display:flex; justify-content:space-between;"><span style="color:var(--text-secondary);">Payback Period:</span><strong style="color:#fff;">${prop.payback_years} Years</strong></div>
+        <div style="display:flex; justify-content:space-between;"><span style="color:var(--text-secondary);">25-Year Savings:</span><strong style="color:var(--accent-green);">₹${Math.round(prop.savings_25yr).toLocaleString('en-IN')}</strong></div>
       </div>
     `;
 
   } else if (tab === 'tasks') {
     const box = document.getElementById('crmDrawerTasksList');
     if (!box) return;
-    box.innerHTML = '';
+    const tasks = data360.tasks || [];
+    if (tasks.length === 0) {
+      box.innerHTML = `<div style="text-align:center; padding:15px; font-size:10px; color:var(--text-muted);">No tasks assigned for this lead.</div>`;
+      return;
+    }
+    box.innerHTML = tasks.map(t => {
+      let pBadge = 'badge-priority-low';
+      if (t.priority === 'High') pBadge = 'badge-priority-high';
+      else if (t.priority === 'Medium') pBadge = 'badge-priority-medium';
 
-    safeFetch(`${host}/api/crm/tasks?customer_id=${customer.id}`)
-      .then(res => res.json())
-      .then(envelope => {
-        const tasks = envelope.data || envelope;
-        if (!Array.isArray(tasks) || tasks.length === 0) {
-          box.innerHTML = `<div style="text-align:center; padding:15px; font-size:10px; color:var(--text-muted);">No tasks assigned for this lead.</div>`;
-          return;
-        }
-
-        box.innerHTML = tasks.map(t => {
-          let pBadge = 'badge-priority-low';
-          if (t.priority === 'High') pBadge = 'badge-priority-high';
-          else if (t.priority === 'Medium') pBadge = 'badge-priority-medium';
-
-          return `<div class="card-base" style="--card-theme: 167, 139, 250; padding:10px; font-size:10px; display:flex; justify-content:space-between; align-items:center;">
-            <div>
-              <strong>${escapeHtml(t.title)}</strong>
-              <div style="font-size:8px; color:var(--text-secondary); margin-top:2px;">Owner: ${t.assigned_to || 'System'} | Due: ${t.due_date}</div>
-              <span class="crm-badge ${pBadge}" style="font-size:7px; padding:1px 4px; margin-top:2px;">${t.priority}</span>
-            </div>
-            <strong style="font-size:9px; color:#fff;">${t.status}</strong>
-          </div>`;
-        }).join('');
-      });
+      return `<div class="card-base" style="--card-theme: 167, 139, 250; padding:10px; font-size:10px; display:flex; justify-content:space-between; align-items:center;">
+        <div>
+          <strong>${escapeHtml(t.title)}</strong>
+          <div style="font-size:8px; color:var(--text-secondary); margin-top:2px;">Owner: ${t.assigned_to || 'System'} | Due: ${t.due_date}</div>
+          <span class="crm-badge ${pBadge}" style="font-size:7px; padding:1px 4px; margin-top:2px;">${t.priority}</span>
+        </div>
+        <strong style="font-size:9px; color:#fff;">${t.status}</strong>
+      </div>`;
+    }).join('');
 
   } else if (tab === 'meetings') {
     const box = document.getElementById('crmDrawerMeetingsList');
     if (!box) return;
-    box.innerHTML = '';
-
-    safeFetch(`${host}/api/crm/meetings?customer_id=${customer.id}`)
-      .then(res => res.json())
-      .then(envelope => {
-        const meets = envelope.data || envelope;
-        if (!Array.isArray(meets) || meets.length === 0) {
-          box.innerHTML = `<div style="text-align:center; padding:15px; font-size:10px; color:var(--text-muted);">No scheduled meetings for this lead.</div>`;
-          return;
-        }
-
-        box.innerHTML = meets.map(m => `
-          <div class="card-base" style="--card-theme: 54, 211, 153; padding:10px; font-size:10px; display:flex; justify-content:space-between; align-items:center;">
-            <div>
-              <strong>${escapeHtml(m.title)} (${m.meeting_type})</strong>
-              <div style="font-size:8px; color:var(--text-secondary); margin-top:2px;">Scheduled: ${m.scheduled_date} ${m.scheduled_time} | Rep: ${escapeHtml(m.assigned_to || 'System')}</div>
-            </div>
-            <strong style="font-size:9px; color:var(--accent-green);">${m.outcome || 'Scheduled'}</strong>
-          </div>
-        `).join('');
-      });
+    const meets = data360.meetings || [];
+    if (meets.length === 0) {
+      box.innerHTML = `<div style="text-align:center; padding:15px; font-size:10px; color:var(--text-muted);">No scheduled meetings for this lead.</div>`;
+      return;
+    }
+    box.innerHTML = meets.map(m => `
+      <div class="card-base" style="--card-theme: 54, 211, 153; padding:10px; font-size:10px; display:flex; justify-content:space-between; align-items:center;">
+        <div>
+          <strong>${escapeHtml(m.title)} (${m.meeting_type})</strong>
+          <div style="font-size:8px; color:var(--text-secondary); margin-top:2px;">Scheduled: ${m.scheduled_date} ${m.scheduled_time} | Rep: ${escapeHtml(m.assigned_to || 'System')}</div>
+        </div>
+        <strong style="font-size:9px; color:var(--accent-green);">${m.outcome || 'Scheduled'}</strong>
+      </div>
+    `).join('');
 
   } else if (tab === 'timeline') {
-    const box = document.getElementById('crmDrawerTimelineList');
-    if (!box) return;
-    box.innerHTML = '';
-
-    safeFetch(`${host}/api/crm/timeline/${customer.id}`)
+    const listEl = document.getElementById('crmDrawerTimelineList');
+    if (!listEl) return;
+    
+    const page = window.crmDrawerPages.timeline;
+    _setText('timelinePageIndicator', `Page ${page}`);
+    
+    safeFetch(`${API_BASE}/api/crm/customers/${customerId}/timeline-paginated?page=${page}&limit=5`)
       .then(res => res.json())
       .then(envelope => {
-        const events = envelope.data || envelope;
-        if (!Array.isArray(events) || events.length === 0) {
-          box.innerHTML = `<div style="text-align:center; padding:15px; font-size:10px; color:var(--text-muted);">No activity records found.</div>`;
+        const events = envelope.data || [];
+        if (events.length === 0) {
+          listEl.innerHTML = `<div style="text-align:center; padding:15px; font-size:10px; color:var(--text-muted);">No activity records found.</div>`;
           return;
         }
 
-        box.innerHTML = events.map(e => `
+        listEl.innerHTML = events.map(e => `
           <div style="display: flex; gap: 8px; border-left: 2px solid var(--border-color-light); padding-left: 10px; padding-bottom: 8px; position: relative;">
             <span style="position: absolute; left: -5px; top: 3px; width: 8px; height: 8px; border-radius: 50%; background-color: var(--accent-blue);"></span>
             <div style="font-size: 11px;">
@@ -9524,37 +9523,40 @@ function loadDrawerTabContent(tab, customer) {
         `).join('');
       });
 
+    const prevBtn = document.getElementById('btnTimelinePrev');
+    const nextBtn = document.getElementById('btnTimelineNext');
+    if (prevBtn) {
+      prevBtn.onclick = () => {
+        if (window.crmDrawerPages.timeline > 1) {
+          window.crmDrawerPages.timeline--;
+          loadDrawerTabContent('timeline', customer, data360);
+        }
+      };
+    }
+    if (nextBtn) {
+      nextBtn.onclick = () => {
+        window.crmDrawerPages.timeline++;
+        loadDrawerTabContent('timeline', customer, data360);
+      };
+    }
+
   } else if (tab === 'notes') {
-    // Keep internal consult notes list loaded
     const box = document.getElementById('crmDrawerNotesList');
     if (!box) return;
-    box.innerHTML = '';
+    const followUps = data360.follow_ups || [];
+    const notes = followUps.filter(f => f.title === 'Internal Consult Note' || f.title === 'Consult NoteAdded' || f.title === 'Internal Note');
 
-    // Notes are persisted as completed follow-ups under title "Internal Consult Note"
-    safeFetch(`${host}/api/crm/followups?customer_id=${customer.id}`)
-      .then(res => res.json())
-      .then(envelope => {
-        const list = envelope.data || envelope;
-        if (!Array.isArray(list)) {
-          box.innerHTML = '<div style="font-style: italic; color: var(--text-muted); font-size: 10px; text-align:center; padding:15px;">No internal sales notes added yet.</div>';
-          return;
-        }
-        const notes = list.filter(f => f.title === 'Internal Consult Note' || f.title === 'Consult NoteAdded' || f.title === 'Internal Note');
+    if (notes.length === 0) {
+      box.innerHTML = '<div style="font-style: italic; color: var(--text-muted); font-size: 10px; text-align:center; padding:15px;">No internal sales notes added yet.</div>';
+    } else {
+      box.innerHTML = notes.map(n => `
+        <div style="background: rgba(255, 255, 255, 0.02); padding: 8px; border-radius: 4px; border: 1px solid var(--border-color-light); font-size: 10px; margin-bottom: 6px;">
+          <p style="margin: 0; color: #fff; white-space: pre-wrap;">${escapeHtml(n.notes)}</p>
+          <span style="font-size: 8px; color: var(--text-muted); display: block; text-align: right; margin-top: 4px;">User: System | ${new Date(n.created_at || n.due_date).toLocaleDateString()}</span>
+        </div>
+      `).join('');
+    }
 
-        if (notes.length === 0) {
-          box.innerHTML = '<div style="font-style: italic; color: var(--text-muted); font-size: 10px; text-align:center; padding:15px;">No internal sales notes added yet.</div>';
-          return;
-        }
-
-        box.innerHTML = notes.map(n => `
-          <div style="background: rgba(255, 255, 255, 0.02); padding: 8px; border-radius: 4px; border: 1px solid var(--border-color-light); font-size: 10px;">
-            <p style="margin: 0; color: #fff; white-space: pre-wrap;">${escapeHtml(n.notes)}</p>
-            <span style="font-size: 8px; color: var(--text-muted); display: block; text-align: right; margin-top: 4px;">User: System | ${new Date(n.created_at || n.due_date).toLocaleDateString()}</span>
-          </div>
-        `).join('');
-      });
-
-    // Wire single note saving trigger
     const btnSaveCrmNote = document.getElementById('btnSaveCrmNote');
     if (btnSaveCrmNote) {
       btnSaveCrmNote.onclick = () => {
@@ -9564,33 +9566,640 @@ function loadDrawerTabContent(tab, customer) {
           showToast('Cannot save an empty note!', 'error');
           return;
         }
+        btnSaveCrmNote.disabled = true;
+        safeFetch(`${host}/api/crm/followups`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            customer_id: customerId,
+            title: "Internal Consult Note",
+            due_date: new Date().toISOString(),
+            priority: "Low",
+            status: "Completed",
+            notes: noteText
+          })
+        }).then(() => {
+          textarea.value = '';
+          showToast('Consultation note added successfully.', 'success');
+          delete window.customer360Cache[customerId];
+          safeFetch(`${host}/api/crm/customers/${customerId}/360`)
+            .then(res => res.json())
+            .then(envelope => {
+              const newData = envelope.data || envelope;
+              window.customer360Cache[customerId] = newData;
+              loadDrawerTabContent('notes', customer, newData);
+            });
+        }).finally(() => btnSaveCrmNote.disabled = false);
+      };
+    }
 
-        // Add note as timeline activity entry
-        safeFetch(`${host}/api/crm/customers/${customer.id}`, {
+  } else if (tab === 'documents') {
+    const page = window.crmDrawerPages.documents;
+    
+    const chips = document.querySelectorAll('#docCategoryChips .filter-chip');
+    chips.forEach(chip => {
+      chip.onclick = () => {
+        chips.forEach(c => c.classList.remove('active'));
+        chip.classList.add('active');
+        window.crmDrawerPages.documents = 1;
+        fetchAndRenderDocuments(customerId, 1);
+      };
+    });
+
+    const fetchAndRenderDocuments = (custId, pg = 1) => {
+      const chipActive = document.querySelector('#docCategoryChips .filter-chip.active');
+      const filterType = chipActive ? chipActive.getAttribute('data-doc-type') : 'All';
+      let url = `${host}/api/crm/customers/${custId}/documents?page=${pg}&limit=5`;
+      if (filterType !== 'All') {
+        url += `&search=${encodeURIComponent(filterType)}`;
+      }
+      safeFetch(url)
+        .then(res => res.json())
+        .then(envelope => {
+          const docs = envelope.data || [];
+          const listEl = document.getElementById('crmDrawerDocsList');
+          if (!listEl) return;
+          
+          if (docs.length === 0) {
+            listEl.innerHTML = '<div style="text-align:center; padding:15px; font-size:10px; color:var(--text-muted);">No documents found.</div>';
+            return;
+          }
+          
+          listEl.innerHTML = docs.map(d => `
+            <div class="card-base" style="--card-theme: 99, 102, 241; padding: 10px; font-size:11px; margin-bottom: 6px;">
+              <div style="display:flex; justify-content:space-between; font-weight:bold; color:#fff;">
+                <span>${escapeHtml(d.document_name)} (${escapeHtml(d.document_type)})</span>
+                <span class="crm-badge" style="background:${d.verification_status === 'Verified' ? 'rgba(34,197,94,0.15)' : d.verification_status === 'Rejected' ? 'rgba(239,68,68,0.15)' : 'rgba(245,158,11,0.15)'}; color:${d.verification_status === 'Verified' ? '#22c55e' : d.verification_status === 'Rejected' ? '#ef4444' : '#f59e0b'}; font-size:8px;">${d.verification_status}</span>
+              </div>
+              <div style="font-size:9px; color:var(--text-secondary); margin-top:4px;">
+                Uploaded by ${escapeHtml(d.uploaded_by)} on ${new Date(d.uploaded_at).toLocaleDateString()}
+              </div>
+              <div style="margin-top:6px; display:flex; gap:6px; justify-content:flex-end;">
+                <button class="table-action-btn verify-doc-btn" data-doc-id="${d.id}" data-action="Verified" style="font-size:8px; padding:2px 6px;">Verify</button>
+                <button class="table-action-btn reject-doc-btn" data-doc-id="${d.id}" data-action="Rejected" style="font-size:8px; padding:2px 6px; border-color:rgba(239,68,68,0.3); color:#ef4444;">Reject</button>
+                <a href="${host}/${d.file_path}" target="_blank" class="table-action-btn" style="font-size:8px; padding:2px 6px; text-decoration:none;">Download</a>
+                <button class="table-action-btn delete-doc-btn" data-doc-id="${d.id}" style="font-size:8px; padding:2px 6px; border-color:rgba(239,68,68,0.3); color:#ef4444;">Delete</button>
+              </div>
+            </div>
+          `).join('');
+          
+          listEl.querySelectorAll('.verify-doc-btn, .reject-doc-btn').forEach(btn => {
+            btn.onclick = () => {
+              const docId = btn.getAttribute('data-doc-id');
+              const action = btn.getAttribute('data-action');
+              safeFetch(`${host}/api/crm/documents/${docId}`, {
+                method: 'PUT',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ verification_status: action, remarks: `Verified via Customer Profile 3.0.` })
+              })
+                .then(res => res.json())
+                .then(() => {
+                  showToast(`Document updated to ${action}.`, 'success');
+                  delete window.customer360Cache[customerId];
+                  fetchAndRenderDocuments(customerId, pg);
+                });
+            };
+          });
+
+          listEl.querySelectorAll('.delete-doc-btn').forEach(btn => {
+            btn.onclick = () => {
+              if (!confirm('Are you sure you want to delete this document?')) return;
+              const docId = btn.getAttribute('data-doc-id');
+              safeFetch(`${host}/api/crm/documents/${docId}`, { method: 'DELETE' })
+                .then(() => {
+                  showToast('Document deleted.', 'success');
+                  delete window.customer360Cache[customerId];
+                  fetchAndRenderDocuments(customerId, pg);
+                });
+            };
+          });
+        });
+    };
+
+    fetchAndRenderDocuments(customerId, page);
+
+    const dropzone = document.getElementById('docDropzone');
+    const fileInput = document.getElementById('docFileInput');
+    if (dropzone && fileInput) {
+      dropzone.onclick = () => fileInput.click();
+      dropzone.ondragover = (e) => { e.preventDefault(); dropzone.style.borderColor = 'var(--accent-blue)'; };
+      dropzone.ondragleave = () => { dropzone.style.borderColor = 'rgba(0, 181, 226, 0.3)'; };
+      dropzone.ondrop = (e) => {
+        e.preventDefault();
+        dropzone.style.borderColor = 'rgba(0, 181, 226, 0.3)';
+        if (e.dataTransfer.files.length > 0) {
+          handleDocUpload(e.dataTransfer.files, customerId);
+        }
+      };
+      fileInput.onchange = () => {
+        if (fileInput.files.length > 0) {
+          handleDocUpload(fileInput.files, customerId);
+        }
+      };
+    }
+
+    function handleDocUpload(files, custId) {
+      const progList = document.getElementById('docUploadProgressList');
+      if (!progList) return;
+      
+      Array.from(files).forEach(file => {
+        const rowId = 'upload-' + Math.random().toString(36).substring(2, 9);
+        progList.innerHTML += `
+          <div id="${rowId}" style="display:flex; justify-content:space-between; align-items:center; background:rgba(255,255,255,0.02); border:1px solid var(--border-color); padding:6px; border-radius:4px; font-size:10px; margin-bottom:4px;">
+            <span style="color:#fff; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; max-width:200px;">${escapeHtml(file.name)}</span>
+            <span class="upload-pct" style="color:var(--accent-blue);">Uploading...</span>
+          </div>
+        `;
+        
+        const formData = new FormData();
+        formData.append('customer_id', custId);
+        let docType = 'Agreement';
+        if (file.name.toLowerCase().includes('aadhaar')) docType = 'Aadhaar';
+        else if (file.name.toLowerCase().includes('pan')) docType = 'PAN';
+        else if (file.name.toLowerCase().includes('bill')) docType = 'Electricity Bill';
+        else if (file.name.toLowerCase().includes('survey')) docType = 'Site Survey';
+        
+        formData.append('document_type', docType);
+        formData.append('document_name', file.name.replace(/\.[^/.]+$/, ""));
+        formData.append('uploaded_by', customer.salesperson || 'System');
+        formData.append('file', file);
+        
+        const xhr = new XMLHttpRequest();
+        xhr.open('POST', `${host}/api/crm/documents`, true);
+        xhr.upload.onprogress = (e) => {
+          if (e.lengthComputable) {
+            const pct = Math.round((e.loaded / e.total) * 100);
+            const pctEl = document.querySelector(`#${rowId} .upload-pct`);
+            if (pctEl) pctEl.textContent = `${pct}%`;
+          }
+        };
+        xhr.onload = () => {
+          const row = document.getElementById(rowId);
+          if (xhr.status === 200 || xhr.status === 201) {
+            if (row) row.remove();
+            showToast(`File ${file.name} uploaded successfully.`, 'success');
+            delete window.customer360Cache[customerId];
+            fetchAndRenderDocuments(custId, 1);
+          } else {
+            try {
+              const err = JSON.parse(xhr.responseText);
+              if (row) row.querySelector('.upload-pct').style.color = '#ef4444';
+              if (row) row.querySelector('.upload-pct').textContent = 'Error';
+              showToast(err.message || `Upload failed.`, 'error');
+            } catch(e) {
+              if (row) row.querySelector('.upload-pct').textContent = 'Error';
+              showToast(`Upload failed.`, 'error');
+            }
+          }
+        };
+        xhr.send(formData);
+      });
+    }
+
+  } else if (tab === 'communications') {
+    const page = window.crmDrawerPages.communications;
+    
+    const chips = document.querySelectorAll('#pane-communications .filter-chip');
+    chips.forEach(chip => {
+      chip.onclick = () => {
+        chips.forEach(c => c.classList.remove('active'));
+        chip.classList.add('active');
+        window.crmDrawerPages.communications = 1;
+        fetchAndRenderCommunications(customerId, 1);
+      };
+    });
+
+    const fetchAndRenderCommunications = (custId, pg = 1) => {
+      const chipActive = document.querySelector('#pane-communications .filter-chip.active');
+      const filterType = chipActive ? chipActive.getAttribute('data-comm-chan') : 'All';
+      let url = `${host}/api/crm/customers/${custId}/communications?page=${pg}&limit=5`;
+      if (filterType !== 'All') {
+        url += `&filter_status=${encodeURIComponent(filterType)}`;
+      }
+      safeFetch(url)
+        .then(res => res.json())
+        .then(envelope => {
+          const comms = envelope.data || [];
+          const listEl = document.getElementById('crmDrawerCommsList');
+          if (!listEl) return;
+          
+          if (comms.length === 0) {
+            listEl.innerHTML = '<div style="text-align:center; padding:15px; font-size:10px; color:var(--text-muted);">No communications logged.</div>';
+            return;
+          }
+          
+          listEl.innerHTML = comms.map(c => `
+            <div class="card-base" style="--card-theme: 54, 211, 153; padding: 10px; font-size:11px; margin-bottom: 6px;">
+              <div style="display:flex; justify-content:space-between; font-weight:bold; color:#fff;">
+                <span>${escapeHtml(c.subject || 'No Subject')}</span>
+                <span class="crm-badge" style="background:rgba(0, 181, 226, 0.15); color:var(--accent-blue); font-size:8px;">${c.channel}</span>
+              </div>
+              <p style="margin:4px 0; color:var(--text-secondary); font-size:10px;">${escapeHtml(c.message)}</p>
+              <div style="font-size:8px; color:var(--text-muted); display:flex; justify-content:space-between;">
+                <span>Sender: ${escapeHtml(c.sender)} &rarr; ${escapeHtml(c.receiver || 'Client')}</span>
+                <span>${new Date(c.created_at).toLocaleString()}</span>
+              </div>
+            </div>
+          `).join('');
+        });
+    };
+
+    fetchAndRenderCommunications(customerId, page);
+
+    const btnLogComm = document.getElementById('btnLogCommunication');
+    if (btnLogComm) {
+      btnLogComm.onclick = () => {
+        const channel = document.getElementById('commFormChannel').value;
+        const subject = document.getElementById('commFormSubject').value.trim();
+        const message = document.getElementById('commFormMessage').value.trim();
+        if (!message) {
+          showToast('Please type a communication message.', 'error');
+          return;
+        }
+        btnLogComm.disabled = true;
+        safeFetch(`${host}/api/crm/communications`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            customer_id: customerId,
+            channel,
+            subject: subject || null,
+            message,
+            sender: 'System',
+            receiver: customer.customer_name || 'Client',
+            delivery_status: 'Delivered'
+          })
+        })
+          .then(res => res.json())
+          .then(() => {
+            showToast('Communication logged successfully.', 'success');
+            document.getElementById('commFormSubject').value = '';
+            document.getElementById('commFormMessage').value = '';
+            delete window.customer360Cache[customerId];
+            fetchAndRenderCommunications(customerId, 1);
+          })
+          .finally(() => btnLogComm.disabled = false);
+      };
+    }
+
+  } else if (tab === 'installation') {
+    const install = data360.installation || {};
+    document.getElementById('installWorkflowStage').textContent = install.current_stage || 'Lead Won';
+    document.getElementById('installWorkflowPct').textContent = `${install.completion_percentage || 0}%`;
+    document.getElementById('installWorkflowProgressBar').style.width = `${install.completion_percentage || 0}%`;
+
+    document.getElementById('installStageSelect').value = install.current_stage || 'Lead Won';
+    document.getElementById('installEngineerInput').value = install.assigned_engineer || '';
+    
+    _setText('installStartDateText', install.start_date || '—');
+    _setText('installExpectedDateText', install.expected_completion_date || '—');
+    _setText('installNetMeterText', install.net_meter_status || 'Pending');
+
+    const renderInstallHistory = (history) => {
+      const logEl = document.getElementById('installHistoryLog');
+      if (!logEl) return;
+      if (!history || history.length === 0) {
+        logEl.innerHTML = '<div style="font-size:9px; color:var(--text-muted); text-align:center;">No history recorded yet.</div>';
+        return;
+      }
+      logEl.innerHTML = history.map(h => `
+        <div style="border-left:1px solid rgba(255,255,255,0.06); padding-left:8px; padding-bottom:6px; font-size:10px;">
+          <div style="font-weight:bold; color:#fff;">${h.stage} (${h.completion_percentage}%)</div>
+          <p style="margin:2px 0; color:var(--text-secondary); font-size:9px;">${escapeHtml(h.remarks)}</p>
+          <span style="font-size:8px; color:var(--text-muted);">${new Date(h.timestamp).toLocaleString()} | Operator: ${h.completed_by}</span>
+        </div>
+      `).join('');
+    };
+
+    if (install.history) {
+      try {
+        renderInstallHistory(JSON.parse(install.history));
+      } catch(e) {}
+    } else {
+      renderInstallHistory([]);
+    }
+
+    const btnUpdateInstall = document.getElementById('btnUpdateInstallation');
+    if (btnUpdateInstall) {
+      btnUpdateInstall.onclick = () => {
+        const current_stage = document.getElementById('installStageSelect').value;
+        const assigned_engineer = document.getElementById('installEngineerInput').value.trim();
+        const remarks = document.getElementById('installRemarksInput').value.trim();
+        
+        btnUpdateInstall.disabled = true;
+        safeFetch(`${host}/api/crm/customers/${customerId}/installation`, {
           method: 'PUT',
           headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({}) // triggers scoring and saves note in timeline
-        }).then(() => {
-          // Let's create an explicit note log event by creating a completed follow-up
-          safeFetch(`${host}/api/crm/followups`, {
+          body: JSON.stringify({
+            current_stage,
+            assigned_engineer: assigned_engineer || null,
+            remarks: remarks || null
+          })
+        })
+          .then(res => res.json())
+          .then(resp => {
+            showToast('Installation stage updated.', 'success');
+            document.getElementById('installRemarksInput').value = '';
+            delete window.customer360Cache[customerId];
+            
+            safeFetch(`${host}/api/crm/customers/${customerId}/360`)
+              .then(res => res.json())
+              .then(envelope => {
+                const newData = envelope.data || envelope;
+                window.customer360Cache[customerId] = newData;
+                loadDrawerTabContent('installation', customer, newData);
+              });
+          })
+          .finally(() => btnUpdateInstall.disabled = false);
+      };
+    }
+
+  } else if (tab === 'payments') {
+    const page = window.crmDrawerPages.payments;
+    
+    const fetchAndRenderPayments = (custId, pg = 1) => {
+      safeFetch(`${host}/api/crm/customers/${custId}/payments?page=${pg}&limit=5`)
+        .then(res => res.json())
+        .then(envelope => {
+          const payments = envelope.data || [];
+          const listEl = document.getElementById('crmDrawerPaymentsList');
+          const invoiceSelect = document.getElementById('payInvoiceSelect');
+          if (!listEl) return;
+          
+          invoiceSelect.innerHTML = '<option value="">-- Create New Invoice --</option>';
+          
+          let invoicedSum = 0;
+          let collectedSum = 0;
+          
+          payments.forEach(p => {
+            invoicedSum += p.invoice_amount;
+            collectedSum += p.paid_amount;
+            if (p.payment_status !== 'Paid') {
+              invoiceSelect.innerHTML += `<option value="${p.id}">Pay Invoice: ${p.invoice_number} (Outstanding: ₹${p.outstanding_amount})</option>`;
+            }
+          });
+          
+          document.getElementById('payTotalInvoiced').textContent = `₹${invoicedSum.toLocaleString('en-IN')}`;
+          document.getElementById('payTotalCollected').textContent = `₹${collectedSum.toLocaleString('en-IN')}`;
+          document.getElementById('payTotalOutstanding').textContent = `₹${(invoicedSum - collectedSum).toLocaleString('en-IN')}`;
+
+          if (payments.length === 0) {
+            listEl.innerHTML = '<div style="text-align:center; padding:15px; font-size:10px; color:var(--text-muted);">No invoices generated.</div>';
+            return;
+          }
+          
+          listEl.innerHTML = payments.map(p => `
+            <div class="card-base" style="--card-theme: 99, 102, 241; padding: 10px; font-size:11px; margin-bottom: 6px;">
+              <div style="display:flex; justify-content:space-between; font-weight:bold; color:#fff;">
+                <span>Inv: ${escapeHtml(p.invoice_number)} (${escapeHtml(p.stage)})</span>
+                <span class="crm-badge" style="background:${p.payment_status === 'Paid' ? 'rgba(34,197,94,0.15)' : p.payment_status === 'Overdue' ? 'rgba(239,68,68,0.15)' : 'rgba(245,158,11,0.15)'}; color:${p.payment_status === 'Paid' ? '#22c55e' : p.payment_status === 'Overdue' ? '#ef4444' : '#f59e0b'}; font-size:8px;">${p.payment_status}</span>
+              </div>
+              <div style="display:grid; grid-template-columns: 1fr 1fr; gap:6px; margin-top:4px; font-size:9px; color:var(--text-secondary);">
+                <span>Amount: ₹${p.invoice_amount.toLocaleString()}</span>
+                <span>Collected: ₹${p.paid_amount.toLocaleString()}</span>
+                <span>Due Date: ${p.due_date}</span>
+                <span>Outstanding: ₹${p.outstanding_amount.toLocaleString()}</span>
+              </div>
+            </div>
+          `).join('');
+        });
+    };
+
+    fetchAndRenderPayments(customerId, page);
+
+    const payInvoiceSelect = document.getElementById('payInvoiceSelect');
+    if (payInvoiceSelect) {
+      payInvoiceSelect.onchange = () => {
+        const isNew = payInvoiceSelect.value === '';
+        document.getElementById('payNewInvoiceGroup').style.display = isNew ? 'grid' : 'none';
+        document.getElementById('payRecordPaymentGroup').style.display = isNew ? 'none' : 'grid';
+        document.getElementById('btnSubmitPaymentAction').textContent = isNew ? 'Create Milestone Invoice' : 'Record Payment Collection';
+      };
+    }
+
+    const btnSubmitPayment = document.getElementById('btnSubmitPaymentAction');
+    if (btnSubmitPayment) {
+      btnSubmitPayment.onclick = () => {
+        const selectedInvoiceId = payInvoiceSelect.value;
+        const amount = parseFloat(document.getElementById('payAmountInput').value);
+        if (isNaN(amount) || amount <= 0) {
+          showToast('Please enter a valid amount.', 'error');
+          return;
+        }
+        
+        btnSubmitPayment.disabled = true;
+        if (selectedInvoiceId === '') {
+          const stage = document.getElementById('payMilestoneStage').value;
+          const due_date = document.getElementById('payDueDateInput').value;
+          if (!due_date) {
+            showToast('Please select a due date.', 'error');
+            btnSubmitPayment.disabled = false;
+            return;
+          }
+          
+          safeFetch(`${host}/api/crm/payments`, {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify({
-              customer_id: customer.id,
-              title: "Internal Consult Note",
-              due_date: new Date().toISOString(),
-              priority: "Low",
-              status: "Completed",
-              notes: noteText
+              customer_id: customerId,
+              invoice_amount: amount,
+              due_date,
+              stage
             })
-          }).then(() => {
-            textarea.value = '';
-            showToast('Consultation note added successfully.', 'success');
-            loadDrawerTabContent('notes', customer); // Reload notes list
-            refreshCrmDashboardUI();
-          });
-        });
+          })
+            .then(res => res.json())
+            .then(() => {
+              showToast('Milestone invoice generated successfully.', 'success');
+              document.getElementById('payAmountInput').value = '';
+              delete window.customer360Cache[customerId];
+              fetchAndRenderPayments(customerId, 1);
+            })
+            .finally(() => btnSubmitPayment.disabled = false);
+        } else {
+          const payment_method = document.getElementById('payMethodSelect').value;
+          const transaction_reference = document.getElementById('payRefInput').value.trim();
+          
+          safeFetch(`${host}/api/crm/payments/${selectedInvoiceId}`, {
+            method: 'PUT',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+              paid_amount: amount,
+              payment_method,
+              transaction_reference: transaction_reference || null
+            })
+          })
+            .then(res => res.json())
+            .then(() => {
+              showToast('Payment collection recorded successfully.', 'success');
+              document.getElementById('payAmountInput').value = '';
+              document.getElementById('payRefInput').value = '';
+              delete window.customer360Cache[customerId];
+              fetchAndRenderPayments(customerId, 1);
+            })
+            .finally(() => btnSubmitPayment.disabled = false);
+        }
       };
+    }
+
+  } else if (tab === 'amc') {
+    const amc = data360.amc || {};
+    document.getElementById('amcContractNumber').textContent = amc.contract_number || 'No Active Contract';
+    document.getElementById('amcWarrantyStatus').textContent = amc.warranty_status || 'Inactive';
+    document.getElementById('amcServiceFreq').textContent = amc.service_frequency || 'N/A';
+    document.getElementById('amcNextService').textContent = amc.next_service || '—';
+    document.getElementById('amcExpiryDate').textContent = amc.expiry_date || '—';
+    document.getElementById('amcContractStatus').textContent = amc.status || 'No Contract';
+
+    document.getElementById('amcFreqSelect').value = amc.service_frequency || 'Quarterly';
+    document.getElementById('amcStatusSelect').value = amc.status || 'Active';
+
+    const renderAmcVisitsList = (visits) => {
+      const listEl = document.getElementById('amcVisitsList');
+      if (!listEl) return;
+      if (!visits || visits.length === 0) {
+        listEl.innerHTML = '<div style="font-size:9px; color:var(--text-muted); text-align:center;">No service visits logged yet.</div>';
+        return;
+      }
+      listEl.innerHTML = visits.map(v => `
+        <div class="card-base" style="--card-theme: 54, 211, 153; padding:8px; font-size:10px; margin-bottom:4px;">
+          <div style="font-weight:bold; color:#fff; display:flex; justify-content:space-between;">
+            <span>${escapeHtml(v.visit_type)}</span>
+            <span>${v.visit_date}</span>
+          </div>
+          <p style="margin:2px 0; color:var(--text-secondary); font-size:9px;">${escapeHtml(v.remarks)}</p>
+          <span style="font-size:8px; color:var(--text-muted);">Engineer: ${escapeHtml(v.engineer)}</span>
+        </div>
+      `).join('');
+    };
+
+    if (amc.visits) {
+      try {
+        renderAmcVisitsList(JSON.parse(amc.visits));
+      } catch(e) {}
+    } else {
+      renderAmcVisitsList([]);
+    }
+
+    const btnUpdateAmc = document.getElementById('btnUpdateAmcSettings');
+    if (btnUpdateAmc) {
+      btnUpdateAmc.onclick = () => {
+        const service_frequency = document.getElementById('amcFreqSelect').value;
+        const status = document.getElementById('amcStatusSelect').value;
+        
+        btnUpdateAmc.disabled = true;
+        safeFetch(`${host}/api/crm/customers/${customerId}/amc`, {
+          method: 'PUT',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ service_frequency, status })
+        })
+          .then(res => res.json())
+          .then(resp => {
+            showToast('AMC contract settings updated.', 'success');
+            delete window.customer360Cache[customerId];
+            
+            const updatedAmc = resp.data || resp;
+            document.getElementById('amcServiceFreq').textContent = updatedAmc.service_frequency;
+            document.getElementById('amcContractStatus').textContent = updatedAmc.status;
+          })
+          .finally(() => btnUpdateAmc.disabled = false);
+      };
+    }
+
+    const btnLogVisit = document.getElementById('btnLogAmcVisit');
+    if (btnLogVisit) {
+      btnLogVisit.onclick = () => {
+        const visit_type = document.getElementById('amcVisitType').value;
+        const engineer = document.getElementById('amcVisitEngineer').value.trim();
+        const remarks = document.getElementById('amcVisitRemarks').value.trim();
+        if (!remarks) {
+          showToast('Please add service remarks.', 'error');
+          return;
+        }
+        
+        const visits = amc.visits ? JSON.parse(amc.visits) : [];
+        visits.push({
+          visit_type,
+          visit_date: new Date().toISOString().split('T')[0],
+          remarks,
+          engineer: engineer || 'System'
+        });
+        
+        btnLogVisit.disabled = true;
+        safeFetch(`${host}/api/crm/customers/${customerId}/amc`, {
+          method: 'PUT',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ visits_json: JSON.stringify(visits) })
+        })
+          .then(res => res.json())
+          .then(resp => {
+            showToast('Service visit logged successfully.', 'success');
+            document.getElementById('amcVisitEngineer').value = '';
+            document.getElementById('amcVisitRemarks').value = '';
+            delete window.customer360Cache[customerId];
+            
+            safeFetch(`${host}/api/crm/customers/${customerId}/360`)
+              .then(res => res.json())
+              .then(envelope => {
+                const newData = envelope.data || envelope;
+                window.customer360Cache[customerId] = newData;
+                loadDrawerTabContent('amc', customer, newData);
+              });
+          })
+          .finally(() => btnLogVisit.disabled = false);
+      };
+    }
+
+  } else if (tab === 'analytics') {
+    const canvas = document.getElementById('crmDrawerSavingsChart');
+    if (canvas) {
+      if (window.crmDrawerSavingsChartInstance) {
+        window.crmDrawerSavingsChartInstance.destroy();
+      }
+      
+      const prop = data360.proposal;
+      const systemCost = prop ? prop.net_system_cost : 250000;
+      const savings25 = prop ? prop.savings_25yr : 750000;
+      const paybackYears = prop ? prop.payback_years : 5.2;
+      const recommendedKw = prop ? prop.recommended_kw : 5;
+      
+      _setText('crmAnalyticPayback', `${paybackYears} Years`);
+      _setText('crmAnalyticCapacity', `${recommendedKw} kW`);
+      _setText('crmAnalyticGeneration', `${Math.round(recommendedKw * 1450).toLocaleString()} kWh/yr`);
+      
+      const roi = systemCost > 0 ? Math.round((savings25 / systemCost) * 100) : 0;
+      _setText('crmAnalyticROI', `${roi}%`);
+
+      const labels = [];
+      const dataset = [];
+      const annualSavings = savings25 / 25;
+      for (let yr = 1; yr <= 25; yr++) {
+        labels.push(`Yr ${yr}`);
+        dataset.push(Math.round((annualSavings * yr) - systemCost));
+      }
+      
+      window.crmDrawerSavingsChartInstance = new Chart(canvas, {
+        type: 'line',
+        data: {
+          labels,
+          datasets: [{
+            label: 'Cumulative Net Benefit (₹)',
+            data: dataset,
+            borderColor: 'rgb(0, 181, 226)',
+            backgroundColor: 'rgba(0, 181, 226, 0.05)',
+            fill: true,
+            tension: 0.3
+          }]
+        },
+        options: {
+          responsive: true,
+          maintainAspectRatio: false,
+          plugins: { legend: { display: false } },
+          scales: {
+            x: { grid: { display: false }, ticks: { color: 'rgba(255,255,255,0.4)', font: { size: 8 } } },
+            y: { grid: { color: 'rgba(255,255,255,0.05)' }, ticks: { color: 'rgba(255,255,255,0.4)', font: { size: 8 } } }
+          }
+        }
+      });
     }
   }
 }

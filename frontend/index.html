@@ -5121,6 +5121,81 @@
               </div>
             </div>
 
+            <!-- Post-Sales Operational Telemetry Card -->
+            <div style="margin-bottom: 12px;"><h3 style="font-size: 11px; font-weight: 700; color: var(--text-muted); text-transform: uppercase; letter-spacing: 0.5px;">Post-Sales Operational Telemetry</h3></div>
+            <div class="card-base" style="--card-theme: 23, 168, 229; margin-bottom: 20px; padding: 20px;">
+              <div class="kpi-header-row" style="border-bottom: 1px solid var(--border-color-light); padding-bottom: 10px; margin-bottom: 15px;">
+                <span class="kpi-title">Installation, Payments &amp; AMC Statuses</span>
+                <span class="api-tag">GET /api/admin/overview</span>
+              </div>
+              <div style="display: grid; grid-template-columns: repeat(5, 1fr); gap: 12px; margin-bottom: 12px;">
+                <div style="background: rgba(255,255,255,0.02); border: 1px solid var(--border-color); border-radius: 6px; padding: 10px; text-align: center;">
+                  <span style="font-size: 9px; font-weight: 700; color: var(--text-secondary); display: block; margin-bottom: 4px;">Active Installations</span>
+                  <span id="opActiveInstallations" style="font-size: 18px; font-weight: 800; color: var(--text-navy);">—</span>
+                </div>
+                <div style="background: rgba(255,255,255,0.02); border: 1px solid var(--border-color); border-radius: 6px; padding: 10px; text-align: center;">
+                  <span style="font-size: 9px; font-weight: 700; color: var(--text-secondary); display: block; margin-bottom: 4px;">Installations This Month</span>
+                  <span id="opInstallationsThisMonth" style="font-size: 18px; font-weight: 800; color: var(--text-navy);">—</span>
+                </div>
+                <div style="background: rgba(255,255,255,0.02); border: 1px solid var(--border-color); border-radius: 6px; padding: 10px; text-align: center;">
+                  <span style="font-size: 9px; font-weight: 700; color: var(--text-secondary); display: block; margin-bottom: 4px;">Revenue Collected</span>
+                  <span id="opRevenueCollected" style="font-size: 18px; font-weight: 800; color: var(--text-navy);">—</span>
+                </div>
+                <div style="background: rgba(255,255,255,0.02); border: 1px solid var(--border-color); border-radius: 6px; padding: 10px; text-align: center;">
+                  <span style="font-size: 9px; font-weight: 700; color: var(--text-secondary); display: block; margin-bottom: 4px;">Outstanding Revenue</span>
+                  <span id="opOutstandingRevenue" style="font-size: 18px; font-weight: 800; color: var(--text-navy);">—</span>
+                </div>
+                <div style="background: rgba(255,255,255,0.02); border: 1px solid var(--border-color); border-radius: 6px; padding: 10px; text-align: center;">
+                  <span style="font-size: 9px; font-weight: 700; color: var(--text-secondary); display: block; margin-bottom: 4px;">Pending Payments</span>
+                  <span id="opPendingPayments" style="font-size: 18px; font-weight: 800; color: var(--text-navy);">—</span>
+                </div>
+              </div>
+              <div style="display: grid; grid-template-columns: repeat(5, 1fr); gap: 12px; margin-bottom: 12px;">
+                <div style="background: rgba(255,255,255,0.02); border: 1px solid var(--border-color); border-radius: 6px; padding: 10px; text-align: center;">
+                  <span style="font-size: 9px; font-weight: 700; color: var(--text-secondary); display: block; margin-bottom: 4px;">Docs Pending Verification</span>
+                  <span id="opDocsPendingVerification" style="font-size: 18px; font-weight: 800; color: var(--text-navy);">—</span>
+                </div>
+                <div style="background: rgba(255,255,255,0.02); border: 1px solid var(--border-color); border-radius: 6px; padding: 10px; text-align: center;">
+                  <span style="font-size: 9px; font-weight: 700; color: var(--text-secondary); display: block; margin-bottom: 4px;">AMC Due (30 Days)</span>
+                  <span id="opAmcDue" style="font-size: 18px; font-weight: 800; color: var(--text-navy);">—</span>
+                </div>
+                <div style="background: rgba(255,255,255,0.02); border: 1px solid var(--border-color); border-radius: 6px; padding: 10px; text-align: center;">
+                  <span style="font-size: 9px; font-weight: 700; color: var(--text-secondary); display: block; margin-bottom: 4px;">AMC Expiring (30 Days)</span>
+                  <span id="opAmcExpiring" style="font-size: 18px; font-weight: 800; color: var(--text-navy);">—</span>
+                </div>
+                <div style="background: rgba(255,255,255,0.02); border: 1px solid var(--border-color); border-radius: 6px; padding: 10px; text-align: center;">
+                  <span style="font-size: 9px; font-weight: 700; color: var(--text-secondary); display: block; margin-bottom: 4px;">Engineers Assigned</span>
+                  <span id="opEngineersAssigned" style="font-size: 18px; font-weight: 800; color: var(--text-navy);">—</span>
+                </div>
+                <div style="background: rgba(255,255,255,0.02); border: 1px solid var(--border-color); border-radius: 6px; padding: 10px; text-align: center;">
+                  <span style="font-size: 9px; font-weight: 700; color: var(--text-secondary); display: block; margin-bottom: 4px;">Engineer Utilization</span>
+                  <span id="opEngineerUtilization" style="font-size: 18px; font-weight: 800; color: var(--text-navy);">—</span>
+                </div>
+              </div>
+              <div style="display: grid; grid-template-columns: repeat(5, 1fr); gap: 12px;">
+                <div style="background: rgba(255,255,255,0.02); border: 1px solid var(--border-color); border-radius: 6px; padding: 10px; text-align: center;">
+                  <span style="font-size: 9px; font-weight: 700; color: var(--text-secondary); display: block; margin-bottom: 4px;">Avg Installation Time</span>
+                  <span id="opAvgInstallationTime" style="font-size: 18px; font-weight: 800; color: var(--text-navy);">—</span>
+                </div>
+                <div style="background: rgba(255,255,255,0.02); border: 1px solid var(--border-color); border-radius: 6px; padding: 10px; text-align: center;">
+                  <span style="font-size: 9px; font-weight: 700; color: var(--text-secondary); display: block; margin-bottom: 4px;">Avg Collection Time</span>
+                  <span id="opAvgCollectionTime" style="font-size: 18px; font-weight: 800; color: var(--text-navy);">—</span>
+                </div>
+                <div style="background: rgba(255,255,255,0.02); border: 1px solid var(--border-color); border-radius: 6px; padding: 10px; text-align: center;">
+                  <span style="font-size: 9px; font-weight: 700; color: var(--text-secondary); display: block; margin-bottom: 4px;">Customer Lifetime Value (Avg)</span>
+                  <span id="opAvgCLV" style="font-size: 18px; font-weight: 800; color: var(--text-navy);">—</span>
+                </div>
+                <div style="background: rgba(255,255,255,0.02); border: 1px solid var(--border-color); border-radius: 6px; padding: 10px; text-align: center;">
+                  <span style="font-size: 9px; font-weight: 700; color: var(--text-secondary); display: block; margin-bottom: 4px;">Customer Satisfaction</span>
+                  <span id="opCsatScore" style="font-size: 18px; font-weight: 800; color: var(--text-navy);">94%</span>
+                </div>
+                <div style="background: rgba(255,255,255,0.02); border: 1px solid var(--border-color); border-radius: 6px; padding: 10px; text-align: center;">
+                  <span style="font-size: 9px; font-weight: 700; color: var(--text-secondary); display: block; margin-bottom: 4px;">Operational Health Score</span>
+                  <span id="opOperationalHealth" style="font-size: 18px; font-weight: 800; color: var(--text-navy);">—</span>
+                </div>
+              </div>
+            </div>
+
             <!-- Audit & System Telemetry Card -->
             <div style="margin-bottom: 12px;"><h3 style="font-size: 11px; font-weight: 700; color: var(--text-muted); text-transform: uppercase; letter-spacing: 0.5px;">Audit &amp; System Telemetry</h3></div>
             <div class="card-base" style="--card-theme: 231, 76, 60; margin-bottom: 20px; padding: 20px;">
@@ -6403,15 +6478,21 @@
       </div>
 
       <!-- Drawer Sub-Navigation Tabs -->
-      <div class="crm-drawer-tabs-nav" style="padding: 5px 20px 0 20px;">
+      <div class="crm-drawer-tabs-nav" style="padding: 5px 20px 0 20px; display: flex; gap: 4px; overflow-x: auto; white-space: nowrap; -webkit-overflow-scrolling: touch; scrollbar-width: none;">
         <button class="crm-drawer-tab-btn active" data-tab="overview">Overview</button>
         <button class="crm-drawer-tab-btn" data-tab="bills">Bills</button>
-        <button class="crm-drawer-tab-btn" data-tab="roof">Roof Suitability</button>
+        <button class="crm-drawer-tab-btn" data-tab="roof">Roof Analysis</button>
         <button class="crm-drawer-tab-btn" data-tab="survey">Site Survey</button>
         <button class="crm-drawer-tab-btn" data-tab="proposal">Proposal</button>
         <button class="crm-drawer-tab-btn" data-tab="tasks">Tasks</button>
         <button class="crm-drawer-tab-btn" data-tab="meetings">Meetings</button>
         <button class="crm-drawer-tab-btn" data-tab="timeline">Timeline</button>
+        <button class="crm-drawer-tab-btn" data-tab="documents">Documents</button>
+        <button class="crm-drawer-tab-btn" data-tab="communications">Communications</button>
+        <button class="crm-drawer-tab-btn" data-tab="installation">Installation</button>
+        <button class="crm-drawer-tab-btn" data-tab="payments">Payments</button>
+        <button class="crm-drawer-tab-btn" data-tab="amc">AMC</button>
+        <button class="crm-drawer-tab-btn" data-tab="analytics">Analytics</button>
         <button class="crm-drawer-tab-btn" data-tab="notes">Notes</button>
       </div>
 
@@ -6421,6 +6502,64 @@
         <!-- Tab 1: Overview -->
         <div class="crm-drawer-tab-pane active" id="pane-overview">
           <div style="display:flex; flex-direction:column; gap:12px; margin-top:10px;">
+            <!-- Progress Rings & High-level Metrics Dashboard -->
+            <div class="card-base" style="--card-theme: 54, 211, 153; padding: 12px;">
+              <h4 style="margin:0 0 10px 0; font-size:10px; text-transform:uppercase; color:var(--text-muted); letter-spacing:0.5px;">Operational Health &amp; Progress</h4>
+              <div style="display:grid; grid-template-columns: repeat(2, 1fr); gap:12px; margin-bottom:12px; border-bottom:1px solid rgba(255,255,255,0.04); padding-bottom:12px;">
+                <!-- Health Score Ring -->
+                <div style="display:flex; align-items:center; gap:8px;">
+                  <svg class="progress-ring" width="36" height="36" style="transform: rotate(-90deg);">
+                    <circle stroke="rgba(255,255,255,0.06)" stroke-width="3.5" fill="transparent" r="14" cx="18" cy="18"/>
+                    <circle id="ringOverviewHealth" stroke="var(--accent-green)" stroke-width="3.5" fill="transparent" r="14" cx="18" cy="18"
+                            stroke-dasharray="87.96" stroke-dashoffset="87.96" style="transition: stroke-dashoffset 0.4s ease-out;"/>
+                  </svg>
+                  <div>
+                    <span style="font-size:8px; color:var(--text-secondary); display:block;">Health Score</span>
+                    <strong id="crmOverviewHealthText" style="font-size:12px; color:#fff;">—</strong>
+                  </div>
+                </div>
+                <!-- Lead Score Ring -->
+                <div style="display:flex; align-items:center; gap:8px;">
+                  <svg class="progress-ring" width="36" height="36" style="transform: rotate(-90deg);">
+                    <circle stroke="rgba(255,255,255,0.06)" stroke-width="3.5" fill="transparent" r="14" cx="18" cy="18"/>
+                    <circle id="ringOverviewLead" stroke="var(--accent-orange)" stroke-width="3.5" fill="transparent" r="14" cx="18" cy="18"
+                            stroke-dasharray="87.96" stroke-dashoffset="87.96" style="transition: stroke-dashoffset 0.4s ease-out;"/>
+                  </svg>
+                  <div>
+                    <span style="font-size:8px; color:var(--text-secondary); display:block;">Lead Score</span>
+                    <strong id="crmOverviewLeadText" style="font-size:12px; color:#fff;">—</strong>
+                  </div>
+                </div>
+              </div>
+              <div style="display:grid; grid-template-columns: repeat(3, 1fr); gap:10px; font-size:10px;">
+                <div style="background:rgba(255,255,255,0.01); border:1px solid var(--border-color); border-radius:4px; padding:6px; text-align:center;">
+                  <span style="font-size:8px; color:var(--text-secondary); display:block; margin-bottom:2px;">Project Progress</span>
+                  <strong id="crmOverviewProjProgress" style="color:var(--accent-blue); font-size:11px;">—</strong>
+                </div>
+                <div style="background:rgba(255,255,255,0.01); border:1px solid var(--border-color); border-radius:4px; padding:6px; text-align:center;">
+                  <span style="font-size:8px; color:var(--text-secondary); display:block; margin-bottom:2px;">Payment Progress</span>
+                  <strong id="crmOverviewPayProgress" style="color:var(--accent-green); font-size:11px;">—</strong>
+                </div>
+                <div style="background:rgba(255,255,255,0.01); border:1px solid var(--border-color); border-radius:4px; padding:6px; text-align:center;">
+                  <span style="font-size:8px; color:var(--text-secondary); display:block; margin-bottom:2px;">Install Progress</span>
+                  <strong id="crmOverviewInstallProgress" style="color:var(--accent-orange); font-size:11px;">—</strong>
+                </div>
+              </div>
+            </div>
+
+            <!-- Operations Metadata Panel -->
+            <div class="card-base" style="--card-theme: 99, 102, 241; padding: 12px;">
+              <h4 style="margin:0 0 8px 0; font-size:10px; text-transform:uppercase; color:var(--text-muted); letter-spacing:0.5px;">Operational Metrics</h4>
+              <div style="display:flex; flex-direction:column; gap:6px; font-size:11px;">
+                <div style="display:flex; justify-content:space-between;"><span style="color:var(--text-secondary);">Lifetime Value (CLV):</span><strong id="crmOverviewCLV" style="color:#fff;">—</strong></div>
+                <div style="display:flex; justify-content:space-between;"><span style="color:var(--text-secondary);">AMC Contract Status:</span><strong id="crmOverviewAmcStatus" style="color:#fff;">—</strong></div>
+                <div style="display:flex; justify-content:space-between;"><span style="color:var(--text-secondary);">Last Communication:</span><strong id="crmOverviewLastComm" style="color:#fff;">—</strong></div>
+                <div style="display:flex; justify-content:space-between;"><span style="color:var(--text-secondary);">Last Activity Timestamp:</span><strong id="crmOverviewLastActivity" style="color:#fff;">—</strong></div>
+                <div style="display:flex; justify-content:space-between;"><span style="color:var(--text-secondary);">Next Scheduled Follow-up:</span><strong id="crmOverviewNextFollowup" style="color:#fff;">—</strong></div>
+                <div style="display:flex; justify-content:space-between;"><span style="color:var(--text-secondary);">Assigned Engineer:</span><strong id="crmOverviewEngineer" style="color:#fff;">—</strong></div>
+              </div>
+            </div>
+
             <div class="card-base" style="--card-theme: 23, 168, 229; padding: 12px;">
               <h4 style="margin:0 0 8px 0; font-size:10px; text-transform:uppercase; color:var(--text-muted);">Contact Details</h4>
               <div style="display:flex; flex-direction:column; gap:6px; font-size:11px;">
@@ -6502,7 +6641,321 @@
 
         <!-- Tab 8: Timeline -->
         <div class="crm-drawer-tab-pane" id="pane-timeline">
-          <div style="display:flex; flex-direction:column; gap:10px; margin-top:10px;" id="crmDrawerTimelineList"></div>
+          <div style="display:flex; flex-direction:column; gap:10px; margin-top:10px;">
+            <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:5px;">
+              <h4 style="margin:0; font-size:10px; text-transform:uppercase; color:var(--text-muted);">Activity Timeline</h4>
+              <div style="display:flex; gap:4px; align-items:center;">
+                <button type="button" id="btnTimelinePrev" class="table-action-btn" style="padding:2px 6px; font-size:8px;">&larr;</button>
+                <span id="timelinePageIndicator" style="font-size:9px; color:var(--text-secondary);">Page 1</span>
+                <button type="button" id="btnTimelineNext" class="table-action-btn" style="padding:2px 6px; font-size:8px;">&rarr;</button>
+              </div>
+            </div>
+            <div style="display:flex; flex-direction:column; gap:10px;" id="crmDrawerTimelineList"></div>
+          </div>
+        </div>
+
+        <!-- Tab: Documents -->
+        <div class="crm-drawer-tab-pane" id="pane-documents">
+          <div style="display:flex; flex-direction:column; gap:10px; margin-top:10px;">
+            <div style="display:flex; gap:6px; overflow-x:auto; white-space:nowrap; padding-bottom:5px;" id="docCategoryChips">
+              <span class="filter-chip active" data-doc-type="All">All</span>
+              <span class="filter-chip" data-doc-type="Aadhaar">Aadhaar</span>
+              <span class="filter-chip" data-doc-type="PAN">PAN</span>
+              <span class="filter-chip" data-doc-type="Electricity Bill">Electricity Bill</span>
+              <span class="filter-chip" data-doc-type="Agreement">Agreement</span>
+              <span class="filter-chip" data-doc-type="Site Survey">Site Survey</span>
+              <span class="filter-chip" data-doc-type="Roof Analysis">Roof Analysis</span>
+            </div>
+            
+            <!-- Drag & Drop Zone -->
+            <div id="docDropzone" style="border:2px dashed rgba(0, 181, 226, 0.3); border-radius:6px; padding:15px; text-align:center; background:rgba(255,255,255,0.01); cursor:pointer; transition:all 0.25s;">
+              <span style="font-size:10px; color:var(--text-secondary); display:block;">Drag &amp; drop files here or click to upload</span>
+              <span style="font-size:8px; color:var(--text-muted); display:block; margin-top:4px;">Supported: PDF, JPG, PNG (Max 10MB)</span>
+              <input type="file" id="docFileInput" style="display:none;" multiple>
+            </div>
+            
+            <!-- Upload Queue -->
+            <div id="docUploadProgressList" style="display:flex; flex-direction:column; gap:6px;"></div>
+
+            <!-- Documents Table/Grid -->
+            <div id="crmDrawerDocsList" style="display:flex; flex-direction:column; gap:8px; margin-top:5px; max-height:220px; overflow-y:auto;"></div>
+          </div>
+        </div>
+
+        <!-- Tab: Communications -->
+        <div class="crm-drawer-tab-pane" id="pane-communications">
+          <div style="display:flex; flex-direction:column; gap:10px; margin-top:10px;">
+            <!-- Filter Bar -->
+            <div style="display:flex; gap:6px; overflow-x:auto; white-space:nowrap; padding-bottom:5px;">
+              <span class="filter-chip active" data-comm-chan="All">All</span>
+              <span class="filter-chip" data-comm-chan="Email">Email</span>
+              <span class="filter-chip" data-comm-chan="SMS">SMS</span>
+              <span class="filter-chip" data-comm-chan="WhatsApp">WhatsApp</span>
+              <span class="filter-chip" data-comm-chan="Phone Call">Phone Call</span>
+              <span class="filter-chip" data-comm-chan="Internal Note">Internal Note</span>
+            </div>
+
+            <!-- Log Interaction Form -->
+            <div class="card-base" style="--card-theme: 54, 211, 153; padding: 10px;">
+              <h5 style="margin:0 0 6px 0; font-size:9px; text-transform:uppercase; color:var(--text-secondary);">Log New Interaction</h5>
+              <div style="display:flex; flex-direction:column; gap:6px;">
+                <div style="display:grid; grid-template-columns: 1fr 1fr; gap:6px;">
+                  <select id="commFormChannel" style="background:var(--bg-input); border:1px solid var(--border-color); color:var(--text-navy); font-size:10px; padding:4px; border-radius:4px;">
+                    <option value="Email">Email</option>
+                    <option value="SMS">SMS</option>
+                    <option value="WhatsApp">WhatsApp</option>
+                    <option value="Phone Call">Phone Call</option>
+                    <option value="Internal Note">Internal Note</option>
+                  </select>
+                  <input type="text" id="commFormSubject" placeholder="Subject" style="background:var(--bg-input); border:1px solid var(--border-color); color:#fff; font-size:10px; padding:4px; border-radius:4px;">
+                </div>
+                <textarea id="commFormMessage" placeholder="Message content..." style="background:var(--bg-input); border:1px solid var(--border-color); color:#fff; font-size:10px; padding:4px; border-radius:4px; height:45px; resize:none; font-family:'Outfit';"></textarea>
+                <button type="button" id="btnLogCommunication" class="calc-btn" style="padding:4px 8px; font-size:9px; align-self:flex-end; width:auto; height:auto;">Log Interaction</button>
+              </div>
+            </div>
+
+            <!-- Communications list -->
+            <div id="crmDrawerCommsList" style="display:flex; flex-direction:column; gap:8px; max-height:200px; overflow-y:auto;"></div>
+          </div>
+        </div>
+
+        <!-- Tab: Installation -->
+        <div class="crm-drawer-tab-pane" id="pane-installation">
+          <div style="display:flex; flex-direction:column; gap:10px; margin-top:10px;">
+            <div class="card-base" style="--card-theme: 23, 168, 229; padding: 12px;">
+              <h4 style="margin:0 0 8px 0; font-size:10px; text-transform:uppercase; color:var(--text-muted);">Workflow Progress</h4>
+              
+              <!-- Completion indicator -->
+              <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:8px;">
+                <span id="installWorkflowStage" style="font-size:11px; font-weight:800; color:#fff;">Lead Won</span>
+                <strong id="installWorkflowPct" style="font-size:11px; color:var(--accent-blue);">0%</strong>
+              </div>
+              <div style="width:100%; height:4px; background:rgba(255,255,255,0.06); border-radius:2px; margin-bottom:12px; overflow:hidden;">
+                <div id="installWorkflowProgressBar" style="width:0%; height:100%; background:var(--accent-blue); transition:width 0.4s ease-out;"></div>
+              </div>
+
+              <!-- Update Stage -->
+              <div style="display:flex; flex-direction:column; gap:8px; border-top:1px solid rgba(255,255,255,0.04); padding-top:10px;">
+                <div style="display:grid; grid-template-columns: 1fr 1fr; gap:6px;">
+                  <div>
+                    <label style="font-size:8px; color:var(--text-secondary); display:block; margin-bottom:2px;">Select Current Stage</label>
+                    <select id="installStageSelect" style="width:100%; background:var(--bg-input); border:1px solid var(--border-color); color:var(--text-navy); font-size:10px; padding:4px; border-radius:4px;">
+                      <option value="Lead Won">Lead Won</option>
+                      <option value="Engineering Review">Engineering Review</option>
+                      <option value="Material Ordered">Material Ordered</option>
+                      <option value="Installation Scheduled">Installation Scheduled</option>
+                      <option value="Panels Installed">Panels Installed</option>
+                      <option value="Inverter Installed">Inverter Installed</option>
+                      <option value="Inspection">Inspection</option>
+                      <option value="Net Meter Applied">Net Meter Applied</option>
+                      <option value="Net Meter Approved">Net Meter Approved</option>
+                      <option value="Commissioned">Commissioned</option>
+                      <option value="Completed">Completed</option>
+                    </select>
+                  </div>
+                  <div>
+                    <label style="font-size:8px; color:var(--text-secondary); display:block; margin-bottom:2px;">Assigned Engineer</label>
+                    <input type="text" id="installEngineerInput" placeholder="Engineer Name" style="width:100%; background:var(--bg-input); border:1px solid var(--border-color); color:#fff; font-size:10px; padding:4px; border-radius:4px; box-sizing:border-box;">
+                  </div>
+                </div>
+                <div>
+                  <label style="font-size:8px; color:var(--text-secondary); display:block; margin-bottom:2px;">Step Remarks</label>
+                  <textarea id="installRemarksInput" placeholder="Add status notes or checklist updates..." style="width:100%; background:var(--bg-input); border:1px solid var(--border-color); color:#fff; font-size:10px; padding:4px; border-radius:4px; height:40px; resize:none; font-family:'Outfit'; box-sizing:border-box;"></textarea>
+                </div>
+                <button type="button" id="btnUpdateInstallation" class="calc-btn" style="padding:5px; font-size:10px; width:100%; height:auto;">Update Installation Status</button>
+              </div>
+            </div>
+
+            <!-- Checklist & Details -->
+            <div class="card-base" style="--card-theme: 99, 102, 241; padding:12px;">
+              <h4 style="margin:0 0 6px 0; font-size:10px; text-transform:uppercase; color:var(--text-muted);">Installation Details</h4>
+              <div style="display:flex; flex-direction:column; gap:6px; font-size:11px;">
+                <div style="display:flex; justify-content:space-between;"><span style="color:var(--text-secondary);">Start Date:</span><span id="installStartDateText" style="color:#fff;">—</span></div>
+                <div style="display:flex; justify-content:space-between;"><span style="color:var(--text-secondary);">Expected Completion:</span><span id="installExpectedDateText" style="color:#fff;">—</span></div>
+                <div style="display:flex; justify-content:space-between;"><span style="color:var(--text-secondary);">Net Meter Status:</span><span id="installNetMeterText" style="color:#fff;">—</span></div>
+              </div>
+            </div>
+
+            <!-- History Timeline -->
+            <h5 style="margin:5px 0 3px 0; font-size:9px; text-transform:uppercase; color:var(--text-muted);">Stage History Log</h5>
+            <div id="installHistoryLog" style="display:flex; flex-direction:column; gap:6px; max-height:120px; overflow-y:auto;"></div>
+          </div>
+        </div>
+
+        <!-- Tab: Payments -->
+        <div class="crm-drawer-tab-pane" id="pane-payments">
+          <div style="display:flex; flex-direction:column; gap:10px; margin-top:10px;">
+            <div style="display:grid; grid-template-columns: repeat(3, 1fr); gap:8px;">
+              <div style="background:rgba(255,255,255,0.01); border:1px solid var(--border-color); border-radius:4px; padding:6px; text-align:center;">
+                <span style="font-size:8px; color:var(--text-secondary); display:block;">Total Invoiced</span>
+                <strong id="payTotalInvoiced" style="color:#fff; font-size:11px;">₹0</strong>
+              </div>
+              <div style="background:rgba(255,255,255,0.01); border:1px solid var(--border-color); border-radius:4px; padding:6px; text-align:center;">
+                <span style="font-size:8px; color:var(--text-secondary); display:block;">Total Collected</span>
+                <strong id="payTotalCollected" style="color:var(--accent-green); font-size:11px;">₹0</strong>
+              </div>
+              <div style="background:rgba(255,255,255,0.01); border:1px solid var(--border-color); border-radius:4px; padding:6px; text-align:center;">
+                <span style="font-size:8px; color:var(--text-secondary); display:block;">Outstanding</span>
+                <strong id="payTotalOutstanding" style="color:var(--accent-orange); font-size:11px;">₹0</strong>
+              </div>
+            </div>
+
+            <!-- Invoices List -->
+            <h5 style="margin:5px 0 2px 0; font-size:9px; text-transform:uppercase; color:var(--text-muted);">Milestone Invoices</h5>
+            <div id="crmDrawerPaymentsList" style="display:flex; flex-direction:column; gap:6px; max-height:130px; overflow-y:auto;"></div>
+
+            <!-- Add Payment Form -->
+            <div class="card-base" style="--card-theme: 54, 211, 153; padding: 10px;">
+              <h5 style="margin:0 0 6px 0; font-size:9px; text-transform:uppercase; color:var(--text-secondary);">Record Collection / Create Invoice</h5>
+              <div style="display:flex; flex-direction:column; gap:6px;">
+                <div style="display:grid; grid-template-columns: 1fr 1fr; gap:6px;">
+                  <div>
+                    <label style="font-size:8px; color:var(--text-secondary); display:block; margin-bottom:2px;">Select Invoice (to pay)</label>
+                    <select id="payInvoiceSelect" style="width:100%; background:var(--bg-input); border:1px solid var(--border-color); color:var(--text-navy); font-size:10px; padding:4px; border-radius:4px;">
+                      <option value="">-- Create New Invoice --</option>
+                    </select>
+                  </div>
+                  <div>
+                    <label style="font-size:8px; color:var(--text-secondary); display:block; margin-bottom:2px;">Amount (₹)</label>
+                    <input type="number" id="payAmountInput" style="width:100%; background:var(--bg-input); border:1px solid var(--border-color); color:#fff; font-size:10px; padding:4px; border-radius:4px; box-sizing:border-box;">
+                  </div>
+                </div>
+
+                <!-- Fields for New Invoice -->
+                <div id="payNewInvoiceGroup" style="display:grid; grid-template-columns: 1fr 1fr; gap:6px;">
+                  <div>
+                    <label style="font-size:8px; color:var(--text-secondary); display:block; margin-bottom:2px;">Milestone Stage</label>
+                    <select id="payMilestoneStage" style="width:100%; background:var(--bg-input); border:1px solid var(--border-color); color:var(--text-navy); font-size:10px; padding:4px; border-radius:4px;">
+                      <option value="Booking Advance">Booking Advance</option>
+                      <option value="Material Delivery">Material Delivery</option>
+                      <option value="Structure Erected">Structure Erected</option>
+                      <option value="Commissioning">Commissioning</option>
+                      <option value="Final Handover">Final Handover</option>
+                    </select>
+                  </div>
+                  <div>
+                    <label style="font-size:8px; color:var(--text-secondary); display:block; margin-bottom:2px;">Due Date</label>
+                    <input type="date" id="payDueDateInput" style="width:100%; background:var(--bg-input); border:1px solid var(--border-color); color:var(--text-navy); font-size:10px; padding:4px; border-radius:4px; box-sizing:border-box;">
+                  </div>
+                </div>
+
+                <!-- Fields for Record Payment -->
+                <div id="payRecordPaymentGroup" style="display:none; grid-template-columns: 1fr 1fr; gap:6px;">
+                  <div>
+                    <label style="font-size:8px; color:var(--text-secondary); display:block; margin-bottom:2px;">Payment Method</label>
+                    <select id="payMethodSelect" style="width:100%; background:var(--bg-input); border:1px solid var(--border-color); color:var(--text-navy); font-size:10px; padding:4px; border-radius:4px;">
+                      <option value="Bank Transfer">Bank Transfer</option>
+                      <option value="UPI">UPI</option>
+                      <option value="Cheque">Cheque</option>
+                      <option value="Credit Card">Credit Card</option>
+                    </select>
+                  </div>
+                  <div>
+                    <label style="font-size:8px; color:var(--text-secondary); display:block; margin-bottom:2px;">Reference/Transaction #</label>
+                    <input type="text" id="payRefInput" placeholder="Txn Ref" style="width:100%; background:var(--bg-input); border:1px solid var(--border-color); color:#fff; font-size:10px; padding:4px; border-radius:4px; box-sizing:border-box;">
+                  </div>
+                </div>
+
+                <button type="button" id="btnSubmitPaymentAction" class="calc-btn" style="padding:5px; font-size:10px; width:100%; height:auto;">Create Milestone Invoice</button>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Tab: AMC -->
+        <div class="crm-drawer-tab-pane" id="pane-amc">
+          <div style="display:flex; flex-direction:column; gap:10px; margin-top:10px;">
+            <div class="card-base" style="--card-theme: 99, 102, 241; padding: 12px;">
+              <h4 style="margin:0 0 8px 0; font-size:10px; text-transform:uppercase; color:var(--text-muted);">AMC Contract Details</h4>
+              <div style="display:flex; flex-direction:column; gap:6px; font-size:11px;">
+                <div style="display:flex; justify-content:space-between;"><span style="color:var(--text-secondary);">Contract Number:</span><strong id="amcContractNumber" style="color:#fff;">—</strong></div>
+                <div style="display:flex; justify-content:space-between;"><span style="color:var(--text-secondary);">Warranty Status:</span><strong id="amcWarrantyStatus" style="color:#fff;">—</strong></div>
+                <div style="display:flex; justify-content:space-between;"><span style="color:var(--text-secondary);">Service Frequency:</span><strong id="amcServiceFreq" style="color:#fff;">—</strong></div>
+                <div style="display:flex; justify-content:space-between;"><span style="color:var(--text-secondary);">Next Service Due:</span><strong id="amcNextService" style="color:#fff;">—</strong></div>
+                <div style="display:flex; justify-content:space-between;"><span style="color:var(--text-secondary);">Expiry Date:</span><strong id="amcExpiryDate" style="color:#fff;">—</strong></div>
+                <div style="display:flex; justify-content:space-between;"><span style="color:var(--text-secondary);">AMC Status:</span><strong id="amcContractStatus" style="color:#fff;">—</strong></div>
+              </div>
+              
+              <!-- Update AMC Settings -->
+              <div style="display:flex; flex-direction:column; gap:8px; border-top:1px solid rgba(255,255,255,0.04); padding-top:10px; margin-top:10px;">
+                <div style="display:grid; grid-template-columns: 1fr 1fr; gap:6px;">
+                  <div>
+                    <label style="font-size:8px; color:var(--text-secondary); display:block; margin-bottom:2px;">Service Frequency</label>
+                    <select id="amcFreqSelect" style="width:100%; background:var(--bg-input); border:1px solid var(--border-color); color:var(--text-navy); font-size:10px; padding:4px; border-radius:4px;">
+                      <option value="Quarterly">Quarterly</option>
+                      <option value="Half-Yearly">Half-Yearly</option>
+                      <option value="Annually">Annually</option>
+                    </select>
+                  </div>
+                  <div>
+                    <label style="font-size:8px; color:var(--text-secondary); display:block; margin-bottom:2px;">AMC Status</label>
+                    <select id="amcStatusSelect" style="width:100%; background:var(--bg-input); border:1px solid var(--border-color); color:var(--text-navy); font-size:10px; padding:4px; border-radius:4px;">
+                      <option value="Active">Active</option>
+                      <option value="Suspended">Suspended</option>
+                      <option value="Expired">Expired</option>
+                    </select>
+                  </div>
+                </div>
+                <button type="button" id="btnUpdateAmcSettings" class="calc-btn" style="padding:4px; font-size:9px; width:100%; height:auto;">Update Contract Settings</button>
+              </div>
+            </div>
+
+            <!-- Record AMC Visit -->
+            <div class="card-base" style="--card-theme: 54, 211, 153; padding: 10px;">
+              <h5 style="margin:0 0 6px 0; font-size:9px; text-transform:uppercase; color:var(--text-secondary);">Log Service Visit</h5>
+              <div style="display:flex; flex-direction:column; gap:6px;">
+                <div style="display:grid; grid-template-columns: 1fr 1fr; gap:6px;">
+                  <select id="amcVisitType" style="background:var(--bg-input); border:1px solid var(--border-color); color:var(--text-navy); font-size:10px; padding:4px; border-radius:4px;">
+                    <option value="Preventive Maintenance">Preventive Maintenance</option>
+                    <option value="Breakdown Call">Breakdown Call</option>
+                    <option value="Panel Cleaning">Panel Cleaning</option>
+                    <option value="Inverter Checkup">Inverter Checkup</option>
+                  </select>
+                  <input type="text" id="amcVisitEngineer" placeholder="Service Engineer" style="background:var(--bg-input); border:1px solid var(--border-color); color:#fff; font-size:10px; padding:4px; border-radius:4px;">
+                </div>
+                <textarea id="amcVisitRemarks" placeholder="Service remarks, replacements, breakdown analysis..." style="background:var(--bg-input); border:1px solid var(--border-color); color:#fff; font-size:10px; padding:4px; border-radius:4px; height:40px; resize:none; font-family:'Outfit';"></textarea>
+                <button type="button" id="btnLogAmcVisit" class="calc-btn" style="padding:4px 8px; font-size:9px; align-self:flex-end; width:auto; height:auto;">Log Service Visit</button>
+              </div>
+            </div>
+
+            <!-- Visits Log List -->
+            <h5 style="margin:5px 0 2px 0; font-size:9px; text-transform:uppercase; color:var(--text-muted);">AMC Service Visit History</h5>
+            <div id="amcVisitsList" style="display:flex; flex-direction:column; gap:6px; max-height:120px; overflow-y:auto;"></div>
+          </div>
+        </div>
+
+        <!-- Tab: Analytics -->
+        <div class="crm-drawer-tab-pane" id="pane-analytics">
+          <div style="display:flex; flex-direction:column; gap:10px; margin-top:10px;">
+            <div class="card-base" style="--card-theme: 167, 139, 250; padding: 12px;">
+              <h4 style="margin:0 0 10px 0; font-size:10px; text-transform:uppercase; color:var(--text-muted);">25-Year Cumulative Savings</h4>
+              <div style="height: 150px; position: relative;">
+                <canvas id="crmDrawerSavingsChart"></canvas>
+              </div>
+            </div>
+            
+            <div class="card-base" style="--card-theme: 54, 211, 153; padding: 12px;">
+              <h4 style="margin:0 0 10px 0; font-size:10px; text-transform:uppercase; color:var(--text-muted);">Solar ROI Metrics</h4>
+              <div style="display:grid; grid-template-columns: 1fr 1fr; gap:10px; font-size:11px;">
+                <div>
+                  <span style="color:var(--text-secondary); display:block;">Payback Period</span>
+                  <strong id="crmAnalyticPayback" style="font-size:14px; color:#fff;">—</strong>
+                </div>
+                <div>
+                  <span style="color:var(--text-secondary); display:block;">Recommended Capacity</span>
+                  <strong id="crmAnalyticCapacity" style="font-size:14px; color:var(--accent-blue);">—</strong>
+                </div>
+                <div>
+                  <span style="color:var(--text-secondary); display:block;">Est. Annual Generation</span>
+                  <strong id="crmAnalyticGeneration" style="font-size:14px; color:var(--accent-green);">—</strong>
+                </div>
+                <div>
+                  <span style="color:var(--text-secondary); display:block;">25-Year ROI Percentage</span>
+                  <strong id="crmAnalyticROI" style="font-size:14px; color:var(--accent-orange);">—</strong>
+                </div>
+              </div>
+            </div>
+          </div>
         </div>
 
         <!-- Tab 9: Notes -->
