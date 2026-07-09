@@ -56,8 +56,24 @@ app.include_router(crm_router)
 async def startup_event():
     from security import run_startup_health_check
     run_startup_health_check()
-    
-    # Initialize SQLite database & import dataset automatically
+
+    from ml.registry import reload_registry
+    from ml.loader import get_loader
+    from ml.config import get_config
+
+    config = get_config()
+    registry = reload_registry(config.models_dir)
+    loader = get_loader()
+
+    registry.discover(config.models_dir)
+    loader.preload_all()
+    loader.preload_encoders()
+
+    print(f"ML Registry initialized: {len(registry.get_all())} models, {len(registry.get_all_encoders())} encoders")
+
+    from ml.metadata import generate_all_metadata
+    generate_all_metadata()
+
     from database_sqlite import engine_sqlite, SessionLocalSqlite, run_cdp_migrations
     from customer_service import import_csv_if_empty
     run_cdp_migrations(engine_sqlite)

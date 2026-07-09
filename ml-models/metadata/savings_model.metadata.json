@@ -1,0 +1,15 @@
+{
+  "name": "savings_model",
+  "version": "1.0.0",
+  "algorithm": "unknown",
+  "framework": "unknown",
+  "task": "unknown",
+  "status": "active",
+  "checksum": "69034d334e7a270b9ccae9d843e256050f77c2bd414f7a24c8443ab480a2f9bc",
+  "file_size": 119897,
+  "file_path": "E:\\GET SOLAR ENERGY\\get-solar-energy\\ml-models\\savings_model.pkl",
+  "model_type": "pkl",
+  "training_date": "2026-07-05",
+  "created_at": "2026-07-09T14:23:43.563762Z",
+  "updated_at": "2026-07-09T14:23:43.563762Z"
+}
