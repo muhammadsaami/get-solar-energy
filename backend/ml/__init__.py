@@ -54,6 +54,32 @@ from .metadata import (
     get_training_date,
 )
 
+from .postprocessing import (
+    format_prediction,
+    format_confidence,
+    format_explanation,
+    build_response,
+)
+
+from .inference import (
+    InferenceEngine,
+    get_inference_engine,
+    MODEL_BILL,
+    MODEL_SAVINGS,
+    ENCODER_CITY,
+)
+
+from .audit import (
+    AuditLogger,
+    get_audit_logger,
+)
+
+from .monitoring import (
+    Monitoring,
+    Metrics,
+    get_monitoring,
+)
+
 
 __all__ = [
     "get_config",
@@ -88,4 +114,18 @@ __all__ = [
     "update_metadata",
     "validate_metadata",
     "get_training_date",
+    "format_prediction",
+    "format_confidence",
+    "format_explanation",
+    "build_response",
+    "InferenceEngine",
+    "get_inference_engine",
+    "MODEL_BILL",
+    "MODEL_SAVINGS",
+    "ENCODER_CITY",
+    "AuditLogger",
+    "get_audit_logger",
+    "Monitoring",
+    "Metrics",
+    "get_monitoring",
 ]

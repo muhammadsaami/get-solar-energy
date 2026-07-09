@@ -39,6 +39,7 @@ from amc import router as amc_router
 from site_survey import router as site_survey_router
 from customer_routes import router as customer_router
 from crm_routes import router as crm_router
+from ml.routes import router as ml_router
 
 app.include_router(roof_router)
 app.include_router(roi_router)
@@ -51,6 +52,7 @@ app.include_router(amc_router)
 app.include_router(site_survey_router)
 app.include_router(customer_router)
 app.include_router(crm_router)
+app.include_router(ml_router)
 
 @app.on_event("startup")
 async def startup_event():
