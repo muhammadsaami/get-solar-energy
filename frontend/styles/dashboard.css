@@ -7636,3 +7636,36 @@ mark.crm-search-highlight {
     display: none;
   }
 }
+
+/* ==========================================================================
+   ENTERPRISE AI ASSISTANT
+   ========================================================================== */
+#tab-enterprise-ai .chat-conversation-log {
+  scrollbar-width: thin;
+  scrollbar-color: var(--accent-purple) transparent;
+}
+#tab-enterprise-ai .chat-conversation-log::-webkit-scrollbar {
+  width: 4px;
+}
+#tab-enterprise-ai .chat-conversation-log::-webkit-scrollbar-thumb {
+  background: var(--accent-purple);
+  border-radius: 4px;
+}
+#tab-enterprise-ai .chat-suggest-chip:hover {
+  background: rgba(124, 93, 250, 0.18) !important;
+  border-color: rgba(124, 93, 250, 0.5) !important;
+  transform: translateY(-1px);
+}
+#tab-enterprise-ai .chat-suggest-chip:active {
+  transform: translateY(0);
+}
+#tab-enterprise-ai #enterpriseChatSend:hover {
+  background: #6a4fe0 !important;
+  border-color: #6a4fe0 !important;
+  box-shadow: 0 4px 12px rgba(124, 93, 250, 0.3);
+}
+@media (max-width: 1024px) {
+  #tab-enterprise-ai > div:nth-child(2) {
+    grid-template-columns: 1fr !important;
+  }
+}

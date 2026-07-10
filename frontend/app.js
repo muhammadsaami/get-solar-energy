@@ -227,6 +227,7 @@ function initDashboard() {
   initSolarReportUploader();
   initRoofScannerSimulator();
   initAIAdvisorChat();
+  initEnterpriseAI();
   initReportsCenter();
   initTabROICalculator();
   initAdminDashboard();
@@ -1537,9 +1538,11 @@ function initModalRoiCalculatorChart(payback = 4.8, netCost = 102000, annualSavi
                 return _safeNum(value / 100000).toFixed(1) + 'L';
               }
               return value;
-            }
-          }
-        }
+    }
+  } else if (tabId === 'enterprise-ai') {
+    if (typeof loadEnterpriseTools === 'function') loadEnterpriseTools();
+  }
+}
       }
     }
   });
@@ -4291,6 +4294,244 @@ function initAIAdvisorChat() {
   });
 
   renderLog();
+}
+
+/* ==========================================================================
+   13B. ENTERPRISE AI ASSISTANT
+   ========================================================================== */
+function initEnterpriseAI() {
+  const log = document.getElementById('enterpriseChatLog');
+  const input = document.getElementById('enterpriseChatInput');
+  const sendBtn = document.getElementById('enterpriseChatSend');
+  const chipsRow = document.getElementById('enterpriseChipsRow');
+  const toolActivity = document.getElementById('enterpriseToolActivity');
+  const contextPanel = document.getElementById('enterpriseContextPanel');
+  const timeline = document.getElementById('enterpriseTimeline');
+
+  if (!sendBtn || !input || !log) return;
+
+  let historyList = [];
+  let sessionId = localStorage.getItem('enterpriseAISessionId') || null;
+
+  // Load saved history
+  try {
+    const saved = localStorage.getItem('enterpriseAIHistory');
+    if (saved) historyList = JSON.parse(saved);
+  } catch (e) { }
+
+  // Suggested prompts
+  const prompts = [
+    "Show customer 360 for customer 5",
+    "Create a follow-up task",
+    "What is the ROI for a 3kW system?",
+    "Run AI analysis on my data",
+    "Generate a sales report",
+    "Recommend next actions",
+    "Check installation status",
+    "Show payment history",
+    "Explain the customer score",
+    "Is my home solar ready?"
+  ];
+
+  if (chipsRow) {
+    chipsRow.innerHTML = prompts.map(p =>
+      `<button class="chat-suggest-chip" style="font-size: 11px; background: rgba(124,93,250,0.08); border: 1px solid rgba(124,93,250,0.25); color: #7c5dfa; padding: 6px 12px; border-radius: 14px; cursor: pointer; transition: all 0.2s;">${p}</button>`
+    ).join('');
+    chipsRow.querySelectorAll('.chat-suggest-chip').forEach(chip => {
+      chip.addEventListener('click', () => {
+        if (!input.disabled) sendMessage(chip.textContent);
+      });
+    });
+  }
+
+  // Typing indicator styles (reuse if already injected)
+  if (!document.getElementById('enterprise-typing-styles')) {
+    const style = document.createElement('style');
+    style.id = 'enterprise-typing-styles';
+    style.textContent = `
+      @keyframes entPulse { 0% { opacity: 0.3; } 100% { opacity: 1; } }
+      .ent-pulse-dot { animation: entPulse 0.6s infinite alternate; font-weight: bold; display: inline-block; }
+    `;
+    document.head.appendChild(style);
+  }
+
+  function formatMessageContent(text) {
+    let safe = text.replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;").replace(/"/g, "&quot;").replace(/'/g, "&#039;");
+    const lines = safe.split('\n');
+    return lines.map(line => {
+      const trimmed = line.trim();
+      if (trimmed.startsWith('* ') || trimmed.startsWith('- ') || trimmed.startsWith('• ')) {
+        return `<div style="display:flex;gap:6px;margin-left:8px;margin-top:4px;align-items:flex-start;"><span style="color:#7c5dfa;font-weight:bold;flex-shrink:0;">•</span><span>${trimmed.substring(2)}</span></div>`;
+      }
+      return `<div style="margin-top:2px;">${trimmed || '&nbsp;'}</div>`;
+    }).join('');
+  }
+
+  function showTyping(show) {
+    const existing = log.querySelector('.typing-indicator');
+    if (!show && existing) { existing.remove(); return; }
+    if (show && !existing) {
+      const el = document.createElement('div');
+      el.className = 'typing-indicator';
+      el.style = 'display:flex;flex-direction:column;align-items:flex-start;max-width:80%;';
+      el.innerHTML = `<div class="message-bubble" style="background:rgba(124,93,250,0.1);border:1px solid rgba(124,93,250,0.25);padding:10px 14px;border-radius:8px 8px 8px 0;font-size:12px;color:var(--text-navy);"><span class="ent-pulse-dot" style="color:#7c5dfa;">●</span> <span class="ent-pulse-dot" style="color:#7c5dfa;animation-delay:0.2s;">●</span> <span class="ent-pulse-dot" style="color:#7c5dfa;animation-delay:0.4s;">●</span> <span style="margin-left:4px;color:var(--text-muted);">Thinking...</span></div>`;
+      log.appendChild(el);
+      log.scrollTop = log.scrollHeight;
+    }
+  }
+
+  function updateTimeline(steps) {
+    if (!timeline) return;
+    if (!steps || steps.length === 0) {
+      timeline.innerHTML = '<div style="opacity:0.5;font-style:italic;">Waiting for request...</div>';
+      return;
+    }
+    timeline.innerHTML = steps.map((s, i) => {
+      const color = s.status === 'done' ? '#36d399' : s.status === 'running' ? '#7c5dfa' : s.status === 'error' ? '#f43f5e' : 'var(--text-muted)';
+      return `<div style="display:flex;align-items:center;gap:6px;margin-bottom:4px;"><span style="width:6px;height:6px;border-radius:50%;background:${color};flex-shrink:0;"></span><span>${s.label}</span></div>`;
+    }).join('');
+  }
+
+  function updateToolActivity(results) {
+    if (!toolActivity) return;
+    if (!results || results.length === 0) {
+      toolActivity.innerHTML = '<div style="opacity:0.5;font-style:italic;">No tools executed yet</div>';
+      return;
+    }
+    toolActivity.innerHTML = results.map(r => {
+      const icon = r.success ? '✓' : '✗';
+      const color = r.success ? '#36d399' : '#f43f5e';
+      return `<div style="display:flex;align-items:center;gap:6px;margin-bottom:4px;"><span style="color:${color};font-weight:bold;">${icon}</span><span>${r.tool}</span><span style="margin-left:auto;color:var(--text-muted);font-size:10px;">${r.latency_ms || 0}ms</span></div>`;
+    }).join('');
+  }
+
+  function updateContext(ctx) {
+    if (!contextPanel) return;
+    if (!ctx || Object.keys(ctx).length === 0) {
+      contextPanel.innerHTML = '<div style="opacity:0.5;font-style:italic;">No context loaded</div>';
+      return;
+    }
+    const items = [];
+    if (ctx.intent) items.push(`Intent: ${ctx.intent}`);
+    if (ctx.confidence) items.push(`Confidence: ${(ctx.confidence * 100).toFixed(0)}%`);
+    contextPanel.innerHTML = items.map(i => `<div style="margin-bottom:2px;">${i}</div>`).join('') || '<div style="opacity:0.5;font-style:italic;">Context active</div>';
+  }
+
+  function renderLog() {
+    log.innerHTML = '';
+    historyList.forEach(msg => {
+      const el = document.createElement('div');
+      if (msg.role === 'user') {
+        el.style = 'display:flex;flex-direction:column;align-items:flex-end;max-width:80%;margin-left:auto;';
+        el.innerHTML = `<div class="message-bubble" style="background:rgba(124,93,250,0.15);border:1px solid rgba(124,93,250,0.3);padding:10px 14px;border-radius:8px 8px 0 8px;font-size:12px;color:var(--text-navy);line-height:1.4;text-align:left;">${formatMessageContent(msg.content)}</div><span style="font-size:9px;color:var(--text-muted);margin-top:4px;margin-right:4px;">${msg.time}</span>`;
+      } else {
+        el.style = 'display:flex;flex-direction:column;align-items:flex-start;max-width:80%;';
+        el.innerHTML = `<div class="message-bubble" style="background:rgba(255,255,255,0.08);border:1px solid var(--border-color);padding:10px 14px;border-radius:8px 8px 8px 0;font-size:12px;color:var(--text-navy);line-height:1.4;text-align:left;">${formatMessageContent(msg.content)}</div><span style="font-size:9px;color:var(--text-muted);margin-top:4px;margin-left:4px;">${msg.time}</span>`;
+      }
+      log.appendChild(el);
+    });
+    log.scrollTop = log.scrollHeight;
+  }
+
+  function sendMessage(text) {
+    if (!text || !text.trim()) return;
+    input.value = '';
+
+    const timeStr = new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+    historyList.push({ role: 'user', content: text, time: timeStr });
+    if (historyList.length > 30) historyList = historyList.slice(-30);
+    localStorage.setItem('enterpriseAIHistory', JSON.stringify(historyList));
+
+    renderLog();
+    showTyping(true);
+
+    updateTimeline([
+      { label: 'User Request', status: 'done' },
+      { label: 'Classifying Intent...', status: 'running' },
+      { label: 'Building Plan', status: 'pending' },
+      { label: 'Executing Tools', status: 'pending' },
+      { label: 'Generating Response', status: 'pending' }
+    ]);
+
+    const host = API_BASE;
+    const token = localStorage.getItem('authToken') || '';
+
+    safeFetch(`${host}/api/assistant/chat`, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'Authorization': `Bearer ${token}`
+      },
+      body: JSON.stringify({
+        message: text,
+        session_id: sessionId,
+        context: {
+          bill: (() => { try { return JSON.parse(localStorage.getItem('lastBillAnalysis') || 'null'); } catch(e) { return null; } })(),
+          roof: (() => { try { return JSON.parse(localStorage.getItem('lastRoofAnalysis') || 'null'); } catch(e) { return null; } })(),
+          roi: (() => { try { return JSON.parse(localStorage.getItem('lastROIAnalysis') || 'null'); } catch(e) { return null; } })()
+        }
+      })
+    })
+      .then(async (res) => {
+        if (!res.ok) throw new Error(`HTTP ${res.status}`);
+        return res.json();
+      })
+      .then((result) => {
+        showTyping(false);
+
+        const data = (result && result.data) ? result.data : result;
+        const replyText = (data && data.response) ? data.response : 'Request failed. Please try again.';
+
+        if (data && data.conversation_id) {
+          sessionId = data.conversation_id;
+          localStorage.setItem('enterpriseAISessionId', sessionId);
+        }
+
+        const replyTimeStr = new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+        historyList.push({ role: 'assistant', content: replyText, time: replyTimeStr });
+        if (historyList.length > 30) historyList = historyList.slice(-30);
+        localStorage.setItem('enterpriseAIHistory', JSON.stringify(historyList));
+
+        renderLog();
+
+        // Update sidebar panels
+        if (data && data.tool_results) updateToolActivity(data.tool_results);
+        if (data && data.context) updateContext(data.context);
+
+        updateTimeline([
+          { label: 'User Request', status: 'done' },
+          { label: 'Intent: ' + ((data && data.context && data.context.intent) || 'GENERAL'), status: 'done' },
+          { label: 'Plan Executed', status: 'done' },
+          { label: 'Tools: ' + ((data && data.tool_results) ? data.tool_results.length : 0) + ' called', status: 'done' },
+          { label: 'Response Generated', status: 'done' }
+        ]);
+      })
+      .catch((err) => {
+        console.error('Enterprise AI error:', err);
+        showTyping(false);
+        const replyText = 'Enterprise AI is currently experiencing high demand. Please try again.';
+        const replyTimeStr = new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+        historyList.push({ role: 'assistant', content: replyText, time: replyTimeStr });
+        if (historyList.length > 30) historyList = historyList.slice(-30);
+        localStorage.setItem('enterpriseAIHistory', JSON.stringify(historyList));
+        renderLog();
+        updateTimeline([
+          { label: 'User Request', status: 'done' },
+          { label: 'Error: Service unavailable', status: 'error' }
+        ]);
+      });
+  }
+
+  sendBtn.addEventListener('click', () => sendMessage(input.value));
+  input.addEventListener('keydown', (e) => {
+    if (e.key === 'Enter') sendMessage(input.value);
+  });
+
+  renderLog();
+}
+
+function loadEnterpriseTools() {
+  // Refresh tools list on tab switch if needed
 }
 
 /* ==========================================================================

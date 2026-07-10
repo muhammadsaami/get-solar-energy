@@ -298,6 +298,12 @@
               <span>AI Assistant</span>
             </a>
           </li>
+          <li class="menu-item" data-tab="enterprise-ai" data-color="indigo">
+            <a href="#" data-tooltip="Enterprise AI">
+              <svg><use href="#icon-bot"></use></svg>
+              <span>Enterprise AI</span>
+            </a>
+          </li>
 
           <!-- ── GROUP B: ENGAGEMENT ─────────────────────── -->
           <li class="sidebar-section-label"><span>Engagement</span></li>
@@ -2195,6 +2201,72 @@
           <div class="chat-input-row" style="display: flex; gap: 10px; margin-top: 12px;">
             <input type="text" id="aiChatInputText" placeholder="Ask GET Solar Advisor..." style="flex: 1; padding: 12px; border-radius: 8px; background-color: var(--bg-input); border: 1px solid var(--border-color); color: var(--text-navy); outline: none; font-size: 12px;" aria-label="Ask AI Assistant prompt">
             <button class="calc-btn" id="aiChatSendBtn" style="margin-top: 0; padding: 10px 20px; width: auto; font-size: 12px; font-weight: 700;">Send</button>
+          </div>
+        </div>
+      </div>
+
+      <!-- --- ENTERPRISE AI ASSISTANT TAB CONTENT --- -->
+      <div class="tab-content" id="tab-enterprise-ai">
+        <div class="tab-header-block">
+          <h2 class="tab-heading">Enterprise AI Assistant</h2>
+          <p class="tab-subheading">Intelligent orchestration layer — CRM, Customer360, AI Analysis, Recommendations, and more.</p>
+        </div>
+
+        <div style="display: grid; grid-template-columns: 1fr 320px; gap: 16px; align-items: start;">
+          <!-- Main Chat Area -->
+          <div class="card-base" style="--card-theme: 124, 93, 250;">
+            <div class="kpi-header-row" style="border-bottom: 1px solid var(--border-color-light); padding-bottom: 12px; margin-bottom: 12px;">
+              <div style="display: flex; align-items: center; gap: 8px;">
+                <svg style="width:20px; height:20px; stroke:#7c5dfa; fill:none; stroke-width:2;"><use href="#icon-bot"></use></svg>
+                <span class="kpi-title">Enterprise AI Copilot</span>
+              </div>
+              <span class="api-tag">POST /api/assistant/chat</span>
+            </div>
+
+            <!-- Conversation Log -->
+            <div class="chat-conversation-log" id="enterpriseChatLog" style="height: 340px; overflow-y: auto; display: flex; flex-direction: column; gap: 12px; padding: 10px; background: rgba(0,0,0,0.15); border-radius: 6px; border: 1px solid var(--border-color); margin-bottom: 12px;">
+              <div class="chat-message assistant" style="display: flex; flex-direction: column; align-items: flex-start; max-width: 80%;">
+                <div class="message-bubble" style="background: rgba(255,255,255,0.08); border: 1px solid var(--border-color); padding: 10px 14px; border-radius: 8px 8px 8px 0; font-size: 12px; color: var(--text-navy); line-height: 1.4;">
+                  Welcome to the Enterprise AI Assistant. I can manage customers, run AI analyses, generate recommendations, create CRM tasks, and more. How can I help?
+                </div>
+                <span class="message-time" style="font-size: 9px; color: var(--text-muted); margin-top: 4px; margin-left: 4px;">now</span>
+              </div>
+            </div>
+
+            <!-- Suggested Action Chips -->
+            <div class="chat-suggestion-chips-row" id="enterpriseChipsRow" style="display: flex; flex-wrap: wrap; gap: 8px; margin-bottom: 15px;">
+            </div>
+
+            <!-- Input -->
+            <div class="chat-input-row" style="display: flex; gap: 10px; margin-top: 12px;">
+              <input type="text" id="enterpriseChatInput" placeholder="Ask Enterprise AI..." style="flex: 1; padding: 12px; border-radius: 8px; background-color: var(--bg-input); border: 1px solid var(--border-color); color: var(--text-navy); outline: none; font-size: 12px;">
+              <button class="calc-btn" id="enterpriseChatSend" style="margin-top: 0; padding: 10px 20px; width: auto; font-size: 12px; font-weight: 700; background: #7c5dfa; border-color: #7c5dfa;">Send</button>
+            </div>
+          </div>
+
+          <!-- Sidebar Panels -->
+          <div style="display: flex; flex-direction: column; gap: 12px;">
+            <!-- Tool Activity -->
+            <div class="card-base" style="--card-theme: 124, 93, 250; padding: 14px;">
+              <h4 style="margin: 0 0 8px 0; font-size: 12px; font-weight: 700; color: var(--text-navy);">Tool Activity</h4>
+              <div id="enterpriseToolActivity" style="font-size: 11px; color: var(--text-secondary); min-height: 60px;">
+                <div style="opacity: 0.5; font-style: italic;">No tools executed yet</div>
+              </div>
+            </div>
+            <!-- Context Panel -->
+            <div class="card-base" style="--card-theme: 124, 93, 250; padding: 14px;">
+              <h4 style="margin: 0 0 8px 0; font-size: 12px; font-weight: 700; color: var(--text-navy);">Context</h4>
+              <div id="enterpriseContextPanel" style="font-size: 11px; color: var(--text-secondary); min-height: 40px;">
+                <div style="opacity: 0.5; font-style: italic;">No context loaded</div>
+              </div>
+            </div>
+            <!-- AI Thinking Timeline -->
+            <div class="card-base" style="--card-theme: 124, 93, 250; padding: 14px;">
+              <h4 style="margin: 0 0 8px 0; font-size: 12px; font-weight: 700; color: var(--text-navy);">AI Thinking</h4>
+              <div id="enterpriseTimeline" style="font-size: 11px; color: var(--text-secondary); min-height: 40px;">
+                <div style="opacity: 0.5; font-style: italic;">Waiting for request...</div>
+              </div>
+            </div>
           </div>
         </div>
       </div>
