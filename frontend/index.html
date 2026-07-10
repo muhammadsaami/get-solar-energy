@@ -989,6 +989,139 @@
 
         </div>
 
+        <!-- --- AI INTELLIGENCE SECTION --- -->
+        <section class="ai-intelligence-section" id="aiIntelligenceSection">
+          <div class="ai-section-header">
+            <div class="ai-section-title-row">
+              <svg class="ai-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 2a2 2 0 0 1 2 2c0 .74-.4 1.39-1 1.73V7h1a7 7 0 0 1 7 7H3a7 7 0 0 1 7-7h1V5.73A2 2 0 0 1 10 4a2 2 0 0 1 2-2z"/><path d="M5 14v5a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2v-5"/><circle cx="9" cy="17" r="1" fill="currentColor" stroke="none"/><circle cx="15" cy="17" r="1" fill="currentColor" stroke="none"/></svg>
+              <h3 class="ai-section-title">AI Intelligence Engine</h3>
+            </div>
+            <button class="ai-analyze-btn" id="aiAnalyzeBtn" onclick="runAIAnalysis()">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21.5 2v6h-6M2.5 22v-6h6"/><path d="M2.5 11.5a10 10 0 0 1 18.8-4.3M21.5 12.5a10 10 0 0 1-18.8 4.2"/></svg>
+              <span>Run AI Analysis</span>
+            </button>
+          </div>
+
+          <!-- AI Insights Grid -->
+          <div class="ai-insights-grid" id="aiInsightsGrid">
+            <!-- AI Insights Card -->
+            <div class="ai-insight-card ai-insights-main" id="aiInsightsCard">
+              <div class="ai-card-header">
+                <span class="ai-card-badge">AI Summary</span>
+                <span class="ai-confidence-ring" id="aiConfidenceRing">
+                  <svg viewBox="0 0 36 36" class="ai-ring-svg">
+                    <path class="ai-ring-bg" d="M18 2.0845 a 15.9155 15.9155 0 0 1 0 31.831 a 15.9155 15.9155 0 0 1 0 -31.831" fill="none" stroke="#1e293b" stroke-width="2.5"/>
+                    <path class="ai-ring-fill" id="aiRingFill" d="M18 2.0845 a 15.9155 15.9155 0 0 1 0 31.831 a 15.9155 15.9155 0 0 1 0 -31.831" fill="none" stroke="var(--accent-orange)" stroke-width="2.5" stroke-dasharray="0, 100"/>
+                  </svg>
+                  <span class="ai-ring-text" id="aiConfidenceText">--</span>
+                </span>
+              </div>
+              <div class="ai-card-body">
+                <div class="ai-readiness-display" id="aiReadinessDisplay">
+                  <span class="ai-readiness-label">Solar Readiness</span>
+                  <span class="ai-readiness-value" id="aiReadinessValue">--</span>
+                </div>
+                <p class="ai-summary-text" id="aiSummaryText">Run an AI analysis to get personalized solar intelligence insights.</p>
+                <div class="ai-next-action" id="aiNextAction">
+                  <span class="ai-action-label">Next Best Action</span>
+                  <span class="ai-action-text" id="aiNextActionText">Upload bill data to begin</span>
+                </div>
+              </div>
+            </div>
+
+            <!-- Customer Score Card -->
+            <div class="ai-insight-card" id="aiCustomerScoreCard">
+              <div class="ai-card-header">
+                <span class="ai-card-badge orange">Customer Score</span>
+              </div>
+              <div class="ai-card-body">
+                <div class="ai-score-display">
+                  <span class="ai-score-value" id="aiCustomerScoreVal">--</span>
+                  <span class="ai-score-label">Overall Score</span>
+                </div>
+                <div class="ai-score-breakdown">
+                  <div class="ai-score-item">
+                    <span class="ai-score-item-label">Purchase Intent</span>
+                    <div class="ai-score-bar"><div class="ai-score-bar-fill" id="aiPurchaseIntentBar" style="width:0%"></div></div>
+                    <span class="ai-score-item-val" id="aiPurchaseIntentVal">--</span>
+                  </div>
+                  <div class="ai-score-item">
+                    <span class="ai-score-item-label">Financial Readiness</span>
+                    <div class="ai-score-bar"><div class="ai-score-bar-fill" id="aiFinancialBar" style="width:0%"></div></div>
+                    <span class="ai-score-item-val" id="aiFinancialVal">--</span>
+                  </div>
+                  <div class="ai-score-item">
+                    <span class="ai-score-item-label">Installation Ready</span>
+                    <div class="ai-score-bar"><div class="ai-score-bar-fill" id="aiInstallBar" style="width:0%"></div></div>
+                    <span class="ai-score-item-val" id="aiInstallVal">--</span>
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            <!-- Solar Readiness Card -->
+            <div class="ai-insight-card" id="aiSolarReadinessCard">
+              <div class="ai-card-header">
+                <span class="ai-card-badge green">Solar Readiness</span>
+              </div>
+              <div class="ai-card-body">
+                <div class="ai-score-display">
+                  <span class="ai-score-value green" id="aiSolarReadinessVal">--</span>
+                  <span class="ai-score-label">Readiness Score</span>
+                </div>
+                <div class="ai-readiness-metrics">
+                  <div class="ai-metric-item">
+                    <span class="ai-metric-label">Roof Suitability</span>
+                    <span class="ai-metric-val" id="aiRoofSuitVal">--</span>
+                  </div>
+                  <div class="ai-metric-item">
+                    <span class="ai-metric-label">Consumption Fit</span>
+                    <span class="ai-metric-val" id="aiConsumptionVal">--</span>
+                  </div>
+                  <div class="ai-metric-item">
+                    <span class="ai-metric-label">ROI Payback</span>
+                    <span class="ai-metric-val" id="aiPaybackVal">--</span>
+                  </div>
+                  <div class="ai-metric-item">
+                    <span class="ai-metric-label">CO₂ Reduced</span>
+                    <span class="ai-metric-val" id="aiCO2Val">--</span>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <!-- AI Recommendations -->
+          <div class="ai-recommendations-container" id="aiRecommendationsContainer">
+            <h4 class="ai-rec-title">AI Recommendations</h4>
+            <div class="ai-rec-grid" id="aiRecGrid">
+              <p class="ai-empty-state">No recommendations yet. Run analysis to generate insights.</p>
+            </div>
+          </div>
+
+          <!-- AI Prediction Timeline -->
+          <div class="ai-timeline-container" id="aiTimelineContainer">
+            <h4 class="ai-rec-title">Prediction Timeline</h4>
+            <div class="ai-timeline" id="aiTimeline">
+              <div class="ai-timeline-empty">Timeline will appear after analysis.</div>
+            </div>
+          </div>
+        </section>
+
+        <!-- Explainability Drawer (Hidden by default) -->
+        <div class="ai-explain-drawer" id="aiExplainDrawer">
+          <div class="ai-drawer-overlay" onclick="closeExplainDrawer()"></div>
+          <div class="ai-drawer-content">
+            <div class="ai-drawer-header">
+              <h3>Prediction Explanation</h3>
+              <button class="ai-drawer-close" onclick="closeExplainDrawer()">&times;</button>
+            </div>
+            <div class="ai-drawer-body" id="aiDrawerBody">
+              <p class="ai-empty-state">Select a prediction to view its explanation.</p>
+            </div>
+          </div>
+        </div>
+
         <!-- --- FOOTER GRID (Testimonials, Banner, Refer) --- -->
         <footer class="footer-grid">
           <!-- Testimonials (Column 1) -->

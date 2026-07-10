@@ -80,6 +80,29 @@ from .monitoring import (
     get_monitoring,
 )
 
+from .recommendation_engine import (
+    RecommendationEngine,
+    Recommendation,
+    get_recommendation_engine,
+)
+
+from .explainability import (
+    ExplainabilityEngine,
+    Explanation,
+    Factor,
+    RiskIndicator,
+    get_explainability_engine,
+)
+
+from .orchestrator import (
+    AIOrchestrator,
+    get_ai_orchestrator,
+)
+
+from .ai_service import (
+    AIService,
+    get_ai_service,
+)
 
 __all__ = [
     "get_config",
@@ -128,4 +151,16 @@ __all__ = [
     "Monitoring",
     "Metrics",
     "get_monitoring",
+    "RecommendationEngine",
+    "Recommendation",
+    "get_recommendation_engine",
+    "ExplainabilityEngine",
+    "Explanation",
+    "Factor",
+    "RiskIndicator",
+    "get_explainability_engine",
+    "AIOrchestrator",
+    "get_ai_orchestrator",
+    "AIService",
+    "get_ai_service",
 ]

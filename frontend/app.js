@@ -14987,7 +14987,307 @@ function renderAuditLogsTable() {
       }
 
 
+/* ==========================================================================
+   PHASE 13.0C — AI INTELLIGENCE ENGINE (Frontend)
+   ========================================================================== */
 
+let _aiAnalysisData = null;
+
+/**
+ * runAIAnalysis() — Execute the full AI analysis pipeline.
+ * Uses bill analysis data already available in the UI context.
+ */
+async function runAIAnalysis() {
+  const btn = document.getElementById('aiAnalyzeBtn');
+  if (btn) {
+    btn.disabled = true;
+    btn.querySelector('span').textContent = 'Analyzing...';
+  }
+
+  try {
+    const billData = _getLastBillAnalysis();
+    if (!billData || !billData.monthly_units) {
+      showToast('Please analyze a bill first before running AI analysis.', 'warning');
+      return;
+    }
+
+    const payload = {
+      monthly_units: billData.monthly_units,
+      city: billData.city || 'Lucknow',
+      billing_period: billData.billing_period || 'JAN',
+      per_unit_rate: billData.per_unit_rate || 7.0,
+      bill_amount: billData.bill_amount || (billData.monthly_units * (billData.per_unit_rate || 7.0)),
+      customer_id: null,
+    };
+
+    const user = _getUser();
+    if (user && user.id) {
+      payload.customer_id = user.id;
+    }
+
+    const res = await safeFetch(`${API_BASE}/api/ai/analyze`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(payload),
+    });
+    const json = await res.json();
+
+    if (json.success && json.data) {
+      _aiAnalysisData = json.data;
+      renderAIInsights(json.data);
+      renderAIRecommendations(json.data.recommendations || []);
+      renderAITimeline(json.data.timeline || []);
+      showToast('AI analysis complete!', 'success');
+    } else {
+      showToast('AI analysis failed: ' + (json.message || 'Unknown error'), 'error');
+    }
+  } catch (err) {
+    console.error('AI Analysis Error:', err);
+    showToast('AI analysis failed. Please try again.', 'error');
+  } finally {
+    if (btn) {
+      btn.disabled = false;
+      btn.querySelector('span').textContent = 'Run AI Analysis';
+    }
+  }
+}
+
+/**
+ * _getLastBillAnalysis() — Get the most recent bill analysis data from session.
+ */
+function _getLastBillAnalysis() {
+  try {
+    const raw = sessionStorage.getItem('lastBillAnalysis') || localStorage.getItem('lastBillAnalysis');
+    if (raw) return JSON.parse(raw);
+  } catch (e) { /* ignore */ }
+  return null;
+}
+
+/**
+ * renderAIInsights(data) — Render the AI insights cards.
+ */
+function renderAIInsights(data) {
+  const confidence = data.confidence || {};
+  const readiness = data.solar_readiness || {};
+  const score = data.customer_score || {};
+
+  // Confidence ring
+  const ringFill = document.getElementById('aiRingFill');
+  const ringText = document.getElementById('aiConfidenceText');
+  if (ringFill && ringText) {
+    const pct = Math.round((confidence.overall || 0) * 100);
+    ringFill.setAttribute('stroke-dasharray', `${pct}, 100`);
+    ringText.textContent = `${pct}%`;
+  }
+
+  // Readiness
+  const readinessVal = document.getElementById('aiReadinessValue');
+  if (readinessVal) {
+    readinessVal.textContent = readiness.overall_score != null ? `${readiness.overall_score}%` : '--';
+  }
+
+  // Summary
+  const summaryText = document.getElementById('aiSummaryText');
+  if (summaryText) {
+    const bill = data.predictions?.bill;
+    const savings = data.predictions?.savings;
+    const parts = [];
+    if (bill?.prediction) parts.push(`Estimated bill: ₹${Number(bill.prediction).toLocaleString()}`);
+    if (savings?.prediction) parts.push(`Potential savings: ₹${Number(savings.prediction).toLocaleString()}/mo`);
+    if (readiness.overall_score) parts.push(`Readiness: ${readiness.overall_score}%`);
+    summaryText.textContent = parts.length > 0 ? parts.join(' | ') : 'Analysis complete.';
+  }
+
+  // Next best action
+  const nextAction = document.getElementById('aiNextActionText');
+  if (nextAction) {
+    nextAction.textContent = data.next_best_action || 'Review analysis results.';
+  }
+
+  // Customer score
+  const csVal = document.getElementById('aiCustomerScoreVal');
+  if (csVal) csVal.textContent = score.overall_score != null ? score.overall_score : '--';
+
+  setScoreBar('aiPurchaseIntentBar', 'aiPurchaseIntentVal', score.purchase_intent);
+  setScoreBar('aiFinancialBar', 'aiFinancialVal', score.financial_readiness);
+  setScoreBar('aiInstallBar', 'aiInstallVal', score.installation_readiness);
+
+  // Solar readiness card
+  const srVal = document.getElementById('aiSolarReadinessVal');
+  if (srVal) srVal.textContent = readiness.overall_score != null ? `${readiness.overall_score}%` : '--';
+
+  setTextSafe('aiRoofSuitVal', readiness.roof_suitability != null ? `${readiness.roof_suitability}%` : '--');
+  setTextSafe('aiConsumptionVal', readiness.consumption_suitability != null ? `${readiness.consumption_suitability}%` : '--');
+  setTextSafe('aiPaybackVal', readiness.roi?.payback_period != null ? `${readiness.roi.payback_period} yrs` : '--');
+  setTextSafe('aiCO2Val', readiness.environmental_impact?.co2_reduction_annual_tons != null ? `${readiness.environmental_impact.co2_reduction_annual_tons} tons/yr` : '--');
+}
+
+function setScoreBar(barId, valId, value) {
+  const bar = document.getElementById(barId);
+  const val = document.getElementById(valId);
+  if (bar) bar.style.width = `${value || 0}%`;
+  if (val) val.textContent = value != null ? value : '--';
+}
+
+function setTextSafe(id, text) {
+  const el = document.getElementById(id);
+  if (el) el.textContent = text;
+}
+
+/**
+ * renderAIRecommendations(recs) — Render recommendation cards.
+ */
+function renderAIRecommendations(recs) {
+  const grid = document.getElementById('aiRecGrid');
+  if (!grid) return;
+
+  if (!recs || recs.length === 0) {
+    grid.innerHTML = '<p class="ai-empty-state">No recommendations at this time.</p>';
+    return;
+  }
+
+  grid.innerHTML = recs.map(function(r) {
+    var priorityClass = r.priority === 'high' ? 'ai-priority-high' : r.priority === 'medium' ? 'ai-priority-medium' : 'ai-priority-low';
+    var categoryIcons = {
+      solar_sizing: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="5"/><line x1="12" y1="1" x2="12" y2="3"/><line x1="12" y1="21" x2="12" y2="23"/></svg>',
+      battery: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="1" y="6" width="18" height="12" rx="2"/><line x1="23" y1="10" x2="23" y2="14"/></svg>',
+      subsidy: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 1v22M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"/></svg>',
+      financing: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="2" y="7" width="20" height="14" rx="2"/><path d="M16 7V5a2 2 0 0 0-2-2h-4a2 2 0 0 0-2 2v2"/></svg>',
+      lead_priority: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>',
+      roof_inspection: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/><path d="M9 22V12h6v10"/></svg>',
+      upsell: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="23 6 13.5 15.5 8.5 10.5 1 18"/><polyline points="17 6 23 6 23 12"/></svg>',
+      amc: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 1 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33"/></svg>',
+      followup: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>',
+    };
+    var icon = categoryIcons[r.category] || categoryIcons.solar_sizing;
+
+    return '<div class="ai-rec-card ' + priorityClass + '" onclick="openExplainDrawer(\'' + r.category + '\')">' +
+      '<div class="ai-rec-icon">' + icon + '</div>' +
+      '<div class="ai-rec-info">' +
+        '<span class="ai-rec-card-title">' + r.title + '</span>' +
+        '<span class="ai-rec-card-desc">' + r.description + '</span>' +
+        '<span class="ai-rec-card-action">' + r.action + '</span>' +
+      '</div>' +
+      '<span class="ai-rec-priority">' + r.priority + '</span>' +
+    '</div>';
+  }).join('');
+}
+
+/**
+ * renderAITimeline(timeline) — Render the prediction timeline.
+ */
+function renderAITimeline(timeline) {
+  var container = document.getElementById('aiTimeline');
+  if (!container) return;
+
+  if (!timeline || timeline.length === 0) {
+    container.innerHTML = '<div class="ai-timeline-empty">No timeline data.</div>';
+    return;
+  }
+
+  container.innerHTML = timeline.map(function(step, i) {
+    var statusClass = step.status === 'completed' ? 'ai-tl-done' : 'ai-tl-pending';
+    var connector = i < timeline.length - 1 ? '<div class="ai-tl-connector"></div>' : '';
+    return '<div class="ai-tl-step ' + statusClass + '">' +
+      '<div class="ai-tl-dot"></div>' +
+      '<span class="ai-tl-label">' + step.label + '</span>' +
+      connector +
+    '</div>';
+  }).join('');
+}
+
+/**
+ * openExplainDrawer(category) — Open the explainability drawer for a category.
+ */
+function openExplainDrawer(category) {
+  var drawer = document.getElementById('aiExplainDrawer');
+  var body = document.getElementById('aiDrawerBody');
+  if (!drawer || !body) return;
+
+  if (!_aiAnalysisData) {
+    body.innerHTML = '<p class="ai-empty-state">No analysis data available.</p>';
+    drawer.classList.add('open');
+    return;
+  }
+
+  var explanation = _aiAnalysisData.explanation || {};
+  var rec = (_aiAnalysisData.recommendations || []).find(function(r) { return r.category === category; });
+
+  var html = '';
+
+  if (rec) {
+    html += '<div class="ai-drawer-section">' +
+      '<h4>' + rec.title + '</h4>' +
+      '<p>' + rec.description + '</p>' +
+      '<div class="ai-drawer-meta">' +
+        '<span class="ai-drawer-badge ' + rec.priority + '">' + rec.priority + ' priority</span>' +
+        '<span class="ai-drawer-badge">Confidence: ' + Math.round((rec.confidence || 0) * 100) + '%</span>' +
+      '</div>' +
+      '<div class="ai-drawer-action">' +
+        '<strong>Recommended Action:</strong> ' + rec.action +
+      '</div>' +
+    '</div>';
+  }
+
+  var billExp = explanation.bill;
+  if (billExp && billExp.contributing_factors && billExp.contributing_factors.length > 0) {
+    html += '<div class="ai-drawer-section">' +
+      '<h4>Key Contributing Factors</h4>' +
+      '<div class="ai-drawer-factors">' +
+        billExp.contributing_factors.map(function(f) {
+          return '<div class="ai-drawer-factor">' +
+            '<span class="ai-factor-name">' + f.name + '</span>' +
+            '<span class="ai-factor-impact ' + f.impact + '">' + f.impact + '</span>' +
+            '<span class="ai-factor-desc">' + f.description + '</span>' +
+          '</div>';
+        }).join('') +
+      '</div>' +
+    '</div>';
+  }
+
+  if (billExp && billExp.business_interpretation) {
+    html += '<div class="ai-drawer-section">' +
+      '<h4>Business Interpretation</h4>' +
+      '<p>' + billExp.business_interpretation + '</p>' +
+    '</div>';
+  }
+
+  var risks = _aiAnalysisData.risk_indicators || [];
+  if (risks.length > 0) {
+    html += '<div class="ai-drawer-section">' +
+      '<h4>Risk Indicators</h4>' +
+      '<div class="ai-drawer-risks">' +
+        risks.map(function(r) {
+          return '<div class="ai-drawer-risk ' + r.severity + '">' +
+            '<span class="ai-risk-severity">' + r.severity + '</span>' +
+            '<span class="ai-risk-msg">' + r.message + '</span>' +
+            '<span class="ai-risk-mitigation">' + r.mitigation + '</span>' +
+          '</div>';
+        }).join('') +
+      '</div>' +
+    '</div>';
+  }
+
+  body.innerHTML = html || '<p class="ai-empty-state">No explanation available for this category.</p>';
+  drawer.classList.add('open');
+}
+
+/**
+ * closeExplainDrawer() — Close the explainability drawer.
+ */
+function closeExplainDrawer() {
+  var drawer = document.getElementById('aiExplainDrawer');
+  if (drawer) drawer.classList.remove('open');
+}
+
+/**
+ * Store bill analysis data for AI consumption.
+ */
+function _storeBillAnalysisForAI(data) {
+  try {
+    sessionStorage.setItem('lastBillAnalysis', JSON.stringify(data));
+  } catch (e) { /* ignore */ }
+}
 
 
 
