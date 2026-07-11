@@ -10,8 +10,6 @@
    ========================================================================== */
 const DEV_MODE = false;
 
-console.log('ROI DEBUG: app.js loaded');
-
 const API_BASE =
   window.location.hostname === "localhost" ||
     window.location.hostname === "127.0.0.1"
@@ -23,12 +21,14 @@ const API_BASE =
  * Validates status codes and content type to prevent HTML parsing errors, returning the response object.
  */
 async function safeFetch(url, options = {}) {
-  const logLabel = `API [${options.method || 'GET'}] ${url}`;
-  console.log(`${logLabel} - Fetching...`);
-
   try {
+    const token = localStorage.getItem('token');
+    if (token) {
+      options.headers = { ...options.headers, 'Authorization': `Bearer ${token}` };
+    }
+
     const res = await fetch(url, options);
-    console.log(`${logLabel} - Status: ${res.status}`);
+    if (DEV_MODE) console.log(`API [${options.method || 'GET'}] ${url} - Status: ${res.status}`);
 
     if (!res.ok) {
       const errorMsg = `Admin API Request Failed\n\nURL:\n${url}\n\nStatus:\n${res.status}`;
@@ -240,6 +240,7 @@ function initDashboard() {
   initVendorPortal();
   initAmcWorkspace();
   initSiteSurveyWorkspace();
+  initReferralCopy();
 }
 
 /**
@@ -325,23 +326,6 @@ function initAuth() {
     });
   }
 
-  // Wire standalone logout button (inside dropdown)
-  function doLogout() {
-    const u = _getUser() || {};
-    logAuditEvent(u.email || 'anonymous', 'User Logout', 'Authentication', `User ${u.name || 'Unknown'} logged out.`, 'Low');
-    sessionStorage.removeItem('loginLogged');
-    if (typeof window.authLogout === 'function') {
-      window.authLogout();
-    } else {
-      localStorage.removeItem('token');
-      localStorage.removeItem('user');
-      window.location.replace('login.html');
-    }
-  }
-  // Legacy standalone logout btn (may still be in DOM in some slots)
-  const logoutBtnLegacy = document.getElementById('logoutBtn');
-  if (logoutBtnLegacy) logoutBtnLegacy.addEventListener('click', doLogout);
-
   // Audit login event once per session
   const loginLogged = sessionStorage.getItem('loginLogged');
   if (!loginLogged && rawUser) {
@@ -366,19 +350,6 @@ function initProfileDropdown(cu) {
   if (pdName) pdName.textContent = cu.name;
   const pdRole = document.getElementById('pdRole');
   if (pdRole) pdRole.textContent = cu.subscriptionTier;
-
-  function doLogout() {
-    const u = _getUser() || {};
-    logAuditEvent(u.email || 'anonymous', 'User Logout', 'Authentication', `User ${u.name || 'Unknown'} logged out.`, 'Low');
-    sessionStorage.removeItem('loginLogged');
-    if (typeof window.authLogout === 'function') {
-      window.authLogout();
-    } else {
-      localStorage.removeItem('token');
-      localStorage.removeItem('user');
-      window.location.replace('login.html');
-    }
-  }
 
   // Open/close toggle on pill click (but not on child logout btn clicks)
   pill.addEventListener('click', (e) => {
@@ -884,7 +855,6 @@ let consumptionChartInstance = null;
 let performanceTrendChartInstance = null;
 let savingsSparklineInstance = null;
 let lifetimeSparklineInstance = null;
-let roiChartInstance = null;
 
 function initCharts() {
   if (!dashboardData) return;
@@ -1306,13 +1276,10 @@ function initPerformanceTrendChart() {
 let modalRoiChartInstance = null;
 
 function initROICalculator() {
-  console.log('ROI DEBUG: ROI modal initialized (Delegated Event Listeners)');
-
   document.addEventListener('click', async (e) => {
     // 1. Show modal
     const showBtn = e.target.closest('#heroCalcBtn') || e.target.closest('#actCalc') || e.target.closest('#btnEmptyROI');
     if (showBtn) {
-      console.log('ROI DEBUG: Show modal clicked');
       const modal = document.getElementById('calcModal');
       if (modal) {
         modal.classList.add('active');
@@ -1325,7 +1292,6 @@ function initROICalculator() {
       const closeBtn = e.target.closest('#closeCalcModal');
       const isOverlay = e.target === modal;
       if (closeBtn || isOverlay) {
-        console.log('ROI DEBUG: Hide modal clicked');
         modal.classList.remove('active');
         const calcResults = document.getElementById('calcResults');
         if (calcResults) calcResults.classList.remove('active');
@@ -1336,12 +1302,10 @@ function initROICalculator() {
     const calcBtn = e.target.closest('#computeSavingsBtn');
     if (calcBtn) {
       e.preventDefault();
-      console.log('ROI DEBUG: Calculate ROI clicked');
       const monthlyBillEl = document.getElementById('monthlyBill');
       const sunHoursEl = document.getElementById('sunHours');
       const systemSizeEl = document.getElementById('systemSize');
       if (!monthlyBillEl || !sunHoursEl || !systemSizeEl) {
-        console.warn('ROI DEBUG: Input elements missing', { monthlyBillEl, sunHoursEl, systemSizeEl });
         return;
       }
 
@@ -1373,7 +1337,6 @@ function initROICalculator() {
         controller.abort();
       }, 30000);
 
-      console.log('ROI DEBUG: API request started', { monthly_bill: monthlyBill, system_size: systemSize });
       try {
         const res = await fetch(`${API_BASE}/api/calculate-roi`, {
           method: 'POST',
@@ -1396,7 +1359,6 @@ function initROICalculator() {
         }
 
         const result = await res.json();
-        console.log('ROI DEBUG: API response received', result);
 
         if (!result || result.success !== true || !result.data) {
           throw new Error((result && result.error) || 'Invalid API response format.');
@@ -1417,7 +1379,6 @@ function initROICalculator() {
           showToast(err.message || 'API connection failed. Switched to fallback calculation.', 'warning');
         }
 
-        console.log('ROI DEBUG: Fallback executed');
         // Demo Fallback Calculation
         try {
           const fallbackData = runClientSideROIFallback(monthlyBill, systemSize);
@@ -1461,7 +1422,6 @@ function updateModalResultsUI(data) {
 }
 
 function initModalRoiCalculatorChart(payback = 4.8, netCost = 102000, annualSavings = 58400) {
-  console.log('ROI DEBUG: Chart rendered');
   const canvas = document.getElementById('roiTrendChart');
   if (!canvas) return;
   const ctx = canvas.getContext('2d');
@@ -1617,10 +1577,14 @@ function initTestimonialCarousel() {
     });
 
     // Auto rotate every 10 seconds
-    setInterval(() => {
+    let testimonialInterval = setInterval(() => {
       currentIndex = (currentIndex + 1) % testimonials.length;
       update(currentIndex);
     }, 10000);
+
+    // Cleanup previous interval if re-initialized
+    if (window._testimonialInterval) clearInterval(window._testimonialInterval);
+    window._testimonialInterval = testimonialInterval;
   }
 }
 
@@ -1656,13 +1620,6 @@ function initReferralCopy() {
   if (sidebarExploreBtn) {
     sidebarExploreBtn.addEventListener('click', () => {
       showToast('Opening GET Solar product explorer...');
-    });
-  }
-
-  const heroPlanBtn = document.getElementById('heroPlanBtn');
-  if (heroPlanBtn) {
-    heroPlanBtn.addEventListener('click', () => {
-      showToast('Loading customized installation blueprint plan...');
     });
   }
 
@@ -1741,26 +1698,28 @@ function initReferralCopy() {
    8. TABS CONTROLLER NAVIGATION SYSTEM
    ========================================================================== */
 function initTabsNavigation() {
-  const menuItems = document.querySelectorAll('.sidebar-menu .menu-item');
+  const menuWrapper = document.querySelector('.sidebar-menu');
+  if (!menuWrapper) return;
 
-  menuItems.forEach(item => {
-    item.addEventListener('click', (e) => {
-      const targetTabId = item.getAttribute('data-tab');
-      if (!targetTabId) return;
+  menuWrapper.addEventListener('click', (e) => {
+    const item = e.target.closest('.menu-item');
+    if (!item) return;
 
-      e.preventDefault();
+    const targetTabId = item.getAttribute('data-tab');
+    if (!targetTabId) return;
 
-      // Toggle menu item active class
-      menuItems.forEach(mi => mi.classList.remove('active'));
-      item.classList.add('active');
+    e.preventDefault();
 
-      // Close mobile drawer if open
-      const sidebar = document.getElementById('sidebar');
-      if (sidebar) sidebar.classList.remove('mobile-active');
+    // Toggle menu item active class
+    menuWrapper.querySelectorAll('.menu-item').forEach(mi => mi.classList.remove('active'));
+    item.classList.add('active');
 
-      // Switch tab contents
-      switchTab(targetTabId);
-    });
+    // Close mobile drawer if open
+    const sidebar = document.getElementById('sidebar');
+    if (sidebar) sidebar.classList.remove('mobile-active');
+
+    // Switch tab contents
+    switchTab(targetTabId);
   });
 }
 
@@ -1814,8 +1773,8 @@ function switchTab(tabId) {
     loadAdminDashboardData();
     // Resize admin charts after data load so they fill available width
     setTimeout(() => {
-      if (typeof adminActivityTrendChartInstance !== 'undefined' && adminActivityTrendChartInstance) {
-        adminActivityTrendChartInstance.resize();
+      if (typeof adminTrendChartInstance !== 'undefined' && adminTrendChartInstance) {
+        adminTrendChartInstance.resize();
       }
     }, 300);
   } else if (tabId === 'crm-dashboard') {
@@ -1838,22 +1797,16 @@ function switchTab(tabId) {
         refreshBusinessIntelligenceUI();
         // Resize BI charts after they become visible
         setTimeout(() => {
-          if (typeof biStageDistributionChartInstance !== 'undefined' && biStageDistributionChartInstance) {
-            biStageDistributionChartInstance.resize();
-          }
-          if (typeof biSegmentationChartInstance !== 'undefined' && biSegmentationChartInstance) {
-            biSegmentationChartInstance.resize();
+          if (typeof biInteractiveChartInstance !== 'undefined' && biInteractiveChartInstance) {
+            biInteractiveChartInstance.resize();
           }
         }, 200);
       }, 800);
     } else {
       refreshBusinessIntelligenceUI();
       setTimeout(() => {
-        if (typeof biStageDistributionChartInstance !== 'undefined' && biStageDistributionChartInstance) {
-          biStageDistributionChartInstance.resize();
-        }
-        if (typeof biSegmentationChartInstance !== 'undefined' && biSegmentationChartInstance) {
-          biSegmentationChartInstance.resize();
+        if (typeof biInteractiveChartInstance !== 'undefined' && biInteractiveChartInstance) {
+          biInteractiveChartInstance.resize();
         }
       }, 200);
     }
@@ -2193,41 +2146,6 @@ function initBillUploadSimulator() {
     initBillCostBreakdownChart(billAmount, monthlySavings);
   }
 
-  function loadPdfJS() {
-    return new Promise((resolve, reject) => {
-      if (window.pdfjsLib) {
-        resolve(window.pdfjsLib);
-        return;
-      }
-      const script = document.createElement('script');
-      script.src = 'https://cdnjs.cloudflare.com/ajax/libs/pdf.js/2.16.105/pdf.min.js';
-      script.onload = () => {
-        window.pdfjsLib.GlobalWorkerOptions.workerSrc = 'https://cdnjs.cloudflare.com/ajax/libs/pdf.js/2.16.105/pdf.worker.min.js';
-        resolve(window.pdfjsLib);
-      };
-      script.onerror = () => reject(new Error('Failed to load PDF.js library'));
-      document.head.appendChild(script);
-    });
-  }
-
-  async function convertPdfToImageBlob(pdfFile) {
-    const pdfjsLib = await loadPdfJS();
-    const arrayBuffer = await pdfFile.arrayBuffer();
-    const pdf = await pdfjsLib.getDocument({ data: arrayBuffer }).promise;
-    const page = await pdf.getPage(1);
-    const viewport = page.getViewport({ scale: 2.0 });
-    const canvas = document.createElement('canvas');
-    const context = canvas.getContext('2d');
-    canvas.height = viewport.height;
-    canvas.width = viewport.width;
-    await page.render({ canvasContext: context, viewport: viewport }).promise;
-    return new Promise((resolve) => {
-      canvas.toBlob((blob) => {
-        resolve(blob);
-      }, 'image/png');
-    });
-  }
-
   function handleFile(file) {
     if (!file) return;
 
@@ -2344,10 +2262,9 @@ function initBillUploadSimulator() {
         );
 
         if (isLowConfidence) {
-          console.log('PDF text extraction was low-confidence or empty. Triggering OCR Fallback...');
           if (progressStatus) progressStatus.textContent = 'Running OCR...';
 
-          convertPdfToImageBlob(fileOrBlob)
+          pdfToImageBlob(fileOrBlob)
             .then((imgBlob) => {
               runPipeline(imgBlob, 'bill_page1.png', 'image/png', true, solarData);
             })
@@ -2365,9 +2282,8 @@ function initBillUploadSimulator() {
 
         // Try OCR fallback as a last resort for PDF upload failure
         if (isPDF && !isFallback) {
-          console.log('PDF upload failed, attempting OCR Fallback...');
           if (progressStatus) progressStatus.textContent = 'Running OCR...';
-          convertPdfToImageBlob(fileOrBlob)
+          pdfToImageBlob(fileOrBlob)
             .then((imgBlob) => {
               runPipeline(imgBlob, 'bill_page1.png', 'image/png', true, solarData);
             })
@@ -2592,7 +2508,7 @@ function initSolarReportUploader() {
             runSolarPipeline(file, file.name, file.type, text, false);
           } else {
             updateProgress(40, 'Running OCR...');
-            convertSolarPdfToImageBlob(file).then(blob => {
+            pdfToImageBlob(file).then(blob => {
               runSolarPipeline(blob, 'solar_page1.png', 'image/png', '', true);
             }).catch(() => {
               // proceed with empty text anyway
@@ -2607,19 +2523,6 @@ function initSolarReportUploader() {
       // PLUS attempt a local text read via FileReader for filenames
       runSolarPipeline(file, file.name, fileType, '', false);
     }
-  }
-
-  async function convertSolarPdfToImageBlob(pdfFile) {
-    const pdfjsLib = await loadPdfJS();
-    const arrayBuffer = await pdfFile.arrayBuffer();
-    const pdf = await pdfjsLib.getDocument({ data: arrayBuffer }).promise;
-    const page = await pdf.getPage(1);
-    const viewport = page.getViewport({ scale: 2.0 });
-    const canvas = document.createElement('canvas');
-    canvas.height = viewport.height;
-    canvas.width = viewport.width;
-    await page.render({ canvasContext: canvas.getContext('2d'), viewport }).promise;
-    return new Promise(resolve => canvas.toBlob(resolve, 'image/png'));
   }
 
   function updateProgress(pct, status) {
@@ -2671,7 +2574,7 @@ function initSolarReportUploader() {
           const ext = fileName.split('.').pop().toLowerCase();
           if (ext === 'pdf') {
             clearInterval(progressInterval);
-            convertSolarPdfToImageBlob(fileOrBlob).then(blob => {
+            pdfToImageBlob(fileOrBlob).then(blob => {
               runSolarPipeline(blob, 'solar_page1.png', 'image/png', prefetchedText, true);
             }).catch(() => completeSolarSuccess(prodData));
             return;
@@ -2742,23 +2645,6 @@ function checkAndRenderUnified() {
   }
 }
 
-
-function loadPdfJS() {
-  return new Promise((resolve, reject) => {
-    if (window.pdfjsLib) {
-      resolve(window.pdfjsLib);
-      return;
-    }
-    const script = document.createElement('script');
-    script.src = 'https://cdnjs.cloudflare.com/ajax/libs/pdf.js/2.16.105/pdf.min.js';
-    script.onload = () => {
-      window.pdfjsLib.GlobalWorkerOptions.workerSrc = 'https://cdnjs.cloudflare.com/ajax/libs/pdf.js/2.16.105/pdf.worker.min.js';
-      resolve(window.pdfjsLib);
-    };
-    script.onerror = () => reject(new Error('Failed to load PDF.js library'));
-    document.head.appendChild(script);
-  });
-}
 
 async function extractPdfText(pdfFile) {
   try {
@@ -3669,12 +3555,6 @@ function initRoofScannerSimulator() {
     formData.append('city', roofCity);
 
     // Log FormData contents for debugging
-    console.log('=== Roof Analyzer FormData ===')
-    for (const pair of formData.entries()) {
-      console.log(pair[0], pair[1]);
-    }
-    console.log('==============================');
-
     safeFetch(`${API_BASE}/api/analyze-roof`, {
       method: 'POST',
       body: formData
@@ -3823,7 +3703,7 @@ function initAIAdvisorChat() {
 
   // Analytics Tracking Wrapper
   function trackEvent(name, data = {}) {
-    console.log(`[Analytics] Tracked event: ${name}`, data);
+    if (DEV_MODE) console.log(`[Analytics] Tracked event: ${name}`, data);
     const trackingWrapper = window.logEvent || window.trackEvent || window.logAnalyticsEvent || (window.analytics && window.analytics.track);
     if (typeof trackingWrapper === 'function') {
       try {
@@ -4454,13 +4334,11 @@ function initEnterpriseAI() {
     ]);
 
     const host = API_BASE;
-    const token = localStorage.getItem('authToken') || '';
 
     safeFetch(`${host}/api/assistant/chat`, {
       method: 'POST',
       headers: {
-        'Content-Type': 'application/json',
-        'Authorization': `Bearer ${token}`
+        'Content-Type': 'application/json'
       },
       body: JSON.stringify({
         message: text,
@@ -4509,7 +4387,16 @@ function initEnterpriseAI() {
       .catch((err) => {
         console.error('Enterprise AI error:', err);
         showTyping(false);
-        const replyText = 'Enterprise AI is currently experiencing high demand. Please try again.';
+        const msg = err.message || '';
+        const replyText = msg.includes('401')
+          ? 'Your session has expired. Please sign in again.'
+          : msg.includes('403')
+            ? "You don't have permission to use Enterprise AI."
+            : msg.includes('429')
+              ? 'Enterprise AI is currently experiencing high demand. Please try again shortly.'
+              : msg.includes('500')
+                ? 'Enterprise AI is temporarily unavailable. Please try again later.'
+                : 'Unable to reach Enterprise AI. Please check your connection and try again.';
         const replyTimeStr = new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
         historyList.push({ role: 'assistant', content: replyText, time: replyTimeStr });
         if (historyList.length > 30) historyList = historyList.slice(-30);
@@ -4517,7 +4404,7 @@ function initEnterpriseAI() {
         renderLog();
         updateTimeline([
           { label: 'User Request', status: 'done' },
-          { label: 'Error: Service unavailable', status: 'error' }
+          { label: 'Error: ' + replyText, status: 'error' }
         ]);
       });
   }
@@ -6085,6 +5972,20 @@ function initRewardsTab() {
   } catch (e) { }
 }
 
+/* Centralized logout — used by both initAuth and initProfileDropdown */
+function doLogout() {
+  const u = _getUser() || {};
+  logAuditEvent(u.email || 'anonymous', 'User Logout', 'Authentication', `User ${u.name || 'Unknown'} logged out.`, 'Low');
+  sessionStorage.removeItem('loginLogged');
+  if (typeof window.authLogout === 'function') {
+    window.authLogout();
+  } else {
+    localStorage.removeItem('token');
+    localStorage.removeItem('user');
+    window.location.replace('login.html');
+  }
+}
+
 function _getUser() {
   return safeParseJSON('user', null);
 }
@@ -6304,50 +6205,6 @@ function _esc(str) {
   const div = document.createElement('div');
   div.textContent = str || '';
   return div.innerHTML;
-}
-
-/**
- * _safeNum — coerces any value to a finite number, returning `fallback` (default 0)
- * when the value is undefined, null, NaN, or Infinity. Use before every .toFixed() call.
- */
-function _safeNum(val, fallback = 0) {
-  const n = Number(val);
-  return isFinite(n) ? n : fallback;
-}
-
-
-/* ==========================================================================
-   TOAST MESSAGE POPUP SYSTEM
-   ========================================================================== */
-function showToast(message, type = 'info') {
-  const toast = document.getElementById('toastMsg');
-  const toastText = document.getElementById('toastText');
-  const toastSvg = toast?.querySelector('svg');
-
-  if (toast && toastText) {
-    toastText.textContent = message;
-
-    // Clear previous classes and apply active + type
-    toast.className = 'toast-msg active ' + type;
-
-    // Customize SVG icon based on type
-    if (toastSvg) {
-      if (type === 'error') {
-        toastSvg.innerHTML = '<circle cx="12" cy="12" r="10"></circle><line x1="12" y1="8" x2="12" y2="12"></line><line x1="12" y1="16" x2="12.01" y2="16"></line>';
-      } else if (type === 'warning') {
-        toastSvg.innerHTML = '<path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"></path><line x1="12" y1="9" x2="12" y2="13"></line><line x1="12" y1="17" x2="12.01" y2="17"></line>';
-      } else {
-        // success or default checkmark
-        toastSvg.innerHTML = '<polyline points="20 6 9 17 4 12"></polyline>';
-      }
-    }
-
-    clearTimeout(toast._timer);
-    toast._timer = setTimeout(() => {
-      toast.classList.remove('active');
-      toast.className = 'toast-msg';
-    }, 3000);
-  }
 }
 
 /* ==========================================================================
@@ -8094,7 +7951,7 @@ function checkFollowUpReminders() {
 }
 
 // Global relative time loop
-setInterval(() => {
+window._globalRefreshInterval = setInterval(() => {
   refreshNotificationsUI();
   refreshActivityCenterUI();
   checkFollowUpReminders();
@@ -8390,15 +8247,6 @@ function initCrmDashboard() {
 
   // Load Initial Data
   fetchAndPopulateCrm();
-}
-
-// Debounce helper
-function debounce(func, wait) {
-  let timeout;
-  return function (...args) {
-    clearTimeout(timeout);
-    timeout = setTimeout(() => func.apply(this, args), wait);
-  };
 }
 
 // ─── Global Search with keyboard nav, recent searches, abort ─────────────────
@@ -11092,11 +10940,6 @@ function renderAuditLogsTable() {
          19. EXECUTIVE BUSINESS INTELLIGENCE PLATFORM (Phase 10.7)
          ========================================================================== */
 
-      let biSegmentationChartInstance = null;
-      let biStageDistributionChartInstance = null;
-      let biLeadSourceVolumeChartInstance = null;
-      let biLeadSourceConvChartInstance = null;
-      let biAiCategoryChartInstance = null;
       let biInteractiveChartInstance = null;
 
       // Global variables for Advanced BI (Phase 12.3.1)
@@ -12524,11 +12367,6 @@ function renderAuditLogsTable() {
         _populateMultiSelectOptions(data);
         _populateColumnVisibilityOptions();
         applyBiFilters();
-      }
-
-      function _safeNum(val, fallback = 0) {
-        const n = Number(val);
-        return isFinite(n) ? n : fallback;
       }
 
       function _hydrateBiTelemetryWidget(data) {

@@ -119,13 +119,6 @@
       <polyline points="23 6 13.5 15.5 8.5 10.5 1 18"/>
       <polyline points="17 6 23 6 23 12"/>
     </symbol>
-    <!-- Business Intelligence (bar chart) icon kept for backwards compat -->
-    <symbol id="icon-bi" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-      <line x1="18" y1="20" x2="18" y2="10"></line>
-      <line x1="12" y1="20" x2="12" y2="4"></line>
-      <line x1="6" y1="20" x2="6" y2="14"></line>
-      <line x1="2" y1="20" x2="22" y2="20"></line>
-    </symbol>
     <!-- MapPin Icon -->
     <symbol id="icon-mappin" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
       <path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z"/>
@@ -211,6 +204,21 @@
     <symbol id="icon-wrench" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
       <path d="M14.7 6.3a1 1 0 0 0 0 1.4l1.6 1.6a1 1 0 0 0 1.4 0l3.77-3.77a6 6 0 0 1-7.94 7.94l-6.91 6.91a2.12 2.12 0 0 1-3-3l6.91-6.91a6 6 0 0 1 7.94-7.94l-3.76 3.76z"/>
     </symbol>
+    <!-- Sparkles / AI Assistant Icon -->
+    <symbol id="icon-sparkles" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+      <path d="M12 3l1.5 4.5L18 9l-4.5 1.5L12 15l-1.5-4.5L6 9l4.5-1.5z"/>
+      <circle cx="5" cy="19" r="1" fill="currentColor" stroke="none"/>
+      <circle cx="19" cy="18" r="1.5" fill="currentColor" stroke="none"/>
+    </symbol>
+    <!-- MLOps / Neural Network Icon -->
+    <symbol id="icon-mlops" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+      <circle cx="12" cy="5" r="2"/>
+      <circle cx="5" cy="19" r="2"/>
+      <circle cx="19" cy="19" r="2"/>
+      <line x1="10.5" y1="6.5" x2="6.5" y2="17"/>
+      <line x1="13.5" y1="6.5" x2="17.5" y2="17"/>
+      <line x1="7" y1="19" x2="17" y2="19"/>
+    </symbol>
     <!-- Clipboard / Survey Icon -->
     <symbol id="icon-clipboard" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
       <path d="M16 4h2a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2V6a2 2 0 0 1 2-2h2"></path>
@@ -222,6 +230,7 @@
     
     <!-- --- SIDEBAR --- -->
     <aside class="sidebar" id="sidebar">
+      <div class="sidebar-top-section">
       <!-- Desktop Collapse Toggle Button (Premium Redesign) -->
       <button class="sidebar-collapse-btn" id="sidebarCollapseBtn" aria-label="Collapse Sidebar" title="Collapse Sidebar">
         <svg class="collapse-chevron" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
@@ -261,6 +270,7 @@
           <span class="logo-sub-text">SOLAR INTELLIGENCE PLATFORM</span>
         </div>
       </div>
+      </div>
 
       <nav class="sidebar-menu-wrapper">
         <ul class="sidebar-menu">
@@ -294,7 +304,7 @@
           </li>
           <li class="menu-item" data-tab="ai-assistant" data-color="purple">
             <a href="#" data-tooltip="AI Assistant">
-              <svg><use href="#icon-bot"></use></svg>
+              <svg><use href="#icon-sparkles"></use></svg>
               <span>AI Assistant</span>
             </a>
           </li>
@@ -380,7 +390,7 @@
           </li>
           <li id="menu-item-audit" data-tab="audit-monitoring" class="menu-item" data-color="red" style="display: none;">
             <a href="#" data-tooltip="Audit &amp; Monitoring">
-              <svg><use href="#icon-shield"></use></svg>
+              <svg><use href="#icon-activity"></use></svg>
               <span>Audit &amp; Monitoring</span>
             </a>
           </li>
@@ -392,7 +402,7 @@
           </li>
           <li id="menu-item-mlops" data-tab="mlops-dashboard" class="menu-item" data-color="red" style="display: none;">
             <a href="#" data-tooltip="MLOps">
-              <svg><use href="#icon-shield"></use></svg>
+              <svg><use href="#icon-mlops"></use></svg>
               <span>MLOps</span>
             </a>
           </li>
@@ -703,7 +713,7 @@
                   <span>+18.2% vs last month</span>
                 </div>
                 <div class="savings-sparkline-box">
-                  <svg class="sparkline-svg" width="100%" height="100%"><use href="#sparkline-path"></use></svg>
+                  <canvas id="savingsSparklineCanvas"></canvas>
                 </div>
               </div>
 
@@ -923,13 +933,36 @@
           <section class="analytics-card subsidy-card">
             <div class="analytics-header-row">
               <h4 class="analytics-title" style="color: #15803d;">Government Subsidy</h4>
-              <span class="subsidy-tag">Eligible for Subsidy</span>
+              <span class="subsidy-tag">Eligible for Central & State Subsidy</span>
             </div>
-            <div class="subsidy-val-row">
+            <div class="subsidy-hero-row">
               <div class="subsidy-val">₹78,000</div>
-              <span>You are eligible for central and state government subsidy</span>
+              <span class="subsidy-hero-label">Eligible Amount</span>
             </div>
-            <img class="subsidy-illustration subsidy-img" src="assets/gov_subsidy_building.png" alt="Indian Parliament minimal illustration showing national government subsidy program representation">
+            <div class="subsidy-divider"></div>
+            <div class="subsidy-breakdown">
+              <div class="subsidy-item">
+                <svg class="subsidy-check-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg>
+                <span class="subsidy-item-label">Central Subsidy (MNRE)</span>
+                <span class="subsidy-item-amount">₹30,000</span>
+              </div>
+              <div class="subsidy-item">
+                <svg class="subsidy-check-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg>
+                <span class="subsidy-item-label">State Subsidy</span>
+                <span class="subsidy-item-amount">₹30,000</span>
+              </div>
+              <div class="subsidy-item">
+                <svg class="subsidy-check-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg>
+                <span class="subsidy-item-label">Additional Incentives</span>
+                <span class="subsidy-item-amount">₹18,000</span>
+              </div>
+            </div>
+            <div class="subsidy-progress-row">
+              <div class="subsidy-progress-track">
+                <div class="subsidy-progress-fill" style="width: 75%;"></div>
+              </div>
+              <span class="subsidy-progress-label">75% Eligible</span>
+            </div>
             <button class="subsidy-btn" id="subsidyBtn" onclick="switchTab('roi-calculator')">
               <span>Check Eligibility</span>
               <svg><use href="#icon-arrow-right"></use></svg>
@@ -1583,49 +1616,7 @@
               </div>
             </div>
 
-            <!-- Inline Styles for Loader & Toast Types -->
-            <style>
-              @keyframes pulse {
-                0% { opacity: 0.6; }
-                50% { opacity: 1; }
-                100% { opacity: 0.6; }
-              }
-              .skeleton-loader {
-                animation: pulse 1.2s infinite ease-in-out;
-                background: rgba(255, 255, 255, 0.07);
-                border-radius: 3px;
-                display: inline-block;
-                min-width: 60px;
-                height: 12px;
-                vertical-align: middle;
-              }
-              /* Toast modifications */
-              .toast-msg.success {
-                border-color: rgba(54, 211, 153, 0.3);
-                background: rgba(15, 34, 30, 0.96) !important;
-                color: var(--accent-green) !important;
-              }
-              .toast-msg.success svg {
-                stroke: var(--accent-green) !important;
-              }
-              .toast-msg.error {
-                border-color: rgba(231, 76, 60, 0.3);
-                background: rgba(35, 18, 18, 0.96) !important;
-                color: #ef4444 !important;
-              }
-              .toast-msg.error svg {
-                stroke: #ef4444 !important;
-              }
-              .toast-msg.warning {
-                border-color: rgba(255, 138, 29, 0.3);
-                background: rgba(35, 27, 18, 0.96) !important;
-                color: var(--accent-orange) !important;
-              }
-              .toast-msg.warning svg {
-                stroke: var(--accent-orange) !important;
-              }
-            </style>
-          </div>
+            </div>
 
           <!-- KPI indicators grid -->
           <div class="kpis-stack-column" style="display: flex; flex-direction: column; gap: 15px;">
@@ -6645,6 +6636,7 @@
 
     </main>
   </div>
+      </div>
 
   <!-- --- REPORT PREVIEW MODAL --- -->
   <div class="modal-overlay" id="reportPreviewModal" style="display: none; align-items: flex-start; padding-top: 50px; overflow-y: auto; background: rgba(4, 11, 23, 0.85); z-index: 1000;">
@@ -7400,6 +7392,7 @@
   </div>
 
   <script src="chart.min.js"></script>
+  <script src="utils/ui-utils.js?v=1.0.0"></script>
   <script src="app.js?v=1.0.3"></script>
 </body>
 </html>
