@@ -20,6 +20,7 @@
   </script>
 </head>
 <body>
+<a href="#main-content" class="skip-link">Skip to main content</a>
 
   <!-- SVG Sprite sheet for clean, high-performance icons -->
   <svg style="display: none;">
@@ -467,7 +468,7 @@
     </aside>
 
     <!-- --- MAIN PANEL --- -->
-    <main class="main-panel">
+    <main class="main-panel" id="main-content">
       
       <!-- --- HEADER --- -->
       <header class="header">
@@ -550,7 +551,7 @@
       </header>
 
       <!-- --- DASHBOARD TAB CONTENT --- -->
-      <div class="tab-content active" id="tab-dashboard">
+      <div class="tab-content active" role="tabpanel" aria-label="dashboard" id="tab-dashboard">
         
         <!-- --- TOP ROW DASHBOARD GRID --- -->
         <div class="dashboard-grid">
@@ -751,7 +752,7 @@
             </div>
             <div class="sub-kpi-text-box">
               <span class="sub-kpi-label">ROI Period</span>
-              <span class="sub-kpi-val" id="roiPeriodVal">3.8 Years</span>
+              <span class="sub-kpi-val" aria-live="polite" id="roiPeriodVal">3.8 Years</span>
               <span class="sub-kpi-desc" style="color: #ea580c; font-weight:600;">Excellent Return</span>
             </div>
           </div>
@@ -762,7 +763,7 @@
             </div>
             <div class="sub-kpi-text-box">
               <span class="sub-kpi-label">Carbon Offset</span>
-              <span class="sub-kpi-val" id="carbonOffsetVal">12.4 Tons</span>
+              <span class="sub-kpi-val" aria-live="polite" id="carbonOffsetVal">12.4 Tons</span>
               <span class="sub-kpi-desc" style="color: #16a34a; font-weight:600;">CO₂ Reduced</span>
             </div>
           </div>
@@ -773,7 +774,7 @@
             </div>
             <div class="sub-kpi-text-box">
               <span class="sub-kpi-label">System Size</span>
-              <span class="sub-kpi-val" id="systemSizeVal">5.2 kW</span>
+              <span class="sub-kpi-val" aria-live="polite" id="systemSizeVal">5.2 kW</span>
               <span class="sub-kpi-desc" style="color: var(--accent-blue); font-weight:600;">Optimal Size</span>
             </div>
           </div>
@@ -784,7 +785,7 @@
             </div>
             <div class="sub-kpi-text-box">
               <span class="sub-kpi-label">Energy Independence</span>
-              <span class="sub-kpi-val" id="energyIndependenceVal">78%</span>
+              <span class="sub-kpi-val" aria-live="polite" id="energyIndependenceVal">78%</span>
               <span class="sub-kpi-desc" style="color: #ea580c; font-weight:600;">Projected</span>
             </div>
           </div>
@@ -798,7 +799,7 @@
           
           <div class="quick-actions-grid">
             <!-- Card 1 -->
-            <div class="action-card bill-analyzer" id="actBill" onclick="switchTab('bill-analyzer')">
+            <div class="action-card" tabindex="0" role="button" bill-analyzer" id="actBill" onclick="switchTab('bill-analyzer')">
               <div class="action-header-row">
                 <div class="action-icon-box">
                   <svg><use href="#icon-bill"></use></svg>
@@ -815,7 +816,7 @@
             </div>
 
             <!-- Card 2 -->
-            <div class="action-card roof-analysis" id="actRoof" onclick="switchTab('roof-analysis')">
+            <div class="action-card" tabindex="0" role="button" roof-analysis" id="actRoof" onclick="switchTab('roof-analysis')">
               <div class="action-header-row">
                 <div class="action-icon-box">
                   <svg><use href="#icon-roof"></use></svg>
@@ -832,7 +833,7 @@
             </div>
 
             <!-- Card 3 -->
-            <div class="action-card roi-calc" id="actCalc" onclick="switchTab('roi-calculator')">
+            <div class="action-card" tabindex="0" role="button" roi-calc" id="actCalc" onclick="switchTab('roi-calculator')">
               <div class="action-header-row">
                 <div class="action-icon-box">
                   <svg><use href="#icon-calculator"></use></svg>
@@ -849,7 +850,7 @@
             </div>
 
             <!-- Card 4 -->
-            <div class="action-card ai-assistant" id="actAI" onclick="switchTab('ai-assistant')">
+            <div class="action-card" tabindex="0" role="button" ai-assistant" id="actAI" onclick="switchTab('ai-assistant')">
               <div class="action-header-row">
                 <div class="action-icon-box">
                   <svg><use href="#icon-chat"></use></svg>
@@ -866,7 +867,7 @@
             </div>
 
             <!-- Card 5 -->
-            <div class="action-card referrals" id="actReferral" onclick="switchTab('rewards')">
+            <div class="action-card" tabindex="0" role="button" referrals" id="actReferral" onclick="switchTab('rewards')">
               <div class="action-header-row">
                 <div class="action-icon-box">
                   <svg><use href="#icon-gift"></use></svg>
@@ -1236,7 +1237,7 @@
 
       </div><!-- End of #tab-dashboard -->
       <!-- --- BILL ANALYZER TAB CONTENT --- -->
-      <div class="tab-content" id="tab-bill-analyzer">
+      <div class="tab-content" role="tabpanel" aria-label="bill analyzer" id="tab-bill-analyzer">
         <div class="tab-header-block">
           <h2 class="tab-heading">Bill Analyzer</h2>
           <p class="tab-subheading">Analyze your electricity bill & discover optimal solar capacity requirements.</p>
@@ -1672,7 +1673,7 @@
       </div>
 
       <!-- --- ROOF ANALYSIS TAB CONTENT --- -->
-      <div class="tab-content" id="tab-roof-analysis">
+      <div class="tab-content" role="tabpanel" aria-label="roof analysis" id="tab-roof-analysis">
         <div class="tab-header-block">
           <h2 class="tab-heading">AI Roof Analysis</h2>
           <p class="tab-subheading">Satellite intelligence scanning roof structure, shadow cast, and solar array layout.</p>
@@ -1938,7 +1939,7 @@
       </div>
 
       <!-- --- ROI CALCULATOR TAB CONTENT --- -->
-      <div class="tab-content" id="tab-roi-calculator">
+      <div class="tab-content" role="tabpanel" aria-label="roi calculator" id="tab-roi-calculator">
         <div class="tab-header-block">
           <h2 class="tab-heading">Financial Savings & ROI Simulator</h2>
           <p class="tab-subheading">Simulate your payback period, investment metrics, and cumulative returns based on government subsidy guidelines.</p>
@@ -2162,7 +2163,7 @@
       </div>
 
       <!-- --- AI ASSISTANT TAB CONTENT --- -->
-      <div class="tab-content" id="tab-ai-assistant">
+      <div class="tab-content" role="tabpanel" aria-label="ai assistant" id="tab-ai-assistant">
         <div class="tab-header-block">
           <h2 class="tab-heading">AI Solar Advisor</h2>
           <p class="tab-subheading">Ask questions about solar technology, PM-Surya Ghar subsidies, net metering, installation requirements, or maintenance logs.</p>
@@ -2203,7 +2204,7 @@
       </div>
 
       <!-- --- ENTERPRISE AI ASSISTANT TAB CONTENT --- -->
-      <div class="tab-content" id="tab-enterprise-ai">
+      <div class="tab-content" role="tabpanel" aria-label="enterprise ai" id="tab-enterprise-ai">
         <div class="tab-header-block">
           <h2 class="tab-heading">Enterprise AI Assistant</h2>
           <p class="tab-subheading">Intelligent orchestration layer — CRM, Customer360, AI Analysis, Recommendations, and more.</p>
@@ -2269,7 +2270,7 @@
       </div>
 
       <!-- --- REWARDS & REFERRALS TAB CONTENT --- -->
-      <div class="tab-content" id="tab-rewards">
+      <div class="tab-content" role="tabpanel" aria-label="rewards" id="tab-rewards">
         <div class="tab-header-block">
           <h2 class="tab-heading">Rewards & Referrals</h2>
           <p class="tab-subheading">Refer friends to solar energy and earn points redeemable for vouchers, services, and cashback.</p>
@@ -2436,7 +2437,7 @@
       </div>
 
       <!-- --- REPORTS CENTER TAB CONTENT --- -->
-      <div class="tab-content" id="tab-reports-center">
+      <div class="tab-content" role="tabpanel" aria-label="reports center" id="tab-reports-center">
         <div class="tab-header-block">
           <h2 class="tab-heading">Reports &amp; PDF Export Center</h2>
           <p class="tab-subheading">Generate, preview, and download custom, executive-ready Solar Intelligence reports and spreadsheets.</p>
@@ -2620,7 +2621,7 @@
       </div>
 
       <!-- --- ACTIVITY CENTER TAB CONTENT --- -->
-      <div class="tab-content" id="tab-activity-center">
+      <div class="tab-content" role="tabpanel" aria-label="activity center" id="tab-activity-center">
         <div class="tab-header-block">
           <h2 class="tab-heading">Activity Center</h2>
           <p class="tab-subheading">Track chronological events and assessments throughout your solar journey.</p>
@@ -2681,7 +2682,7 @@
       </div>
 
       <!-- --- SYSTEM PERFORMANCE TAB CONTENT --- -->
-      <div class="tab-content" id="tab-performance">
+      <div class="tab-content" role="tabpanel" aria-label="performance" id="tab-performance">
         <div class="tab-header-block">
           <h2 class="tab-heading">Real-Time System Analytics</h2>
           <p class="tab-subheading">Track live photovoltaic energy output, consumption ratios, grid balance imports/exports, and performance ratio (PR) health scores.</p>
@@ -2805,7 +2806,7 @@
       </div>
 
       <!-- --- SETTINGS TAB CONTENT --- -->
-      <div class="tab-content" id="tab-settings">
+      <div class="tab-content" role="tabpanel" aria-label="settings" id="tab-settings">
         <div class="tab-header-block">
           <h2 class="tab-heading">Dashboard Configurations</h2>
           <p class="tab-subheading">Configure system values, load preferences, tariff parameters, and profile details.</p>
@@ -2861,7 +2862,7 @@
       </div><!-- /tab-settings -->
 
       <!-- --- ANNUAL MAINTENANCE CONTRACT (AMC) TAB CONTENT --- -->
-      <div class="tab-content" id="tab-amc">
+      <div class="tab-content" role="tabpanel" aria-label="amc" id="tab-amc">
         <div class="tab-header-block">
           <h2 class="tab-heading">Annual Maintenance Contract (AMC)</h2>
           <p class="tab-subheading">Keep your solar system operating at peak efficiency with predictive maintenance and annual service plans.</p>
@@ -2888,7 +2889,7 @@
             </div>
             <div class="sub-kpi-text-box">
               <span class="sub-kpi-label">Recommended Plan</span>
-              <span class="sub-kpi-val" id="amcKpiPlan">—</span>
+              <span class="sub-kpi-val" aria-live="polite" id="amcKpiPlan">—</span>
               <span class="sub-kpi-desc">Based on system health</span>
             </div>
           </div>
@@ -2899,7 +2900,7 @@
             </div>
             <div class="sub-kpi-text-box">
               <span class="sub-kpi-label">Estimated Annual Cost</span>
-              <span class="sub-kpi-val" id="amcKpiCost">₹0</span>
+              <span class="sub-kpi-val" aria-live="polite" id="amcKpiCost">₹0</span>
               <span class="sub-kpi-desc">Annual service pricing</span>
             </div>
           </div>
@@ -2910,7 +2911,7 @@
             </div>
             <div class="sub-kpi-text-box">
               <span class="sub-kpi-label">System Health</span>
-              <span class="sub-kpi-val" id="amcKpiHealth">—</span>
+              <span class="sub-kpi-val" aria-live="polite" id="amcKpiHealth">—</span>
               <span class="sub-kpi-desc">Overall efficiency score</span>
             </div>
           </div>
@@ -2921,7 +2922,7 @@
             </div>
             <div class="sub-kpi-text-box">
               <span class="sub-kpi-label">Warranty Status</span>
-              <span class="sub-kpi-val" id="amcKpiWarranty">Active</span>
+              <span class="sub-kpi-val" aria-live="polite" id="amcKpiWarranty">Active</span>
               <span class="sub-kpi-desc">Standard components coverage</span>
             </div>
           </div>
@@ -2932,7 +2933,7 @@
             </div>
             <div class="sub-kpi-text-box">
               <span class="sub-kpi-label">Next Scheduled Visit</span>
-              <span class="sub-kpi-val" id="amcKpiNextVisit">—</span>
+              <span class="sub-kpi-val" aria-live="polite" id="amcKpiNextVisit">—</span>
               <span class="sub-kpi-desc">Recommended O&M window</span>
             </div>
           </div>
@@ -2943,7 +2944,7 @@
             </div>
             <div class="sub-kpi-text-box">
               <span class="sub-kpi-label">Preventive Score</span>
-              <span class="sub-kpi-val" id="amcKpiPmScore">—</span>
+              <span class="sub-kpi-val" aria-live="polite" id="amcKpiPmScore">—</span>
               <span class="sub-kpi-desc">Remote system metrics</span>
             </div>
           </div>
@@ -3231,7 +3232,7 @@
       </div><!-- /tab-amc -->
 
       <!-- --- SITE SURVEY TAB CONTENT --- -->
-      <div class="tab-content" id="tab-site-survey">
+      <div class="tab-content" role="tabpanel" aria-label="site survey" id="tab-site-survey">
         <div class="tab-header-block">
           <h2 class="tab-heading">AI Site Survey Feasibility</h2>
           <p class="tab-subheading">Analyze building parameters and structural suitability to determine site installation feasibility.</p>
@@ -3299,7 +3300,7 @@
             <div class="sub-kpi-text-box">
               <span class="sub-kpi-label">Site Feasibility</span>
               <div style="display: flex; align-items: baseline; gap: 8px;">
-                <span class="sub-kpi-val" id="surveyKpiFeasibility">—</span>
+                <span class="sub-kpi-val" aria-live="polite" id="surveyKpiFeasibility">—</span>
                 <span style="font-size: 9px; font-weight: 700;" id="surveyKpiFeasibilityTrend"></span>
               </div>
               <span class="sub-kpi-desc">Overall suitability score</span>
@@ -3313,7 +3314,7 @@
             <div class="sub-kpi-text-box">
               <span class="sub-kpi-label">Roof Accessibility</span>
               <div style="display: flex; align-items: baseline; gap: 8px;">
-                <span class="sub-kpi-val" id="surveyKpiAccessibility">—</span>
+                <span class="sub-kpi-val" aria-live="polite" id="surveyKpiAccessibility">—</span>
                 <span style="font-size: 9px; font-weight: 700;" id="surveyKpiAccessibilityTrend"></span>
               </div>
               <span class="sub-kpi-desc">Based on height & structure</span>
@@ -3327,7 +3328,7 @@
             <div class="sub-kpi-text-box">
               <span class="sub-kpi-label">Installation Complexity</span>
               <div style="display: flex; align-items: baseline; gap: 8px;">
-                <span class="sub-kpi-val" id="surveyKpiComplexity">—</span>
+                <span class="sub-kpi-val" aria-live="polite" id="surveyKpiComplexity">—</span>
                 <span style="font-size: 9px; font-weight: 700;" id="surveyKpiComplexityTrend"></span>
               </div>
               <span class="sub-kpi-desc">Obstacles & slope analysis</span>
@@ -3341,7 +3342,7 @@
             <div class="sub-kpi-text-box">
               <span class="sub-kpi-label">Safety Score</span>
               <div style="display: flex; align-items: baseline; gap: 8px;">
-                <span class="sub-kpi-val" id="surveyKpiSafety">—</span>
+                <span class="sub-kpi-val" aria-live="polite" id="surveyKpiSafety">—</span>
                 <span style="font-size: 9px; font-weight: 700;" id="surveyKpiSafetyTrend"></span>
               </div>
               <span class="sub-kpi-desc">Electrical & structural hazards</span>
@@ -3355,7 +3356,7 @@
             <div class="sub-kpi-text-box">
               <span class="sub-kpi-label">Estimated Setup Time</span>
               <div style="display: flex; align-items: baseline; gap: 8px;">
-                <span class="sub-kpi-val" id="surveyKpiTime">—</span>
+                <span class="sub-kpi-val" aria-live="polite" id="surveyKpiTime">—</span>
                 <span style="font-size: 9px; font-weight: 700;" id="surveyKpiTimeTrend"></span>
               </div>
               <span class="sub-kpi-desc">Estimated installation window</span>
@@ -3369,7 +3370,7 @@
             <div class="sub-kpi-text-box">
               <span class="sub-kpi-label">Survey Status</span>
               <div style="display: flex; align-items: baseline; gap: 8px;">
-                <span class="sub-kpi-val" id="surveyKpiStatus">Pending</span>
+                <span class="sub-kpi-val" aria-live="polite" id="surveyKpiStatus">Pending</span>
                 <span style="font-size: 9px; font-weight: 700;" id="surveyKpiStatusTrend"></span>
               </div>
               <span class="sub-kpi-desc">Current O&M stage</span>
@@ -4015,7 +4016,7 @@
       </div><!-- /tab-site-survey -->
 
       <!-- --- VENDOR PORTAL TAB CONTENT --- -->
-      <div class="tab-content" id="tab-vendor-portal">
+      <div class="tab-content" role="tabpanel" aria-label="vendor portal" id="tab-vendor-portal">
         <div class="tab-header-block">
           <h2 class="tab-heading">Vendor Portal</h2>
           <p class="tab-subheading">Generate and manage premium, AI-powered solar proposals, analyze roof space suitability, and track conversions.</p>
@@ -4409,7 +4410,7 @@
       </div>
 
       <!-- --- CRM & LEAD MANAGEMENT TAB CONTENT --- -->
-      <div class="tab-content" id="tab-crm-dashboard">
+      <div class="tab-content" role="tabpanel" aria-label="crm dashboard" id="tab-crm-dashboard">
         <div class="tab-header-block" style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 15px; margin-bottom: 20px;">
           <div>
             <h2 class="tab-heading">Solar Enterprise CRM &amp; Sales Operations</h2>
@@ -4899,7 +4900,7 @@
           </div>
         </div>
       </div><!-- --- ADMIN ANALYTICS DASHBOARD TAB CONTENT --- -->
-      <div class="tab-content" id="tab-admin-dashboard">
+      <div class="tab-content" role="tabpanel" aria-label="admin dashboard" id="tab-admin-dashboard">
         <div class="tab-header-block" style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 15px;">
           <div>
             <h2 class="tab-heading">Admin Operations Dashboard</h2>
@@ -5708,7 +5709,7 @@
       </div>
 
       <!-- --- AUDIT & MONITORING TAB CONTENT --- -->
-      <div class="tab-content" id="tab-audit-monitoring">
+      <div class="tab-content" role="tabpanel" aria-label="audit monitoring" id="tab-audit-monitoring">
         <div class="tab-header-block" style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 15px;">
           <div>
             <h2 class="tab-heading">Audit Logs &amp; Operational Monitoring</h2>
@@ -5968,7 +5969,7 @@
       </div>
 
       <!-- --- BUSINESS INTELLIGENCE TAB CONTENT --- -->
-      <div class="tab-content" id="tab-business-intelligence">
+      <div class="tab-content" role="tabpanel" aria-label="business intelligence" id="tab-business-intelligence">
         
         <!-- Boardroom Executive Header & Command Center -->
         <div class="card-base" style="--card-theme: 23, 168, 229; padding: 20px; margin-bottom: 20px; background: rgba(15, 23, 42, 0.45); backdrop-filter: blur(16px); border: 1px solid rgba(255, 255, 255, 0.08);">
@@ -6539,7 +6540,7 @@
       </div> <!-- /tab-business-intelligence -->
 
       <!-- --- MLOPS DASHBOARD TAB CONTENT --- -->
-      <div class="tab-content" id="tab-mlops-dashboard">
+      <div class="tab-content" role="tabpanel" aria-label="mlops dashboard" id="tab-mlops-dashboard">
         <div class="tab-header-block" style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 15px;">
           <div>
             <h2 class="tab-heading">MLOps Model Lifecycle Management</h2>

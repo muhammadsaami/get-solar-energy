@@ -15372,15 +15372,12 @@ function _storeBillAnalysisForAI(data) {
    MLOps Dashboard Functions (Phase 13.0E.10)
    ────────────────────────────────────────────────────────────── */
 
-var _mlopsToken = null;
-
 function _mlopsAuth() {
-  if (_mlopsToken) return _mlopsToken;
-  try {
-    var t = localStorage.getItem('auth_token');
-    if (t) _mlopsToken = t;
-  } catch(e) {}
-  return _mlopsToken;
+    try {
+        return localStorage.getItem("token") || "";
+    } catch (e) {
+        return "";
+    }
 }
 
 function _mlopsHeaders() {
@@ -15390,7 +15387,16 @@ function _mlopsHeaders() {
 async function _mlopsFetch(url, opts) {
   opts = opts || {};
   opts.headers = Object.assign({}, _mlopsHeaders(), opts.headers || {});
-  var r = await fetch(url, opts);
+  var token = _mlopsAuth();
+  if (!token) {
+    throw new Error("No authentication token found");
+  }
+  var r = await fetch(API_BASE + url, opts);
+  if (!r.ok) {
+    var body = await r.text();
+    console.error("MLOps request failed:", r.status, body);
+    throw new Error("MLOps request failed: " + r.status + " " + body);
+  }
   return r.json();
 }
 
