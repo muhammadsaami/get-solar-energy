@@ -42,6 +42,7 @@ from crm_routes import router as crm_router
 from ml.routes import router as ml_router
 from ml.ai_routes import router as ai_router
 from ai.routes import router as assistant_router
+from mlops.routes import router as mlops_router
 
 app.include_router(roof_router)
 app.include_router(roi_router)
@@ -57,6 +58,7 @@ app.include_router(crm_router)
 app.include_router(ml_router)
 app.include_router(ai_router)
 app.include_router(assistant_router)
+app.include_router(mlops_router)
 
 @app.on_event("startup")
 async def startup_event():

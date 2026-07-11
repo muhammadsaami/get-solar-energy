@@ -390,6 +390,12 @@
               <span>Business Intelligence</span>
             </a>
           </li>
+          <li id="menu-item-mlops" data-tab="mlops-dashboard" class="menu-item" data-color="red" style="display: none;">
+            <a href="#" data-tooltip="MLOps">
+              <svg><use href="#icon-shield"></use></svg>
+              <span>MLOps</span>
+            </a>
+          </li>
 
         </ul>
       </nav>
@@ -6540,6 +6546,102 @@
 
         </div> <!-- /biDashboardActiveView -->
       </div> <!-- /tab-business-intelligence -->
+
+      <!-- --- MLOPS DASHBOARD TAB CONTENT --- -->
+      <div class="tab-content" id="tab-mlops-dashboard">
+        <div class="tab-header-block" style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 15px;">
+          <div>
+            <h2 class="tab-heading">MLOps Model Lifecycle Management</h2>
+            <p class="tab-subheading">Model registry, deployment pipelines, health monitoring, drift detection, and version management.</p>
+          </div>
+          <div style="display: flex; align-items: center; gap: 12px;">
+            <button id="btnRefreshMlops" class="calc-btn" style="padding: 8px 16px; margin: 0; width: auto; background: rgba(239, 68, 68, 0.12); color: var(--accent-orange); border: 1px solid rgba(239, 68, 68, 0.2);">Refresh</button>
+          </div>
+        </div>
+
+        <!-- KPI Cards Row -->
+        <div style="display: grid; grid-template-columns: repeat(5, 1fr); gap: 16px; margin-bottom: 20px;">
+          <div class="card-base shadow-lift" style="--card-theme: 239, 68, 68;">
+            <span class="kpi-title">Platform Status</span>
+            <div class="kpi-value-block">
+              <span class="kpi-value-text" id="mlopsKpiStatus">—</span>
+            </div>
+            <span class="kpi-card-subdesc">MLOps operational status</span>
+          </div>
+          <div class="card-base shadow-lift" style="--card-theme: 16, 185, 129;">
+            <span class="kpi-title">Models Registered</span>
+            <div class="kpi-value-block">
+              <span class="kpi-value-text" id="mlopsKpiModels">0</span>
+            </div>
+            <span class="kpi-card-subdesc">Total registered models</span>
+          </div>
+          <div class="card-base shadow-lift" style="--card-theme: 245, 158, 11;">
+            <span class="kpi-title">Active Deployments</span>
+            <div class="kpi-value-block">
+              <span class="kpi-value-text" id="mlopsKpiDeployed">0</span>
+            </div>
+            <span class="kpi-card-subdesc">Currently deployed models</span>
+          </div>
+          <div class="card-base shadow-lift" style="--card-theme: 139, 92, 246;">
+            <span class="kpi-title">Avg Latency</span>
+            <div class="kpi-value-block">
+              <span class="kpi-value-text" id="mlopsKpiLatency">0ms</span>
+            </div>
+            <span class="kpi-card-subdesc">Mean prediction latency</span>
+          </div>
+          <div class="card-base shadow-lift" style="--card-theme: 59, 130, 246;">
+            <span class="kpi-title">Health Score</span>
+            <div class="kpi-value-block">
+              <span class="kpi-value-text" id="mlopsKpiHealth">—</span>
+            </div>
+            <span class="kpi-card-subdesc">System health index</span>
+          </div>
+        </div>
+
+        <!-- Models Table + Health Panel -->
+        <div style="display: grid; grid-template-columns: 1.4fr 1fr; gap: 16px; margin-bottom: 20px;">
+          <div class="card-base" style="--card-theme: 16, 185, 129; padding: 16px;">
+            <h3 style="margin: 0 0 12px 0; font-size: 13px; color: var(--text-primary); font-weight: 700;">Registered Models</h3>
+            <div style="overflow-x: auto;">
+              <table style="width: 100%; border-collapse: collapse; font-size: 11px;">
+                <thead>
+                  <tr style="border-bottom: 1px solid rgba(255,255,255,0.08);">
+                    <th style="text-align: left; padding: 8px 6px; color: var(--text-muted); font-weight: 700;">Model Name</th>
+                    <th style="text-align: left; padding: 8px 6px; color: var(--text-muted); font-weight: 700;">Version</th>
+                    <th style="text-align: left; padding: 8px 6px; color: var(--text-muted); font-weight: 700;">State</th>
+                    <th style="text-align: left; padding: 8px 6px; color: var(--text-muted); font-weight: 700;">Actions</th>
+                  </tr>
+                </thead>
+                <tbody id="mlopsModelsTable">
+                  <tr><td colspan="4" style="padding: 20px; text-align: center; color: var(--text-muted);">Loading models...</td></tr>
+                </tbody>
+              </table>
+            </div>
+          </div>
+          <div class="card-base" style="--card-theme: 59, 130, 246; padding: 16px;">
+            <h3 style="margin: 0 0 12px 0; font-size: 13px; color: var(--text-primary); font-weight: 700;">System Health</h3>
+            <div id="mlopsHealthPanel" style="font-size: 11px; color: var(--text-secondary);">
+              <p style="color: var(--text-muted);">Loading health data...</p>
+            </div>
+          </div>
+        </div>
+
+        <!-- Events + Metrics Panels -->
+        <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 16px;">
+          <div class="card-base" style="--card-theme: 139, 92, 246; padding: 16px;">
+            <h3 style="margin: 0 0 12px 0; font-size: 13px; color: var(--text-primary); font-weight: 700;">Recent Events</h3>
+            <div id="mlopsEventsPanel" style="font-size: 11px; color: var(--text-secondary); max-height: 300px; overflow-y: auto;">
+              <p style="color: var(--text-muted);">Loading events...</p>
+            </div>
+          </div>
+          <div class="card-base" style="--card-theme: 245, 158, 11; padding: 16px;">
+            <h3 style="margin: 0 0 12px 0; font-size: 13px; color: var(--text-primary); font-weight: 700;">Metrics Overview</h3>
+            <div id="mlopsMetricsPanel" style="font-size: 11px; color: var(--text-secondary);">
+              <p style="color: var(--text-muted);">Loading metrics...</p>
+            </div>
+          </div>
+        </div>
+      </div> <!-- /tab-mlops-dashboard -->
 
     </main>
   </div>

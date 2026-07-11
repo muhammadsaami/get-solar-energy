@@ -1538,11 +1538,9 @@ function initModalRoiCalculatorChart(payback = 4.8, netCost = 102000, annualSavi
                 return _safeNum(value / 100000).toFixed(1) + 'L';
               }
               return value;
-    }
-  } else if (tabId === 'enterprise-ai') {
-    if (typeof loadEnterpriseTools === 'function') loadEnterpriseTools();
-  }
-}
+            }
+          }
+        }
       }
     }
   });
@@ -1768,7 +1766,7 @@ function initTabsNavigation() {
 
 function switchTab(tabId) {
   const user = _getUser() || {};
-  if (['admin-dashboard', 'crm-dashboard', 'audit-monitoring', 'business-intelligence'].includes(tabId)) {
+  if (['admin-dashboard', 'crm-dashboard', 'audit-monitoring', 'business-intelligence', 'mlops-dashboard'].includes(tabId)) {
     if (user.role !== 'Administrator') {
       logAuditEvent(user.email || 'anonymous', 'Unauthorized Admin Access Attempt', 'Security', `Attempted to access restricted tab: ${tabId}`, 'Critical');
       showToast('Access Denied: Administrator permissions required.', 'error');
@@ -1859,6 +1857,8 @@ function switchTab(tabId) {
         }
       }, 200);
     }
+  } else if (tabId === 'enterprise-ai') {
+    if (typeof loadEnterpriseTools === 'function') loadEnterpriseTools();
   }
 }
 
@@ -15530,5 +15530,203 @@ function _storeBillAnalysisForAI(data) {
   } catch (e) { /* ignore */ }
 }
 
+/* ──────────────────────────────────────────────────────────────
+   MLOps Dashboard Functions (Phase 13.0E.10)
+   ────────────────────────────────────────────────────────────── */
 
+var _mlopsToken = null;
+
+function _mlopsAuth() {
+  if (_mlopsToken) return _mlopsToken;
+  try {
+    var t = localStorage.getItem('auth_token');
+    if (t) _mlopsToken = t;
+  } catch(e) {}
+  return _mlopsToken;
+}
+
+function _mlopsHeaders() {
+  return { 'Authorization': 'Bearer ' + _mlopsAuth(), 'Content-Type': 'application/json' };
+}
+
+async function _mlopsFetch(url, opts) {
+  opts = opts || {};
+  opts.headers = Object.assign({}, _mlopsHeaders(), opts.headers || {});
+  var r = await fetch(url, opts);
+  return r.json();
+}
+
+function _mlopsEscapeHtml(s) {
+  if (s == null) return '';
+  return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
+}
+
+function _mlopsStateColor(state) {
+  var m = {
+    'active': '#10b981', 'deployed': '#3b82f6', 'registered': '#8b5cf6',
+    'deprecated': '#ef4444', 'archived': '#6b7280', 'rollbacked': '#f59e0b'
+  };
+  return m[state] || '#6b7281';
+}
+
+function _mlopsFormatTimestamp(ts) {
+  if (!ts) return '—';
+  try { return new Date(ts).toLocaleString(); } catch(e) { return ts; }
+}
+
+async function _mlopsLoadDashboard() {
+  try {
+    var statusResp = await _mlopsFetch('/api/mlops/status');
+    if (statusResp.success) {
+      var s = statusResp.data;
+      document.getElementById('mlopsKpiStatus').textContent = s.platform_status || 'OK';
+      document.getElementById('mlopsKpiModels').textContent = s.total_models || 0;
+      document.getElementById('mlopsKpiDeployed').textContent = s.deployed_models || 0;
+    }
+  } catch(e) { document.getElementById('mlopsKpiStatus').textContent = '—'; }
+
+  try {
+    var metricsResp = await _mlopsFetch('/api/mlops/metrics');
+    if (metricsResp.success) {
+      var m = metricsResp.data;
+      var avgLat = m.latency && m.latency.mean ? Math.round(m.latency.mean) : 0;
+      document.getElementById('mlopsKpiLatency').textContent = avgLat + 'ms';
+    }
+  } catch(e) { document.getElementById('mlopsKpiLatency').textContent = '0ms'; }
+
+  try {
+    var healthResp = await _mlopsFetch('/api/mlops/health');
+    if (healthResp.success) {
+      var h = healthResp.data;
+      var score = h.health_score != null ? h.health_score : '—';
+      document.getElementById('mlopsKpiHealth').textContent = score + (typeof score === 'number' ? '%' : '');
+      _mlopsRenderHealthPanel(h);
+    }
+  } catch(e) { document.getElementById('mlopsKpiHealth').textContent = '—'; }
+
+  await _mlopsLoadModels();
+  await _mlopsLoadEvents();
+}
+
+async function _mlopsLoadModels() {
+  try {
+    var resp = await _mlopsFetch('/api/mlops/models');
+    if (!resp.success) return;
+    var models = resp.data.models || [];
+    var tbody = document.getElementById('mlopsModelsTable');
+    if (!models.length) {
+      tbody.innerHTML = '<tr><td colspan="4" style="padding:20px;text-align:center;color:var(--text-muted);">No models registered.</td></tr>';
+      return;
+    }
+    tbody.innerHTML = models.map(function(m) {
+      var name = _mlopsEscapeHtml(m.name);
+      var ver = _mlopsEscapeHtml(m.version || '—');
+      var state = m.lifecycle_state || m.state || 'registered';
+      var col = _mlopsStateColor(state);
+      return '<tr style="border-bottom:1px solid rgba(255,255,255,0.06);">' +
+        '<td style="padding:8px 6px;color:#fff;font-weight:700;">' + name + '</td>' +
+        '<td style="padding:8px 6px;color:var(--text-secondary);">' + ver + '</td>' +
+        '<td style="padding:8px 6px;"><span style="display:inline-block;padding:2px 8px;border-radius:4px;font-size:9px;font-weight:800;text-transform:uppercase;color:#fff;background:' + col + ';">' + _mlopsEscapeHtml(state) + '</span></td>' +
+        '<td style="padding:8px 6px;"><button onclick="mlopsDeployModel(\'' + name + '\')" style="padding:3px 8px;font-size:9px;background:rgba(59,130,246,0.15);color:var(--accent-blue);border:1px solid rgba(59,130,246,0.25);border-radius:4px;cursor:pointer;margin-right:4px;">Deploy</button>' +
+        '<button onclick="mlopsRollbackModel(\'' + name + '\')" style="padding:3px 8px;font-size:9px;background:rgba(245,158,11,0.15);color:var(--accent-orange);border:1px solid rgba(245,158,11,0.25);border-radius:4px;cursor:pointer;">Rollback</button></td>' +
+        '</tr>';
+    }).join('');
+  } catch(e) { document.getElementById('mlopsModelsTable').innerHTML = '<tr><td colspan="4" style="padding:20px;text-align:center;color:var(--text-muted);">Error loading models.</td></tr>'; }
+}
+
+function _mlopsRenderHealthPanel(h) {
+  var el = document.getElementById('mlopsHealthPanel');
+  var rows = [];
+  if (h.system) {
+    rows.push('<div style="margin-bottom:8px;"><strong style="color:#fff;">System Resources</strong></div>');
+    if (h.system.cpu_percent != null) rows.push('<div style="display:flex;justify-content:space-between;margin-bottom:4px;"><span>CPU Usage</span><span style="color:#fff;font-weight:700;">' + h.system.cpu_percent + '%</span></div>');
+    if (h.system.memory_percent != null) rows.push('<div style="display:flex;justify-content:space-between;margin-bottom:4px;"><span>Memory Usage</span><span style="color:#fff;font-weight:700;">' + h.system.memory_percent + '%</span></div>');
+  }
+  if (h.models && Object.keys(h.models).length) {
+    rows.push('<div style="margin-bottom:8px;margin-top:12px;"><strong style="color:#fff;">Model Availability</strong></div>');
+    Object.keys(h.models).forEach(function(name) {
+      var mh = h.models[name];
+      var avail = mh.available ? '✓' : '✗';
+      var acol = mh.available ? '#10b981' : '#ef4444';
+      rows.push('<div style="display:flex;justify-content:space-between;margin-bottom:4px;"><span>' + _mlopsEscapeHtml(name) + '</span><span style="color:' + acol + ';font-weight:700;">' + avail + '</span></div>');
+    });
+  }
+  if (h.timestamp) rows.push('<div style="margin-top:12px;color:var(--text-muted);font-size:9px;">Last check: ' + _mlopsFormatTimestamp(h.timestamp) + '</div>');
+  el.innerHTML = rows.join('') || '<p style="color:var(--text-muted);">No health data available.</p>';
+}
+
+async function _mlopsLoadEvents() {
+  try {
+    var resp = await _mlopsFetch('/api/mlops/events?limit=20');
+    if (!resp.success) return;
+    var events = resp.data.events || [];
+    var el = document.getElementById('mlopsEventsPanel');
+    if (!events.length) {
+      el.innerHTML = '<p style="color:var(--text-muted);">No events recorded.</p>';
+      return;
+    }
+    el.innerHTML = events.map(function(ev) {
+      var typeCol = { 'deploy': '#3b82f6', 'rollback': '#f59e0b', 'validation': '#8b5cf6', 'health': '#10b981', 'drift': '#ef4444' }[ev.event_type] || '#6b7281';
+      return '<div style="display:flex;align-items:center;gap:8px;padding:6px 0;border-bottom:1px solid rgba(255,255,255,0.04);">' +
+        '<span style="width:6px;height:6px;border-radius:50%;background:' + typeCol + ';flex-shrink:0;"></span>' +
+        '<span style="flex:1;color:#fff;font-weight:600;">' + _mlopsEscapeHtml(ev.event_type) + '</span>' +
+        '<span style="color:var(--text-muted);font-size:9px;">' + _mlopsFormatTimestamp(ev.timestamp) + '</span>' +
+        '</div>';
+    }).join('');
+  } catch(e) { document.getElementById('mlopsEventsPanel').innerHTML = '<p style="color:var(--text-muted);">Error loading events.</p>'; }
+}
+
+async function mlopsDeployModel(name) {
+  if (!confirm('Deploy model "' + name + '"?')) return;
+  try {
+    var resp = await _mlopsFetch('/api/mlops/deploy', { method: 'POST', body: JSON.stringify({ model_name: name }) });
+    if (resp.success) {
+      showToast(resp.message || 'Model deployed', 'success');
+      _mlopsLoadDashboard();
+    } else {
+      showToast(resp.message || 'Deploy failed', 'error');
+    }
+  } catch(e) { showToast('Deploy failed', 'error'); }
+}
+
+async function mlopsRollbackModel(name) {
+  if (!confirm('Rollback model "' + name + '"?')) return;
+  try {
+    var resp = await _mlopsFetch('/api/mlops/rollback', { method: 'POST', body: JSON.stringify({ model_name: name }) });
+    if (resp.success) {
+      showToast(resp.message || 'Model rolled back', 'success');
+      _mlopsLoadDashboard();
+    } else {
+      showToast(resp.message || 'Rollback failed', 'error');
+    }
+  } catch(e) { showToast('Rollback failed', 'error'); }
+}
+
+function _initMlopsRefresh() {
+  var btn = document.getElementById('btnRefreshMlops');
+  if (btn) btn.addEventListener('click', function() { _mlopsLoadDashboard(); });
+}
+
+/* Ensure MLOps dashboard loads when tab activates */
+var _origSwitchTab = window.switchTab;
+if (typeof _origSwitchTab === 'function') {
+  window.switchTab = function(tabId) {
+    _origSwitchTab(tabId);
+    if (tabId === 'mlops-dashboard') {
+      _mlopsLoadDashboard();
+    }
+  };
+}
+
+document.addEventListener('DOMContentLoaded', function() {
+  _initMlopsRefresh();
+  /* Show MLOps menu for admin */
+  try {
+    var user = JSON.parse(localStorage.getItem('user') || '{}');
+    if (user.role === 'Administrator') {
+      var m = document.getElementById('menu-item-mlops');
+      if (m) m.style.display = '';
+    }
+  } catch(e) {}
+});
 
