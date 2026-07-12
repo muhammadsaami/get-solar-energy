@@ -351,6 +351,26 @@
   --radius-xl:     20px;
   --radius-2xl:    28px;
 
+  /* ╔═══════════════════════════════════════════════╗
+     ║  MODULE ACCENT COLORS                          ║
+     ╚═══════════════════════════════════════════════╝ */
+
+  /* Violet — Project Tracking, premium features */
+  --color-violet:              #8b5cf6;
+  --color-violet-hover:        #7c3aed;
+  --color-violet-glow:         rgba(139, 92, 246, 0.16);
+  --color-violet-border:       rgba(139, 92, 246, 0.35);
+  --color-violet-surface:      rgba(139, 92, 246, 0.08);
+  --color-violet-rgb:          139, 92, 246;
+
+  /* Teal — Planning Workspace, success metrics */
+  --color-teal:                #14b8a6;
+  --color-teal-hover:          #0d9488;
+  --color-teal-glow:           rgba(20, 184, 166, 0.16);
+  --color-teal-border:         rgba(20, 184, 166, 0.35);
+  --color-teal-surface:        rgba(20, 184, 166, 0.08);
+  --color-teal-rgb:            20, 184, 166;
+
   /* --- Theme preparation hooks (not yet active) --- */
   /* --theme: 'default'; */
 }
