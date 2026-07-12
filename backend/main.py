@@ -28,6 +28,15 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
+from fastapi import Request
+@app.middleware("http")
+async def log_auth_header(request: Request, call_next):
+    auth_header = request.headers.get("authorization")
+    if auth_header and request.url.path.startswith("/api/mlops"):
+        with open("auth_dump.log", "a") as f:
+            f.write(f"Path: {request.url.path}\nAuth: {repr(auth_header)}\n")
+    return await call_next(request)
+
 from roof import router as roof_router
 from roi import router as roi_router
 from chat import router as chat_router

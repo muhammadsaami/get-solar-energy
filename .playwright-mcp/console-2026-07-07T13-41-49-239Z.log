@@ -1,0 +1,167 @@
+[     103ms] [LOG] ROI DEBUG: app.js loaded @ http://127.0.0.1:8000/frontend/app.js?v=1.0.3:12
+[     169ms] [LOG] ROI DEBUG: ROI modal initialized (Delegated Event Listeners) @ http://127.0.0.1:8000/frontend/app.js?v=1.0.3:1307
+[     188ms] [LOG] API [GET] http://127.0.0.1:8000/api/crm/pipeline-metrics - Fetching... @ http://127.0.0.1:8000/frontend/app.js?v=1.0.3:26
+[     189ms] [LOG] API [GET] http://127.0.0.1:8000/api/customers?limit=100 - Fetching... @ http://127.0.0.1:8000/frontend/app.js?v=1.0.3:26
+[     225ms] [LOG] API [GET] http://127.0.0.1:8000/api/crm/pipeline-metrics - Status: 200 @ http://127.0.0.1:8000/frontend/app.js?v=1.0.3:30
+[     226ms] [LOG] API [GET] http://127.0.0.1:8000/api/customers?limit=100 - Status: 200 @ http://127.0.0.1:8000/frontend/app.js?v=1.0.3:30
+[     230ms] [LOG] API [GET] http://127.0.0.1:8000/api/crm/followups - Fetching... @ http://127.0.0.1:8000/frontend/app.js?v=1.0.3:26
+[     231ms] [LOG] API [GET] http://127.0.0.1:8000/api/crm/tasks - Fetching... @ http://127.0.0.1:8000/frontend/app.js?v=1.0.3:26
+[     231ms] [LOG] API [GET] http://127.0.0.1:8000/api/crm/meetings - Fetching... @ http://127.0.0.1:8000/frontend/app.js?v=1.0.3:26
+[     231ms] [LOG] API [GET] http://127.0.0.1:8000/api/crm/alerts - Fetching... @ http://127.0.0.1:8000/frontend/app.js?v=1.0.3:26
+[     254ms] [LOG] API [GET] http://127.0.0.1:8000/api/crm/followups - Status: 200 @ http://127.0.0.1:8000/frontend/app.js?v=1.0.3:30
+[     255ms] [LOG] API [GET] http://127.0.0.1:8000/api/crm/tasks - Status: 200 @ http://127.0.0.1:8000/frontend/app.js?v=1.0.3:30
+[     255ms] [LOG] API [GET] http://127.0.0.1:8000/api/crm/meetings - Status: 200 @ http://127.0.0.1:8000/frontend/app.js?v=1.0.3:30
+[     256ms] [LOG] API [GET] http://127.0.0.1:8000/api/crm/alerts - Status: 200 @ http://127.0.0.1:8000/frontend/app.js?v=1.0.3:30
+[    6932ms] [LOG] API [GET] http://127.0.0.1:8000/api/crm/pipeline-metrics - Fetching... @ http://127.0.0.1:8000/frontend/app.js?v=1.0.3:26
+[    6933ms] [LOG] API [GET] http://127.0.0.1:8000/api/customers?limit=100 - Fetching... @ http://127.0.0.1:8000/frontend/app.js?v=1.0.3:26
+[    6951ms] [LOG] API [GET] http://127.0.0.1:8000/api/crm/pipeline-metrics - Status: 200 @ http://127.0.0.1:8000/frontend/app.js?v=1.0.3:30
+[    6961ms] [LOG] API [GET] http://127.0.0.1:8000/api/customers?limit=100 - Status: 200 @ http://127.0.0.1:8000/frontend/app.js?v=1.0.3:30
+[    6964ms] [LOG] API [GET] http://127.0.0.1:8000/api/crm/followups - Fetching... @ http://127.0.0.1:8000/frontend/app.js?v=1.0.3:26
+[    6964ms] [LOG] API [GET] http://127.0.0.1:8000/api/crm/tasks - Fetching... @ http://127.0.0.1:8000/frontend/app.js?v=1.0.3:26
+[    6965ms] [LOG] API [GET] http://127.0.0.1:8000/api/crm/meetings - Fetching... @ http://127.0.0.1:8000/frontend/app.js?v=1.0.3:26
+[    6965ms] [LOG] API [GET] http://127.0.0.1:8000/api/crm/alerts - Fetching... @ http://127.0.0.1:8000/frontend/app.js?v=1.0.3:26
+[    6980ms] [LOG] API [GET] http://127.0.0.1:8000/api/crm/tasks - Status: 200 @ http://127.0.0.1:8000/frontend/app.js?v=1.0.3:30
+[    6984ms] [LOG] API [GET] http://127.0.0.1:8000/api/crm/followups - Status: 200 @ http://127.0.0.1:8000/frontend/app.js?v=1.0.3:30
+[    6985ms] [LOG] API [GET] http://127.0.0.1:8000/api/crm/meetings - Status: 200 @ http://127.0.0.1:8000/frontend/app.js?v=1.0.3:30
+[    6991ms] [LOG] API [GET] http://127.0.0.1:8000/api/crm/alerts - Status: 200 @ http://127.0.0.1:8000/frontend/app.js?v=1.0.3:30
+[   11232ms] [LOG] API [GET] http://127.0.0.1:8000/api/customers/1 - Fetching... @ http://127.0.0.1:8000/frontend/app.js?v=1.0.3:26
+[   11243ms] [LOG] API [GET] http://127.0.0.1:8000/api/customers/1 - Status: 200 @ http://127.0.0.1:8000/frontend/app.js?v=1.0.3:30
+[   14888ms] [LOG] API [GET] http://127.0.0.1:8000/api/crm/timeline/1 - Fetching... @ http://127.0.0.1:8000/frontend/app.js?v=1.0.3:26
+[   14897ms] [LOG] API [GET] http://127.0.0.1:8000/api/crm/timeline/1 - Status: 200 @ http://127.0.0.1:8000/frontend/app.js?v=1.0.3:30
+[   21868ms] [LOG] API [PUT] http://127.0.0.1:8000/api/crm/customers/1 - Fetching... @ http://127.0.0.1:8000/frontend/app.js?v=1.0.3:26
+[   21954ms] [LOG] API [PUT] http://127.0.0.1:8000/api/crm/customers/1 - Status: 200 @ http://127.0.0.1:8000/frontend/app.js?v=1.0.3:30
+[   21954ms] [LOG] API [POST] http://127.0.0.1:8000/api/crm/followups - Fetching... @ http://127.0.0.1:8000/frontend/app.js?v=1.0.3:26
+[   22010ms] [ERROR] Failed to load resource: the server responded with a status of 500 (Internal Server Error) @ http://127.0.0.1:8000/api/crm/followups:0
+[   22010ms] [LOG] API [POST] http://127.0.0.1:8000/api/crm/followups - Status: 500 @ http://127.0.0.1:8000/frontend/app.js?v=1.0.3:30
+[   22010ms] [ERROR] Admin API Request Failed
+
+URL:
+http://127.0.0.1:8000/api/crm/followups
+
+Status:
+500 @ http://127.0.0.1:8000/frontend/app.js?v=1.0.3:34
+[   22010ms] [ERROR] Fetch execution error for URL: http://127.0.0.1:8000/api/crm/followups Error: Admin API Request Failed
+
+URL:
+http://127.0.0.1:8000/api/crm/followups
+
+Status:
+500
+    at safeFetch (http://127.0.0.1:8000/frontend/app.js?v=1.0.3:36:13) @ http://127.0.0.1:8000/frontend/app.js?v=1.0.3:47
+[   22012ms] Error: Admin API Request Failed
+
+URL:
+http://127.0.0.1:8000/api/crm/followups
+
+Status:
+500
+    at safeFetch (http://127.0.0.1:8000/frontend/app.js?v=1.0.3:36:13)
+[   40633ms] [LOG] API [GET] http://127.0.0.1:8000/api/admin/overview - Fetching... @ http://127.0.0.1:8000/frontend/app.js?v=1.0.3:26
+[   40634ms] [LOG] API [GET] http://127.0.0.1:8000/api/admin/users - Fetching... @ http://127.0.0.1:8000/frontend/app.js?v=1.0.3:26
+[   40634ms] [LOG] API [GET] http://127.0.0.1:8000/api/admin/rewards - Fetching... @ http://127.0.0.1:8000/frontend/app.js?v=1.0.3:26
+[   40634ms] [LOG] API [GET] http://127.0.0.1:8000/api/admin/assistant - Fetching... @ http://127.0.0.1:8000/frontend/app.js?v=1.0.3:26
+[   40635ms] [LOG] API [GET] http://127.0.0.1:8000/api/admin/activity - Fetching... @ http://127.0.0.1:8000/frontend/app.js?v=1.0.3:26
+[   40635ms] [LOG] API [GET] http://127.0.0.1:8000/api/dashboard/stats - Fetching... @ http://127.0.0.1:8000/frontend/app.js?v=1.0.3:26
+[   40635ms] [LOG] API [GET] http://127.0.0.1:8000/api/dashboard/recent-bills?limit=5 - Fetching... @ http://127.0.0.1:8000/frontend/app.js?v=1.0.3:26
+[   40635ms] [LOG] API [GET] http://127.0.0.1:8000/api/customers?limit=100 - Fetching... @ http://127.0.0.1:8000/frontend/app.js?v=1.0.3:26
+[   40666ms] [LOG] API [GET] http://127.0.0.1:8000/api/admin/users - Status: 200 @ http://127.0.0.1:8000/frontend/app.js?v=1.0.3:30
+[   40666ms] [LOG] API [GET] http://127.0.0.1:8000/api/admin/activity - Status: 200 @ http://127.0.0.1:8000/frontend/app.js?v=1.0.3:30
+[   40667ms] [LOG] API [GET] http://127.0.0.1:8000/api/admin/overview - Status: 200 @ http://127.0.0.1:8000/frontend/app.js?v=1.0.3:30
+[   40669ms] [LOG] API [GET] http://127.0.0.1:8000/api/admin/rewards - Status: 200 @ http://127.0.0.1:8000/frontend/app.js?v=1.0.3:30
+[   40671ms] [LOG] API [GET] http://127.0.0.1:8000/api/admin/assistant - Status: 200 @ http://127.0.0.1:8000/frontend/app.js?v=1.0.3:30
+[   40703ms] [LOG] API [GET] http://127.0.0.1:8000/api/dashboard/recent-bills?limit=5 - Status: 200 @ http://127.0.0.1:8000/frontend/app.js?v=1.0.3:30
+[   40708ms] [LOG] API [GET] http://127.0.0.1:8000/api/dashboard/stats - Status: 200 @ http://127.0.0.1:8000/frontend/app.js?v=1.0.3:30
+[   40716ms] [LOG] API [GET] http://127.0.0.1:8000/api/customers?limit=100 - Status: 200 @ http://127.0.0.1:8000/frontend/app.js?v=1.0.3:30
+[   40722ms] [ERROR] Failed to load fresh admin dashboard data: ReferenceError: processAndRenderLeads is not defined
+    at _hydrateAdminDashboardUI (http://127.0.0.1:8000/frontend/app.js?v=1.0.3:6492:5)
+    at http://127.0.0.1:8000/frontend/app.js?v=1.0.3:6384:9 @ http://127.0.0.1:8000/frontend/app.js?v=1.0.3:6390
+[   43717ms] [LOG] API [GET] http://127.0.0.1:8000/api/admin/overview - Fetching... @ http://127.0.0.1:8000/frontend/app.js?v=1.0.3:26
+[   43717ms] [LOG] API [GET] http://127.0.0.1:8000/api/admin/users - Fetching... @ http://127.0.0.1:8000/frontend/app.js?v=1.0.3:26
+[   43717ms] [LOG] API [GET] http://127.0.0.1:8000/api/admin/rewards - Fetching... @ http://127.0.0.1:8000/frontend/app.js?v=1.0.3:26
+[   43718ms] [LOG] API [GET] http://127.0.0.1:8000/api/admin/assistant - Fetching... @ http://127.0.0.1:8000/frontend/app.js?v=1.0.3:26
+[   43718ms] [LOG] API [GET] http://127.0.0.1:8000/api/admin/activity - Fetching... @ http://127.0.0.1:8000/frontend/app.js?v=1.0.3:26
+[   43718ms] [LOG] API [GET] http://127.0.0.1:8000/api/dashboard/stats - Fetching... @ http://127.0.0.1:8000/frontend/app.js?v=1.0.3:26
+[   43718ms] [LOG] API [GET] http://127.0.0.1:8000/api/dashboard/recent-bills?limit=5 - Fetching... @ http://127.0.0.1:8000/frontend/app.js?v=1.0.3:26
+[   43719ms] [LOG] API [GET] http://127.0.0.1:8000/api/customers?limit=100 - Fetching... @ http://127.0.0.1:8000/frontend/app.js?v=1.0.3:26
+[   43730ms] [LOG] API [GET] http://127.0.0.1:8000/api/admin/overview - Status: 200 @ http://127.0.0.1:8000/frontend/app.js?v=1.0.3:30
+[   43733ms] [LOG] API [GET] http://127.0.0.1:8000/api/admin/rewards - Status: 200 @ http://127.0.0.1:8000/frontend/app.js?v=1.0.3:30
+[   43733ms] [LOG] API [GET] http://127.0.0.1:8000/api/admin/users - Status: 200 @ http://127.0.0.1:8000/frontend/app.js?v=1.0.3:30
+[   43734ms] [LOG] API [GET] http://127.0.0.1:8000/api/admin/assistant - Status: 200 @ http://127.0.0.1:8000/frontend/app.js?v=1.0.3:30
+[   43736ms] [LOG] API [GET] http://127.0.0.1:8000/api/admin/activity - Status: 200 @ http://127.0.0.1:8000/frontend/app.js?v=1.0.3:30
+[   43756ms] [LOG] API [GET] http://127.0.0.1:8000/api/dashboard/recent-bills?limit=5 - Status: 200 @ http://127.0.0.1:8000/frontend/app.js?v=1.0.3:30
+[   43771ms] [LOG] API [GET] http://127.0.0.1:8000/api/dashboard/stats - Status: 200 @ http://127.0.0.1:8000/frontend/app.js?v=1.0.3:30
+[   43772ms] [LOG] API [GET] http://127.0.0.1:8000/api/customers?limit=100 - Status: 200 @ http://127.0.0.1:8000/frontend/app.js?v=1.0.3:30
+[   43774ms] [ERROR] Failed to load fresh admin dashboard data: ReferenceError: processAndRenderLeads is not defined
+    at _hydrateAdminDashboardUI (http://127.0.0.1:8000/frontend/app.js?v=1.0.3:6492:5)
+    at http://127.0.0.1:8000/frontend/app.js?v=1.0.3:6384:9 @ http://127.0.0.1:8000/frontend/app.js?v=1.0.3:6390
+[   43775ms] [WARNING] Cached data parse failure: ReferenceError: processAndRenderLeads is not defined
+    at _hydrateAdminDashboardUI (http://127.0.0.1:8000/frontend/app.js?v=1.0.3:6492:5)
+    at http://127.0.0.1:8000/frontend/app.js?v=1.0.3:6406:13 @ http://127.0.0.1:8000/frontend/app.js?v=1.0.3:6421
+[   44028ms] [LOG] API [GET] http://127.0.0.1:8000/api/admin/overview - Fetching... @ http://127.0.0.1:8000/frontend/app.js?v=1.0.3:26
+[   44028ms] [LOG] API [GET] http://127.0.0.1:8000/api/admin/users - Fetching... @ http://127.0.0.1:8000/frontend/app.js?v=1.0.3:26
+[   44028ms] [LOG] API [GET] http://127.0.0.1:8000/api/admin/rewards - Fetching... @ http://127.0.0.1:8000/frontend/app.js?v=1.0.3:26
+[   44029ms] [LOG] API [GET] http://127.0.0.1:8000/api/admin/assistant - Fetching... @ http://127.0.0.1:8000/frontend/app.js?v=1.0.3:26
+[   44029ms] [LOG] API [GET] http://127.0.0.1:8000/api/admin/activity - Fetching... @ http://127.0.0.1:8000/frontend/app.js?v=1.0.3:26
+[   44029ms] [LOG] API [GET] http://127.0.0.1:8000/api/dashboard/stats - Fetching... @ http://127.0.0.1:8000/frontend/app.js?v=1.0.3:26
+[   44029ms] [LOG] API [GET] http://127.0.0.1:8000/api/dashboard/recent-bills?limit=5 - Fetching... @ http://127.0.0.1:8000/frontend/app.js?v=1.0.3:26
+[   44030ms] [LOG] API [GET] http://127.0.0.1:8000/api/customers?limit=100 - Fetching... @ http://127.0.0.1:8000/frontend/app.js?v=1.0.3:26
+[   44039ms] [LOG] API [GET] http://127.0.0.1:8000/api/admin/overview - Status: 200 @ http://127.0.0.1:8000/frontend/app.js?v=1.0.3:30
+[   44039ms] [LOG] API [GET] http://127.0.0.1:8000/api/admin/rewards - Status: 200 @ http://127.0.0.1:8000/frontend/app.js?v=1.0.3:30
+[   44040ms] [LOG] API [GET] http://127.0.0.1:8000/api/admin/users - Status: 200 @ http://127.0.0.1:8000/frontend/app.js?v=1.0.3:30
+[   44042ms] [LOG] API [GET] http://127.0.0.1:8000/api/admin/activity - Status: 200 @ http://127.0.0.1:8000/frontend/app.js?v=1.0.3:30
+[   44042ms] [LOG] API [GET] http://127.0.0.1:8000/api/admin/assistant - Status: 200 @ http://127.0.0.1:8000/frontend/app.js?v=1.0.3:30
+[   44056ms] [LOG] API [GET] http://127.0.0.1:8000/api/dashboard/recent-bills?limit=5 - Status: 200 @ http://127.0.0.1:8000/frontend/app.js?v=1.0.3:30
+[   44066ms] [LOG] API [GET] http://127.0.0.1:8000/api/dashboard/stats - Status: 200 @ http://127.0.0.1:8000/frontend/app.js?v=1.0.3:30
+[   44070ms] [LOG] API [GET] http://127.0.0.1:8000/api/customers?limit=100 - Status: 200 @ http://127.0.0.1:8000/frontend/app.js?v=1.0.3:30
+[   44072ms] [ERROR] Failed to load fresh admin dashboard data: ReferenceError: processAndRenderLeads is not defined
+    at _hydrateAdminDashboardUI (http://127.0.0.1:8000/frontend/app.js?v=1.0.3:6492:5)
+    at http://127.0.0.1:8000/frontend/app.js?v=1.0.3:6384:9 @ http://127.0.0.1:8000/frontend/app.js?v=1.0.3:6390
+[   44072ms] [WARNING] Cached data parse failure: ReferenceError: processAndRenderLeads is not defined
+    at _hydrateAdminDashboardUI (http://127.0.0.1:8000/frontend/app.js?v=1.0.3:6492:5)
+    at http://127.0.0.1:8000/frontend/app.js?v=1.0.3:6406:13 @ http://127.0.0.1:8000/frontend/app.js?v=1.0.3:6421
+[   44244ms] [LOG] API [GET] http://127.0.0.1:8000/api/admin/overview - Fetching... @ http://127.0.0.1:8000/frontend/app.js?v=1.0.3:26
+[   44244ms] [LOG] API [GET] http://127.0.0.1:8000/api/admin/users - Fetching... @ http://127.0.0.1:8000/frontend/app.js?v=1.0.3:26
+[   44244ms] [LOG] API [GET] http://127.0.0.1:8000/api/admin/rewards - Fetching... @ http://127.0.0.1:8000/frontend/app.js?v=1.0.3:26
+[   44244ms] [LOG] API [GET] http://127.0.0.1:8000/api/admin/assistant - Fetching... @ http://127.0.0.1:8000/frontend/app.js?v=1.0.3:26
+[   44245ms] [LOG] API [GET] http://127.0.0.1:8000/api/admin/activity - Fetching... @ http://127.0.0.1:8000/frontend/app.js?v=1.0.3:26
+[   44245ms] [LOG] API [GET] http://127.0.0.1:8000/api/dashboard/stats - Fetching... @ http://127.0.0.1:8000/frontend/app.js?v=1.0.3:26
+[   44245ms] [LOG] API [GET] http://127.0.0.1:8000/api/dashboard/recent-bills?limit=5 - Fetching... @ http://127.0.0.1:8000/frontend/app.js?v=1.0.3:26
+[   44245ms] [LOG] API [GET] http://127.0.0.1:8000/api/customers?limit=100 - Fetching... @ http://127.0.0.1:8000/frontend/app.js?v=1.0.3:26
+[   44256ms] [LOG] API [GET] http://127.0.0.1:8000/api/admin/overview - Status: 200 @ http://127.0.0.1:8000/frontend/app.js?v=1.0.3:30
+[   44258ms] [LOG] API [GET] http://127.0.0.1:8000/api/admin/rewards - Status: 200 @ http://127.0.0.1:8000/frontend/app.js?v=1.0.3:30
+[   44258ms] [LOG] API [GET] http://127.0.0.1:8000/api/admin/users - Status: 200 @ http://127.0.0.1:8000/frontend/app.js?v=1.0.3:30
+[   44260ms] [LOG] API [GET] http://127.0.0.1:8000/api/admin/activity - Status: 200 @ http://127.0.0.1:8000/frontend/app.js?v=1.0.3:30
+[   44261ms] [LOG] API [GET] http://127.0.0.1:8000/api/admin/assistant - Status: 200 @ http://127.0.0.1:8000/frontend/app.js?v=1.0.3:30
+[   44272ms] [LOG] API [GET] http://127.0.0.1:8000/api/dashboard/recent-bills?limit=5 - Status: 200 @ http://127.0.0.1:8000/frontend/app.js?v=1.0.3:30
+[   44281ms] [LOG] API [GET] http://127.0.0.1:8000/api/dashboard/stats - Status: 200 @ http://127.0.0.1:8000/frontend/app.js?v=1.0.3:30
+[   44286ms] [LOG] API [GET] http://127.0.0.1:8000/api/customers?limit=100 - Status: 200 @ http://127.0.0.1:8000/frontend/app.js?v=1.0.3:30
+[   44288ms] [ERROR] Failed to load fresh admin dashboard data: ReferenceError: processAndRenderLeads is not defined
+    at _hydrateAdminDashboardUI (http://127.0.0.1:8000/frontend/app.js?v=1.0.3:6492:5)
+    at http://127.0.0.1:8000/frontend/app.js?v=1.0.3:6384:9 @ http://127.0.0.1:8000/frontend/app.js?v=1.0.3:6390
+[   44289ms] [WARNING] Cached data parse failure: ReferenceError: processAndRenderLeads is not defined
+    at _hydrateAdminDashboardUI (http://127.0.0.1:8000/frontend/app.js?v=1.0.3:6492:5)
+    at http://127.0.0.1:8000/frontend/app.js?v=1.0.3:6406:13 @ http://127.0.0.1:8000/frontend/app.js?v=1.0.3:6421
+[   44460ms] [LOG] API [GET] http://127.0.0.1:8000/api/admin/overview - Fetching... @ http://127.0.0.1:8000/frontend/app.js?v=1.0.3:26
+[   44461ms] [LOG] API [GET] http://127.0.0.1:8000/api/admin/users - Fetching... @ http://127.0.0.1:8000/frontend/app.js?v=1.0.3:26
+[   44461ms] [LOG] API [GET] http://127.0.0.1:8000/api/admin/rewards - Fetching... @ http://127.0.0.1:8000/frontend/app.js?v=1.0.3:26
+[   44461ms] [LOG] API [GET] http://127.0.0.1:8000/api/admin/assistant - Fetching... @ http://127.0.0.1:8000/frontend/app.js?v=1.0.3:26
+[   44461ms] [LOG] API [GET] http://127.0.0.1:8000/api/admin/activity - Fetching... @ http://127.0.0.1:8000/frontend/app.js?v=1.0.3:26
+[   44461ms] [LOG] API [GET] http://127.0.0.1:8000/api/dashboard/stats - Fetching... @ http://127.0.0.1:8000/frontend/app.js?v=1.0.3:26
+[   44462ms] [LOG] API [GET] http://127.0.0.1:8000/api/dashboard/recent-bills?limit=5 - Fetching... @ http://127.0.0.1:8000/frontend/app.js?v=1.0.3:26
+[   44462ms] [LOG] API [GET] http://127.0.0.1:8000/api/customers?limit=100 - Fetching... @ http://127.0.0.1:8000/frontend/app.js?v=1.0.3:26
+[   44473ms] [LOG] API [GET] http://127.0.0.1:8000/api/admin/overview - Status: 200 @ http://127.0.0.1:8000/frontend/app.js?v=1.0.3:30
+[   44473ms] [LOG] API [GET] http://127.0.0.1:8000/api/admin/users - Status: 200 @ http://127.0.0.1:8000/frontend/app.js?v=1.0.3:30
+[   44474ms] [LOG] API [GET] http://127.0.0.1:8000/api/admin/assistant - Status: 200 @ http://127.0.0.1:8000/frontend/app.js?v=1.0.3:30
+[   44475ms] [LOG] API [GET] http://127.0.0.1:8000/api/admin/rewards - Status: 200 @ http://127.0.0.1:8000/frontend/app.js?v=1.0.3:30
+[   44476ms] [LOG] API [GET] http://127.0.0.1:8000/api/admin/activity - Status: 200 @ http://127.0.0.1:8000/frontend/app.js?v=1.0.3:30
+[   44491ms] [LOG] API [GET] http://127.0.0.1:8000/api/dashboard/recent-bills?limit=5 - Status: 200 @ http://127.0.0.1:8000/frontend/app.js?v=1.0.3:30
+[   44501ms] [LOG] API [GET] http://127.0.0.1:8000/api/dashboard/stats - Status: 200 @ http://127.0.0.1:8000/frontend/app.js?v=1.0.3:30
+[   44505ms] [LOG] API [GET] http://127.0.0.1:8000/api/customers?limit=100 - Status: 200 @ http://127.0.0.1:8000/frontend/app.js?v=1.0.3:30
+[   44509ms] [ERROR] Failed to load fresh admin dashboard data: ReferenceError: processAndRenderLeads is not defined
+    at _hydrateAdminDashboardUI (http://127.0.0.1:8000/frontend/app.js?v=1.0.3:6492:5)
+    at http://127.0.0.1:8000/frontend/app.js?v=1.0.3:6384:9 @ http://127.0.0.1:8000/frontend/app.js?v=1.0.3:6390
+[   44510ms] [WARNING] Cached data parse failure: ReferenceError: processAndRenderLeads is not defined
+    at _hydrateAdminDashboardUI (http://127.0.0.1:8000/frontend/app.js?v=1.0.3:6492:5)
+    at http://127.0.0.1:8000/frontend/app.js?v=1.0.3:6406:13 @ http://127.0.0.1:8000/frontend/app.js?v=1.0.3:6421
+[   60183ms] [LOG] API [GET] http://127.0.0.1:8000/api/crm/followups - Fetching... @ http://127.0.0.1:8000/frontend/app.js?v=1.0.3:26
+[   60219ms] [LOG] API [GET] http://127.0.0.1:8000/api/crm/followups - Status: 200 @ http://127.0.0.1:8000/frontend/app.js?v=1.0.3:30

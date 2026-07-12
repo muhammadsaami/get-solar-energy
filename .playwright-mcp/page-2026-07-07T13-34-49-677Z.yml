@@ -1,0 +1,416 @@
+- generic [active] [ref=f1e1]:
+  - generic [ref=f1e2]:
+    - complementary [ref=f1e3]:
+      - button "Collapse Sidebar" [ref=f1e4] [cursor=pointer]:
+        - img [ref=f1e5]
+      - generic [ref=f1e7]:
+        - img [ref=f1e9]:
+          - generic [ref=f1e20]: G
+        - generic [ref=f1e21]:
+          - generic [ref=f1e22]: GET SOLAR ENERGY
+          - generic [ref=f1e23]: SOLAR INTELLIGENCE PLATFORM
+      - navigation [ref=f1e24]:
+        - list [ref=f1e25]:
+          - listitem:
+            - generic: Customer Tools
+          - listitem [ref=f1e26]:
+            - link "Dashboard Dashboard" [ref=f1e27] [cursor=pointer]:
+              - /url: "#"
+              - img [ref=f1e28]
+              - generic [ref=f1e30]: Dashboard
+              - text: Dashboard
+          - listitem [ref=f1e31]:
+            - link "Bill Analyzer Bill Analyzer" [ref=f1e32] [cursor=pointer]:
+              - /url: "#"
+              - img [ref=f1e33]
+              - generic [ref=f1e35]: Bill Analyzer
+              - text: Bill Analyzer
+          - listitem [ref=f1e36]:
+            - link "Roof Analysis Roof Analysis" [ref=f1e37] [cursor=pointer]:
+              - /url: "#"
+              - img [ref=f1e38]
+              - generic [ref=f1e40]: Roof Analysis
+              - text: Roof Analysis
+          - listitem [ref=f1e41]:
+            - link "ROI Calculator ROI Calculator" [ref=f1e42] [cursor=pointer]:
+              - /url: "#"
+              - img [ref=f1e43]
+              - generic [ref=f1e45]: ROI Calculator
+              - text: ROI Calculator
+          - listitem [ref=f1e46]:
+            - link "AI Assistant AI Assistant" [ref=f1e47] [cursor=pointer]:
+              - /url: "#"
+              - img [ref=f1e48]
+              - generic [ref=f1e50]: AI Assistant
+              - text: AI Assistant
+          - listitem:
+            - generic: Engagement
+          - listitem [ref=f1e51]:
+            - link "Rewards & Referrals Rewards & Referrals" [ref=f1e52] [cursor=pointer]:
+              - /url: "#"
+              - img [ref=f1e53]
+              - generic [ref=f1e55]: Rewards & Referrals
+              - text: Rewards & Referrals
+          - listitem [ref=f1e56]:
+            - link "Reports Center Reports Center" [ref=f1e57] [cursor=pointer]:
+              - /url: "#"
+              - img [ref=f1e58]
+              - generic [ref=f1e60]: Reports Center
+              - text: Reports Center
+          - listitem [ref=f1e61]:
+            - link "Activity Center Activity Center" [ref=f1e62] [cursor=pointer]:
+              - /url: "#"
+              - img [ref=f1e63]
+              - generic [ref=f1e65]: Activity Center
+              - text: Activity Center
+          - listitem [ref=f1e66]:
+            - link "System Performance System Performance" [ref=f1e67] [cursor=pointer]:
+              - /url: "#"
+              - img [ref=f1e68]
+              - generic [ref=f1e70]: System Performance
+              - text: System Performance
+          - listitem:
+            - generic: Maintenance
+          - listitem [ref=f1e71]:
+            - link "AMC AMC" [ref=f1e72] [cursor=pointer]:
+              - /url: "#"
+              - img [ref=f1e73]
+              - generic [ref=f1e75]: AMC
+              - text: AMC
+          - listitem:
+            - generic: Operations
+          - listitem [ref=f1e76]:
+            - link "Site Survey Site Survey" [ref=f1e77] [cursor=pointer]:
+              - /url: "#"
+              - img [ref=f1e78]
+              - generic [ref=f1e80]: Site Survey
+              - text: Site Survey
+          - listitem:
+            - generic: Platform
+          - listitem [ref=f1e81]:
+            - link "Settings Settings" [ref=f1e82] [cursor=pointer]:
+              - /url: "#"
+              - img [ref=f1e83]
+              - generic [ref=f1e85]: Settings
+              - text: Settings
+          - listitem [ref=f1e86]:
+            - link "Vendor Portal Vendor Portal" [ref=f1e87] [cursor=pointer]:
+              - /url: "#"
+              - img [ref=f1e88]
+              - generic [ref=f1e90]: Vendor Portal
+              - text: Vendor Portal
+          - text: Admin Dashboard CRM & Leads Audit & Monitoring Business Intelligence
+      - generic [ref=f1e91]:
+        - generic [ref=f1e92]:
+          - img [ref=f1e93]
+          - heading "Make Every Sunbeam Count" [level=4] [ref=f1e105]
+          - paragraph [ref=f1e106]: Switch to solar. Save more. Live better.
+          - button "Explore Solar" [ref=f1e107] [cursor=pointer]:
+            - generic [ref=f1e108]: Explore Solar
+            - img [ref=f1e109]
+        - generic [ref=f1e111]:
+          - generic [ref=f1e112]:
+            - img [ref=f1e113]
+            - generic [ref=f1e115]: GET Solar Pro
+          - paragraph [ref=f1e116]: Pro Plan · Valid till 28 Feb 2026
+          - generic [ref=f1e118]:
+            - generic [ref=f1e119]: Usage Status
+            - generic [ref=f1e120]: 85% Used
+    - main [ref=f1e123]:
+      - generic [ref=f1e124]:
+        - generic [ref=f1e125]:
+          - heading "Good Evening, Muhammad 👋" [level=1] [ref=f1e127]:
+            - text: Good Evening, Muhammad
+            - generic [ref=f1e128]: 👋
+          - generic [ref=f1e129]: Here's what's happening with your solar journey today.
+        - generic [ref=f1e130]:
+          - button "Lucknow" [ref=f1e132] [cursor=pointer]:
+            - img [ref=f1e133]
+            - generic [ref=f1e135]: Lucknow
+            - img [ref=f1e136]
+          - button "Notification indicators panel" [ref=f1e138] [cursor=pointer]:
+            - img [ref=f1e139]
+            - generic [ref=f1e141]: "6"
+          - button "Open profile menu" [ref=f1e142] [cursor=pointer]:
+            - generic [ref=f1e143]: MH
+            - generic [ref=f1e144]:
+              - generic [ref=f1e145]: Muhammad
+              - generic [ref=f1e146]: Standard User
+            - img [ref=f1e147]
+      - generic [ref=f1e149]:
+        - generic [ref=f1e150]:
+          - generic [ref=f1e151]:
+            - generic [ref=f1e152]:
+              - generic [ref=f1e153]:
+                - generic [ref=f1e154]:
+                  - img [ref=f1e155]
+                  - generic [ref=f1e158]: Lucknow
+                - generic [ref=f1e159]:
+                  - img [ref=f1e160]
+                  - generic [ref=f1e163]: Standard User
+                - generic [ref=f1e166]: "Grid Status: Online"
+              - heading "Good Evening, Muhammad" [level=2] [ref=f1e167]
+              - paragraph [ref=f1e168]: Welcome back to GET Solar Energy. Manage your electricity usage, monitor your solar journey, and discover opportunities to reduce your energy costs.
+              - generic [ref=f1e169]:
+                - button "Analyze My Electricity Bill" [ref=f1e170] [cursor=pointer]:
+                  - generic [ref=f1e171]: Analyze My Electricity Bill
+                  - img [ref=f1e172]
+                - button "Check Roof Suitability" [ref=f1e174] [cursor=pointer]:
+                  - generic [ref=f1e175]: Check Roof Suitability
+                  - img [ref=f1e176]
+              - generic [ref=f1e178]:
+                - generic [ref=f1e179]:
+                  - img [ref=f1e180]
+                  - generic [ref=f1e183]: Government Subsidy Assistance
+                - generic [ref=f1e184]:
+                  - img [ref=f1e185]
+                  - generic [ref=f1e188]: Certified Installation Partners
+                - generic [ref=f1e189]:
+                  - img [ref=f1e190]
+                  - generic [ref=f1e192]: End-to-End Solar Lifecycle
+                - generic [ref=f1e193]:
+                  - img [ref=f1e194]
+                  - generic [ref=f1e196]: 25-Year Performance Support
+            - generic [ref=f1e198]:
+              - generic [ref=f1e199]:
+                - generic [ref=f1e200]: Live Summary
+                - generic [ref=f1e201]: Dynamic Sync
+              - generic [ref=f1e202]:
+                - generic [ref=f1e203]:
+                  - generic [ref=f1e204]: Solar Readiness
+                  - generic [ref=f1e205]: Pending Assessment
+                - generic [ref=f1e207]: Pending
+              - generic [ref=f1e209]:
+                - generic [ref=f1e210]:
+                  - generic [ref=f1e211]: Monthly Bill
+                  - generic [ref=f1e212]: Upload your first bill
+                - generic [ref=f1e213]:
+                  - generic [ref=f1e214]: Estimated Savings
+                  - generic [ref=f1e215]: Available after analysis
+                - generic [ref=f1e216]:
+                  - generic [ref=f1e217]: Recommended Size
+                  - generic [ref=f1e218]: Analyze your roof
+                - generic [ref=f1e219]:
+                  - generic [ref=f1e220]: Payback Period
+                  - generic [ref=f1e221]: Calculate ROI
+              - generic [ref=f1e222]:
+                - generic [ref=f1e223]: Your Solar Journey
+                - generic [ref=f1e224]:
+                  - generic [ref=f1e227]: Bill Analysis
+                  - generic [ref=f1e230]: Roof Analysis
+                  - generic [ref=f1e233]: ROI Calculation
+                  - generic [ref=f1e236]: Proposal Generated
+                  - generic [ref=f1e239]: System Installation
+          - region "Key Performance Metrics" [ref=f1e240]:
+            - generic [ref=f1e241]:
+              - generic [ref=f1e242]:
+                - generic [ref=f1e243]: Solar Readiness Score
+                - paragraph [ref=f1e244]: Excellent! Your home is ready for solar.
+                - button "View Details" [ref=f1e245] [cursor=pointer]
+              - generic [ref=f1e246]:
+                - img [ref=f1e247]
+                - generic [ref=f1e250]: 92%
+            - generic [ref=f1e251]:
+              - generic [ref=f1e252]:
+                - generic [ref=f1e253]: Estimated Annual Savings
+                - generic [ref=f1e255]: ₹58,400
+                - generic [ref=f1e256]:
+                  - img [ref=f1e257]
+                  - generic [ref=f1e259]: +18.2% vs last month
+                - img [ref=f1e261]
+              - generic [ref=f1e262]:
+                - generic [ref=f1e263]: Lifetime Savings (25 Years)
+                - generic [ref=f1e265]: ₹14.6 Lakhs
+                - generic [ref=f1e266]:
+                  - img [ref=f1e267]
+                  - generic [ref=f1e269]: Projected returns
+        - region "Solar System Design Metrics" [ref=f1e277]:
+          - generic [ref=f1e278]:
+            - img [ref=f1e280]
+            - generic [ref=f1e282]:
+              - generic [ref=f1e283]: ROI Period
+              - generic [ref=f1e284]: 4.8 Years
+              - generic [ref=f1e285]: Excellent Return
+          - generic [ref=f1e286]:
+            - img [ref=f1e288]
+            - generic [ref=f1e289]:
+              - generic [ref=f1e290]: Carbon Offset
+              - generic [ref=f1e291]: 2.8 Tons
+              - generic [ref=f1e292]: CO₂ Reduced
+          - generic [ref=f1e293]:
+            - img [ref=f1e295]
+            - generic [ref=f1e297]:
+              - generic [ref=f1e298]: System Size
+              - generic [ref=f1e299]: 5.2 kW
+              - generic [ref=f1e300]: Optimal Size
+          - generic [ref=f1e301]:
+            - img [ref=f1e303]
+            - generic [ref=f1e305]:
+              - generic [ref=f1e306]: Energy Independence
+              - generic [ref=f1e307]: 84%
+              - generic [ref=f1e308]: Projected
+        - region "Quick Actions" [ref=f1e309]:
+          - heading "Quick Actions" [level=3] [ref=f1e311]
+          - generic [ref=f1e312]:
+            - generic [ref=f1e313] [cursor=pointer]:
+              - img [ref=f1e316]
+              - generic [ref=f1e318]:
+                - heading "Bill Analyzer" [level=4] [ref=f1e319]
+                - paragraph [ref=f1e320]: Upload your electricity bill and discover your savings potential.
+              - button "Analyze Bill" [ref=f1e321]:
+                - generic [ref=f1e322]: Analyze Bill
+                - img [ref=f1e323]
+            - generic [ref=f1e325] [cursor=pointer]:
+              - img [ref=f1e328]
+              - generic [ref=f1e330]:
+                - heading "Roof Analysis" [level=4] [ref=f1e331]
+                - paragraph [ref=f1e332]: AI + Satellite analysis of your roof for accurate solar estimate.
+              - button "Analyze Roof" [ref=f1e333]:
+                - generic [ref=f1e334]: Analyze Roof
+                - img [ref=f1e335]
+            - generic [ref=f1e337] [cursor=pointer]:
+              - img [ref=f1e340]
+              - generic [ref=f1e342]:
+                - heading "ROI Calculator" [level=4] [ref=f1e343]
+                - paragraph [ref=f1e344]: Calculate returns, savings and payback period instantly.
+              - button "Calculate ROI" [ref=f1e345]:
+                - generic [ref=f1e346]: Calculate ROI
+                - img [ref=f1e347]
+            - generic [ref=f1e349] [cursor=pointer]:
+              - img [ref=f1e352]
+              - generic [ref=f1e353]:
+                - heading "AI Solar Assistant" [level=4] [ref=f1e354]
+                - paragraph [ref=f1e355]: Ask anything about solar energy. Your AI energy expert.
+              - button "Ask AI" [ref=f1e356]:
+                - generic [ref=f1e357]: Ask AI
+                - img [ref=f1e358]
+            - generic [ref=f1e360] [cursor=pointer]:
+              - img [ref=f1e363]
+              - generic [ref=f1e365]:
+                - heading "Rewards & Referrals" [level=4] [ref=f1e366]
+                - paragraph [ref=f1e367]: Earn rewards and help your friends switch to solar.
+              - button "Invite & Earn" [ref=f1e368]:
+                - generic [ref=f1e369]: Invite & Earn
+                - img [ref=f1e370]
+        - generic [ref=f1e372]:
+          - generic [ref=f1e373]:
+            - generic [ref=f1e374]:
+              - heading "Energy Production" [level=4] [ref=f1e375]
+              - combobox "Energy Production Timeline Selector" [ref=f1e376] [cursor=pointer]:
+                - option "This Month" [selected]
+                - option "Last Month"
+            - generic [ref=f1e377]:
+              - text: Total Generated
+              - generic [ref=f1e378]:
+                - generic [ref=f1e379]: 486 kWh
+                - generic [ref=f1e380]: ✓ +22.5% vs last month
+          - generic [ref=f1e383]:
+            - generic [ref=f1e384]:
+              - heading "Electricity Consumption" [level=4] [ref=f1e385]
+              - combobox "Electricity Consumption Timeline Selector" [ref=f1e386] [cursor=pointer]:
+                - option "This Month" [selected]
+                - option "Last Month"
+            - generic [ref=f1e387]:
+              - text: Total Consumed
+              - generic [ref=f1e388]:
+                - generic [ref=f1e389]: 362 kWh
+                - generic [ref=f1e390]: ✓ -12.4% vs last month
+          - generic [ref=f1e393]:
+            - generic [ref=f1e394]:
+              - heading "Government Subsidy" [level=4] [ref=f1e395]
+              - generic [ref=f1e396]: Eligible for Subsidy
+            - generic [ref=f1e397]:
+              - generic [ref=f1e398]: ₹78,000
+              - text: You are eligible for central and state government subsidy
+            - img "Indian Parliament minimal illustration showing national government subsidy program representation" [ref=f1e399]
+            - button "Check Eligibility" [ref=f1e400] [cursor=pointer]:
+              - generic [ref=f1e401]: Check Eligibility
+              - img [ref=f1e402]
+          - generic [ref=f1e404]:
+            - heading "System Performance" [level=4] [ref=f1e406]
+            - generic [ref=f1e407]:
+              - img [ref=f1e408]
+              - generic [ref=f1e411]: 88% Excellent
+            - generic [ref=f1e412]:
+              - generic [ref=f1e414]:
+                - generic [ref=f1e415]: Inverter
+                - generic [ref=f1e416]: 98%
+              - generic [ref=f1e419]:
+                - generic [ref=f1e420]: Panels
+                - generic [ref=f1e421]: 91%
+              - generic [ref=f1e424]:
+                - generic [ref=f1e425]: Battery
+                - generic [ref=f1e426]: 76%
+              - generic [ref=f1e429]:
+                - generic [ref=f1e430]: Wiring
+                - generic [ref=f1e431]: 87%
+            - button "View All Insights" [ref=f1e433] [cursor=pointer]:
+              - generic [ref=f1e434]: View All Insights
+              - img [ref=f1e435]
+        - generic [ref=f1e437]:
+          - generic [ref=f1e438]:
+            - generic [ref=f1e439]:
+              - heading "What Our Customers Say" [level=4] [ref=f1e440]
+              - generic [ref=f1e441]:
+                - img [ref=f1e442]
+                - img [ref=f1e444]
+                - img [ref=f1e446]
+                - img [ref=f1e448]
+                - img [ref=f1e450]
+            - paragraph [ref=f1e452]: "\"GET Solar Energy made going solar super simple. Saved over ₹1.8 Lakhs in the first year!\""
+            - generic [ref=f1e453]:
+              - generic [ref=f1e454]:
+                - img "Arjun Mehta test headshot picture" [ref=f1e455]
+                - generic [ref=f1e456]:
+                  - generic [ref=f1e457]: Arjun Mehta
+                  - generic [ref=f1e458]: Jaipur
+              - generic [ref=f1e459]:
+                - button "Previous Testimonial" [ref=f1e460] [cursor=pointer]:
+                  - img [ref=f1e461]
+                - button "Next Testimonial" [ref=f1e463] [cursor=pointer]:
+                  - img [ref=f1e464]
+          - generic [ref=f1e466]:
+            - generic [ref=f1e467]:
+              - heading "Your roof has potential. Your future has more." [level=4] [ref=f1e468]:
+                - text: Your roof has potential.
+                - text: Your future has more.
+              - paragraph [ref=f1e469]: Take the next step towards energy independence.
+            - img "Solar roof installation banner details" [ref=f1e470]
+            - button "Get My Solar Plan" [ref=f1e471] [cursor=pointer]:
+              - generic [ref=f1e472]: Get My Solar Plan
+              - img [ref=f1e473]
+          - generic [ref=f1e475]:
+            - generic [ref=f1e476]:
+              - heading "Refer & Earn" [level=4] [ref=f1e477]
+              - paragraph [ref=f1e478]: Invite your friends and earn exciting rewards when they switch to solar.
+            - generic [ref=f1e479]:
+              - generic [ref=f1e480]: MUH9CA25
+              - button "Copy referral promo code to clipboard" [ref=f1e481] [cursor=pointer]:
+                - img [ref=f1e482]
+            - img "Clean minimalist white gift box with green ribbon" [ref=f1e485]
+  - generic:
+    - generic:
+      - button "Close ROI calculator modal":
+        - img
+      - heading "Solar Savings Calculator" [level=2]
+      - paragraph: Enter your average electricity costs to compute estimated system costs and ROI timeline.
+      - generic:
+        - generic:
+          - generic: Current Monthly Bill
+          - generic:
+            - generic: ₹
+            - spinbutton "Current Monthly Bill": "6500"
+        - generic:
+          - generic: Average Daily Sun Hours
+          - generic:
+            - generic: ☼
+            - spinbutton "Average Daily Sun Hours": "5"
+        - generic:
+          - generic: System Size (kW)
+          - generic:
+            - generic: ⚡
+            - spinbutton "System Size (kW)": "3.0"
+        - button "Calculate ROI"
+  - generic:
+    - img
+    - generic: Referral code copied!

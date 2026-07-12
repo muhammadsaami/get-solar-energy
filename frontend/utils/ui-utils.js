@@ -333,3 +333,75 @@ const ComponentState = (function () {
 
   return { showLoading, showError, showEmpty, showSuccess, showContent };
 })();
+
+
+/* ── Phase 13.5B: Keyboard Navigation & Reduced Motion ──────────── */
+
+/**
+ * Initialize keyboard navigation for action cards.
+ * Adds Enter/Space support to elements with role="button".
+ */
+function initKeyboardNavigation() {
+  document.addEventListener('keydown', function(e) {
+    const target = e.target;
+    if (!target) return;
+
+    // Handle action cards with role="button"
+    if (target.classList.contains('action-card') && target.getAttribute('role') === 'button') {
+      if (e.key === 'Enter' || e.key === ' ') {
+        e.preventDefault();
+        target.click();
+      }
+    }
+
+    // Handle profile pill (div with role="button")
+    if (target.id === 'profilePill' && (e.key === 'Enter' || e.key === ' ')) {
+      e.preventDefault();
+      target.click();
+    }
+
+    // Escape closes drawers and modals
+    if (e.key === 'Escape') {
+      const openDrawer = document.querySelector('.drawer-overlay[style*="display: block"], .drawer-overlay.active, .ai-explain-drawer.open');
+      if (openDrawer) {
+        openDrawer.style.display = 'none';
+        openDrawer.classList.remove('active', 'open');
+      }
+      const openModal = document.querySelector('.modal-overlay[style*="display: flex"]');
+      if (openModal) {
+        openModal.style.display = 'none';
+      }
+    }
+  });
+}
+
+/**
+ * Detect reduced motion preference.
+ * @returns {boolean} true if user prefers reduced motion
+ */
+function prefersReducedMotion() {
+  return window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+}
+
+/**
+ * Animate a numeric counter, respecting reduced motion.
+ * @param {HTMLElement} element - Target element
+ * @param {number} start - Start value
+ * @param {number} end - End value
+ * @param {number} duration - Animation duration in ms
+ * @param {string} suffix - Optional suffix (e.g., '%', 'kW')
+ */
+function animateValueSafe(element, start, end, duration, suffix) {
+  if (prefersReducedMotion()) {
+    element.textContent = end.toLocaleString() + (suffix || '');
+    return;
+  }
+  animateValue(element, start, end, duration, suffix);
+}
+
+// Initialize keyboard navigation on load
+if (document.readyState === 'loading') {
+  document.addEventListener('DOMContentLoaded', initKeyboardNavigation);
+} else {
+  initKeyboardNavigation();
+}

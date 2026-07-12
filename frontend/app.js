@@ -10404,8 +10404,9 @@ function initAuditMonitoring() {
 
 function refreshAuditDashboardUI() {
   // 1. Fetch backend health and failed logins
-  const host = API_BASE;
-  safeFetch(`${ host } /api/admin / overview`)
+  const url = `${API_BASE}/api/admin/overview`;
+  console.log("Audit URL:", url);
+  safeFetch(url)
     .then(res => res.json())
     .then(data => {
       if (data.success) {
@@ -10423,6 +10424,11 @@ function refreshAuditDashboardUI() {
         
         // Populate health checklist
         hydrateHealthChecklist(data.health);
+        
+        const activeUsersEl = document.getElementById('auditKpiActiveUsers');
+        if (activeUsersEl) {
+          activeUsersEl.textContent = data.active_users || 0;
+        }
       }
       // Trigger table and analytics rendering
       renderAuditLogsTable();
@@ -10681,7 +10687,7 @@ function renderAuditLogsTable() {
         platformHealth = Math.max(10, Math.min(100, platformHealth));
 
         // Executive summary UI hydration
-        const scoreVal = document.getElementById('summaryPlatformHealth');
+        const scoreVal = document.getElementById('auditKpiHealthScore');
         if (scoreVal) scoreVal.textContent = `${platformHealth}%`;
         const scoreTrack = document.getElementById('summaryPlatformHealthTrack');
         if (scoreTrack) scoreTrack.style.width = `${platformHealth}%`;
@@ -10694,10 +10700,10 @@ function renderAuditLogsTable() {
           else scoreCard.style.setProperty('--card-theme', '231, 76, 60');
         }
 
-        const summaryTotalEvents = document.getElementById('summaryTotalEvents');
+        const summaryTotalEvents = document.getElementById('auditKpiTotalEvents');
         if (summaryTotalEvents) summaryTotalEvents.textContent = totalAuditEvents;
 
-        const summaryHighRisk = document.getElementById('summaryHighRisk');
+        const summaryHighRisk = document.getElementById('auditKpiHighRisk');
         if (summaryHighRisk) summaryHighRisk.textContent = highRiskCount;
 
         // Hydrate Error monitor card
@@ -15433,8 +15439,9 @@ async function _mlopsLoadDashboard() {
     var metricsResp = await _mlopsFetch('/api/mlops/metrics');
     if (metricsResp.success) {
       var m = metricsResp.data;
-      var avgLat = m.latency && m.latency.mean ? Math.round(m.latency.mean) : 0;
+      var avgLat = m.average_latency_ms ? Math.round(m.average_latency_ms) : (m.latency_stats && m.latency_stats.avg_ms ? Math.round(m.latency_stats.avg_ms) : 0);
       document.getElementById('mlopsKpiLatency').textContent = avgLat + 'ms';
+      _mlopsRenderMetricsPanel(m);
     }
   } catch(e) { document.getElementById('mlopsKpiLatency').textContent = '0ms'; }
 
@@ -15497,6 +15504,26 @@ function _mlopsRenderHealthPanel(h) {
   }
   if (h.timestamp) rows.push('<div style="margin-top:12px;color:var(--text-muted);font-size:9px;">Last check: ' + _mlopsFormatTimestamp(h.timestamp) + '</div>');
   el.innerHTML = rows.join('') || '<p style="color:var(--text-muted);">No health data available.</p>';
+}
+
+function _mlopsRenderMetricsPanel(m) {
+  var el = document.getElementById('mlopsMetricsPanel');
+  if (!el) return;
+  var rows = [];
+  rows.push('<div style="display:flex;justify-content:space-between;margin-bottom:4px;"><span>Total Predictions</span><span style="color:#fff;font-weight:700;">' + (m.total_predictions || 0) + '</span></div>');
+  rows.push('<div style="display:flex;justify-content:space-between;margin-bottom:4px;"><span>Successful</span><span style="color:#10b981;font-weight:700;">' + (m.successful_predictions || 0) + '</span></div>');
+  rows.push('<div style="display:flex;justify-content:space-between;margin-bottom:4px;"><span>Failed</span><span style="color:#ef4444;font-weight:700;">' + (m.failed_predictions || 0) + '</span></div>');
+  var successRate = m.success_rate != null ? Math.round(m.success_rate * 100) : 0;
+  rows.push('<div style="display:flex;justify-content:space-between;margin-bottom:4px;margin-top:8px;"><span>Success Rate</span><span style="color:#fff;font-weight:700;">' + successRate + '%</span></div>');
+  if (m.p95_latency_ms != null) {
+    rows.push('<div style="display:flex;justify-content:space-between;margin-bottom:4px;"><span>P95 Latency</span><span style="color:#fff;font-weight:700;">' + Math.round(m.p95_latency_ms) + 'ms</span></div>');
+  } else if (m.latency_stats && m.latency_stats.p95_ms) {
+    rows.push('<div style="display:flex;justify-content:space-between;margin-bottom:4px;"><span>P95 Latency</span><span style="color:#fff;font-weight:700;">' + Math.round(m.latency_stats.p95_ms) + 'ms</span></div>');
+  }
+  if (m.timestamp) {
+    rows.push('<div style="margin-top:12px;color:var(--text-muted);font-size:9px;">Updated: ' + _mlopsFormatTimestamp(m.timestamp) + '</div>');
+  }
+  el.innerHTML = rows.join('') || '<p style="color:var(--text-muted);">No metrics data available.</p>';
 }
 
 async function _mlopsLoadEvents() {

@@ -24,6 +24,9 @@ import Bills from './pages/Bills';
 import Roof from './pages/Roof';
 import Proposal from './pages/Proposal';
 
+// Vendor pages
+import ProjectTracking from './pages/ProjectTracking';
+
 // Protected Route Guard
 function ProtectedRoute({ children }) {
   const { isAuthenticated, loading } = useAuth();
@@ -78,6 +81,9 @@ function AppRoutes() {
         {/* Account Workspaces (Locked placeholders) */}
         <Route path="/app/account/profile" element={<AppRoute><LockedWorkspace targetStageId="ST-02" /></AppRoute>} />
         <Route path="/app/account/settings" element={<AppRoute><LockedWorkspace targetStageId="ST-02" /></AppRoute>} />
+
+        {/* Vendor Portal */}
+        <Route path="/app/vendor/project-tracking" element={<AppRoute><ProjectTracking /></AppRoute>} />
 
         {/* Fallback redirect */}
         <Route path="*" element={<Navigate to="/" replace />} />

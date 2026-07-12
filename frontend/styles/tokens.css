@@ -67,9 +67,6 @@
   --color-purple-surface:      rgba(124, 93, 250, 0.08);
   --color-purple-rgb:          124, 93, 250;
 
-  /* Cyan — Legacy alias (landing page compat) */
-  --color-cyan:                #17a8e5;
-
   /* ╔═══════════════════════════════════════════════╗
      ║  BACKGROUND SCALE                             ║
      ╚═══════════════════════════════════════════════╝ */
@@ -273,13 +270,6 @@
   --transition-slow:    400ms cubic-bezier(0.4, 0, 0.2, 1);
   --transition-sidebar: 300ms cubic-bezier(0.4, 0, 0.2, 1);
 
-  /* Cinematic / landing page motion tokens */
-  --time-micro:          300ms;
-  --time-reveal:         800ms;
-  --time-transition:     1200ms;
-  --time-camera:         3000ms;
-  --ease-linear-scroll:  linear;
-
   /* ╔═══════════════════════════════════════════════╗
      ║  Z-INDEX SCALE                                ║
      ╚═══════════════════════════════════════════════╝ */
@@ -355,10 +345,8 @@
   --border-radius-sm:        var(--radius-sm);
   --border-radius-md:        var(--radius-md);
   --border-radius-lg:        var(--radius-lg);
-  --bg-input:                rgba(10, 28, 50, 0.85);
 
   /* --- auth.css compat --- */
-  --border-glow:   var(--border-glow);
   --ease:          var(--ease-spring);
   --radius-xl:     20px;
   --radius-2xl:    28px;

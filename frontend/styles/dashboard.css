@@ -122,7 +122,7 @@ body {
   box-shadow: 0 1px 4px rgba(0, 0, 0, 0.15);
   color: rgba(159, 179, 200, 0.65);
   cursor: pointer;
-  transition: background 0.2s ease, filter 0.2s ease, color 0.2s ease;
+  transition: background var(--duration-fast) ease, filter var(--duration-fast) ease, color var(--duration-fast) ease;
 }
 
 .sidebar-collapse-btn:hover {
@@ -140,7 +140,7 @@ body {
   stroke: currentColor;
   fill: none;
   stroke-width: 2px;
-  transition: transform 0.25s ease;
+  transition: transform var(--duration-normal) ease;
   flex-shrink: 0;
 }
 
@@ -233,7 +233,7 @@ body {
   font-size: 12px;
   font-weight: 600;
   padding: 7px 12px;
-  border-radius: 8px;
+  border-radius: var(--radius-sm);
   white-space: nowrap;
   border: 1px solid rgba(255, 255, 255, 0.1);
   box-shadow: 0 8px 24px rgba(0, 0, 0, 0.4);
@@ -259,9 +259,9 @@ body {
   margin-bottom: 12px;
   border-bottom: 1px solid rgba(255, 255, 255, 0.07);
   background: rgba(255, 255, 255, 0.02);
-  border-radius: 12px;
+  border-radius: var(--radius-md);
   flex-shrink: 0;
-  transition: background 0.25s ease;
+  transition: background var(--duration-normal) ease;
 }
 
 .logo-container:hover {
@@ -272,7 +272,7 @@ body {
   width: 44px;
   height: 44px;
   flex-shrink: 0;
-  transition: transform 0.2s ease;
+  transition: transform var(--duration-fast) ease;
 }
 .logo-container:hover .logo-badge {
   transform: scale(1.04);
@@ -567,7 +567,7 @@ body {
     padding: 20px 12px 16px;
     box-shadow: 8px 0 32px rgba(0, 0, 0, 0.5);
     z-index: 300;
-    transition: transform 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+    transition: transform var(--duration-slow) cubic-bezier(0.4, 0, 0.2, 1);
   }
 
   /* Open state — JS adds .sidebar-open to <body> */
@@ -584,7 +584,7 @@ body {
     backdrop-filter: blur(3px);
     z-index: 299;
     opacity: 0;
-    transition: opacity 0.3s ease;
+    transition: opacity var(--duration-slow) ease;
   }
   body.sidebar-open .sidebar-mobile-overlay {
     display: block;
@@ -1094,7 +1094,7 @@ body.sidebar-collapsed .main-panel {
   box-shadow: 0 20px 40px rgba(0, 0, 0, 0.4), inset 0 1px 1px rgba(255, 255, 255, 0.1);
   position: relative;
   overflow: hidden;
-  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+  transition: all var(--duration-slow) cubic-bezier(0.4, 0, 0.2, 1);
 }
 
 .live-summary-panel:hover {
@@ -1128,7 +1128,7 @@ body.sidebar-collapsed .main-panel {
   font-size: 9px;
   font-weight: 700;
   padding: 2px 8px;
-  border-radius: 12px;
+  border-radius: var(--radius-md);
   text-transform: uppercase;
   letter-spacing: 0.5px;
   animation: pulseBadge 2s infinite ease-in-out;
@@ -1154,7 +1154,7 @@ body.sidebar-collapsed .main-panel {
   background: rgba(255, 255, 255, 0.02);
   border: 1px solid rgba(255, 255, 255, 0.04);
   border-radius: 10px;
-  transition: all 0.2s ease;
+  transition: all var(--duration-fast) ease;
 }
 
 .summary-item:hover {
@@ -1176,7 +1176,7 @@ body.sidebar-collapsed .main-panel {
   font-weight: 800;
   color: #ffffff;
   letter-spacing: -0.2px;
-  transition: color 0.3s ease;
+  transition: color var(--duration-slow) ease;
 }
 
 /* Metadata Badges styling */
@@ -1251,7 +1251,7 @@ body.sidebar-collapsed .main-panel {
   background: rgba(255, 255, 255, 0.02);
   border: 1px solid rgba(255, 255, 255, 0.04);
   padding: 14px 16px;
-  border-radius: 12px;
+  border-radius: var(--radius-md);
 }
 
 .readiness-header-row {
@@ -1345,7 +1345,7 @@ body.sidebar-collapsed .main-panel {
   align-items: center;
   gap: 10px;
   opacity: 0.45;
-  transition: opacity 0.3s ease;
+  transition: opacity var(--duration-slow) ease;
 }
 
 .checklist-item.completed {
@@ -1361,7 +1361,7 @@ body.sidebar-collapsed .main-panel {
   align-items: center;
   justify-content: center;
   position: relative;
-  transition: all 0.2s ease;
+  transition: all var(--duration-fast) ease;
   background: transparent;
   flex-shrink: 0;
 }
@@ -1384,7 +1384,7 @@ body.sidebar-collapsed .main-panel {
   font-size: 10.5px;
   font-weight: 700;
   color: #94a3b8;
-  transition: color 0.2s ease;
+  transition: color var(--duration-fast) ease;
 }
 
 .checklist-item.completed .check-label {
@@ -1403,7 +1403,7 @@ body.sidebar-collapsed .main-panel {
   color: #ffffff;
   border: none;
   padding: 0 20px;
-  border-radius: 8px;
+  border-radius: var(--radius-sm);
   font-size: 12.5px;
   font-weight: 700;
   cursor: pointer;
@@ -1443,7 +1443,7 @@ body.sidebar-collapsed .main-panel {
   border: 1px solid rgba(255, 255, 255, 0.1);
   color: #ffffff;
   padding: 0 20px;
-  border-radius: 8px;
+  border-radius: var(--radius-sm);
   font-size: 12.5px;
   font-weight: 700;
   cursor: pointer;
@@ -1495,7 +1495,7 @@ body.sidebar-collapsed .main-panel {
   border: 1px solid rgba(255, 255, 255, 0.06);
   padding: 6px 12px;
   border-radius: 30px;
-  transition: all 0.2s ease;
+  transition: all var(--duration-fast) ease;
 }
 
 .trust-pill:hover {
@@ -2367,7 +2367,7 @@ canvas {
   font-weight: 700;
   color: var(--text-secondary);
   padding: 4px 8px;
-  border-radius: 12px;
+  border-radius: var(--radius-md);
   outline: none;
   cursor: pointer;
 }
@@ -2395,7 +2395,7 @@ canvas {
   font-size: 9px;
   font-weight: 700;
   padding: 3px 8px;
-  border-radius: 12px;
+  border-radius: var(--radius-md);
 }
 
 .subsidy-hero-row {
@@ -3513,7 +3513,7 @@ canvas {
   font-size: 10px;
   font-weight: 700;
   cursor: pointer;
-  transition: all 0.2s ease;
+  transition: all var(--duration-fast) ease;
 }
 .table-action-btn:hover {
   background: rgba(23, 168, 229, 0.16);
@@ -3579,7 +3579,7 @@ canvas {
   cursor: pointer;
   font-weight: 600;
   font-size: 12px;
-  transition: all 0.2s ease;
+  transition: all var(--duration-fast) ease;
   white-space: nowrap;
   outline: none;
 }
@@ -3605,7 +3605,7 @@ canvas {
   border-radius: 6px;
   font-size: 11.5px;
   align-items: center;
-  transition: transform 0.2s ease;
+  transition: transform var(--duration-fast) ease;
 }
 .admin-activity-item:hover {
   transform: translateX(3px);
@@ -3633,7 +3633,7 @@ canvas {
 
 /* System Health status indicators */
 .status-indicator {
-  transition: all 0.3s ease;
+  transition: all var(--duration-slow) ease;
 }
 .status-indicator.status-green {
   background-color: var(--accent-green) !important;
@@ -3766,7 +3766,7 @@ canvas {
   background: rgba(4, 11, 23, 0.6);
   backdrop-filter: blur(4px);
   z-index: 1100;
-  transition: opacity 0.3s ease;
+  transition: opacity var(--duration-slow) ease;
 }
 
 .drawer-content {
@@ -3782,7 +3782,7 @@ canvas {
   flex-direction: column;
   box-shadow: -10px 0 30px rgba(0,0,0,0.5);
   transform: translateX(100%);
-  transition: transform 0.3s cubic-bezier(0.16, 1, 0.3, 1);
+  transition: transform var(--duration-slow) cubic-bezier(0.16, 1, 0.3, 1);
 }
 
 .drawer-overlay.active {
@@ -3808,7 +3808,7 @@ canvas {
   padding: 4px 10px;
   border-radius: 20px;
   cursor: pointer;
-  transition: all 0.2s ease;
+  transition: all var(--duration-fast) ease;
   white-space: nowrap;
 }
 
@@ -3834,7 +3834,7 @@ canvas {
   display: flex;
   flex-direction: column;
   gap: 6px;
-  transition: all 0.2s ease;
+  transition: all var(--duration-fast) ease;
 }
 
 .notification-item:hover {
@@ -3912,7 +3912,7 @@ canvas {
   font-weight: 700;
   cursor: pointer;
   font-family: 'Outfit', sans-serif;
-  transition: all 0.2s ease;
+  transition: all var(--duration-fast) ease;
 }
 
 .notif-cta-btn:hover {
@@ -3956,12 +3956,12 @@ canvas {
   position: relative;
   background: rgba(255, 255, 255, 0.02);
   border: 1px solid var(--border-color);
-  border-radius: 8px;
+  border-radius: var(--radius-sm);
   padding: 14px 16px;
   display: flex;
   flex-direction: column;
   gap: 6px;
-  transition: all 0.2s ease;
+  transition: all var(--duration-fast) ease;
 }
 
 .timeline-event:hover {
@@ -3982,7 +3982,7 @@ canvas {
   border: 3px solid rgba(255, 255, 255, 0.1);
   box-shadow: 0 0 0 4px var(--bg-card);
   z-index: 2;
-  transition: all 0.2s ease;
+  transition: all var(--duration-fast) ease;
 }
 
 .timeline-event:hover::before {
@@ -4068,7 +4068,7 @@ canvas {
   color: var(--text-secondary);
   border: 1px solid var(--border-color);
   cursor: pointer;
-  transition: all 0.2s ease;
+  transition: all var(--duration-fast) ease;
 }
 
 .filter-btn:hover {
@@ -4135,7 +4135,7 @@ canvas {
   flex-direction: column;
   gap: 8px;
   min-height: 480px;
-  transition: background-color 0.2s ease, border 0.2s ease;
+  transition: background-color var(--duration-fast) ease, border var(--duration-fast) ease;
 }
 
 .kanban-cards-container.drag-over {
@@ -4151,7 +4151,7 @@ canvas {
   padding: 12px;
   cursor: grab;
   position: relative;
-  transition: transform 0.2s ease, box-shadow 0.2s ease, border-color 0.2s ease;
+  transition: transform var(--duration-fast) ease, box-shadow var(--duration-fast) ease, border-color var(--duration-fast) ease;
 }
 
 .kanban-card:hover {
@@ -4248,7 +4248,7 @@ canvas {
   cursor: pointer;
   margin-top: 8px;
   text-align: center;
-  transition: background 0.2s ease, border-color 0.2s ease;
+  transition: background var(--duration-fast) ease, border-color var(--duration-fast) ease;
 }
 
 .kanban-card-btn:hover {
@@ -4401,7 +4401,7 @@ canvas {
 .quota-bar-fill {
   height: 100%;
   border-radius: 2px;
-  transition: width 0.3s ease;
+  transition: width var(--duration-slow) ease;
 }
 
 /* System Events Timeline classes */
@@ -4737,7 +4737,7 @@ input[type="date"]::-webkit-calendar-picker-indicator {
 /* Heatmap Grid Cell Overlay spacing */
 .heatmap-cell {
   position: relative;
-  transition: transform 0.2s ease-in-out;
+  transition: transform var(--duration-fast) ease-in-out;
 }
 .heatmap-cell:hover {
   transform: scale(1.05);
@@ -4770,7 +4770,7 @@ input[type="date"]::-webkit-calendar-picker-indicator {
   display: flex;
   align-items: center;
   gap: 10px;
-  transition: transform 0.2s ease;
+  transition: transform var(--duration-fast) ease;
 }
 .waterfall-loss-card:hover {
   transform: translateY(-2px);
@@ -5051,7 +5051,7 @@ input[type="date"]::-webkit-calendar-picker-indicator {
   border-radius: 6px !important;
   box-sizing: border-box !important;
   cursor: pointer !important;
-  transition: all 0.2s ease !important;
+  transition: all var(--duration-fast) ease !important;
 }
 
 .vendor-form-buttons #btnAutofillAssessment {
@@ -5097,7 +5097,7 @@ input[type="date"]::-webkit-calendar-picker-indicator {
   background: rgba(14, 34, 53, 0.4) !important;
   border: 1px solid rgba(255, 255, 255, 0.05) !important;
   backdrop-filter: blur(10px) !important;
-  transition: transform 0.2s cubic-bezier(0.4, 0, 0.2, 1), border-color 0.2s ease, box-shadow 0.2s ease !important;
+  transition: transform var(--duration-fast) cubic-bezier(0.4, 0, 0.2, 1), border-color var(--duration-fast) ease, box-shadow var(--duration-fast) ease !important;
   box-sizing: border-box !important;
 }
 
@@ -5441,7 +5441,7 @@ div[style*="display: grid"] {
   padding: 9px 12px;
   background: none;
   border: none;
-  border-radius: 8px;
+  border-radius: var(--radius-sm);
   font-family: inherit;
   font-size: 12px;
   font-weight: 600;
@@ -5466,11 +5466,11 @@ div[style*="display: grid"] {
 .onboarding-step-card {
   background: rgba(255,255,255,0.04);
   border: 1px solid rgba(255,255,255,0.1);
-  border-radius: 12px;
+  border-radius: var(--radius-md);
   padding: 20px 14px;
   text-align: center;
   cursor: pointer;
-  transition: all 0.2s ease;
+  transition: all var(--duration-fast) ease;
 }
 .onboarding-step-card:hover {
   background: rgba(255, 138, 29, 0.08);
@@ -5534,7 +5534,7 @@ div[style*="display: grid"] {
   width: 15%;
   text-align: center;
   cursor: pointer;
-  transition: transform 0.25s cubic-bezier(0.2, 0.9, 0.3, 1);
+  transition: transform var(--duration-normal) cubic-bezier(0.2, 0.9, 0.3, 1);
 }
 .amc-timeline-step:hover {
   transform: translateY(-2px);
@@ -5555,7 +5555,7 @@ div[style*="display: grid"] {
   align-items: center;
   justify-content: center;
   z-index: 3;
-  transition: all 0.25s ease;
+  transition: all var(--duration-normal) ease;
 }
 .amc-step-icon-container {
   width: 46px;
@@ -5567,7 +5567,7 @@ div[style*="display: grid"] {
   display: flex;
   align-items: center;
   justify-content: center;
-  transition: all 0.3s cubic-bezier(0.2, 0.9, 0.3, 1);
+  transition: all var(--duration-slow) cubic-bezier(0.2, 0.9, 0.3, 1);
   margin-bottom: 6px;
   box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
 }
@@ -5575,7 +5575,7 @@ div[style*="display: grid"] {
   width: 18px;
   height: 18px;
   stroke-width: 2;
-  transition: stroke 0.3s ease;
+  transition: stroke var(--duration-slow) ease;
 }
 .amc-step-meta {
   display: flex;
@@ -5587,14 +5587,14 @@ div[style*="display: grid"] {
   font-size: 11px;
   font-weight: 700;
   color: var(--text-secondary);
-  transition: color 0.3s ease;
+  transition: color var(--duration-slow) ease;
 }
 .amc-step-desc {
   font-size: 9px;
   color: rgba(159, 179, 200, 0.5);
   max-width: 110px;
   line-height: 1.2;
-  transition: color 0.3s ease;
+  transition: color var(--duration-slow) ease;
 }
 
 /* Color codes */
@@ -5747,7 +5747,7 @@ div[style*="display: grid"] {
   width: 13%;
   text-align: center;
   cursor: pointer;
-  transition: transform 0.25s cubic-bezier(0.2, 0.9, 0.3, 1);
+  transition: transform var(--duration-normal) cubic-bezier(0.2, 0.9, 0.3, 1);
 }
 .survey-timeline-step:hover {
   transform: translateY(-2px);
@@ -5768,7 +5768,7 @@ div[style*="display: grid"] {
   align-items: center;
   justify-content: center;
   z-index: 3;
-  transition: all 0.25s ease;
+  transition: all var(--duration-normal) ease;
 }
 .survey-step-icon-container {
   width: 46px;
@@ -5780,7 +5780,7 @@ div[style*="display: grid"] {
   display: flex;
   align-items: center;
   justify-content: center;
-  transition: all 0.3s cubic-bezier(0.2, 0.9, 0.3, 1);
+  transition: all var(--duration-slow) cubic-bezier(0.2, 0.9, 0.3, 1);
   margin-bottom: 6px;
   box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
 }
@@ -5788,7 +5788,7 @@ div[style*="display: grid"] {
   width: 18px;
   height: 18px;
   stroke-width: 2;
-  transition: stroke 0.3s ease;
+  transition: stroke var(--duration-slow) ease;
 }
 .survey-step-meta {
   display: flex;
@@ -5800,14 +5800,14 @@ div[style*="display: grid"] {
   font-size: 11px;
   font-weight: 700;
   color: var(--text-secondary);
-  transition: color 0.3s ease;
+  transition: color var(--duration-slow) ease;
 }
 .survey-step-desc {
   font-size: 9px;
   color: rgba(159, 179, 200, 0.5);
   max-width: 110px;
   line-height: 1.2;
-  transition: color 0.3s ease;
+  transition: color var(--duration-slow) ease;
 }
 
 /* Color codes */
@@ -5953,13 +5953,13 @@ div[style*="display: grid"] {
 .assessment-item-card {
   background: rgba(8, 24, 42, 0.52);
   border: 1px solid rgba(255, 255, 255, 0.05);
-  border-radius: 8px;
+  border-radius: var(--radius-sm);
   padding: 12px;
   display: flex;
   flex-direction: column;
   align-items: center;
   text-align: center;
-  transition: all 0.25s cubic-bezier(0.2, 0.9, 0.3, 1);
+  transition: all var(--duration-normal) cubic-bezier(0.2, 0.9, 0.3, 1);
 }
 .assessment-item-card:hover {
   transform: translateY(-2px);
@@ -6010,9 +6010,9 @@ div[style*="display: grid"] {
 .risk-card {
   background: rgba(244, 63, 94, 0.04);
   border: 1px solid rgba(244, 63, 94, 0.15);
-  border-radius: 8px;
+  border-radius: var(--radius-sm);
   padding: 12px 16px;
-  transition: all 0.25s cubic-bezier(0.2, 0.9, 0.3, 1);
+  transition: all var(--duration-normal) cubic-bezier(0.2, 0.9, 0.3, 1);
 }
 .risk-card:hover {
   background: rgba(244, 63, 94, 0.08);
@@ -6041,7 +6041,7 @@ div[style*="display: grid"] {
   font-size: 10px;
   font-weight: 700;
   padding: 2px 8px;
-  border-radius: 12px;
+  border-radius: var(--radius-md);
   background: rgba(255,255,255,0.04);
 }
 .risk-desc {
@@ -6059,7 +6059,7 @@ div[style*="display: grid"] {
   text-align: center;
   padding: 20px;
   border-radius: 10px;
-  transition: all 0.3s cubic-bezier(0.2, 0.9, 0.3, 1);
+  transition: all var(--duration-slow) cubic-bezier(0.2, 0.9, 0.3, 1);
 }
 .recommendation-banner-card.approved {
   background: rgba(54, 211, 153, 0.08);
@@ -6105,7 +6105,7 @@ div[style*="display: grid"] {
   background: rgba(15, 23, 42, 0.45);
   backdrop-filter: var(--blur-glass);
   border: 1px solid rgba(255, 255, 255, 0.08);
-  border-radius: 8px;
+  border-radius: var(--radius-sm);
   padding: 16px;
   margin-bottom: 20px;
   display: grid;
@@ -6133,7 +6133,7 @@ div[style*="display: grid"] {
   font-size: 11px;
   outline: none;
   font-family: 'Outfit', sans-serif;
-  transition: all 0.2s ease;
+  transition: all var(--duration-fast) ease;
 }
 .bi-filter-input:focus, .bi-filter-select:focus {
   border-color: var(--accent-blue);
@@ -6240,7 +6240,7 @@ div[style*="display: grid"] {
   color: var(--text-secondary);
   border: 1px solid var(--border-color);
   font-weight: 600;
-  transition: all 0.2s ease;
+  transition: all var(--duration-fast) ease;
   white-space: nowrap;
 }
 .bi-chart-tab:hover {
@@ -6264,7 +6264,7 @@ div[style*="display: grid"] {
 .bi-leaderboard-card {
   background: rgba(15, 23, 42, 0.3);
   border: 1px solid var(--border-color-light);
-  border-radius: 8px;
+  border-radius: var(--radius-sm);
   padding: 14px;
 }
 .bi-leaderboard-list {
@@ -6326,10 +6326,10 @@ div[style*="display: grid"] {
   background: rgba(15, 23, 42, 0.45);
   backdrop-filter: var(--blur-glass);
   border: 1px solid rgba(255, 255, 255, 0.08);
-  border-radius: 8px;
+  border-radius: var(--radius-sm);
   padding: 16px;
   cursor: pointer;
-  transition: all 0.25s cubic-bezier(0.2, 0.9, 0.3, 1);
+  transition: all var(--duration-normal) cubic-bezier(0.2, 0.9, 0.3, 1);
 }
 .bi-geo-card:hover {
   transform: translateY(-3px);
@@ -6425,7 +6425,7 @@ div[style*="display: grid"] {
   background: rgba(15, 23, 42, 0.55);
   backdrop-filter: var(--blur-glass);
   border: 1px solid rgba(255, 255, 255, 0.08);
-  border-radius: 8px;
+  border-radius: var(--radius-sm);
   padding: 18px;
   margin-bottom: 22px;
 }
@@ -6568,7 +6568,7 @@ div[style*="display: grid"] {
   border-radius: 6px;
   padding: 12px;
   cursor: pointer;
-  transition: all 0.2s ease;
+  transition: all var(--duration-fast) ease;
 }
 .bi-segment-card:hover {
   background: rgba(0, 174, 239, 0.04);
@@ -6739,7 +6739,7 @@ div[style*="display: grid"] {
   cursor: pointer;
   border-radius: 4px;
   white-space: nowrap;
-  transition: background 0.2s, color 0.2s;
+  transition: background var(--duration-fast), color var(--duration-fast);
 }
 .crm-drawer-tab-btn:hover {
   background: rgba(255, 255, 255, 0.03);
@@ -6834,7 +6834,7 @@ mark.crm-search-highlight {
 .crm-next-followup-countdown {
   font-size: 11px;
   font-weight: 700;
-  transition: color 0.2s;
+  transition: color var(--duration-fast);
 }
 
 /* ── Kanban Card Drag States ───────────────────────────── */
@@ -6977,7 +6977,7 @@ mark.crm-search-highlight {
   font-size: 13px;
   font-weight: 600;
   cursor: pointer;
-  transition: all 0.25s ease;
+  transition: all var(--duration-normal) ease;
   box-shadow: 0 2px 12px rgba(247, 147, 30, 0.3);
 }
 
@@ -7012,7 +7012,7 @@ mark.crm-search-highlight {
   border-radius: 14px;
   padding: 20px;
   backdrop-filter: blur(12px);
-  transition: border-color 0.25s ease;
+  transition: border-color var(--duration-normal) ease;
 }
 
 .ai-insight-card:hover {
@@ -7212,7 +7212,7 @@ mark.crm-search-highlight {
   flex-direction: column;
   padding: 10px;
   background: rgba(255, 255, 255, 0.03);
-  border-radius: 8px;
+  border-radius: var(--radius-sm);
   border: 1px solid rgba(255, 255, 255, 0.04);
 }
 
@@ -7255,9 +7255,9 @@ mark.crm-search-highlight {
   padding: 16px;
   background: rgba(15, 23, 42, 0.6);
   border: 1px solid rgba(255, 255, 255, 0.06);
-  border-radius: 12px;
+  border-radius: var(--radius-md);
   cursor: pointer;
-  transition: all 0.2s ease;
+  transition: all var(--duration-fast) ease;
   backdrop-filter: blur(8px);
 }
 
@@ -7286,7 +7286,7 @@ mark.crm-search-highlight {
   align-items: center;
   justify-content: center;
   background: rgba(247, 147, 30, 0.12);
-  border-radius: 8px;
+  border-radius: var(--radius-sm);
 }
 
 .ai-rec-icon svg {
@@ -7326,7 +7326,7 @@ mark.crm-search-highlight {
   flex-shrink: 0;
   padding: 2px 8px;
   background: rgba(255, 255, 255, 0.06);
-  border-radius: 12px;
+  border-radius: var(--radius-md);
   font-size: 10px;
   color: var(--text-muted);
   text-transform: uppercase;
@@ -7345,7 +7345,7 @@ mark.crm-search-highlight {
   padding: 16px 20px;
   background: rgba(15, 23, 42, 0.6);
   border: 1px solid rgba(255, 255, 255, 0.06);
-  border-radius: 12px;
+  border-radius: var(--radius-md);
   overflow-x: auto;
 }
 
@@ -7461,11 +7461,11 @@ mark.crm-search-highlight {
   justify-content: center;
   background: rgba(255, 255, 255, 0.06);
   border: none;
-  border-radius: 8px;
+  border-radius: var(--radius-sm);
   color: var(--text-muted);
   font-size: 20px;
   cursor: pointer;
-  transition: background 0.2s;
+  transition: background var(--duration-fast);
 }
 
 .ai-drawer-close:hover {
@@ -7525,7 +7525,7 @@ mark.crm-search-highlight {
   padding: 10px 14px;
   background: rgba(0, 174, 239, 0.06);
   border: 1px solid rgba(0, 174, 239, 0.12);
-  border-radius: 8px;
+  border-radius: var(--radius-sm);
   font-size: 13px;
   color: #e2e8f0;
 }
@@ -7542,7 +7542,7 @@ mark.crm-search-highlight {
   gap: 2px;
   padding: 10px;
   background: rgba(255, 255, 255, 0.03);
-  border-radius: 8px;
+  border-radius: var(--radius-sm);
   border: 1px solid rgba(255, 255, 255, 0.04);
 }
 
@@ -7580,7 +7580,7 @@ mark.crm-search-highlight {
   flex-direction: column;
   gap: 4px;
   padding: 10px;
-  border-radius: 8px;
+  border-radius: var(--radius-sm);
   border: 1px solid rgba(255, 255, 255, 0.04);
 }
 
@@ -7761,4 +7761,143 @@ mark.crm-search-highlight {
     max-width: none;
     width: auto;
   }
+
+/* ==========================================================================
+   PHASE 13.5B — UX INTERACTION POLISH
+   ========================================================================== */
+
+/* --- Standardized card hover lift (uniform across all cards) --- */
+.card-base:hover,
+.analytics-card:hover,
+.footer-card:hover,
+.sidebar-promo-card:hover {
+  transform: translateY(-2px);
+  transition: transform var(--duration-fast) var(--ease-standard),
+              box-shadow var(--duration-fast) var(--ease-standard);
+}
+
+/* --- Button press feedback --- */
+.action-btn:active,
+.hero-btn-primary:active,
+.hero-btn-secondary:active,
+.sidebar-promo-btn:active,
+.footer-banner-btn:active,
+.subsidy-btn:active {
+  transform: scale(0.97);
+  transition: transform var(--duration-fast) var(--ease-standard);
+}
+
+/* --- Keyboard focus ring for action cards --- */
+.action-card:focus-visible {
+  outline: 2px solid var(--color-blue);
+  outline-offset: 2px;
+  border-radius: var(--radius-sm);
+}
+
+/* --- Drawer content shadow standardization --- */
+.drawer-content {
+  box-shadow: var(--shadow-modal);
+}
+
+/* --- Card base consistent padding --- */
+.card-base {
+  padding: var(--space-4);
+}
+
+/* --- Action card alignment consistency --- */
+.action-card {
+  display: flex;
+  flex-direction: column;
+  min-height: 180px;
+}
+
+.action-card .action-btn {
+  margin-top: auto;
+}
+
+/* --- Sub-kpi icon box standardization --- */
+.sub-kpi-icon-box {
+  width: 44px;
+  height: 44px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+}
+
+/* --- Location button chevron alignment --- */
+.location-btn .pin,
+.location-btn .chevron {
+  align-self: center;
+}
+
+/* --- AI card badge nowrap --- */
+.ai-card-badge {
+  white-space: nowrap;
+}
+
+/* --- Focus ring consistency for all interactive elements --- */
+.notification-btn:focus-visible,
+.location-btn:focus-visible,
+.hero-btn-primary:focus-visible,
+.hero-btn-secondary:focus-visible,
+.readiness-btn:focus-visible,
+.action-btn:focus-visible,
+.subsidy-btn:focus-visible,
+.perf-btn:focus-visible,
+.ai-analyze-btn:focus-visible,
+.calc-btn:focus-visible {
+  outline: 2px solid var(--color-blue);
+  outline-offset: 2px;
+}
+
+/* --- Reduced motion support (JS will also check, but CSS is first line) --- */
+@media (prefers-reduced-motion: reduce) {
+  .card-base:hover,
+  .analytics-card:hover,
+  .footer-card:hover,
+  .sidebar-promo-card:hover {
+    transform: none;
+  }
+  .action-btn:active,
+  .hero-btn-primary:active,
+  .hero-btn-secondary:active,
+  .sidebar-promo-btn:active,
+  .footer-banner-btn:active,
+  .subsidy-btn:active {
+    transform: none;
+  }
+}
+
+/* ==========================================================================
+   PHASE 13.5B — RESPONSIVE REFINEMENTS
+   ========================================================================== */
+
+/* --- 1024px: Quick action cards grid fix --- */
+@media (max-width: 1024px) {
+  .quick-actions-grid {
+    gap: var(--space-3);
+  }
+  .quick-actions-grid .action-card {
+    min-width: 0;
+  }
+}
+
+/* --- 640px: Header text overflow fix --- */
+@media (max-width: 640px) {
+  .header-title,
+  .header-subtitle {
+    overflow-wrap: break-word;
+    word-break: break-word;
+  }
+}
+
+/* --- 480px: KPI grid spacing fix --- */
+@media (max-width: 480px) {
+  .kpi-grid,
+  .analytics-grid,
+  .sub-kpis-grid {
+    gap: var(--space-2);
+  }
+}
 }

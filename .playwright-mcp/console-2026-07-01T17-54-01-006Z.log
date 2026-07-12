@@ -1,0 +1,8 @@
+[     246ms] [LOG] ROI DEBUG: app.js loaded @ http://127.0.0.1:8000/frontend/app.js?v=1.0.3:12
+[     316ms] [LOG] ROI DEBUG: ROI modal initialized (Delegated Event Listeners) @ http://127.0.0.1:8000/frontend/app.js?v=1.0.3:1305
+[   13489ms] [LOG] ROI DEBUG: Show modal clicked @ http://127.0.0.1:8000/frontend/app.js?v=1.0.3:1311
+[   28301ms] [LOG] ROI DEBUG: Calculate ROI clicked @ http://127.0.0.1:8000/frontend/app.js?v=1.0.3:1335
+[   28301ms] [LOG] ROI DEBUG: API request started {monthly_bill: 6500, system_size: 3} @ http://127.0.0.1:8000/frontend/app.js?v=1.0.3:1372
+[   28330ms] [LOG] ROI DEBUG: API response received {success: true, data: Object} @ http://127.0.0.1:8000/frontend/app.js?v=1.0.3:1395
+[   28332ms] [LOG] ROI DEBUG: Chart rendered @ http://127.0.0.1:8000/frontend/app.js?v=1.0.3:1460
+[   40334ms] [LOG] ROI DEBUG: Hide modal clicked @ http://127.0.0.1:8000/frontend/app.js?v=1.0.3:1324

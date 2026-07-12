@@ -1,0 +1,14 @@
+[    2290ms] [LOG] ROI DEBUG: app.js loaded @ http://127.0.0.1:8000/frontend/app.js?v=1.0.3:12
+[    2718ms] [LOG] ROI DEBUG: ROI modal initialized (Delegated Event Listeners) @ http://127.0.0.1:8000/frontend/app.js?v=1.0.3:1307
+[    2772ms] [LOG] API [GET] http://127.0.0.1:8000/api/crm/pipeline-metrics - Fetching... @ http://127.0.0.1:8000/frontend/app.js?v=1.0.3:26
+[    2773ms] [LOG] API [GET] http://127.0.0.1:8000/api/customers?limit=100 - Fetching... @ http://127.0.0.1:8000/frontend/app.js?v=1.0.3:26
+[    3398ms] [LOG] API [GET] http://127.0.0.1:8000/api/crm/pipeline-metrics - Status: 200 @ http://127.0.0.1:8000/frontend/app.js?v=1.0.3:30
+[    3398ms] [LOG] API [GET] http://127.0.0.1:8000/api/customers?limit=100 - Status: 200 @ http://127.0.0.1:8000/frontend/app.js?v=1.0.3:30
+[    3434ms] [LOG] API [GET] http://127.0.0.1:8000/api/crm/followups - Fetching... @ http://127.0.0.1:8000/frontend/app.js?v=1.0.3:26
+[    3434ms] [LOG] API [GET] http://127.0.0.1:8000/api/crm/tasks - Fetching... @ http://127.0.0.1:8000/frontend/app.js?v=1.0.3:26
+[    3435ms] [LOG] API [GET] http://127.0.0.1:8000/api/crm/meetings - Fetching... @ http://127.0.0.1:8000/frontend/app.js?v=1.0.3:26
+[    3436ms] [LOG] API [GET] http://127.0.0.1:8000/api/crm/alerts - Fetching... @ http://127.0.0.1:8000/frontend/app.js?v=1.0.3:26
+[    3586ms] [LOG] API [GET] http://127.0.0.1:8000/api/crm/followups - Status: 200 @ http://127.0.0.1:8000/frontend/app.js?v=1.0.3:30
+[    3586ms] [LOG] API [GET] http://127.0.0.1:8000/api/crm/tasks - Status: 200 @ http://127.0.0.1:8000/frontend/app.js?v=1.0.3:30
+[    3590ms] [LOG] API [GET] http://127.0.0.1:8000/api/crm/meetings - Status: 200 @ http://127.0.0.1:8000/frontend/app.js?v=1.0.3:30
+[    3609ms] [LOG] API [GET] http://127.0.0.1:8000/api/crm/alerts - Status: 200 @ http://127.0.0.1:8000/frontend/app.js?v=1.0.3:30

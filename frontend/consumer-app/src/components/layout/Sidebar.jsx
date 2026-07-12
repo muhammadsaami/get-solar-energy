@@ -8,7 +8,7 @@ import {
   MdConstruction, MdFactCheck, MdSettingsInputHdmi, MdBolt,
   MdTrendingUp, MdAssessment, MdFolderOpen, MdNotifications,
   MdHelpOutline, MdCardGiftcard, MdPerson, MdSettings, MdLogout,
-  MdMenuOpen, MdMenu
+  MdMenuOpen, MdMenu, MdTrackChanges
 } from 'react-icons/md';
 
 export default function Sidebar() {
@@ -68,6 +68,12 @@ export default function Sidebar() {
       items: [
         { label: "Profile", path: "/app/account/profile", icon: <MdPerson /> },
         { label: "Settings", path: "/app/account/settings", icon: <MdSettings /> }
+      ]
+    },
+    {
+      groupName: "Vendor Portal",
+      items: [
+        { label: "Project Tracking", path: "/app/vendor/project-tracking", icon: <MdTrackChanges /> }
       ]
     }
   ];
