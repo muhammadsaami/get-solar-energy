@@ -118,6 +118,7 @@ class PostgresRateLimiter(RateLimiter):
 # Instantiate rate limiters
 memory_limiter = MemoryRateLimiter(window_seconds=60, max_requests=3)
 rate_limiter = PostgresRateLimiter(window_seconds=60, max_requests=3)
+auth_rate_limiter = PostgresRateLimiter(window_seconds=60, max_requests=10)
 
 # ==============================================================================
 # USER DATA FILE HELPERS
@@ -161,6 +162,9 @@ async def signup(data: SignupRequest, request: Request):
     client_ip = request.client.host if request.client else "unknown"
     user_agent = request.headers.get("user-agent", "unknown")
     logger.info("Signup request received.")
+    if not auth_rate_limiter.is_allowed(data.email, client_ip):
+        logger.warning("Rate limit exceeded for signup.")
+        raise HTTPException(status_code=429, detail="Too many signup attempts. Please try again later.")
     try:
         # Validate password strength
         validated_password = validate_password_strength(data.password)
@@ -211,6 +215,9 @@ async def login(data: LoginRequest, request: Request):
     client_ip = request.client.host if request.client else "unknown"
     user_agent = request.headers.get("user-agent", "unknown")
     logger.info("Login request received.")
+    if not auth_rate_limiter.is_allowed(data.email, client_ip):
+        logger.warning("Rate limit exceeded for login.")
+        raise HTTPException(status_code=429, detail="Too many login attempts. Please try again later.")
     try:
         users = load_users()
         if data.email not in users:
@@ -301,7 +308,8 @@ async def forgot_password(data: ForgotPasswordRequest, request: Request):
             db.close()
         
         # Generate reset link
-        reset_link = f"http://localhost:8080/reset-password.html?token={token}"
+        frontend_url = os.getenv("FRONTEND_URL", "http://localhost:8080")
+        reset_link = f"{frontend_url}/reset-password.html?token={token}"
         
         # Build MIMEMultipart email
         message = MIMEMultipart("alternative")

@@ -6320,7 +6320,7 @@ function initAdminDashboard() {
         email: "afasana@getsolar.in"
       };
 
-      fetch(`${API_BASE}/api/customers`, {
+      safeFetch(`${API_BASE}/api/customers`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(templateCustomer)
@@ -8314,6 +8314,9 @@ function triggerGlobalCrmSearch() {
     return;
   }
 
+  // Reset keyboard navigation focus before new search
+  _crmSearchFocusIdx = -1;
+
   // Abort any in-flight request
   if (_crmSearchController) _crmSearchController.abort();
   _crmSearchController = new AbortController();
@@ -8349,7 +8352,7 @@ function triggerGlobalCrmSearch() {
         data.customers.forEach(c => {
           html += `<div class="crm-search-item" tabindex="0" role="button" aria-label="Open profile for ${esc(c.name)}"
             style="padding:7px 6px; background:rgba(59,130,246,.04); border:1px solid var(--border-color-light); border-radius:5px; margin-top:3px; font-size:10px; cursor:pointer;"
-            onclick="openLeadProfileDrawer(${c.id}); document.getElementById('crmGlobalSearchResults').style.display='none';">
+            onclick="openLeadProfileDrawer('${c.id}'); document.getElementById('crmGlobalSearchResults').style.display='none';">
             <strong>${highlight(c.name)}</strong> <span style="font-size:8px;color:var(--text-muted);">#${highlight(c.consumer_number)}</span>
             <div style="font-size:8px;color:var(--text-secondary);margin-top:2px;">📞 ${highlight(c.phone)} &nbsp;·&nbsp; Stage: ${esc(c.status)}</div>
           </div>`;
@@ -8817,7 +8820,7 @@ function renderKanbanColumns() {
           </div>
         </div>
 
-        <button class="kanban-card-btn" onclick="openLeadProfileDrawer(${lead.id})" aria-label="View profile for ${escapeHtml(lead.customer_name)}">View Profile</button>
+        <button class="kanban-card-btn" onclick="openLeadProfileDrawer('${lead.id}')" aria-label="View profile for ${escapeHtml(lead.customer_name)}">View Profile</button>
       `;
       container.appendChild(card);
     });
@@ -8927,7 +8930,7 @@ function loadFollowupsCenter(filter = 'today') {
       const filtered = followups.filter(f => {
         if (filter === 'today') return f.status === 'Pending' && f.due_date.startsWith(todayStr);
         if (filter === 'tomorrow') return f.status === 'Pending' && f.due_date.startsWith(tomorrowStr);
-        if (filter === 'overdue') return f.status === 'Overdue' || (f.status === 'Pending' && f.due_date < new Date().toISOString());
+        if (filter === 'overdue') return f.status === 'Overdue' || (f.status === 'Pending' && new Date(f.due_date) <= new Date());
         if (filter === 'completed') return f.status === 'Completed';
         return true; // week / all fallback
       });
@@ -9830,15 +9833,19 @@ function loadDrawerTabContent(tab, customer, data360) {
             delete window.customer360Cache[customerId];
             fetchAndRenderDocuments(custId, 1);
           } else {
+            let errMsg = 'Upload failed.';
             try {
               const err = JSON.parse(xhr.responseText);
-              if (row) row.querySelector('.upload-pct').style.color = '#ef4444';
-              if (row) row.querySelector('.upload-pct').textContent = 'Error';
-              showToast(err.message || `Upload failed.`, 'error');
-            } catch(e) {
-              if (row) row.querySelector('.upload-pct').textContent = 'Error';
-              showToast(`Upload failed.`, 'error');
+              errMsg = err.message || errMsg;
+            } catch(e) { /* use default message */ }
+            if (row) {
+              const pctEl = row.querySelector('.upload-pct');
+              if (pctEl) {
+                pctEl.style.color = '#ef4444';
+                pctEl.textContent = 'Error';
+              }
             }
+            showToast(errMsg, 'error');
           }
         };
         xhr.send(formData);
@@ -11949,7 +11956,7 @@ function renderAuditLogsTable() {
           <span style="font-weight: 800; color: var(--accent-blue);">${lb.formatter(item)}</span>
         `;
               div.addEventListener('click', () => {
-                openLeadProfileDrawer(item.email);
+                openLeadProfileDrawer(item.customer_id);
               });
               list.appendChild(div);
             });
@@ -12148,7 +12155,7 @@ function renderAuditLogsTable() {
           });
 
           tr.addEventListener('click', () => {
-            openLeadProfileDrawer(item.email);
+            openLeadProfileDrawer(item.customer_id);
           });
 
           // Hide columns that are currently toggled off

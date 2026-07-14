@@ -1,4 +1,5 @@
-from fastapi import FastAPI, File, UploadFile
+from fastapi import FastAPI, File, UploadFile, Depends, HTTPException
+from security import verify_token
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.staticfiles import StaticFiles
 from google import genai
@@ -21,21 +22,13 @@ client = genai.Client(api_key=os.getenv("GEMINI_API_KEY"))
 
 app = FastAPI(title="GET Solar Energy API")
 
+cors_origins = os.getenv("CORS_ORIGINS", "*")
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["*"],
+    allow_origins=cors_origins.split(",") if cors_origins != "*" else ["*"],
     allow_methods=["*"],
     allow_headers=["*"],
 )
-
-from fastapi import Request
-@app.middleware("http")
-async def log_auth_header(request: Request, call_next):
-    auth_header = request.headers.get("authorization")
-    if auth_header and request.url.path.startswith("/api/mlops"):
-        with open("auth_dump.log", "a") as f:
-            f.write(f"Path: {request.url.path}\nAuth: {repr(auth_header)}\n")
-    return await call_next(request)
 
 from roof import router as roof_router
 from roi import router as roi_router
@@ -226,7 +219,10 @@ def get_user_analyses(email: str):
     }
 
 @app.get("/api/admin/overview")
-def get_admin_overview():
+def get_admin_overview(user_email: str = Depends(verify_token)):
+    role, _, _ = get_user_metadata(user_email, "")
+    if role != "Administrator":
+        raise HTTPException(status_code=403, detail="Admin access required")
     cached = admin_cache.get("overview")
     if cached:
         return cached
@@ -570,7 +566,10 @@ def get_admin_overview():
         return {"success": False, "error": str(e)}
 
 @app.get("/api/admin/users")
-def get_admin_users():
+def get_admin_users(user_email: str = Depends(verify_token)):
+    role, _, _ = get_user_metadata(user_email, "")
+    if role != "Administrator":
+        raise HTTPException(status_code=403, detail="Admin access required")
     cached = admin_cache.get("users")
     if cached:
         return cached
@@ -600,7 +599,10 @@ def get_admin_users():
         return {"success": False, "error": str(e)}
 
 @app.get("/api/admin/rewards")
-def get_admin_rewards():
+def get_admin_rewards(user_email: str = Depends(verify_token)):
+    role, _, _ = get_user_metadata(user_email, "")
+    if role != "Administrator":
+        raise HTTPException(status_code=403, detail="Admin access required")
     cached = admin_cache.get("rewards")
     if cached:
         return cached
@@ -665,7 +667,10 @@ def get_admin_rewards():
         return {"success": False, "error": str(e)}
 
 @app.get("/api/admin/assistant")
-def get_admin_assistant():
+def get_admin_assistant(user_email: str = Depends(verify_token)):
+    role, _, _ = get_user_metadata(user_email, "")
+    if role != "Administrator":
+        raise HTTPException(status_code=403, detail="Admin access required")
     cached = admin_cache.get("assistant")
     if cached:
         return cached
@@ -701,7 +706,10 @@ def get_admin_assistant():
         return {"success": False, "error": str(e)}
 
 @app.get("/api/admin/activity")
-def get_admin_activity():
+def get_admin_activity(user_email: str = Depends(verify_token)):
+    role, _, _ = get_user_metadata(user_email, "")
+    if role != "Administrator":
+        raise HTTPException(status_code=403, detail="Admin access required")
     cached = admin_cache.get("activity")
     if cached:
         return cached
