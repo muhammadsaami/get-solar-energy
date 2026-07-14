@@ -401,6 +401,9 @@ GSE.Modules.ProjectTracking = (function () {
           });
         }
         return converted.concat(local);
+      },
+      clear: function (projectId) {
+        delete _store[projectId];
       }
     };
   })();
@@ -2073,7 +2076,26 @@ GSE.Modules.ProjectTracking = (function () {
   }
 
   function _persistProjectUpdate(projectId, changes) {
-    // Future: ProjectService.update(projectId, changes).then(refresh)
+    GSE.Services.ProjectService.update(projectId, changes).then(function (resp) {
+      if (resp.success && resp.data) {
+        for (var i = 0; i < _projects.length; i++) {
+          if (_projects[i].id === projectId) {
+            _projects[i] = resp.data;
+            break;
+          }
+        }
+        if (_activeProjectId === projectId) {
+          _activeProject = resp.data;
+        }
+        _filteredProjects = getFilteredProjects(_projects, _searchQuery, _filters);
+        if (_currentView === 'kanban' || _currentView === 'analytics') reRenderCurrentView();
+        if (_isDrawerOpen && _activeDrawerTab) reRenderDrawerTab();
+      } else {
+        refresh();
+      }
+    }).catch(function () {
+      refresh();
+    });
   }
 
   /* Persistence abstraction: local apply + remote persist seam (_persistProjectUpdate is intentionally empty until backend integration) */
@@ -2487,6 +2509,16 @@ GSE.Modules.ProjectTracking = (function () {
     cacheFocusableElements();
   }
 
+  function reRenderDrawerTab() {
+    if (!_isDrawerOpen || !_activeProject) return;
+    var body = _container && _container.querySelector('#pt-drawer-body');
+    if (!body) return;
+    var tabId = _activeDrawerTab || 'overview';
+    var panel = body.querySelector('#pt-tab-' + tabId);
+    if (!panel) return;
+    panel.innerHTML = renderDrawerTabContent(tabId);
+  }
+
   function renderDrawerTabContent(tabId) {
     switch (tabId) {
       case 'timeline':   return renderTimeline();
@@ -2695,6 +2727,32 @@ GSE.Modules.ProjectTracking = (function () {
     '</div>';
   }
 
+  function _persistNotes(projectId) {
+    var p = null;
+    for (var i = 0; i < _projects.length; i++) {
+      if (_projects[i].id === projectId) { p = _projects[i]; break; }
+    }
+    if (!p) return;
+    var allNotes = resolveProjectNotes(p, NoteStore);
+    var serialized = [];
+    for (var j = 0; j < allNotes.length; j++) {
+      var n = allNotes[j];
+      serialized.push({ text: n.text || '', timestamp: n.timestamp || null, author: n.author || 'You' });
+    }
+    GSE.Services.ProjectService.update(projectId, { notes: serialized }).then(function (resp) {
+      if (resp.success && resp.data) {
+        for (var k = 0; k < _projects.length; k++) {
+          if (_projects[k].id === projectId) {
+            _projects[k] = resp.data;
+            NoteStore.clear(projectId);
+            break;
+          }
+        }
+        if (_activeProjectId === projectId) _activeProject = resp.data;
+      }
+    });
+  }
+
   function saveProjectNote(projectId, text) {
     if (!text.trim()) return;
     NoteStore.add(projectId, text);
@@ -2704,7 +2762,7 @@ GSE.Modules.ProjectTracking = (function () {
     }
     var input = _container && _container.querySelector('.drawer-note-input');
     if (input) input.value = '';
-    // TODO: Persist notes through ProjectService
+    _persistNotes(projectId);
   }
 
   function editProjectNote(noteId, newText) {
@@ -2714,6 +2772,7 @@ GSE.Modules.ProjectTracking = (function () {
     if (listEl) {
       listEl.outerHTML = _buildNotesListHTML(_activeProjectId);
     }
+    _persistNotes(_activeProjectId);
   }
 
   function deleteProjectNote(noteId) {
@@ -2724,6 +2783,7 @@ GSE.Modules.ProjectTracking = (function () {
     if (listEl) {
       listEl.outerHTML = _buildNotesListHTML(_activeProjectId);
     }
+    _persistNotes(_activeProjectId);
   }
 
   function _buildNotesListHTML(projectId) {

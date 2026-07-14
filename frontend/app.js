@@ -213,6 +213,7 @@ function initDashboard() {
   initMobileMenu();
   initLocationSelector();
   initGaugesAnimation();
+  migrateStoredAnalysisData();
   hydrateHeroDashboard(); // Revert to original Dashboard Hydration
 
   initCharts();
@@ -555,8 +556,77 @@ function initLocationSelector() {
    3. GAUGES & ANIMATIONS
    ========================================================================== */
 /* ==========================================================================
-   FIX 12 + 13 — HERO DASHBOARD ONBOARDING / REAL DATA HYDRATION
+   HELPER — ROI State Validation
+   Checks the 8 numeric fields inside lastROIAnalysis.data for finite non-negative.
    ========================================================================== */
+function _isValidROIState(stateObj) {
+  if (!stateObj || typeof stateObj !== 'object' || !stateObj.data || typeof stateObj.data !== 'object') return false;
+  var d = stateObj.data;
+  var fields = ['monthly_savings', 'annual_savings', 'system_cost', 'net_cost', 'lifetime_savings', 'payback_period', 'recommended_kw', 'roi_percentage'];
+  for (var i = 0; i < fields.length; i++) {
+    if (d[fields[i]] !== undefined) {
+      var n = Number(d[fields[i]]);
+      if (!isFinite(n) || n < 0) return false;
+    }
+  }
+  return true;
+}
+
+/* ==========================================================================
+   HELPER — Bill Analysis Response Validation
+   Must match backend main.py _is_valid_bill_analysis() rules.
+   Prevents corrupted Gemini sentinel values from entering application state.
+   ========================================================================== */
+function validateBillAnalysisResponse(data) {
+  if (!data || typeof data !== 'object') return false;
+  var fields = [
+    { key: 'monthly_units',  min: 1,       max: 1000000 },
+    { key: 'bill_amount',    min: 1,       max: 10000000 },
+    { key: 'per_unit_rate',  min: 0.01,    max: 100 },
+    { key: 'recommended_kw', min: 0.1,     max: 10000 }
+  ];
+  for (var i = 0; i < fields.length; i++) {
+    var f = fields[i];
+    if (data[f.key] === undefined || data[f.key] === null) return false;
+    var n = Number(data[f.key]);
+    if (!isFinite(n) || n < f.min || n > f.max) return false;
+  }
+  return true;
+}
+
+/* ==========================================================================
+   MIGRATION — Remove corrupted localStorage entries before hydration
+   Reuses validateBillAnalysisResponse() and _isValidROIState().
+   Never calls localStorage.clear() — only removes known analysis keys.
+   ========================================================================== */
+function migrateStoredAnalysisData() {
+  try {
+    var raw = localStorage.getItem('lastBillAnalysis');
+    if (raw) {
+      var d = JSON.parse(raw);
+      if (!validateBillAnalysisResponse(d)) {
+        localStorage.removeItem('lastBillAnalysis');
+        console.warn('Migrated corrupted lastBillAnalysis');
+      }
+    }
+  } catch (e) {
+    localStorage.removeItem('lastBillAnalysis');
+    console.warn('Migrated unparseable lastBillAnalysis');
+  }
+  try {
+    var raw = localStorage.getItem('lastROIAnalysis');
+    if (raw) {
+      var obj = JSON.parse(raw);
+      if (!_isValidROIState(obj)) {
+        localStorage.removeItem('lastROIAnalysis');
+        console.warn('Migrated corrupted lastROIAnalysis');
+      }
+    }
+  } catch (e) {
+    localStorage.removeItem('lastROIAnalysis');
+    console.warn('Migrated unparseable lastROIAnalysis');
+  }
+}
 function hydrateHeroDashboard() {
   const cu = getCurrentUser();
   const firstName = cu.firstName || 'Explorer';
@@ -1921,11 +1991,30 @@ function initBillUploadSimulator() {
     });
   }
 
+  /* ── State Validation Helpers ───────────────────────────── */
+  function _isValidBillState(data) {
+    if (!data || typeof data !== 'object') return false;
+    if (data.monthly_units !== undefined) {
+      var n = Number(data.monthly_units);
+      if (!isFinite(n) || n < 0) return false;
+    }
+    if (data.bill_amount !== undefined) {
+      var n = Number(data.bill_amount);
+      if (!isFinite(n) || n < 0) return false;
+    }
+    return true;
+  }
+
   function restoreAnalysisState() {
     const saved = localStorage.getItem('lastBillAnalysis');
     if (saved) {
       try {
         const data = JSON.parse(saved);
+
+        if (!_isValidBillState(data)) {
+          localStorage.removeItem('lastBillAnalysis');
+          return;
+        }
 
         // Ensure new properties are calculated and written back if missing (Patch 2.1 additions)
         // Also backfill solarYield if an older cached entry is missing it
@@ -2252,6 +2341,12 @@ function initBillUploadSimulator() {
         // Validate Response
         if (!result || result.success !== true || !result.data) {
           throw new Error((result && result.error) || 'Invalid API response format.');
+        }
+
+        // Validate bill analysis data before any downstream processing
+        if (!validateBillAnalysisResponse(result.data)) {
+          handlePipelineError(new Error('Analysis returned invalid data. Please upload a clearer image.'));
+          return;
         }
 
         // Check for low-confidence PDF text extraction fallback
@@ -5410,13 +5505,18 @@ function restoreTabROIState() {
   if (saved) {
     try {
       const stateObj = JSON.parse(saved);
+      if (!_isValidROIState(stateObj)) {
+        localStorage.removeItem('lastROIAnalysis');
+        initTabRoiCalculatorChart();
+        return;
+      }
       renderTabROIData(stateObj);
     } catch (e) {
-      console.error('Failed to restore ROI analysis state:', e);
+      localStorage.removeItem('lastROIAnalysis');
+      console.error('Corrupted ROI analysis state cleared:', e);
       initTabRoiCalculatorChart();
     }
   } else {
-    // Initial default chart rendering on first load
     initTabRoiCalculatorChart();
   }
 }

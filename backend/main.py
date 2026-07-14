@@ -45,6 +45,7 @@ from ml.routes import router as ml_router
 from ml.ai_routes import router as ai_router
 from ai.routes import router as assistant_router
 from mlops.routes import router as mlops_router
+from project_routes import router as project_router
 
 app.include_router(roof_router)
 app.include_router(roi_router)
@@ -61,6 +62,7 @@ app.include_router(ml_router)
 app.include_router(ai_router)
 app.include_router(assistant_router)
 app.include_router(mlops_router)
+app.include_router(project_router)
 
 @app.on_event("startup")
 async def startup_event():
@@ -86,10 +88,13 @@ async def startup_event():
 
     from database_sqlite import engine_sqlite, SessionLocalSqlite, run_cdp_migrations
     from customer_service import import_csv_if_empty
+    import project_models  # register ProjectModel on BaseSqlite.metadata
     run_cdp_migrations(engine_sqlite)
     db = SessionLocalSqlite()
     try:
         import_csv_if_empty(db)
+        from seeds.project_seed import seed_projects_if_empty
+        seed_projects_if_empty(db)
     finally:
         db.close()
 
@@ -914,6 +919,28 @@ Rules:
             }
         return {"success": False, "error": str(e)}
 
+
+def _is_valid_bill_analysis(data: dict) -> bool:
+    if not isinstance(data, dict):
+        return False
+    rules = {
+        "monthly_units":  (1, 1_000_000),
+        "bill_amount":    (1, 10_000_000),
+        "per_unit_rate":  (0.01, 100),
+        "recommended_kw": (0.1, 10_000),
+    }
+    for field, (lo, hi) in rules.items():
+        val = data.get(field)
+        if not isinstance(val, (int, float)):
+            return False
+        if val < lo or val > hi:
+            return False
+    name = data.get("customer_name", "")
+    if not isinstance(name, str) or not name.strip():
+        return False
+    return True
+
+
 @app.post("/api/analyze-bill")
 async def analyze_bill(image: UploadFile = File(...)):
     try:
@@ -983,6 +1010,11 @@ async def analyze_bill(image: UploadFile = File(...)):
                     text = text.split("```")[1].split("```")[0]
 
                 result = json.loads(text.strip())
+
+                if not _is_valid_bill_analysis(result):
+                    logger.warning(f"Gemini returned invalid bill data: {result}")
+                    return {"success": False, "error": "AI returned invalid bill analysis data. Please upload a clearer image."}
+
                 global last_gemini_success_time
                 last_gemini_success_time = time.time()
                 return {"success": True, "data": result}

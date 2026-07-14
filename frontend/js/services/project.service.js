@@ -2,7 +2,7 @@ window.GSE = window.GSE || {};
 window.GSE.Services = window.GSE.Services || {};
 
 GSE.Services.ProjectService = (function () {
-  var _useMock = true;
+  var _useMock = false;
 
   function _envelope(success, data, message) {
     return { success: success, message: message || '', data: data };
