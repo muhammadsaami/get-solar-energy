@@ -15105,10 +15105,8 @@ async function runAIAnalysis() {
       customer_id: null,
     };
 
-    const user = _getUser();
-    if (user && user.id) {
-      payload.customer_id = user.id;
-    }
+    // Intentionally leaving payload.customer_id as null,
+    // because user.id is an auth UUID, whereas the backend expects an integer CRM ID.
 
     const res = await safeFetch(`${API_BASE}/api/ai/analyze`, {
       method: 'POST',
@@ -15399,6 +15397,15 @@ async function _mlopsFetch(url, opts) {
   }
   var r = await fetch(API_BASE + url, opts);
   if (!r.ok) {
+    if (r.status === 401) {
+      if (typeof doLogout === 'function') doLogout();
+      else {
+        localStorage.removeItem('token');
+        localStorage.removeItem('user');
+        window.location.replace('login.html');
+      }
+      return;
+    }
     var body = await r.text();
     console.error("MLOps request failed:", r.status, body);
     throw new Error("MLOps request failed: " + r.status + " " + body);

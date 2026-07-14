@@ -150,6 +150,7 @@ GSE.Mocks.Project = (function () {
 
     return {
       id: 'PRJ-' + padNum(index + 1),
+      projectType: kW >= 10 ? 'commercial' : 'residential',
       title: (kW >= 10 ? 'Commercial ' : 'Residential ') + kW + 'kW Solar Installation',
       description: 'Complete solar PV system for ' + customer.name + ' at ' + customer.city + '. System: ' + panels + ' x ' + panelCapacity + 'W panels.',
       customerName: customer.name,

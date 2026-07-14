@@ -146,7 +146,13 @@ def ai_analyze(req: AIAnalyzeRequest):
         )
         return ok(data=result, message="AI analysis complete")
     except Exception as exc:
-        logger.error("AI analyze failed", extra={"request_id": request_id, "error": str(exc)}, exc_info=True)
+        import traceback
+        print("!!! AI ANALYZE EXCEPTION !!!")
+        traceback.print_exc()
+        try:
+            logger.error("AI analyze failed", extra={"request_id": request_id, "error": str(exc)}, exc_info=True)
+        except Exception as logger_exc:
+            print("Logger failed too:", logger_exc)
         return server_error(message="AI analysis failed")
 
 

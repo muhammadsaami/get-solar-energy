@@ -129,7 +129,7 @@ class AIOrchestrator:
             "timeline": timeline,
             "customer_score": customer_score,
             "solar_readiness": solar_readiness,
-            "risk_indicators": [r.to_dict() for r in risk_indicators],
+            "risk_indicators": risk_indicators,
             "next_best_action": next_best_action,
             "roi": roi,
             "request_id": rid,
