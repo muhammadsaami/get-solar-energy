@@ -22,7 +22,8 @@ Prediction endpoints:
 import uuid
 from typing import Dict, Any, List, Optional
 
-from fastapi import APIRouter
+from fastapi import APIRouter, Depends
+from security import verify_token
 from pydantic import BaseModel, Field
 
 from .inference import get_inference_engine
@@ -35,7 +36,7 @@ from utils.responses import ok, server_error, validation_error, not_found
 
 logger = get_logger("ml.routes")
 
-router = APIRouter(prefix="/api/ml", tags=["ml"])
+router = APIRouter(prefix="/api/ml", tags=["ml"], dependencies=[Depends(verify_token)])
 
 
 # ── Request schemas ──────────────────────────────────────────────────────

@@ -1,13 +1,42 @@
-from fastapi import APIRouter
+from fastapi import APIRouter, Depends, Request
+from security import verify_token
+from auth import auth_rate_limiter
 from pydantic import BaseModel
 from google import genai
 from google.genai import types
 from dotenv import load_dotenv
-import os, json
+import os, json, time
+import logging
 
+logging.basicConfig(level=logging.INFO)
+logger = logging.getLogger(__name__)
 load_dotenv()
 client = genai.Client(api_key=os.getenv("GEMINI_API_KEY"))
-router = APIRouter()
+router = APIRouter(dependencies=[Depends(verify_token)])
+
+DEMO_SITE_SURVEY_DATA = {
+    "customer_name": "Demo Customer",
+    "usable_area_sqft": 850,
+    "area_required_sqft": 500,
+    "feasibility_score": 85,
+    "feasibility_status": "Highly Feasible",
+    "mounting_structure_type": "Elevated Tilt Structure",
+    "cable_run_estimate_meters": 13,
+    "estimated_additional_cost_rs": 0,
+    "site_assessment_summary": "The site has excellent solar potential with a flat RCC roof providing adequate usable area. No significant shading obstructions detected. The structure is in good condition requiring no reinforcement. The proposed 5kW system is well within the available roof area.",
+    "identified_risks": [
+        "Roof age of 8 years may require waterproofing before installation",
+        "Distance to electrical panel is moderate; cable routing needs proper conduit",
+        "Ensure structural load assessment for elevated mounting structure"
+    ],
+    "recommendations": [
+        "Proceed with 5kW system installation using elevated tilt structure",
+        "Use 10mm2 DC cable with proper UV-rated conduit for cable run",
+        "Schedule waterproofing treatment for roof penetration points",
+        "Install bird mesh around panel array perimeter"
+    ],
+    "shading_impact_note": "No significant shading impact detected. The roof has clear southern exposure ideal for maximum generation."
+}
 
 
 class SiteSurveyRequest(BaseModel):
@@ -25,7 +54,10 @@ class SiteSurveyRequest(BaseModel):
 
 
 @router.post("/api/site-survey")
-async def site_survey(data: SiteSurveyRequest):
+async def site_survey(data: SiteSurveyRequest, req: Request = None, user_email: str = Depends(verify_token)):
+    client_ip = req.client.host if req else "unknown"
+    if not auth_rate_limiter.is_allowed(user_email, client_ip):
+        return {"success": False, "error": "Rate limit exceeded. Please try again later."}
     try:
         prompt = f"""
         You are a senior solar installation site surveyor for an Indian solar EPC company.
@@ -76,21 +108,40 @@ async def site_survey(data: SiteSurveyRequest):
         }}
         """
 
-        response = client.models.generate_content(
-            model="gemini-2.5-flash",
-            contents=[
-                types.Content(role="user", parts=[types.Part.from_text(text=prompt)])
-            ]
-        )
+        max_attempts = 4
+        last_error = None
+        for attempt in range(max_attempts):
+            try:
+                response = client.models.generate_content(
+                    model="gemini-2.5-flash",
+                    contents=[
+                        types.Content(role="user", parts=[types.Part.from_text(text=prompt)])
+                    ]
+                )
 
-        text = response.text.strip()
-        if "```json" in text:
-            text = text.split("```json")[1].split("```")[0]
-        elif "```" in text:
-            text = text.split("```")[1].split("```")[0]
+                text = response.text.strip()
+                if "```json" in text:
+                    text = text.split("```json")[1].split("```")[0]
+                elif "```" in text:
+                    text = text.split("```")[1].split("```")[0]
 
-        result = json.loads(text.strip())
-        return {"success": True, "data": result}
+                result = json.loads(text.strip())
+                return {"success": True, "data": result}
+
+            except Exception as e:
+                last_error = e
+                err_str = str(e).lower()
+                if "503" in err_str or "429" in err_str or "unavailable" in err_str or "exhausted" in err_str or "demand" in err_str:
+                    wait_time = 2 ** (attempt + 1)
+                    time.sleep(wait_time)
+                else:
+                    raise e
+
+        raise last_error
 
     except Exception as e:
+        err_str = str(e).lower()
+        if any(term in err_str for term in ["resource_exhausted", "quota", "rate limit", "exhausted", "429", "503", "unavailable"]):
+            logger.warning("Gemini quota exhausted for site survey. Returning fallback response.")
+            return {"success": True, "fallback": True, "data": DEMO_SITE_SURVEY_DATA}
         return {"success": False, "error": str(e)}

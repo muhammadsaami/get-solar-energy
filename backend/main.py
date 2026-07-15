@@ -1,5 +1,6 @@
-from fastapi import FastAPI, File, UploadFile, Depends, HTTPException
+from fastapi import FastAPI, File, UploadFile, Depends, HTTPException, Request
 from security import verify_token
+from auth import auth_rate_limiter
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.staticfiles import StaticFiles
 from google import genai
@@ -799,7 +800,10 @@ class SolarAssistantRequest(BaseModel):
     context: Optional[SolarContext] = None
 
 @app.post("/api/solar-assistant")
-async def solar_assistant(request: SolarAssistantRequest):
+async def solar_assistant(request: SolarAssistantRequest, req: Request, user_email: str = Depends(verify_token)):
+    client_ip = req.client.host
+    if not auth_rate_limiter.is_allowed(user_email, client_ip):
+        return {"success": False, "error": "Rate limit exceeded. Please try again later."}
     try:
         system_prompt = """You are the GET Solar Energy AI Assistant — a professional and neutral solar intelligence advisor for Indian homeowners.
 
@@ -942,7 +946,10 @@ def _is_valid_bill_analysis(data: dict) -> bool:
 
 
 @app.post("/api/analyze-bill")
-async def analyze_bill(image: UploadFile = File(...)):
+async def analyze_bill(image: UploadFile = File(...), req: Request = None, user_email: str = Depends(verify_token)):
+    client_ip = req.client.host if req else "unknown"
+    if not auth_rate_limiter.is_allowed(user_email, client_ip):
+        return {"success": False, "error": "Rate limit exceeded. Please try again later."}
     try:
         image_data = await image.read()
 

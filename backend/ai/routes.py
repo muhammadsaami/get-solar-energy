@@ -55,14 +55,14 @@ def _determine_role(email: str) -> str:
     return "Free User"
 
 
-def get_current_user(token: str = Depends(verify_token)) -> Dict[str, Any]:
+def get_current_user(user_email: str = Depends(verify_token)) -> Dict[str, Any]:
     """Build AssistantContext from the JWT token."""
     users = load_users()
-    user = users.get(token)
-    role = _determine_role(token)
+    user = users.get(user_email)
+    role = _determine_role(user_email)
     name = user.get("name", "") if isinstance(user, dict) else ""
     return {
-        "email": token,
+        "email": user_email,
         "role": role,
         "name": name,
         "permissions": [role],

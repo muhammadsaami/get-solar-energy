@@ -1,13 +1,49 @@
-from fastapi import APIRouter
+from fastapi import APIRouter, Depends, Request
+from security import verify_token
+from auth import auth_rate_limiter
 from pydantic import BaseModel
 from google import genai
 from google.genai import types
 from dotenv import load_dotenv
-import os, json
+import os, json, time
+import logging
 
+logging.basicConfig(level=logging.INFO)
+logger = logging.getLogger(__name__)
 load_dotenv()
 client = genai.Client(api_key=os.getenv("GEMINI_API_KEY"))
-router = APIRouter()
+router = APIRouter(dependencies=[Depends(verify_token)])
+
+DEMO_AMC_DATA = {
+    "customer_name": "Demo Customer",
+    "system_size_kw": 5,
+    "health_score": 78,
+    "system_status": "Needs Attention",
+    "generation_drop_pct": 12.5,
+    "monthly_loss_rs": 800,
+    "next_service_due": "2026-10-15",
+    "urgent_action_required": False,
+    "diagnosis_summary": "The system is operational with minor performance degradation. A 12.5% generation drop suggests potential soiling or partial shading issues. Inverter diagnostics show no critical errors. Preventive maintenance is recommended to restore optimal performance.",
+    "fault_analysis": [
+        "12.5% generation drop indicates possible panel soiling or degradation",
+        "Panel cleaning was last performed over 6 months ago",
+        "Minor performance variation in string 2 output"
+    ],
+    "recommended_actions": [
+        "Schedule comprehensive panel cleaning within 2 weeks",
+        "Perform I-V curve tracing on all strings",
+        "Inspect wiring and connections for corrosion",
+        "Update monitoring system firmware",
+        "Verify inverter cooling fan operation"
+    ],
+    "preventive_measures": [
+        "Schedule quarterly panel cleaning",
+        "Monitor generation data weekly for early anomaly detection",
+        "Keep vegetation around the installation trimmed",
+        "Document all maintenance activities in the CRM"
+    ],
+    "estimated_service_cost_rs": 4500
+}
 
 
 class AMCRequest(BaseModel):
@@ -25,7 +61,10 @@ class AMCRequest(BaseModel):
 
 
 @router.post("/api/amc-recommendation")
-async def amc_recommendation(data: AMCRequest):
+async def amc_recommendation(data: AMCRequest, req: Request = None, user_email: str = Depends(verify_token)):
+    client_ip = req.client.host if req else "unknown"
+    if not auth_rate_limiter.is_allowed(user_email, client_ip):
+        return {"success": False, "error": "Rate limit exceeded. Please try again later."}
     try:
         generation_drop_pct = round(
             ((data.expected_generation_units - data.current_generation_units)
@@ -88,21 +127,40 @@ async def amc_recommendation(data: AMCRequest):
         }}
         """
 
-        response = client.models.generate_content(
-            model="gemini-2.5-flash",
-            contents=[
-                types.Content(role="user", parts=[types.Part.from_text(text=prompt)])
-            ]
-        )
+        max_attempts = 4
+        last_error = None
+        for attempt in range(max_attempts):
+            try:
+                response = client.models.generate_content(
+                    model="gemini-2.5-flash",
+                    contents=[
+                        types.Content(role="user", parts=[types.Part.from_text(text=prompt)])
+                    ]
+                )
 
-        text = response.text.strip()
-        if "```json" in text:
-            text = text.split("```json")[1].split("```")[0]
-        elif "```" in text:
-            text = text.split("```")[1].split("```")[0]
+                text = response.text.strip()
+                if "```json" in text:
+                    text = text.split("```json")[1].split("```")[0]
+                elif "```" in text:
+                    text = text.split("```")[1].split("```")[0]
 
-        result = json.loads(text.strip())
-        return {"success": True, "data": result}
+                result = json.loads(text.strip())
+                return {"success": True, "data": result}
+
+            except Exception as e:
+                last_error = e
+                err_str = str(e).lower()
+                if "503" in err_str or "429" in err_str or "unavailable" in err_str or "exhausted" in err_str or "demand" in err_str:
+                    wait_time = 2 ** (attempt + 1)
+                    time.sleep(wait_time)
+                else:
+                    raise e
+
+        raise last_error
 
     except Exception as e:
+        err_str = str(e).lower()
+        if any(term in err_str for term in ["resource_exhausted", "quota", "rate limit", "exhausted", "429", "503", "unavailable"]):
+            logger.warning("Gemini quota exhausted for AMC recommendation. Returning fallback response.")
+            return {"success": True, "fallback": True, "data": DEMO_AMC_DATA}
         return {"success": False, "error": str(e)}

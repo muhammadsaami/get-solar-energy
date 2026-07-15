@@ -19,7 +19,8 @@ All predictions go through the ML Registry pipeline.
 import uuid
 from typing import Optional
 
-from fastapi import APIRouter
+from fastapi import APIRouter, Depends
+from security import verify_token
 from pydantic import BaseModel, Field
 
 from .ai_service import get_ai_service
@@ -29,7 +30,7 @@ from utils.responses import ok, server_error, bad_request
 
 logger = get_logger("ml.ai_routes")
 
-router = APIRouter(prefix="/api/ai", tags=["ai-intelligence"])
+router = APIRouter(prefix="/api/ai", tags=["ai-intelligence"], dependencies=[Depends(verify_token)])
 
 
 # ── Request Schemas ──────────────────────────────────────────────────────

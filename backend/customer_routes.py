@@ -1,4 +1,5 @@
 from fastapi import APIRouter, Depends, HTTPException, Query
+from security import verify_token
 from sqlalchemy.orm import Session
 from typing import List, Optional
 from datetime import datetime
@@ -7,7 +8,7 @@ from pydantic import BaseModel
 from database_sqlite import get_sqlite_db
 import customer_service
 
-router = APIRouter(tags=["Customer Data Platform"])
+router = APIRouter(dependencies=[Depends(verify_token)], tags=["Customer Data Platform"])
 
 # ═════════════════════════════════════════════════════════════
 # PYDANTIC SCHEMAS

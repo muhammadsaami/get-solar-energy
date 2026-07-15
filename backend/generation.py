@@ -1,4 +1,6 @@
-from fastapi import APIRouter, File, UploadFile
+from fastapi import APIRouter, Depends, File, UploadFile, Request
+from security import verify_token
+from auth import auth_rate_limiter
 from google import genai
 from google.genai import types
 from dotenv import load_dotenv
@@ -6,13 +8,18 @@ import os, json
 
 load_dotenv()
 client = genai.Client(api_key=os.getenv("GEMINI_API_KEY"))
-router = APIRouter()
+router = APIRouter(dependencies=[Depends(verify_token)])
 
 @router.post("/api/analyze-generation")
 async def analyze_generation(
     bill: UploadFile = File(...),
-    generation: UploadFile = File(...)
+    generation: UploadFile = File(...),
+    req: Request = None,
+    user_email: str = Depends(verify_token)
 ):
+    client_ip = req.client.host if req else "unknown"
+    if not auth_rate_limiter.is_allowed(user_email, client_ip):
+        return {"success": False, "error": "Rate limit exceeded. Please try again later."}
     try:
         bill_data = await bill.read()
         gen_data = await generation.read()

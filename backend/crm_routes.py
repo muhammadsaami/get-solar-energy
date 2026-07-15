@@ -59,6 +59,7 @@ from datetime import datetime
 from typing import Optional
 
 from fastapi import APIRouter, Depends, Query, Response
+from security import verify_token
 from sqlalchemy import func
 from sqlalchemy.orm import Session
 
@@ -139,7 +140,7 @@ def get_tasks(customer_id: Optional[int] = None, db: Session = Depends(get_sqlit
 
 
 @router.post("/api/crm/tasks", status_code=201)
-def create_task(task_data: TaskCreateSchema, db: Session = Depends(get_sqlite_db)):
+def create_task(task_data: TaskCreateSchema, db: Session = Depends(get_sqlite_db), user_email: str = Depends(verify_token)):
     """Create a new CRM task."""
     log_api_request(logger, "POST", "/api/crm/tasks")
     try:
@@ -155,7 +156,7 @@ def create_task(task_data: TaskCreateSchema, db: Session = Depends(get_sqlite_db
 
 
 @router.put("/api/crm/tasks/{id}")
-def update_task(id: int, task_data: TaskUpdateSchema, db: Session = Depends(get_sqlite_db)):
+def update_task(id: int, task_data: TaskUpdateSchema, db: Session = Depends(get_sqlite_db), user_email: str = Depends(verify_token)):
     """Update an existing CRM task (partial update supported)."""
     log_api_request(logger, "PUT", f"/api/crm/tasks/{id}")
     try:
@@ -171,7 +172,7 @@ def update_task(id: int, task_data: TaskUpdateSchema, db: Session = Depends(get_
 
 
 @router.delete("/api/crm/tasks/{id}")
-def delete_task(id: int, db: Session = Depends(get_sqlite_db)):
+def delete_task(id: int, db: Session = Depends(get_sqlite_db), user_email: str = Depends(verify_token)):
     """Delete a CRM task."""
     log_api_request(logger, "DELETE", f"/api/crm/tasks/{id}")
     try:
@@ -205,7 +206,7 @@ def get_meetings(customer_id: Optional[int] = None, db: Session = Depends(get_sq
 
 
 @router.post("/api/crm/meetings", status_code=201)
-def create_meeting(meeting_data: MeetingCreateSchema, db: Session = Depends(get_sqlite_db)):
+def create_meeting(meeting_data: MeetingCreateSchema, db: Session = Depends(get_sqlite_db), user_email: str = Depends(verify_token)):
     """Schedule a new CRM meeting."""
     log_api_request(logger, "POST", "/api/crm/meetings")
     try:
@@ -220,7 +221,7 @@ def create_meeting(meeting_data: MeetingCreateSchema, db: Session = Depends(get_
 
 
 @router.put("/api/crm/meetings/{id}")
-def update_meeting(id: int, meeting_data: MeetingUpdateSchema, db: Session = Depends(get_sqlite_db)):
+def update_meeting(id: int, meeting_data: MeetingUpdateSchema, db: Session = Depends(get_sqlite_db), user_email: str = Depends(verify_token)):
     """Update an existing meeting (partial update supported)."""
     log_api_request(logger, "PUT", f"/api/crm/meetings/{id}")
     try:
@@ -235,7 +236,7 @@ def update_meeting(id: int, meeting_data: MeetingUpdateSchema, db: Session = Dep
 
 
 @router.delete("/api/crm/meetings/{id}")
-def delete_meeting(id: int, db: Session = Depends(get_sqlite_db)):
+def delete_meeting(id: int, db: Session = Depends(get_sqlite_db), user_email: str = Depends(verify_token)):
     """Delete a CRM meeting."""
     log_api_request(logger, "DELETE", f"/api/crm/meetings/{id}")
     try:
@@ -265,7 +266,7 @@ def get_followups(customer_id: Optional[int] = None, db: Session = Depends(get_s
 
 
 @router.post("/api/crm/followups", status_code=201)
-def create_followup(followup_data: FollowUpCreateSchema, db: Session = Depends(get_sqlite_db)):
+def create_followup(followup_data: FollowUpCreateSchema, db: Session = Depends(get_sqlite_db), user_email: str = Depends(verify_token)):
     """Create a new follow-up action."""
     log_api_request(logger, "POST", "/api/crm/followups")
     try:
@@ -280,7 +281,7 @@ def create_followup(followup_data: FollowUpCreateSchema, db: Session = Depends(g
 
 
 @router.put("/api/crm/followups/{id}")
-def update_followup(id: int, followup_data: FollowUpUpdateSchema, db: Session = Depends(get_sqlite_db)):
+def update_followup(id: int, followup_data: FollowUpUpdateSchema, db: Session = Depends(get_sqlite_db), user_email: str = Depends(verify_token)):
     """Update an existing follow-up (partial update supported)."""
     log_api_request(logger, "PUT", f"/api/crm/followups/{id}")
     try:
@@ -295,7 +296,7 @@ def update_followup(id: int, followup_data: FollowUpUpdateSchema, db: Session = 
 
 
 @router.delete("/api/crm/followups/{id}")
-def delete_followup(id: int, db: Session = Depends(get_sqlite_db)):
+def delete_followup(id: int, db: Session = Depends(get_sqlite_db), user_email: str = Depends(verify_token)):
     """Delete a follow-up action."""
     log_api_request(logger, "DELETE", f"/api/crm/followups/{id}")
     try:
@@ -321,6 +322,7 @@ def update_customer_crm(
     id: int,
     crm_data: CustomerCrmUpdateSchema,
     db: Session = Depends(get_sqlite_db),
+    user_email: str = Depends(verify_token),
 ):
     """
     Update CRM-specific fields on a customer record.
@@ -815,7 +817,8 @@ async def upload_document(
     uploaded_by: str = Form("System"),
     remarks: Optional[str] = Form(None),
     file: UploadFile = File(...),
-    db: Session = Depends(get_sqlite_db)
+    db: Session = Depends(get_sqlite_db),
+    user_email: str = Depends(verify_token)
 ):
     """Upload and secure a new customer document."""
     log_api_request(logger, "POST", "/api/crm/documents", {"customer_id": customer_id, "document_type": document_type})
@@ -860,7 +863,8 @@ async def upload_document(
 def update_document(
     id: int,
     payload: DocumentUpdateSchema,
-    db: Session = Depends(get_sqlite_db)
+    db: Session = Depends(get_sqlite_db),
+    user_email: str = Depends(verify_token)
 ):
     """Update document verification status and remarks."""
     log_api_request(logger, "PUT", f"/api/crm/documents/{id}")
@@ -879,7 +883,7 @@ def update_document(
         return server_error()
 
 @router.delete("/api/crm/documents/{id}")
-def delete_document(id: int, db: Session = Depends(get_sqlite_db)):
+def delete_document(id: int, db: Session = Depends(get_sqlite_db), user_email: str = Depends(verify_token)):
     """Delete a customer document and its associated file."""
     log_api_request(logger, "DELETE", f"/api/crm/documents/{id}")
     try:
@@ -940,7 +944,8 @@ def get_customer_communications(
 @router.post("/api/crm/communications", status_code=201)
 def create_communication(
     payload: CommunicationCreateSchema,
-    db: Session = Depends(get_sqlite_db)
+    db: Session = Depends(get_sqlite_db),
+    user_email: str = Depends(verify_token)
 ):
     """Log a new customer communication record."""
     log_api_request(logger, "POST", "/api/crm/communications")
@@ -973,7 +978,8 @@ def get_customer_installation(id: int, db: Session = Depends(get_sqlite_db)):
 def update_customer_installation(
     id: int,
     payload: InstallationUpdateSchema,
-    db: Session = Depends(get_sqlite_db)
+    db: Session = Depends(get_sqlite_db),
+    user_email: str = Depends(verify_token)
 ):
     """Update installation details and step workflow."""
     log_api_request(logger, "PUT", f"/api/crm/customers/{id}/installation")
@@ -1009,7 +1015,8 @@ def get_customer_amc(id: int, db: Session = Depends(get_sqlite_db)):
 def update_customer_amc(
     id: int,
     payload: AMCUpdateSchema,
-    db: Session = Depends(get_sqlite_db)
+    db: Session = Depends(get_sqlite_db),
+    user_email: str = Depends(verify_token)
 ):
     """Update AMC contract specifications or add visits."""
     log_api_request(logger, "PUT", f"/api/crm/customers/{id}/amc")
@@ -1070,7 +1077,8 @@ def get_customer_payments(
 @router.post("/api/crm/payments", status_code=201)
 def create_payment(
     payload: PaymentCreateSchema,
-    db: Session = Depends(get_sqlite_db)
+    db: Session = Depends(get_sqlite_db),
+    user_email: str = Depends(verify_token)
 ):
     """Generate a new payment invoice milestone."""
     log_api_request(logger, "POST", "/api/crm/payments")
@@ -1085,7 +1093,8 @@ def create_payment(
 def update_payment(
     id: int,
     payload: PaymentUpdateSchema,
-    db: Session = Depends(get_sqlite_db)
+    db: Session = Depends(get_sqlite_db),
+    user_email: str = Depends(verify_token)
 ):
     """Record payment collection or update invoice status."""
     log_api_request(logger, "PUT", f"/api/crm/payments/{id}")
