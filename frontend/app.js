@@ -227,6 +227,7 @@ function initDashboard() {
   initBillUploadSimulator();
   initSolarReportUploader();
   initRoofScannerSimulator();
+  initSatelliteRoofModule();
   initAIAdvisorChat();
   initEnterpriseAI();
   initReportsCenter();
@@ -3333,6 +3334,12 @@ function initBillHistoryChart() {
 /* ==========================================================================
    12. SATELLITE ROOF SCANNER SIMULATOR
    ========================================================================== */
+function initSatelliteRoofModule() {
+  if (window.GSE && window.GSE.Modules && window.GSE.Modules.SatelliteRoof) {
+    window.GSE.Modules.SatelliteRoof.init();
+  }
+}
+
 function initRoofScannerSimulator() {
   const dropArea = document.getElementById('roofDragDropArea');
   const fileInput = document.getElementById('roofFileInput');
@@ -3370,9 +3377,10 @@ function initRoofScannerSimulator() {
   };
 
   // Expose trigger function globally so the onclick attribute can reach it
-  window.triggerRoofAnalyze = function () {
-    if (!_selectedRoofFile) return;
-    handleRoofFile(_selectedRoofFile);
+  window.triggerRoofAnalyze = function (file) {
+    var f = file || _selectedRoofFile;
+    if (!f) return;
+    handleRoofFile(f);
   };
 
   // Setup click & drag event listeners — only store file, do NOT auto-upload
@@ -3533,6 +3541,20 @@ function initRoofScannerSimulator() {
     _set('resAnnualGeneration', annualGeneration ? `${annualGeneration} units/year` : 'Not Available');
     _set('resAnalysisNotes', analysisNotes);
 
+    // ---- Beta tag for satellite analysis ----
+    var snapTag = document.getElementById('snapTagBadge');
+    if (snapTag) {
+      if (data.satellite_analysis === true) {
+        snapTag.textContent = 'BETA';
+        snapTag.style.background = 'var(--color-yellow)';
+        snapTag.style.color = '#000';
+      } else {
+        snapTag.textContent = 'AI EXTRACTED';
+        snapTag.style.background = 'var(--accent-green)';
+        snapTag.style.color = '#fff';
+      }
+    }
+
     // ---- 2. Analytics Snapshot Card ----
     _set('snapRoofSuitability', `${suitabilityScore}%`);
     _set('snapRoofSystemSize', systemSizeKw ? `${systemSizeKw} kW` : 'Not Available');
@@ -3648,8 +3670,10 @@ function initRoofScannerSimulator() {
     formData.append('length_ft', roofLength);
     formData.append('width_ft', roofWidth);
     formData.append('city', roofCity);
+    if (window._satelliteCaptureMode) {
+      formData.append('source', 'satellite');
+    }
 
-    // Log FormData contents for debugging
     safeFetch(`${API_BASE}/api/analyze-roof`, {
       method: 'POST',
       body: formData
@@ -3662,6 +3686,7 @@ function initRoofScannerSimulator() {
         return res.json();
       })
       .then((result) => {
+        window._satelliteCaptureMode = false;
         if (!result || result.success !== true || !result.data) {
           throw new Error((result && result.error) || 'Invalid API response format.');
         }
@@ -3671,7 +3696,8 @@ function initRoofScannerSimulator() {
         if (progressStatus) progressStatus.textContent = 'Analysis complete!';
         if (scanStatusText) scanStatusText.textContent = 'Status: Complete';
 
-        showToast('Rooftop satellite analysis completed successfully!', 'success');
+        var isSatellite = result.data && result.data.satellite_analysis === true;
+        showToast(isSatellite ? 'Satellite analysis completed!' : 'Rooftop analysis completed successfully!', 'success');
 
         localStorage.setItem('lastRoofAnalysis', JSON.stringify(result.data));
         const solarPot = result.data.solar_potential || 'High';
@@ -3685,22 +3711,24 @@ function initRoofScannerSimulator() {
           if (progressBox) progressBox.style.display = 'none';
           if (laser) laser.style.display = 'none';
 
-          // Success state on drop area
-          dropArea.innerHTML = `
-          <svg class="upload-icon" style="width: 44px; height: 44px; margin-bottom: 10px; stroke: var(--accent-green); fill: none; stroke-width: 1.5;" viewBox="0 0 24 24">
-            <polyline points="20 6 9 17 4 12"/>
-          </svg>
-          <p style="font-size: 12px; color: var(--accent-green); font-weight: 700; margin: 0;">Rooftop Scan Verified & Extracted!</p>
-          <span style="font-size: 9px; color: var(--text-muted);">Click to upload another image</span>
-        `;
+          if (!isSatellite && dropArea) {
+            dropArea.innerHTML = `
+            <svg class="upload-icon" style="width: 44px; height: 44px; margin-bottom: 10px; stroke: var(--accent-green); fill: none; stroke-width: 1.5;" viewBox="0 0 24 24">
+              <polyline points="20 6 9 17 4 12"/>
+            </svg>
+            <p style="font-size: 12px; color: var(--accent-green); font-weight: 700; margin: 0;">Rooftop Scan Verified & Extracted!</p>
+            <span style="font-size: 9px; color: var(--text-muted);">Click to upload another image</span>
+          `;
+          }
 
-          if (poly1) poly1.style.display = 'block';
-          if (poly2) poly2.style.display = 'block';
+          if (!isSatellite && poly1) poly1.style.display = 'block';
+          if (!isSatellite && poly2) poly2.style.display = 'block';
 
           renderRoofData(result.data);
         }, 800);
       })
       .catch((err) => {
+        window._satelliteCaptureMode = false;
         clearInterval(progressInterval);
         console.error('Roof analysis error:', err);
 

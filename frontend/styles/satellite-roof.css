@@ -1,0 +1,235 @@
+.roof-mode-toggle {
+  display: flex;
+  gap: 8px;
+  margin-bottom: 14px;
+  border-bottom: 1px solid var(--border-color-light);
+  padding-bottom: 10px;
+}
+
+.roof-mode-pill {
+  padding: 6px 16px;
+  border: 1px solid var(--border-color);
+  border-radius: 6px;
+  background: transparent;
+  color: var(--text-muted);
+  font-size: 11px;
+  font-weight: 700;
+  font-family: "Outfit", sans-serif;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  letter-spacing: 0.3px;
+}
+
+.roof-mode-pill:hover {
+  border-color: var(--accent-blue);
+  color: var(--accent-blue);
+  background: var(--color-blue-surface);
+}
+
+.roof-mode-pill.active {
+  background: var(--accent-green);
+  color: #fff;
+  border-color: var(--accent-green);
+}
+
+.roof-panel {
+  display: none;
+}
+
+.roof-panel.active {
+  display: block;
+}
+
+#satelliteMap {
+  height: 320px;
+  border-radius: 8px;
+  border: 1px solid var(--border-color);
+  z-index: 1;
+}
+
+.satellite-search-wrapper {
+  position: relative;
+  margin-bottom: 10px;
+}
+
+.satellite-search-wrapper input {
+  width: 100%;
+  box-sizing: border-box;
+  padding: 9px 12px;
+  padding-right: 32px;
+  background: var(--bg-input, rgba(255,255,255,0.04));
+  border: 1px solid var(--border-color);
+  border-radius: 6px;
+  color: var(--text-navy);
+  font-size: 12px;
+  font-family: "Outfit", sans-serif;
+  outline: none;
+  transition: border-color 0.2s;
+}
+
+.satellite-search-wrapper input:focus {
+  border-color: var(--accent-blue);
+}
+
+.satellite-search-icon {
+  position: absolute;
+  right: 10px;
+  top: 50%;
+  transform: translateY(-50%);
+  width: 16px;
+  height: 16px;
+  stroke: var(--text-muted);
+  pointer-events: none;
+}
+
+.satellite-address-results {
+  display: none;
+  position: absolute;
+  top: 100%;
+  left: 0;
+  right: 0;
+  background: var(--bg-card-solid, #0D2136);
+  border: 1px solid var(--border-color);
+  border-radius: 6px;
+  max-height: 180px;
+  overflow-y: auto;
+  z-index: 1000;
+  margin-top: 2px;
+}
+
+.satellite-address-result-item {
+  padding: 8px 12px;
+  font-size: 11px;
+  color: var(--text-navy);
+  cursor: pointer;
+  border-bottom: 1px solid var(--border-color-light);
+  transition: background 0.15s;
+}
+
+.satellite-address-result-item:last-child {
+  border-bottom: none;
+}
+
+.satellite-address-result-item:hover {
+  background: var(--color-blue-surface);
+}
+
+.satellite-location-info {
+  font-size: 10px;
+  color: var(--text-muted);
+  margin-top: 6px;
+  line-height: 1.4;
+  word-break: break-all;
+}
+
+.satellite-map-controls {
+  display: flex;
+  gap: 6px;
+  margin-top: 8px;
+}
+
+.satellite-layer-btn {
+  padding: 4px 10px;
+  background: rgba(23, 168, 229, 0.08);
+  color: var(--accent-blue);
+  border: 1px solid rgba(23, 168, 229, 0.2);
+  border-radius: 4px;
+  font-size: 10px;
+  font-weight: 700;
+  cursor: pointer;
+  transition: all var(--duration-fast, 0.2s) ease;
+  font-family: "Outfit", sans-serif;
+}
+
+.satellite-layer-btn:hover {
+  background: rgba(23, 168, 229, 0.16);
+  border-color: var(--accent-blue);
+}
+
+.satellite-layer-btn.active {
+  background: var(--accent-green);
+  color: #fff;
+  border-color: var(--accent-green);
+}
+
+.beta-badge {
+  display: inline-block;
+  font-size: 9px;
+  font-weight: 800;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  padding: 2px 6px;
+  border-radius: 3px;
+  background: var(--color-yellow-surface);
+  color: var(--color-yellow);
+  border: 1px solid var(--color-yellow-border);
+  vertical-align: middle;
+  margin-left: 8px;
+}
+
+.satellite-info-banner {
+  display: none;
+  margin-top: 12px;
+  margin-bottom: 12px;
+  padding: 10px 12px;
+  border-radius: 6px;
+  font-size: 10px;
+  line-height: 1.5;
+  background: var(--color-yellow-surface);
+  border: 1px solid var(--color-yellow-border);
+  color: var(--text-navy);
+}
+
+.satellite-info-banner svg {
+  width: 14px;
+  height: 14px;
+  stroke: var(--color-yellow);
+  margin-right: 6px;
+  flex-shrink: 0;
+}
+
+.satellite-capture-btn {
+  margin-top: 10px;
+  width: 100%;
+  padding: 11px 0;
+  border: none;
+  border-radius: 7px;
+  background: linear-gradient(135deg, #6366f1, #8b5cf6);
+  color: #fff;
+  font-size: 12px;
+  font-weight: 800;
+  font-family: "Outfit", sans-serif;
+  letter-spacing: 0.3px;
+  cursor: pointer;
+  opacity: 1;
+  transition: opacity 0.2s, box-shadow 0.2s, transform 0.15s;
+}
+
+.satellite-capture-btn:hover:not(:disabled) {
+  box-shadow: 0 4px 18px rgba(99, 102, 241, 0.35);
+  transform: translateY(-1px);
+}
+
+.satellite-capture-btn:disabled {
+  cursor: not-allowed;
+  opacity: 0.45;
+}
+
+.satellite-beta-tag {
+  display: none;
+  font-size: 9px;
+  background: var(--color-yellow);
+  color: #000;
+  padding: 1px 5px;
+  border-radius: 3px;
+  font-weight: 800;
+  font-family: "Outfit", sans-serif;
+  vertical-align: middle;
+  margin-left: 4px;
+}
+
+@media (max-width: 992px) {
+  #satelliteMap {
+    height: 240px;
+  }
+}
