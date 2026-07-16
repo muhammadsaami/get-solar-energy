@@ -3585,7 +3585,36 @@ function initRoofScannerSimulator() {
       else descEl.textContent = 'Moderate readiness. Check shading / obstacles.';
     }
 
-    // ---- 5. Charts ----
+    // ---- 5. Dashboard KPI Cards (Annual Savings, Lifetime, ROI, Carbon, etc.) ----
+    const annualGenUnits = annualGeneration || monthlyGeneration * 12;
+    const savingsRate = 8;
+    const estimatedAnnualSavings = annualGenUnits * savingsRate;
+    const lifetimeSavings = estimatedAnnualSavings * 25;
+    const estSystemCost = systemSizeKw * 55000;
+    const roiYears = estimatedAnnualSavings > 0 ? (estSystemCost / estimatedAnnualSavings) : 0;
+    const carbonOffsetTons = Math.round(annualGenUnits * 0.8 / 1000 * 10) / 10;
+
+    function _setAnimated(id, text) {
+      var el = document.getElementById(id);
+      if (!el) return;
+      var val = text || 'Not Available';
+      if (el.textContent !== val) {
+        el.style.transition = 'opacity 0.2s ease';
+        el.style.opacity = '0';
+        setTimeout(function () {
+          el.textContent = val;
+          el.style.opacity = '1';
+        }, 150);
+      }
+    }
+
+    _setAnimated('annualSavingsTextVal', estimatedAnnualSavings ? `₹${estimatedAnnualSavings.toLocaleString('en-IN')}` : null);
+    _setAnimated('lifetimeSavingsTextVal', lifetimeSavings ? `₹${(lifetimeSavings / 100000).toFixed(1)} Lakhs` : null);
+    _setAnimated('roiPeriodVal', roiYears ? `${roiYears.toFixed(1)} Years` : null);
+    _setAnimated('carbonOffsetVal', carbonOffsetTons ? `${carbonOffsetTons} Tons` : null);
+    _setAnimated('energyIndependenceVal', suitabilityScore ? `${suitabilityScore}%` : null);
+
+    // ---- 6. Charts ----
     if (dashboardData && dashboardData.chartData && dashboardData.chartData.energyProduction) {
       const baseProduction = [380, 420, 490, 520, 560, 510, 440, 460, 480, 510, 440, 400];
       const ratio = systemSizeKw / 3;
@@ -3725,10 +3754,16 @@ function initRoofScannerSimulator() {
           if (!isSatellite && poly2) poly2.style.display = 'block';
 
           renderRoofData(result.data);
+          if (window.GSE && window.GSE.Modules && window.GSE.Modules.SatelliteRoof) {
+            window.GSE.Modules.SatelliteRoof.onAnalysisComplete();
+          }
         }, 800);
       })
       .catch((err) => {
         window._satelliteCaptureMode = false;
+        if (window.GSE && window.GSE.Modules && window.GSE.Modules.SatelliteRoof) {
+          window.GSE.Modules.SatelliteRoof.onAnalysisError();
+        }
         clearInterval(progressInterval);
         console.error('Roof analysis error:', err);
 

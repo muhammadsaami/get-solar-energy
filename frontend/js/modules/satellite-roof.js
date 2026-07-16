@@ -8,24 +8,28 @@ GSE.Modules.SatelliteRoof = (function () {
       name: "OpenStreetMap",
       url: "https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png",
       attribution: "&copy; OpenStreetMap contributors",
-      maxZoom: 19
+      maxZoom: 20
     },
     satellite: {
       name: "ESRI World Imagery",
       url: "https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}",
       attribution: "&copy; ESA",
-      maxZoom: 19
+      maxZoom: 20
     }
   };
 
   var DEFAULT_CENTER = [20.5937, 78.9629];
   var DEFAULT_ZOOM = 5;
+  var CAPTURE_ZOOM = 20;
+  var MIN_CAPTURE_ZOOM = 17;
   var CAPTURE_SCALE = 2;
+  var SEARCH_DEBOUNCE_MS = 350;
+  var LOCATION_TIMEOUT_MS = 15000;
 
   var _map = null;
   var _streetLayer = null;
   var _satLayer = null;
-  var _currentTile = "street";
+  var _currentTile = "satellite";
   var _marker = null;
   var _currentMode = "camera";
   var _selectedLocation = null;
@@ -33,10 +37,28 @@ GSE.Modules.SatelliteRoof = (function () {
   var _isMounted = false;
   var _searchTimer = null;
   var _captureInProgress = false;
+  var _analysisInProgress = false;
+  var _tilesLoaded = false;
+  var _tileLoadTimer = null;
+  var _capturedBlobUrl = null;
+  var _capturedFile = null;
 
   var _els = {};
 
   function _q(id) { return document.getElementById(id); }
+
+  function _updateStepIndicator(activeStep) {
+    var steps = document.querySelectorAll(".satellite-step");
+    var connectors = document.querySelectorAll(".satellite-step-connector");
+    steps.forEach(function (s, i) {
+      var num = i + 1;
+      s.classList.toggle("active", num === activeStep);
+      s.classList.toggle("completed", num < activeStep);
+    });
+    connectors.forEach(function (c, i) {
+      c.classList.toggle("completed", i + 1 < activeStep);
+    });
+  }
 
   function _cacheElements() {
     _els = {
@@ -48,11 +70,19 @@ GSE.Modules.SatelliteRoof = (function () {
       addressInput: _q("satelliteAddressInput"),
       addressResults: _q("satelliteAddressResults"),
       captureBtn: _q("satelliteCaptureBtn"),
+      analyzeCameraBtn: _q("roofAnalyzeBtn"),
+      analyzeSatBtn: _q("roofAnalyzeBtnSatellite"),
       toggleStreet: _q("satelliteToggleStreet"),
       toggleSat: _q("satelliteToggleSat"),
       betaBadge: _q("satelliteBetaBadge"),
-      infoBanner: _q("satelliteInfoBanner"),
       locationLabel: _q("satelliteLocationLabel"),
+      captureStatus: _q("satelliteCaptureStatus"),
+      previewCard: _q("satellitePreviewCard"),
+      previewThumb: _q("satellitePreviewThumb"),
+      previewRes: _q("satellitePreviewRes"),
+      previewTime: _q("satellitePreviewTime"),
+      previewLoc: _q("satellitePreviewLoc"),
+      previewStatus: _q("satellitePreviewStatus"),
       lengthInput: _q("roofLengthInput"),
       widthInput: _q("roofWidthInput"),
       cityInput: _q("roofCityInput")
@@ -69,28 +99,49 @@ GSE.Modules.SatelliteRoof = (function () {
     _bindLayerToggle();
     _bindAddressSearch();
     _bindCapture();
+    _bindAnalyzeSatellite();
     _setMode("camera");
 
     _isInitialized = true;
     _isMounted = true;
-    GSE.ModuleRegistry.markMounted("satellite-roof");
+    if (GSE.ModuleRegistry && GSE.ModuleRegistry.markMounted) {
+      GSE.ModuleRegistry.markMounted("satellite-roof");
+    }
   }
 
   function _setMode(mode) {
     _currentMode = mode;
-    if (_els.modeCamera) _els.modeCamera.classList.toggle("active", mode === "camera");
-    if (_els.modeSatellite) _els.modeSatellite.classList.toggle("active", mode === "satellite");
-    if (_els.cameraPanel) _els.cameraPanel.classList.toggle("active", mode === "camera");
-    if (_els.satellitePanel) _els.satellitePanel.classList.toggle("active", mode === "satellite");
+    var isCamera = mode === "camera";
+    var isSatellite = mode === "satellite";
 
-    if (_els.betaBadge) _els.betaBadge.style.display = mode === "satellite" ? "inline-block" : "none";
-    if (_els.infoBanner) _els.infoBanner.style.display = mode === "satellite" ? "block" : "none";
+    if (_els.modeCamera) {
+      _els.modeCamera.classList.toggle("active", isCamera);
+      _els.modeCamera.classList.toggle("btn-primary", isCamera);
+      _els.modeCamera.classList.toggle("btn-ghost", !isCamera);
+      _els.modeCamera.setAttribute("aria-selected", isCamera ? "true" : "false");
+    }
+    if (_els.modeSatellite) {
+      _els.modeSatellite.classList.toggle("active", isSatellite);
+      _els.modeSatellite.classList.toggle("btn-primary", isSatellite);
+      _els.modeSatellite.classList.toggle("btn-ghost", !isSatellite);
+      _els.modeSatellite.setAttribute("aria-selected", isSatellite ? "true" : "false");
+    }
+    if (_els.cameraPanel) {
+      _els.cameraPanel.classList.toggle("active", isCamera);
+    }
+    if (_els.satellitePanel) {
+      _els.satellitePanel.classList.toggle("active", isSatellite);
+    }
+    if (_els.betaBadge) {
+      _els.betaBadge.style.display = isSatellite ? "inline-flex" : "none";
+    }
 
-    if (mode === "satellite" && _map) {
+    if (isSatellite && _map) {
       setTimeout(function () { _map.invalidateSize(); }, 100);
     }
-    if (mode === "satellite") {
-      _updateAnalyzeBtn();
+    if (isSatellite) {
+      _updateCaptureBtn();
+      _updateStepIndicator(1);
     }
   }
 
@@ -104,7 +155,9 @@ GSE.Modules.SatelliteRoof = (function () {
   }
 
   function _initMap() {
-    if (!_els.mapContainer || typeof L === "undefined") return;
+    if (!_els.mapContainer || typeof L === "undefined") {
+      return;
+    }
 
     _streetLayer = L.tileLayer(TILE_PROVIDERS.street.url, {
       attribution: TILE_PROVIDERS.street.attribution,
@@ -119,15 +172,37 @@ GSE.Modules.SatelliteRoof = (function () {
     _map = L.map(_els.mapContainer, {
       center: DEFAULT_CENTER,
       zoom: DEFAULT_ZOOM,
-      layers: [_streetLayer],
+      layers: [_satLayer],
       zoomControl: true,
       attributionControl: true
+    });
+
+    _currentTile = "satellite";
+    if (_els.toggleSat) _els.toggleSat.classList.add("active");
+    if (_els.toggleStreet) _els.toggleStreet.classList.remove("active");
+
+    _map.on("tileload", function () {
+      _tilesLoaded = true;
+      _updateCaptureBtn();
+      if (_tileLoadTimer) clearTimeout(_tileLoadTimer);
+    });
+
+    _map.on("zoomend", function () {
+      _tilesLoaded = false;
+      if (_tileLoadTimer) clearTimeout(_tileLoadTimer);
+      _tileLoadTimer = setTimeout(function () { _tilesLoaded = true; _updateCaptureBtn(); }, 2000);
+      _updateCaptureBtn();
+    });
+
+    _map.on("moveend", function () {
+      _updateCaptureBtn();
     });
   }
 
   function _setTileLayer(key) {
     if (!_map) return;
     _currentTile = key;
+    _tilesLoaded = false;
     if (key === "satellite") {
       _map.removeLayer(_streetLayer);
       _map.addLayer(_satLayer);
@@ -135,8 +210,15 @@ GSE.Modules.SatelliteRoof = (function () {
       _map.removeLayer(_satLayer);
       _map.addLayer(_streetLayer);
     }
-    if (_els.toggleStreet) _els.toggleStreet.classList.toggle("active", key === "street");
-    if (_els.toggleSat) _els.toggleSat.classList.toggle("active", key === "satellite");
+    if (_els.toggleStreet) {
+      _els.toggleStreet.classList.toggle("active", key === "street");
+      _els.toggleStreet.setAttribute("aria-pressed", key === "street" ? "true" : "false");
+    }
+    if (_els.toggleSat) {
+      _els.toggleSat.classList.toggle("active", key === "satellite");
+      _els.toggleSat.setAttribute("aria-pressed", key === "satellite" ? "true" : "false");
+    }
+    setTimeout(function () { _updateCaptureBtn(); }, 500);
   }
 
   function _bindLayerToggle() {
@@ -152,15 +234,45 @@ GSE.Modules.SatelliteRoof = (function () {
     if (!_map) return;
     if (_marker) _map.removeLayer(_marker);
     _marker = L.marker([lat, lng]).addTo(_map);
-    _map.setView([lat, lng], zoom || 18);
+    _tilesLoaded = false;
+    _map.setView([lat, lng], zoom || CAPTURE_ZOOM, { animate: true, duration: 0.8 });
   }
 
-  function _updateAnalyzeBtn() {
-    var valid = _selectedLocation && _selectedLocation.lat;
-    if (_els.captureBtn) {
-      _els.captureBtn.disabled = !valid;
-      _els.captureBtn.style.opacity = valid ? "1" : "0.45";
-      _els.captureBtn.style.cursor = valid ? "pointer" : "not-allowed";
+  function _getZoomLevel() {
+    return _map ? _map.getZoom() : 0;
+  }
+
+  function _getCaptureValidationMessage() {
+    if (!_selectedLocation || !_selectedLocation.lat) {
+      return "Search for an address first.";
+    }
+    if (_captureInProgress) {
+      return "Capture already in progress.";
+    }
+    if (_analysisInProgress) {
+      return "Analysis in progress. Please wait.";
+    }
+    var zoom = _getZoomLevel();
+    if (zoom < MIN_CAPTURE_ZOOM) {
+      return "Zoom in closer (zoom level " + MIN_CAPTURE_ZOOM + "+) for a usable roof image.";
+    }
+    if (!_tilesLoaded) {
+      return "Map tiles still loading. Please wait.";
+    }
+    return null;
+  }
+
+  function _updateCaptureBtn() {
+    if (!_els.captureBtn) return;
+    var msg = _getCaptureValidationMessage();
+    var disabled = msg !== null;
+    _els.captureBtn.disabled = disabled;
+    _els.captureBtn.classList.toggle("disabled", disabled);
+    if (disabled && _els.captureStatus) {
+      _els.captureStatus.textContent = msg;
+      _els.captureStatus.style.display = "block";
+    } else if (_els.captureStatus) {
+      _els.captureStatus.style.display = "none";
     }
   }
 
@@ -172,11 +284,12 @@ GSE.Modules.SatelliteRoof = (function () {
       if (_searchTimer) clearTimeout(_searchTimer);
       if (val.length < 3) {
         if (_els.addressResults) _els.addressResults.style.display = "none";
+        _clearSelection();
         return;
       }
       _searchTimer = setTimeout(function () {
         _performSearch(val);
-      }, 300);
+      }, SEARCH_DEBOUNCE_MS);
     });
 
     document.addEventListener("click", function (e) {
@@ -189,14 +302,25 @@ GSE.Modules.SatelliteRoof = (function () {
       if (e.key === "Escape" && _els.addressResults) {
         _els.addressResults.style.display = "none";
       }
+      if (e.key === "Enter" && _els.addressResults) {
+        var first = _els.addressResults.querySelector(".satellite-address-result-item");
+        if (first) first.click();
+      }
     });
   }
 
   function _performSearch(query) {
-    if (!window.GSE || !window.GSE.Services || !window.GSE.Services.Geocoding) return;
-    window.GSE.Services.Geocoding.searchAddress(query).then(function (results) {
-      _renderAddressResults(results);
-    });
+    if (!window.GSE || !window.GSE.Services || !window.GSE.Services.Geocoding) {
+      _showToast("Address search unavailable. Enter city manually.", "warning");
+      return;
+    }
+    window.GSE.Services.Geocoding.searchAddress(query)
+      .then(function (results) {
+        _renderAddressResults(results);
+      })
+      .catch(function () {
+        _showToast("Address search failed. Check your connection and try again.", "error");
+      });
   }
 
   function _renderAddressResults(results) {
@@ -204,18 +328,31 @@ GSE.Modules.SatelliteRoof = (function () {
     _els.addressResults.innerHTML = "";
     if (!results || results.length === 0) {
       _els.addressResults.style.display = "none";
+      if (_els.addressInput && _els.addressInput.value.trim().length >= 3) {
+        _showToast("No addresses found. Try a different search term.", "warning");
+      }
       return;
     }
-    results.forEach(function (r) {
+    results.forEach(function (r, i) {
       var item = document.createElement("div");
       item.className = "satellite-address-result-item";
       item.textContent = r.label;
+      item.setAttribute("role", "option");
+      item.setAttribute("tabindex", "0");
       item.addEventListener("click", function () {
         _selectAddressResult(r);
+      });
+      item.addEventListener("keydown", function (e) {
+        if (e.key === "Enter") _selectAddressResult(r);
       });
       _els.addressResults.appendChild(item);
     });
     _els.addressResults.style.display = "block";
+  }
+
+  function _clearSelection() {
+    _selectedLocation = null;
+    _hidePreview();
   }
 
   function _selectAddressResult(location) {
@@ -226,8 +363,10 @@ GSE.Modules.SatelliteRoof = (function () {
     if (_els.cityInput) _els.cityInput.value = location.city;
     if (_els.lengthInput) _els.lengthInput.value = "";
     if (_els.widthInput) _els.widthInput.value = "";
-    _flyTo(location.lat, location.lng, 18);
-    _updateAnalyzeBtn();
+    _setTileLayer("satellite");
+    _flyTo(location.lat, location.lng, CAPTURE_ZOOM);
+    _hidePreview();
+    _updateStepIndicator(2);
   }
 
   function _estimateDimensions() {
@@ -245,15 +384,73 @@ GSE.Modules.SatelliteRoof = (function () {
   function _bindCapture() {
     if (!_els.captureBtn) return;
     _els.captureBtn.addEventListener("click", function () {
-      if (_captureInProgress) return;
+      if (_captureInProgress || _analysisInProgress) return;
+      var msg = _getCaptureValidationMessage();
+      if (msg) {
+        _showToast(msg, "warning");
+        return;
+      }
       _captureInProgress = true;
+      _els.captureBtn.disabled = true;
+      _els.captureBtn.textContent = "Capturing...";
+      _disableAnalyzeButtons();
+      _scheduleTimeout();
       _doCapture();
     });
+  }
+
+  function _bindAnalyzeSatellite() {
+    if (!_els.analyzeSatBtn) return;
+    _els.analyzeSatBtn.addEventListener("click", function () {
+      if (_analysisInProgress || !_capturedFile) return;
+      _analysisInProgress = true;
+      _els.analyzeSatBtn.disabled = true;
+      _els.analyzeSatBtn.classList.add("loading");
+      _els.analyzeSatBtn.textContent = "Analyzing...";
+      _els.captureBtn.disabled = true;
+      window._satelliteCaptureMode = true;
+      window.triggerRoofAnalyze(_capturedFile);
+    });
+  }
+
+  function _disableAnalyzeButtons() {
+    if (_els.analyzeCameraBtn) { _els.analyzeCameraBtn.disabled = true; }
+    if (_els.analyzeSatBtn) { _els.analyzeSatBtn.disabled = true; }
+  }
+
+  function _enableAnalyzeButtons() {
+    if (_els.analyzeCameraBtn) { _els.analyzeCameraBtn.disabled = false; }
+    if (_currentMode === "satellite" && _els.analyzeSatBtn && _capturedFile) {
+      _els.analyzeSatBtn.disabled = false;
+      _els.analyzeSatBtn.textContent = "Analyze Satellite Capture";
+    }
+  }
+
+  function _scheduleTimeout() {
+    setTimeout(function () {
+      if (_captureInProgress) {
+        _captureInProgress = false;
+        _resetCaptureBtn();
+        _enableAnalyzeButtons();
+        _showToast("Capture timed out. Please try again.", "error");
+      }
+    }, LOCATION_TIMEOUT_MS);
+  }
+
+  function _resetCaptureBtn() {
+    if (_els.captureBtn) {
+      _els.captureBtn.disabled = true;
+      _els.captureBtn.textContent = "Capture from Satellite";
+      _updateCaptureBtn();
+    }
   }
 
   function _doCapture() {
     if (!_map || !_els.mapContainer) {
       _captureInProgress = false;
+      _resetCaptureBtn();
+      _enableAnalyzeButtons();
+      _showToast("Map not available. Switch to Camera Upload.", "error");
       return;
     }
 
@@ -268,7 +465,13 @@ GSE.Modules.SatelliteRoof = (function () {
     controls.forEach(function (c) { c.style.display = "none"; });
 
     if (typeof html2canvas === "undefined") {
-      _captureFallback();
+      controls.forEach(function (c) { c.style.display = ""; });
+      mapEl.style.overflow = originalOverflow;
+      mapEl.style.position = originalPosition;
+      _captureInProgress = false;
+      _resetCaptureBtn();
+      _enableAnalyzeButtons();
+      _showToast("Map capture unavailable. Switch to Camera Upload mode.", "error");
       return;
     }
 
@@ -286,45 +489,104 @@ GSE.Modules.SatelliteRoof = (function () {
       canvas.toBlob(function (blob) {
         if (!blob) {
           _captureInProgress = false;
+          _resetCaptureBtn();
+          _enableAnalyzeButtons();
+          _showToast("Failed to create image. Try again.", "error");
           return;
         }
-        _submitCapture(blob);
+        _onCaptureComplete(blob, canvas);
       }, "image/png");
     }).catch(function () {
       controls.forEach(function (c) { c.style.display = ""; });
       mapEl.style.overflow = originalOverflow;
       mapEl.style.position = originalPosition;
-      _captureFallback();
+      _captureInProgress = false;
+      _resetCaptureBtn();
+      _enableAnalyzeButtons();
+      _showToast("Map capture failed. Switch to Camera Upload mode.", "error");
     });
   }
 
-  function _captureFallback() {
-    _captureInProgress = false;
-    _showError("Map capture unavailable. Switch to Camera Upload mode.");
-  }
-
-  function _submitCapture(blob) {
+  function _onCaptureComplete(blob, canvas) {
     var dims = _estimateDimensions();
     var fileName = "satellite-capture-" + Date.now() + ".png";
-    var file = new File([blob], fileName, { type: "image/png" });
+    _capturedFile = new File([blob], fileName, { type: "image/png" });
 
     if (_els.lengthInput) _els.lengthInput.value = dims.length;
     if (_els.widthInput) _els.widthInput.value = dims.width;
 
+    _showPreview(canvas, blob);
+    _updateStepIndicator(3);
     _captureInProgress = false;
+    _resetCaptureBtn();
 
-    if (typeof window.triggerRoofAnalyze === "function") {
-      window._satelliteCaptureMode = true;
-      window._satelliteCaptureFile = file;
-      window.triggerRoofAnalyze(file);
-    } else {
-      _showError("Roof analyzer not available. Please use Camera Upload.");
+    if (_els.analyzeSatBtn) {
+      _els.analyzeSatBtn.disabled = false;
+      _els.analyzeSatBtn.textContent = "Analyze Satellite Capture";
     }
   }
 
-  function _showError(msg) {
+  function _showPreview(canvas, blob) {
+    if (!_els.previewCard) return;
+    _els.previewCard.style.display = "block";
+
+    if (_els.previewThumb) {
+      if (_capturedBlobUrl) URL.revokeObjectURL(_capturedBlobUrl);
+      _capturedBlobUrl = URL.createObjectURL(blob);
+      _els.previewThumb.src = _capturedBlobUrl;
+    }
+
+    if (_els.previewRes) {
+      _els.previewRes.textContent = canvas.width + " x " + canvas.height + " px";
+    }
+
+    if (_els.previewTime) {
+      _els.previewTime.textContent = new Date().toLocaleString();
+    }
+
+    if (_els.previewLoc && _selectedLocation) {
+      _els.previewLoc.textContent = _selectedLocation.label || _selectedLocation.city || "Unknown";
+    }
+
+    if (_els.previewStatus) {
+      _els.previewStatus.textContent = "Ready for Analysis";
+      _els.previewStatus.className = "badge badge-success badge-sm";
+    }
+  }
+
+  function _hidePreview() {
+    if (_els.previewCard) _els.previewCard.style.display = "none";
+    if (_capturedBlobUrl) { URL.revokeObjectURL(_capturedBlobUrl); _capturedBlobUrl = null; }
+    _capturedFile = null;
+  }
+
+  function onAnalysisComplete() {
+    _analysisInProgress = false;
+    _resetCaptureBtn();
+    _enableAnalyzeButtons();
+    if (_els.analyzeSatBtn) {
+      _els.analyzeSatBtn.disabled = false;
+      _els.analyzeSatBtn.classList.remove("loading");
+      _els.analyzeSatBtn.textContent = "Analyze Satellite Capture";
+    }
+    if (_currentMode === "satellite") _updateCaptureBtn();
+  }
+
+  function onAnalysisError() {
+    _analysisInProgress = false;
+    _resetCaptureBtn();
+    _enableAnalyzeButtons();
+    if (_els.analyzeSatBtn) {
+      _els.analyzeSatBtn.disabled = false;
+      _els.analyzeSatBtn.classList.remove("loading");
+      _els.analyzeSatBtn.textContent = "Retry Analysis";
+    }
+    if (_currentMode === "satellite") _updateCaptureBtn();
+  }
+
+  function _showToast(msg, type) {
     if (typeof showToast === "function") {
-      showToast(msg, "error");
+      showToast(msg, type || "info");
     }
   }
 
@@ -333,9 +595,16 @@ GSE.Modules.SatelliteRoof = (function () {
       _map.remove();
       _map = null;
     }
+    if (_capturedBlobUrl) {
+      URL.revokeObjectURL(_capturedBlobUrl);
+      _capturedBlobUrl = null;
+    }
+    _capturedFile = null;
     _isInitialized = false;
     _isMounted = false;
-    GSE.ModuleRegistry.markUnmounted("satellite-roof");
+    if (GSE.ModuleRegistry && GSE.ModuleRegistry.markUnmounted) {
+      GSE.ModuleRegistry.markUnmounted("satellite-roof");
+    }
   }
 
   function getMode() {
@@ -349,12 +618,14 @@ GSE.Modules.SatelliteRoof = (function () {
   GSE.ModuleRegistry.register({
     id: "satellite-roof",
     title: "Satellite Roof Analysis",
-    version: "1.0.0",
+    version: "3.0.0",
     module: {
       init: init,
       destroy: destroy,
       getMode: getMode,
-      getSelectedLocation: getSelectedLocation
+      getSelectedLocation: getSelectedLocation,
+      onAnalysisComplete: onAnalysisComplete,
+      onAnalysisError: onAnalysisError
     }
   });
 
@@ -362,6 +633,8 @@ GSE.Modules.SatelliteRoof = (function () {
     init: init,
     destroy: destroy,
     getMode: getMode,
-    getSelectedLocation: getSelectedLocation
+    getSelectedLocation: getSelectedLocation,
+    onAnalysisComplete: onAnalysisComplete,
+    onAnalysisError: onAnalysisError
   };
 })();

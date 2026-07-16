@@ -1857,6 +1857,7 @@ canvas {
   font-weight: 800;
   letter-spacing: -0.5px;
   color: var(--text-navy);
+  transition: opacity 0.2s ease;
 }
 
 .kpi-subtext-block {
@@ -2125,6 +2126,7 @@ canvas {
   font-weight: 800;
   color: var(--text-navy);
   margin-top: 1px;
+  transition: opacity 0.2s ease;
 }
 
 .sub-kpi-desc {

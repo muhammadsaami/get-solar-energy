@@ -1713,92 +1713,139 @@
         </div>
         
         <div class="tab-grid-layout" style="display: grid; grid-template-columns: 1.8fr 1.2fr; gap: 20px; margin-bottom: 20px;">
-          <div class="card-base satellite-map-card" style="--card-theme: 54, 211, 153;">
-            <div class="kpi-header-row">
-              <span class="kpi-title">Roof Assessment</span>
-              <span class="api-tag">POST /api/analyze-roof</span>
+          <div class="card-glass">
+            <div class="card-header">
+              <span class="card-title">Roof Assessment</span>
+              <span class="badge badge-info badge-sm">POST /api/analyze-roof</span>
             </div>
 
-            <!-- Mode Toggle -->
-            <div class="roof-mode-toggle">
-              <button class="roof-mode-pill active" id="roofModeCamera">Camera Upload</button>
-              <button class="roof-mode-pill" id="roofModeSatellite">Satellite Analysis <span class="beta-badge" id="satelliteBetaBadge" style="display:none;">Beta</span></button>
+            <!-- Mode Toggle Pill Strip -->
+            <div class="satellite-mode-toggle" role="tablist" aria-label="Analysis mode">
+              <button class="btn btn-primary btn-sm active" id="roofModeCamera" role="tab" aria-selected="true" aria-controls="roofCameraPanel">Camera Upload</button>
+              <button class="btn btn-ghost btn-sm" id="roofModeSatellite" role="tab" aria-selected="false" aria-controls="roofSatellitePanel">Satellite Analysis <span class="badge badge-warning badge-sm" id="satelliteBetaBadge" style="display:none;">Beta</span></button>
             </div>
 
             <!-- ======== CAMERA MODE PANEL ======== -->
-            <div class="roof-panel active" id="roofCameraPanel">
+            <div class="satellite-panel active" id="roofCameraPanel" role="tabpanel">
 
-              <div class="drag-drop-area" id="roofDragDropArea" style="border: 2px dashed var(--border-color); border-radius: 8px; padding: 25px; text-align: center; margin-top: 5px; cursor: pointer; transition: all 0.3s ease;">
-                <svg class="upload-icon" style="width: 44px; height: 44px; margin-bottom: 10px; stroke: var(--accent-green); fill: none; stroke-width: 1.5;" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+              <div class="form-upload" id="roofDragDropArea" style="margin-bottom: var(--space-5);">
+                <svg class="form-upload-icon" style="width: 40px; height: 40px; stroke: var(--color-green);" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5">
                   <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/>
                   <polyline points="17 8 12 3 7 8"/>
                   <line x1="12" y1="3" x2="12" y2="15"/>
                 </svg>
-                <p class="upload-text" style="font-size: 12px; color: var(--text-navy); margin: 0;">Drag & drop rooftop image here, or <span class="browse-link" style="color: var(--accent-green); font-weight: 700; text-decoration: underline;">browse</span></p>
+                <span class="form-upload-title">Drag & drop rooftop image here, or <span class="btn-link">browse</span></span>
+                <span class="form-upload-subtitle">Supports PNG, JPG, JPEG up to 10MB</span>
                 <input type="file" id="roofFileInput" accept="image/*" style="display: none;">
-                <span class="file-limits" style="font-size: 9px; color: var(--text-muted); display: block; margin-top: 4px;">Supports PNG, JPG, JPEG up to 10MB</span>
               </div>
 
-              <div id="roofMeasurementInputs" style="margin-top: 14px; display: grid; grid-template-columns: 1fr 1fr; gap: 10px;">
-                <div>
-                  <label style="font-size: 9px; font-weight: 700; color: var(--text-muted); text-transform: uppercase; letter-spacing: 0.5px; display: block; margin-bottom: 4px;">Roof Length (ft)</label>
-                  <input type="number" id="roofLengthInput" min="0.1" step="0.1" placeholder="e.g. 40"
-                    style="width: 100%; box-sizing: border-box; padding: 8px 10px; background: var(--bg-input, rgba(255,255,255,0.04)); border: 1px solid var(--border-color); border-radius: 6px; color: var(--text-navy); font-size: 12px; font-family: 'Outfit', sans-serif; outline: none; transition: border-color 0.2s;"
-                    oninput="updateRoofAnalyzeBtn()" />
+              <div style="display: grid; grid-template-columns: 1fr 1fr; gap: var(--space-4); margin-bottom: var(--space-4);">
+                <div class="form-group">
+                  <label class="form-label form-label-required" for="roofLengthInput">Roof Length (ft)</label>
+                  <input type="number" class="form-input" id="roofLengthInput" min="0.1" step="0.1" placeholder="e.g. 40" oninput="updateRoofAnalyzeBtn()" />
                 </div>
-                <div>
-                  <label style="font-size: 9px; font-weight: 700; color: var(--text-muted); text-transform: uppercase; letter-spacing: 0.5px; display: block; margin-bottom: 4px;">Roof Width (ft)</label>
-                  <input type="number" id="roofWidthInput" min="0.1" step="0.1" placeholder="e.g. 30"
-                    style="width: 100%; box-sizing: border-box; padding: 8px 10px; background: var(--bg-input, rgba(255,255,255,0.04)); border: 1px solid var(--border-color); border-radius: 6px; color: var(--text-navy); font-size: 12px; font-family: 'Outfit', sans-serif; outline: none; transition: border-color 0.2s;"
-                    oninput="updateRoofAnalyzeBtn()" />
+                <div class="form-group">
+                  <label class="form-label form-label-required" for="roofWidthInput">Roof Width (ft)</label>
+                  <input type="number" class="form-input" id="roofWidthInput" min="0.1" step="0.1" placeholder="e.g. 30" oninput="updateRoofAnalyzeBtn()" />
                 </div>
-                <div style="grid-column: span 2;">
-                  <label style="font-size: 9px; font-weight: 700; color: var(--text-muted); text-transform: uppercase; letter-spacing: 0.5px; display: block; margin-bottom: 4px;">City</label>
-                  <input type="text" id="roofCityInput" placeholder="e.g. Karachi"
-                    style="width: 100%; box-sizing: border-box; padding: 8px 10px; background: var(--bg-input, rgba(255,255,255,0.04)); border: 1px solid var(--border-color); border-radius: 6px; color: var(--text-navy); font-size: 12px; font-family: 'Outfit', sans-serif; outline: none; transition: border-color 0.2s;"
-                    oninput="updateRoofAnalyzeBtn()" />
+                <div class="form-group" style="grid-column: span 2;">
+                  <label class="form-label form-label-required" for="roofCityInput">City</label>
+                  <input type="text" class="form-input" id="roofCityInput" placeholder="e.g. Mumbai" oninput="updateRoofAnalyzeBtn()" />
                 </div>
               </div>
 
-              <button id="roofAnalyzeBtn" disabled
-                style="margin-top: 12px; width: 100%; padding: 11px 0; border: none; border-radius: 7px; background: linear-gradient(135deg, var(--accent-green, #36D399), #22c55e); color: #fff; font-size: 12px; font-weight: 800; font-family: 'Outfit', sans-serif; letter-spacing: 0.3px; cursor: not-allowed; opacity: 0.45; transition: opacity 0.2s, box-shadow 0.2s;"
-                onclick="triggerRoofAnalyze()">
+              <button class="btn btn-success btn-full" id="roofAnalyzeBtn" disabled onclick="triggerRoofAnalyze()">
                 Analyze Roof
               </button>
             </div>
 
             <!-- ======== SATELLITE MODE PANEL ======== -->
-            <div class="roof-panel" id="roofSatellitePanel">
+            <div class="satellite-panel" id="roofSatellitePanel" role="tabpanel">
 
-              <div style="display:flex;align-items:center;gap:8px;margin-bottom:8px;">
-                <span style="font-size:11px;font-weight:700;color:var(--accent-blue);">Satellite Analysis</span>
-                <span class="beta-badge" style="display:inline-block;">Beta</span>
+              <!-- Beta Banner -->
+              <div class="satellite-beta-banner">
+                <span class="badge badge-warning badge-sm">Beta</span>
+                <span>Results are estimated from satellite imagery and should be confirmed through an on-site survey before installation or purchasing decisions.</span>
               </div>
 
-              <div class="satellite-search-wrapper">
-                <input type="text" id="satelliteAddressInput" placeholder="Search address or location..." autocomplete="off" />
-                <svg class="satellite-search-icon" viewBox="0 0 24 24" fill="none" stroke-width="2" stroke-linecap="round"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
-                <div class="satellite-address-results" id="satelliteAddressResults"></div>
-              </div>
-
-              <div id="satelliteMap"></div>
-
-              <div class="satellite-map-controls">
-                <button class="satellite-layer-btn active" id="satelliteToggleStreet">Street</button>
-                <button class="satellite-layer-btn" id="satelliteToggleSat">Satellite</button>
-              </div>
-
-              <div class="satellite-location-info" id="satelliteLocationLabel">Search for an address to begin.</div>
-
-              <button class="satellite-capture-btn" id="satelliteCaptureBtn" disabled>
-                Capture from Satellite
-              </button>
-
-              <div class="satellite-info-banner" id="satelliteInfoBanner">
-                <div style="display:flex;align-items:flex-start;gap:6px;">
-                  <svg viewBox="0 0 24 24" fill="none" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"/><line x1="12" y1="9" x2="12" y2="13"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg>
-                  <span>Results are estimated from satellite imagery and should be confirmed through an on-site survey before installation or purchasing decisions.</span>
+              <!-- Three-Step Workflow Indicator -->
+              <div class="satellite-step-indicator" aria-label="Workflow progress">
+                <div class="satellite-step active" data-step="1">
+                  <span class="step-num">1</span>
+                  <span>Search</span>
                 </div>
+                <div class="satellite-step-connector" data-connector="1"></div>
+                <div class="satellite-step" data-step="2">
+                  <span class="step-num">2</span>
+                  <span>Capture</span>
+                </div>
+                <div class="satellite-step-connector" data-connector="2"></div>
+                <div class="satellite-step" data-step="3">
+                  <span class="step-num">3</span>
+                  <span>Analyze</span>
+                </div>
+              </div>
+
+              <!-- Address Search -->
+              <div class="satellite-search-wrapper">
+                <svg class="satellite-search-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
+                <input type="text" class="form-input" id="satelliteAddressInput" placeholder="Search address or location..." autocomplete="off" aria-label="Search address" />
+                <div class="satellite-address-results" id="satelliteAddressResults" role="listbox"></div>
+              </div>
+
+              <div class="satellite-location-label" id="satelliteLocationLabel">Search for an address to begin.</div>
+
+              <!-- Map Container -->
+              <div class="satellite-map-container" id="satelliteMap"></div>
+
+              <!-- Layer Toggle -->
+              <div class="satellite-layer-toggle">
+                <button class="btn btn-ghost btn-sm active" id="satelliteToggleStreet" aria-pressed="true">Street</button>
+                <button class="btn btn-ghost btn-sm" id="satelliteToggleSat" aria-pressed="false">Satellite</button>
+              </div>
+
+              <!-- Capture Button -->
+              <div class="satellite-capture-row">
+                <button class="btn btn-primary" id="satelliteCaptureBtn" disabled aria-label="Capture current map view">
+                  Capture from Satellite
+                </button>
+              </div>
+
+              <!-- Capture Validation Message -->
+              <div class="satellite-capture-status" id="satelliteCaptureStatus" role="alert"></div>
+
+              <!-- Satellite Preview Card -->
+              <div class="satellite-preview-card" id="satellitePreviewCard">
+                <div class="preview-header">
+                  <span class="preview-title">Satellite Capture</span>
+                  <span class="badge badge-success badge-sm" id="satellitePreviewStatus">Ready for Analysis</span>
+                </div>
+                <div class="preview-body">
+                  <div class="preview-thumb-wrap">
+                    <img class="preview-thumb" id="satellitePreviewThumb" alt="Satellite capture preview" />
+                  </div>
+                  <div class="preview-details">
+                    <div class="detail-row">
+                      <span class="detail-label">Resolution</span>
+                      <span class="detail-value" id="satellitePreviewRes">—</span>
+                    </div>
+                    <div class="detail-row">
+                      <span class="detail-label">Captured</span>
+                      <span class="detail-value" id="satellitePreviewTime">—</span>
+                    </div>
+                    <div class="detail-row">
+                      <span class="detail-label">Location</span>
+                      <span class="detail-value" id="satellitePreviewLoc">—</span>
+                    </div>
+                  </div>
+                </div>
+              </div>
+
+              <!-- Analyze Button (satellite mode) -->
+              <div class="satellite-analyze-area">
+                <button class="btn btn-secondary btn-full" id="roofAnalyzeBtnSatellite" disabled>
+                  Analyze Satellite Capture
+                </button>
               </div>
             </div>
 

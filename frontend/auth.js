@@ -25,7 +25,7 @@ const AUTH_CONFIG = {
   /** Mobile prefix shorthand (treat 10-digit numbers as mobile logins) */
   MOBILE_REGEX: /^[6-9]\d{9}$/,
   SPINNER_DELAY_MS: 1200,
-  DASHBOARD_URL: 'index.html',
+  DASHBOARD_URL: 'dashboard.html',
   LOGIN_URL:     'login.html',
   SIGNUP_URL:    'signup.html',
   PARTICLE_COUNT: 25,
@@ -651,12 +651,13 @@ function initSignupPage() {
     setButtonLoading('signupBtn', 'signupSpinner', true);
 
     try {
+      const est = window.__solarEstimate || {};
       const result = await signup({
         name,
         phone: mobile,
         email,
         password: pwd,
-        city: "Lucknow"
+        city: est.city || "Lucknow"
       });
 
       showToast(`Account created! Welcome, ${result.user.name} 🌞`, 'success', 2000);

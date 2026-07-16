@@ -3,6 +3,8 @@ from security import verify_token
 from auth import auth_rate_limiter
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.staticfiles import StaticFiles
+from fastapi.responses import FileResponse
+from pathlib import Path
 from google import genai
 from google.genai import types
 from dotenv import load_dotenv
@@ -770,13 +772,12 @@ def get_admin_activity(user_email: str = Depends(verify_token)):
 # Serve frontend static files at /frontend/
 app.mount("/frontend", StaticFiles(directory="../frontend", html=True), name="frontend")
 
-@app.get("/")
+@app.get("/", response_class=FileResponse)
 def home():
-    return {
-        "message": "GET Solar Energy API running!",
-        "version": "1.0.0",
-        "platform": "India Solar Intelligence & Service Ecosystem"
-    }
+    return FileResponse(
+        str(Path(__file__).resolve().parent.parent / "frontend" / "landing.html"),
+        headers={"Cache-Control": "public, max-age=300"}
+    )
 
 
 # =====================================================================
