@@ -94,7 +94,7 @@ function RoofAnalyzer() {
           <div style={{ background: 'white', padding: '30px', borderRadius: '16px', boxShadow: '0 2px 10px rgba(0,0,0,0.08)' }}>
             <h2 style={{ fontSize: '20px', fontWeight: 'bold', marginBottom: '20px', color: '#27ae60' }}>✅ Roof Analysis Result</h2>
             <div style={{ display: 'grid', gridTemplateColumns: 'repeat(2, 1fr)', gap: '15px' }}>
-              [
+              {[
                 { label: 'Solar Readiness Score', value: `${result.solar_readiness_score ?? result.solarPotential ?? ''}%`, icon: '⚡' },
                 { label: 'Usable Roof Area', value: `${result.usable_roof_area_sqft ?? result.roofAreaSqFt ?? ''} sq ft`, icon: '📐' },
                 { label: 'Shade Factor', value: `${result.shade_factor ?? result.shadingIssues ?? ''}`, icon: '🌥️' },
@@ -110,7 +110,7 @@ function RoofAnalyzer() {
                   <div style={{ fontSize: '18px', fontWeight: 'bold', color: '#333' }}>{item.value}</div>
                   <div style={{ fontSize: '12px', color: '#888' }}>{item.label}</div>
                 </div>
-              ))
+              ))}
             </div>
           </div>
         )}

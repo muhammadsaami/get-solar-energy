@@ -24,7 +24,7 @@ export const authManager = {
     const refresh = localStorage.getItem('refresh_token');
     if (!refresh) throw new Error("No refresh token active");
     
-    const baseURL = process.env.REACT_APP_API_URL || 'http://localhost:8000/api';
+    const baseURL = import.meta.env.VITE_API_URL || '/api';
     const res = await axios.post(`${baseURL}/auth/refresh`, { refresh_token: refresh });
     const newToken = res.data.access_token;
     this.setAccessToken(newToken);
