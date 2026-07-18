@@ -12,6 +12,7 @@ import AppShell from './components/layout/AppShell';
 import LockedWorkspace from './components/feedback/LockedWorkspace';
 
 // Public pages
+import Landing from './pages/Landing';
 import Login from './pages/Login';
 import Signup from './pages/Signup';
 import ResetPassword from './pages/ResetPassword';
@@ -51,7 +52,7 @@ function AppRoutes() {
     <Router>
       <Routes>
         {/* Public routes */}
-        <Route path="/" element={<Login />} />
+        <Route path="/" element={<Landing />} />
         <Route path="/login" element={<Login />} />
         <Route path="/signup" element={<Signup />} />
         <Route path="/reset-password" element={<ResetPassword />} />
