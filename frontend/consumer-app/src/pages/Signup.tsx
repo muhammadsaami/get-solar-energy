@@ -8,18 +8,10 @@ import TrustBadges from '../components/auth/TrustBadges'
 import PasswordStrengthMeter from '../components/auth/PasswordStrengthMeter'
 import ToastHost from '../components/auth/ToastHost'
 import { authService } from '../services/auth.service'
+import { calcPasswordStrength } from '../utils/password'
 
 const MOBILE_REGEX = /^[6-9]\d{9}$/
 const EMAIL_REGEX = /^[^\s@]+@[^\s@]+\.[^\s@]+$/
-
-function calcPasswordStrength(val: string): 0 | 1 | 2 | 3 | 4 {
-  let score = 0
-  if (val.length >= 8) score++
-  if (/[A-Z]/.test(val)) score++
-  if (/[0-9]/.test(val)) score++
-  if (/[^A-Za-z0-9]/.test(val)) score++
-  return score as 0 | 1 | 2 | 3 | 4
-}
 
 interface FieldErrors {
   name?: string

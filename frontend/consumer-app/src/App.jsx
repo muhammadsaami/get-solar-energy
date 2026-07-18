@@ -14,6 +14,7 @@ import LockedWorkspace from './components/feedback/LockedWorkspace';
 // Public pages
 import Login from './pages/Login';
 import Signup from './pages/Signup';
+import ResetPassword from './pages/ResetPassword';
 
 // Portal pages
 import Home from './pages/Home';
@@ -51,7 +52,9 @@ function AppRoutes() {
       <Routes>
         {/* Public routes */}
         <Route path="/" element={<Login />} />
+        <Route path="/login" element={<Login />} />
         <Route path="/signup" element={<Signup />} />
+        <Route path="/reset-password" element={<ResetPassword />} />
 
         {/* Customer Portal - Authenticated */}
         <Route path="/app/home" element={<AppRoute><Home /></AppRoute>} />
