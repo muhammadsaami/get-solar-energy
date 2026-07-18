@@ -9,5 +9,17 @@ export const authService = {
   async getProfile() {
     const res = await api.get('/auth/me');
     return res.data;
+  },
+  async signup(userData) {
+    const res = await api.post('/api/signup', userData);
+    return res.data;
+  },
+  async forgotPassword(email) {
+    const res = await api.post('/api/forgot-password', { email });
+    return res.data;
+  },
+  async resetPassword(token, newPassword) {
+    const res = await api.post('/api/reset-password', { token, new_password: newPassword });
+    return res.data;
   }
 };
