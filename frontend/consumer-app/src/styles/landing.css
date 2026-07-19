@@ -1759,30 +1759,12 @@ body {
   filter: brightness(1) contrast(1.05); /* Wakes up when in view */
 }
 
-/* 2. Sunlight Sweep */
+/* 2. Sunlight Sweep - Disabled for clean SaaS presentation */
 .scene-sunlight-sweep {
-  position: absolute;
-  top: -20%;
-  left: -50%;
-  width: 200%;
-  height: 150%;
-  background: linear-gradient(135deg, transparent 40%, rgba(245, 158, 11, 0.15) 50%, transparent 60%);
-  transform: translateX(-100%) rotate(25deg);
-  pointer-events: none;
-  mix-blend-mode: screen;
+  display: none;
 }
 
-.roof-suitability-section.is-playing .scene-sunlight-sweep {
-  animation: sunlightSweep 3s cubic-bezier(0.4, 0, 0.2, 1) forwards;
-  animation-delay: 0.2s;
-}
-
-@keyframes sunlightSweep {
-  0% { transform: translateX(-100%) rotate(25deg); }
-  100% { transform: translateX(100%) rotate(25deg); }
-}
-
-/* 3. Roof Highlight */
+/* 3. Roof Highlight - Static crisp overlay */
 .scene-roof-highlight {
   position: absolute;
   top: 0;
@@ -1797,24 +1779,13 @@ body {
   position: absolute;
 }
 .roof-plane-fill {
-  fill: rgba(0, 181, 226, 0.0);
-  stroke: rgba(0, 181, 226, 0.0);
+  fill: rgba(0, 181, 226, 0.12);
+  stroke: rgba(0, 181, 226, 0.5);
   stroke-width: 2;
-  transition: all 1s ease;
+  transition: opacity 400ms ease-out;
 }
 
-.roof-suitability-section.is-playing .roof-plane-fill {
-  animation: roofHighlightReveal 1.5s forwards;
-  animation-delay: 1.2s;
-}
-
-@keyframes roofHighlightReveal {
-  0% { fill: rgba(0, 181, 226, 0.0); stroke: rgba(0, 181, 226, 0.0); }
-  50% { fill: rgba(0, 181, 226, 0.15); stroke: rgba(0, 181, 226, 0.6); box-shadow: 0 0 20px rgba(0, 181, 226, 0.4); }
-  100% { fill: rgba(0, 181, 226, 0.1); stroke: rgba(0, 181, 226, 0.4); }
-}
-
-/* 4. Solar Panels Overlay */
+/* 4. Solar Panels Overlay - Static visible layout */
 .scene-solar-panels {
   position: absolute;
   top: 25%;
@@ -1828,21 +1799,11 @@ body {
   background-color: rgba(0, 181, 226, 0.2);
   border: 1px solid rgba(0, 181, 226, 0.5);
   transform: skewX(-20deg) rotate(5deg);
-  opacity: 0;
+  opacity: 1;
   box-shadow: inset 0 0 10px rgba(0, 181, 226, 0.3);
 }
 
-.roof-suitability-section.is-playing .scene-solar-panels {
-  animation: panelsAppear 1.2s cubic-bezier(0.175, 0.885, 0.32, 1.275) forwards;
-  animation-delay: 2.2s;
-}
-
-@keyframes panelsAppear {
-  0% { opacity: 0; transform: skewX(-20deg) rotate(5deg) scale(0.95) translateY(10px); }
-  100% { opacity: 1; transform: skewX(-20deg) rotate(5deg) scale(1) translateY(0); }
-}
-
-/* 5. Energy Flow Particles */
+/* 5. Energy Flow Particles - Static visible indicators */
 .scene-energy-flow {
   position: absolute;
   top: 50%;
@@ -1854,26 +1815,13 @@ body {
 .energy-line {
   position: absolute;
   width: 2px;
-  height: 0;
+  height: 40px;
   background: linear-gradient(to bottom, transparent, var(--accent-orange), transparent);
-  opacity: 0;
+  opacity: 0.8;
 }
 .line-1 { left: -10%; top: 20%; transform: rotate(-15deg); }
 .line-2 { left: 10%; top: 30%; transform: rotate(-5deg); }
 .line-3 { left: 30%; top: 25%; transform: rotate(5deg); }
-
-.roof-suitability-section.is-playing .energy-line {
-  animation: energyFlow 2s infinite ease-in-out;
-}
-.roof-suitability-section.is-playing .line-1 { animation-delay: 3.2s; }
-.roof-suitability-section.is-playing .line-2 { animation-delay: 3.6s; }
-.roof-suitability-section.is-playing .line-3 { animation-delay: 3.4s; }
-
-@keyframes energyFlow {
-  0% { height: 0; opacity: 0; transform: translateY(-20px) scaleY(1); }
-  30% { opacity: 1; }
-  100% { height: 60px; opacity: 0; transform: translateY(40px) scaleY(0.2); }
-}
 
 
 /* --- Right Column: Storytelling & Insights --- */
@@ -1991,15 +1939,18 @@ body {
   margin-top: 8px;
 }
 
-/* Staggered reveals for right column elements */
-.scene-element {
+/* Single smooth fade-in for Roof Analysis scene elements (400ms ease-out) */
+.roof-suitability-section .scene-element {
   opacity: 0;
-  transform: translateY(15px);
-  transition: opacity 0.6s ease, transform 0.6s cubic-bezier(0.2, 0.8, 0.2, 1);
+  transform: none;
+  transition: opacity 400ms ease-out;
 }
-.roof-suitability-section.is-playing .scene-element.step-6 { transition-delay: 2.8s; opacity: 1; transform: translateY(0); }
-.roof-suitability-section.is-playing .scene-element.step-7 { transition-delay: 3.4s; opacity: 1; transform: translateY(0); }
-.roof-suitability-section.is-playing .scene-element.step-8 { transition-delay: 3.8s; opacity: 1; transform: translateY(0); }
+.roof-suitability-section.is-playing .scene-element,
+.roof-suitability-section.is-visible .scene-element,
+.roof-suitability-section .scene-element.is-visible {
+  opacity: 1;
+  transform: none;
+}
 
 
 /* --- Responsive layout --- */

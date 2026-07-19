@@ -96,9 +96,9 @@ export function useSceneVisibility<T extends HTMLElement = HTMLElement>(
             entry.target.classList.add('is-playing')
             entry.target.setAttribute('data-intersecting', 'true')
 
-            // Trigger discrete entry animations for inner elements (excluding step-sequenced elements)
+            // Trigger discrete entry animations for inner elements
             const innerElements = entry.target.querySelectorAll(
-              '.scene-element:not(.step-6):not(.step-7):not(.step-8), .why-card',
+              '.scene-element, .why-card',
             )
             innerElements.forEach((el) => el.classList.add('is-visible'))
 
