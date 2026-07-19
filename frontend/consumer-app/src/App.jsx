@@ -9,6 +9,7 @@ import { PlanningProvider } from './contexts/PlanningContext';
 
 // Layouts & Primitives
 import AppShell from './components/layout/AppShell';
+import LayoutSkeleton from './components/layout/LayoutSkeleton';
 import LockedWorkspace from './components/feedback/LockedWorkspace';
 
 // Public pages
@@ -33,7 +34,7 @@ import ProjectTracking from './pages/ProjectTracking';
 // Protected Route Guard
 function ProtectedRoute({ children }) {
   const { isAuthenticated, loading } = useAuth();
-  if (loading) return <div>Loading Session...</div>;
+  if (loading) return <LayoutSkeleton />;
   return isAuthenticated ? children : <Navigate to="/" replace />;
 }
 
