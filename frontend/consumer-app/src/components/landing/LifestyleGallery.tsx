@@ -1,3 +1,4 @@
+import { useSceneVisibility } from '../../hooks/useSceneVisibility'
 import GalleryGrid from './GalleryGrid'
 
 const GALLERY_ITEMS = [
@@ -40,8 +41,11 @@ const GALLERY_ITEMS = [
 ]
 
 export default function LifestyleGallery() {
+  const sceneRef = useSceneVisibility<HTMLElement>({ camera: 'lifestyle' })
+
   return (
     <article
+      ref={sceneRef}
       className="cinematic-scene scene-lifestyle"
       id="sceneLifestyle"
       data-camera="lifestyle"

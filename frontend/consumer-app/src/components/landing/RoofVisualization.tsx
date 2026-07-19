@@ -15,7 +15,9 @@ export default function RoofVisualization() {
             />
           </svg>
         </div>
-        <div className="scene-solar-panels" />
+        <div className="scene-solar-panels">
+          <div className="panel-grid-overlay" />
+        </div>
         <div className="scene-energy-flow">
           <div className="energy-line line-1" />
           <div className="energy-line line-2" />

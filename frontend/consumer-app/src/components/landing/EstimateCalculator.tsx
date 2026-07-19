@@ -1,5 +1,6 @@
 import { useState, useEffect, useCallback, useRef, useMemo } from 'react'
 import { useDebounce } from '../../hooks/useDebounce'
+import { useSceneVisibility } from '../../hooks/useSceneVisibility'
 import {
   calculateEstimate,
   type EstimateResult,
@@ -28,6 +29,7 @@ function getCityLabel(city: string): string {
 }
 
 export default function EstimateCalculator() {
+  const sceneRef = useSceneVisibility<HTMLElement>({ camera: 'estimate' })
   const [city, setCity] = useState('')
   const [bill, setBill] = useState('')
   const [validationCity, setValidationCity] = useState(false)
@@ -118,36 +120,80 @@ export default function EstimateCalculator() {
   }, [city, billNum, runCalculation])
 
   return (
-    <div className="quick-estimate-card">
-      <div className="estimate-card-header">
-        <h3 className="card-title">Instant Solar Estimate</h3>
-        <span className="estimate-powered-text">
-          powered by GET Solar
-        </span>
+    <article
+      ref={sceneRef}
+      className="cinematic-scene scene-estimate"
+      id="sceneEstimate"
+      data-camera="estimate"
+    >
+      <div className="cinematic-color-grade" />
+      <div className="scene-transition-mask top" />
+      <div className="layer-bg">
+        <img
+          src="/frontend/assets/Cinematic/Asset 2.webp"
+          alt="Home solar potential"
+          loading="lazy"
+        />
       </div>
+      <div className="lighting-overlay lighting-warm" />
 
-      <EstimateForm
-        city={city}
-        bill={bill}
-        validationCity={validationCity}
-        validationBill={validationBill}
-        onCityChange={handleCityChange}
-        onBillChange={handleBillChange}
-        onCalculate={handleCalculate}
-      />
+      <div
+        className="hero-container layer-fg scene-element"
+        style={{
+          width: '100%',
+          maxWidth: 1200,
+          padding: '0 5%',
+          position: 'relative',
+          zIndex: 2,
+          display: 'flex',
+          justifyContent: 'flex-end',
+        }}
+      >
+        <div className="hero-right-col" style={{ maxWidth: 500, width: '100%' }}>
+          <div
+            className="quick-estimate-card"
+            style={{
+              position: 'relative',
+              transform: 'none',
+              right: 'auto',
+              top: 'auto',
+              width: '100%',
+              margin: 0,
+              boxShadow: 'var(--card-shadow)',
+            }}
+          >
+            <div className="estimate-card-header">
+              <h3 className="card-title">Instant Solar Estimate</h3>
+              <span className="estimate-powered-text">
+                powered by GET Solar
+              </span>
+            </div>
 
-      {status === 'loading' && <LoadingSkeleton />}
+            <EstimateForm
+              city={city}
+              bill={bill}
+              validationCity={validationCity}
+              validationBill={validationBill}
+              onCityChange={handleCityChange}
+              onBillChange={handleBillChange}
+              onCalculate={handleCalculate}
+            />
 
-      {status === 'results' && estimate && (
-        <div className="estimate-output-container" style={{ display: 'block' }}>
-          <EstimateResults
-            result={estimate}
-            cityLabel={getCityLabel(city)}
-            city={city}
-            billValue={billNum}
-          />
+            {status === 'loading' && <LoadingSkeleton />}
+
+            {status === 'results' && estimate && (
+              <div className="estimate-output-container" style={{ display: 'block' }}>
+                <EstimateResults
+                  result={estimate}
+                  cityLabel={getCityLabel(city)}
+                  city={city}
+                  billValue={billNum}
+                />
+              </div>
+            )}
+          </div>
         </div>
-      )}
-    </div>
+      </div>
+    </article>
   )
 }

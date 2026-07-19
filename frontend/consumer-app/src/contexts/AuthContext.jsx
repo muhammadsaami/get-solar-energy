@@ -54,13 +54,20 @@ export function AuthProvider({ children }) {
     setIsAuthenticated(false);
   };
 
+  const setSession = (token, user) => {
+    setToken(token);
+    setUser(user);
+    setIsAuthenticated(true);
+  };
+
   const value = {
     isAuthenticated,
     token,
     user,
     loading,
     login,
-    logout
+    logout,
+    setSession
   };
 
   return (

@@ -48,6 +48,7 @@ export function useCinematicParallax(
 
     let ticking = false
     let intersecting = false
+    let rafHandle = 0
 
     const observer = new IntersectionObserver(
       ([entry]) => {
@@ -64,7 +65,7 @@ export function useCinematicParallax(
 
     const handleScroll = () => {
       if (!ticking && intersecting) {
-        requestAnimationFrame(() => {
+        rafHandle = requestAnimationFrame(() => {
           ticking = false
           const rect = scene.getBoundingClientRect()
           const progress = rect.top / window.innerHeight
@@ -77,6 +78,7 @@ export function useCinematicParallax(
     window.addEventListener('scroll', handleScroll, { passive: true })
 
     return () => {
+      cancelAnimationFrame(rafHandle)
       observer.disconnect()
       window.removeEventListener('scroll', handleScroll)
     }

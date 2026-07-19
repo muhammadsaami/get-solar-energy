@@ -1,12 +1,10 @@
-import { useRef } from 'react'
-import { useCinematicParallax } from '../../hooks/useCinematicParallax'
-import { CINEMATIC_PRESETS } from '../../config/cinematic'
+import { useSceneVisibility } from '../../hooks/useSceneVisibility'
 import SavingsStats from './SavingsStats'
 import { trackCTA } from '../../utils/analytics'
 
 export default function SavingsScene() {
-  const sceneRef = useRef<HTMLElement>(null)
-  useCinematicParallax(sceneRef, CINEMATIC_PRESETS.savings)
+  const sceneRef = useSceneVisibility<HTMLElement>({ camera: 'savings' })
+
 
   return (
     <article
@@ -22,6 +20,7 @@ export default function SavingsScene() {
         <img
           src="/frontend/assets/Cinematic/Asset 6.webp"
           alt="Neighborhood Solar Scale"
+          id="savingsParallaxImg"
           loading="lazy"
         />
       </div>

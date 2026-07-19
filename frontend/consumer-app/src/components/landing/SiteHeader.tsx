@@ -4,6 +4,7 @@ import { useScrollPosition } from '../../hooks/useScrollPosition'
 import { useActiveSection } from '../../hooks/useActiveSection'
 import { useAuthStatus } from '../../hooks/useAuthStatus'
 import { useAuthStore } from '../../stores/authStore'
+import { trackCTA } from '../../utils/analytics'
 import MobileDrawer from './MobileDrawer'
 
 const NAV_SECTIONS = [
@@ -12,6 +13,15 @@ const NAV_SECTIONS = [
   'how-it-works',
   'testimonials',
 ]
+
+function HeaderRoot({ children }: { children: React.ReactNode }) {
+  const scrollY = useScrollPosition()
+  return (
+    <header className={`navbar-header${scrollY > 50 ? ' scrolled' : ''}`} id="navbarHeader">
+      {children}
+    </header>
+  )
+}
 
 function LogoIcon() {
   return (
@@ -98,23 +108,17 @@ function LogoIcon() {
 }
 
 export default function SiteHeader() {
-  const scrollY = useScrollPosition()
   const activeSection = useActiveSection(NAV_SECTIONS)
   const [drawerOpen, setDrawerOpen] = useState(false)
   const { isAuthenticated } = useAuthStatus()
 
-  const isScrolled = scrollY > 50
-
   return (
     <>
-      <a href="#heroSection" className="skip-nav">
+      <a href="#sceneHero" className="skip-nav">
         Skip to main content
       </a>
 
-      <header
-        className={`navbar-header${isScrolled ? ' scrolled' : ''}`}
-        id="navbarHeader"
-      >
+      <HeaderRoot>
         <div className="nav-container">
           <a href="/" className="logo-container" aria-label="GET Solar Energy Home">
             <div className="logo-badge">
@@ -156,12 +160,12 @@ export default function SiteHeader() {
           <div className="nav-auth-buttons">
             {isAuthenticated ? (
               <>
-                <Link to="/app/home" className="btn-login">
+                <Link to="/app/home" className="btn-dashboard">
                   Dashboard
                 </Link>
                 <a
                   href="#"
-                  className="btn-signup"
+                  className="btn-logout"
                   onClick={(e) => {
                     e.preventDefault()
                     useAuthStore.getState().logout()
@@ -172,10 +176,10 @@ export default function SiteHeader() {
               </>
             ) : (
               <>
-                <Link to="/login" className="btn-login">
+                <Link to="/login" className="btn-login" onClick={() => trackCTA('login_nav')}>
                   Login
                 </Link>
-                <Link to="/signup" className="btn-signup">
+                <Link to="/signup" className="btn-signup" onClick={() => trackCTA('signup_nav')}>
                   Start Free Assessment
                 </Link>
               </>
@@ -194,7 +198,7 @@ export default function SiteHeader() {
             <span />
           </button>
         </div>
-      </header>
+      </HeaderRoot>
 
       <MobileDrawer
         isOpen={drawerOpen}

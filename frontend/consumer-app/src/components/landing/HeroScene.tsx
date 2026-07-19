@@ -1,4 +1,5 @@
 import { type MetricConfig, useIntersectionCounter } from '../../hooks/useIntersectionCounter'
+import { useSceneVisibility } from '../../hooks/useSceneVisibility'
 import { trackCTA } from '../../utils/analytics'
 
 const METRICS: MetricConfig[] = [
@@ -88,33 +89,31 @@ function TrustPills() {
 }
 
 function PlatformMetricsStrip() {
-  const { values, containerRef, hasAnimated } = useIntersectionCounter(METRICS)
+  const { values, containerRef } = useIntersectionCounter(METRICS)
 
   return (
     <div
       className="hero-stats-grid"
+      id="metricsStrip"
       ref={containerRef}
       style={{ marginTop: 40 }}
     >
-      <div
-        className={`hero-stat-item${hasAnimated ? ' animate-in' : ''}`}
-        style={{ transitionDelay: '0ms' }}
-      >
-        <span className="stat-num">{values.billsAnalyzed}</span>
+      <div className="hero-stat-item" id="metricCard1">
+        <span className="stat-num" id="metricBillsCount">
+          {values.billsAnalyzed}
+        </span>
         <span className="stat-lbl">Bills Analyzed</span>
       </div>
-      <div
-        className={`hero-stat-item${hasAnimated ? ' animate-in' : ''}`}
-        style={{ transitionDelay: '150ms' }}
-      >
-        <span className="stat-num">{values.customerSavings}</span>
+      <div className="hero-stat-item" id="metricCard2">
+        <span className="stat-num" id="metricSavingsCount">
+          {values.customerSavings}
+        </span>
         <span className="stat-lbl">Customer Savings</span>
       </div>
-      <div
-        className={`hero-stat-item${hasAnimated ? ' animate-in' : ''}`}
-        style={{ transitionDelay: '300ms' }}
-      >
-        <span className="stat-num">{values.citiesServed}</span>
+      <div className="hero-stat-item" id="metricCard3">
+        <span className="stat-num" id="metricCitiesCount">
+          {values.citiesServed}
+        </span>
         <span className="stat-lbl">Cities Served</span>
       </div>
     </div>
@@ -122,11 +121,19 @@ function PlatformMetricsStrip() {
 }
 
 export default function HeroScene() {
+  const sceneRef = useSceneVisibility<HTMLElement>({
+    camera: 'arrival',
+    staggerSelector: '.hero-stat-item',
+    staggerDelay: 150,
+  })
+
   return (
     <article
       className="cinematic-scene scene-hero"
       id="sceneHero"
       data-camera="arrival"
+      ref={sceneRef}
+
     >
       <div className="cinematic-color-grade" />
       <div className="scene-transition-mask top" />
@@ -171,3 +178,4 @@ export default function HeroScene() {
     </article>
   )
 }
+

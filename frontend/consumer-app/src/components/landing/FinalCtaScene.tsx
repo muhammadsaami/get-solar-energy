@@ -1,12 +1,10 @@
-import { useRef } from 'react'
-import { useCinematicParallax } from '../../hooks/useCinematicParallax'
-import { CINEMATIC_PRESETS } from '../../config/cinematic'
+import { useSceneVisibility } from '../../hooks/useSceneVisibility'
 import CTAContent from './CTAContent'
 import CTAButtons from './CTAButtons'
 
 export default function FinalCtaScene() {
-  const sceneRef = useRef<HTMLElement>(null)
-  useCinematicParallax(sceneRef, CINEMATIC_PRESETS.conversion)
+  const sceneRef = useSceneVisibility<HTMLElement>({ camera: 'conversion' })
+
 
   return (
     <article

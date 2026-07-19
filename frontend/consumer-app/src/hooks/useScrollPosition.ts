@@ -3,11 +3,12 @@ import { useState, useEffect, useRef } from 'react'
 export function useScrollPosition(): number {
   const [scrollY, setScrollY] = useState(0)
   const ticking = useRef(false)
+  const rafHandle = useRef(0)
 
   useEffect(() => {
     const handleScroll = () => {
       if (!ticking.current) {
-        requestAnimationFrame(() => {
+        rafHandle.current = requestAnimationFrame(() => {
           setScrollY(window.scrollY)
           ticking.current = false
         })
@@ -16,7 +17,10 @@ export function useScrollPosition(): number {
     }
 
     window.addEventListener('scroll', handleScroll, { passive: true })
-    return () => window.removeEventListener('scroll', handleScroll)
+    return () => {
+      cancelAnimationFrame(rafHandle.current)
+      window.removeEventListener('scroll', handleScroll)
+    }
   }, [])
 
   return scrollY

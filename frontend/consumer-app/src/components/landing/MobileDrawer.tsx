@@ -31,6 +31,27 @@ export default function MobileDrawer({ isOpen, onClose }: MobileDrawerProps) {
       if (e.key === 'Escape') {
         onClose()
         toggleRef.current?.focus()
+        return
+      }
+
+      if (e.key === 'Tab' && drawerRef.current) {
+        const focusable = drawerRef.current.querySelectorAll<HTMLElement>(
+          'a[href], button:not([disabled]), textarea, input, select, [tabindex]:not([tabindex="-1"])'
+        )
+        const first = focusable[0]
+        const last = focusable[focusable.length - 1]
+
+        if (e.shiftKey) {
+          if (document.activeElement === first) {
+            e.preventDefault()
+            last?.focus()
+          }
+        } else {
+          if (document.activeElement === last) {
+            e.preventDefault()
+            first?.focus()
+          }
+        }
       }
     }
 
@@ -102,18 +123,21 @@ export default function MobileDrawer({ isOpen, onClose }: MobileDrawerProps) {
           <>
             <a
               href="/app/home"
-              className="drawer-btn-signup"
+              className="drawer-btn-dashboard"
               onClick={onClose}
             >
               Dashboard
             </a>
-            <button
-              className="drawer-btn-login"
-              onClick={handleLogout}
-              style={{ border: 'none', cursor: 'pointer', fontFamily: 'inherit', fontSize: 'inherit' }}
+            <a
+              href="#"
+              className="drawer-btn-logout"
+              onClick={(e) => {
+                e.preventDefault()
+                handleLogout()
+              }}
             >
               Logout
-            </button>
+            </a>
           </>
         ) : (
           <>

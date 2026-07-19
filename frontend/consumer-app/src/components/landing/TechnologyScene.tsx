@@ -1,12 +1,10 @@
-import { useRef } from 'react'
-import { useCinematicParallax } from '../../hooks/useCinematicParallax'
-import { CINEMATIC_PRESETS } from '../../config/cinematic'
+import { useSceneVisibility } from '../../hooks/useSceneVisibility'
 import TechnologyContent from './TechnologyContent'
 import DiagnosticsGrid from './DiagnosticsGrid'
 
 export default function TechnologyScene() {
-  const sceneRef = useRef<HTMLElement>(null)
-  useCinematicParallax(sceneRef, CINEMATIC_PRESETS.technology)
+  const sceneRef = useSceneVisibility<HTMLElement>({ camera: 'technology' })
+
 
   return (
     <article

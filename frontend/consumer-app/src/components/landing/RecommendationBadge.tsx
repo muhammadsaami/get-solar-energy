@@ -5,7 +5,7 @@ interface RecommendationBadgeProps {
 export default function RecommendationBadge({ text }: RecommendationBadgeProps) {
   return (
     <div className="recommendation-badge">
-      <span className="pulse-dot" aria-hidden="true" />
+      <span className="pulse-dot green" aria-hidden="true" />
       {text}
     </div>
   )

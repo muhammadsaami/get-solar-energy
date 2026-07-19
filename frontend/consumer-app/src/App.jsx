@@ -16,6 +16,7 @@ import Landing from './pages/Landing';
 import Login from './pages/Login';
 import Signup from './pages/Signup';
 import ResetPassword from './pages/ResetPassword';
+import NotFound from './pages/NotFound';
 
 // Portal pages
 import Home from './pages/Home';
@@ -89,8 +90,8 @@ function AppRoutes() {
         {/* Vendor Portal */}
         <Route path="/app/vendor/project-tracking" element={<AppRoute><ProjectTracking /></AppRoute>} />
 
-        {/* Fallback redirect */}
-        <Route path="*" element={<Navigate to="/" replace />} />
+        {/* Fallback 404 */}
+        <Route path="*" element={<NotFound />} />
       </Routes>
     </Router>
   );

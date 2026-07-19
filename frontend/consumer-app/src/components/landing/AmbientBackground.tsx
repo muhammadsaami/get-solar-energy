@@ -54,7 +54,7 @@ export default function AmbientBackground() {
     <div className="background-glow-atmosphere" aria-hidden="true">
       <div className="solar-glow-left" />
       <div className="energy-glow-right" />
-      <div className="particle-ambient-container" ref={containerRef} />
+      <div className="particle-ambient-container" id="ambientParticles" ref={containerRef} />
     </div>
   )
 }

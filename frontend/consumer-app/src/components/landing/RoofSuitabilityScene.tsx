@@ -1,45 +1,11 @@
-import { useEffect, useRef } from 'react'
-import { useReducedMotion } from '../../hooks/useReducedMotion'
+import { useSceneVisibility } from '../../hooks/useSceneVisibility'
 import RoofVisualization from './RoofVisualization'
 import SuitabilityGrid from './SuitabilityGrid'
 import RecommendationBadge from './RecommendationBadge'
 
 export default function RoofSuitabilityScene() {
-  const sectionRef = useRef<HTMLElement>(null)
-  const reducedMotion = useReducedMotion()
+  const sectionRef = useSceneVisibility<HTMLElement>({ camera: 'roof' })
 
-  useEffect(() => {
-    const section = sectionRef.current
-    if (!section) return
-
-    const observer = new IntersectionObserver(
-      ([entry]) => {
-        if (entry.isIntersecting) {
-          section.classList.add('is-playing')
-          section
-            .querySelectorAll<HTMLElement>('.scene-element, .why-card')
-            .forEach((el) => el.classList.add('is-visible'))
-          observer.disconnect()
-        }
-      },
-      { threshold: 0.1, rootMargin: '300px 0px' },
-    )
-
-    if (reducedMotion) {
-      section.classList.add('is-playing')
-      section
-        .querySelectorAll<HTMLElement>('.scene-element, .why-card')
-        .forEach((el) => {
-          el.classList.add('is-visible')
-          el.style.opacity = '1'
-          el.style.transform = 'none'
-        })
-      return
-    }
-
-    observer.observe(section)
-    return () => observer.disconnect()
-  }, [reducedMotion])
 
   return (
     <article
@@ -62,7 +28,16 @@ export default function RoofSuitabilityScene() {
 
       <div
         className="suitability-container layer-fg scene-element"
-        style={{ position: 'relative', zIndex: 2 }}
+        style={{
+          position: 'relative',
+          zIndex: 2,
+          display: 'flex',
+          width: '100%',
+          maxWidth: 1200,
+          padding: '0 5%',
+          gap: 60,
+          alignItems: 'center',
+        }}
       >
         <RoofVisualization />
 

@@ -1,5 +1,4 @@
-import { useEffect, useRef } from 'react'
-import { useReducedMotion } from '../../hooks/useReducedMotion'
+import { useSceneVisibility } from '../../hooks/useSceneVisibility'
 import WhyCard from './WhyCard'
 
 const CARDS = [
@@ -16,41 +15,8 @@ const CARDS = [
 ]
 
 export default function InstallationScene() {
-  const sectionRef = useRef<HTMLElement>(null)
-  const reducedMotion = useReducedMotion()
+  const sectionRef = useSceneVisibility<HTMLElement>({ camera: 'installation' })
 
-  useEffect(() => {
-    const section = sectionRef.current
-    if (!section) return
-
-    const observer = new IntersectionObserver(
-      ([entry]) => {
-        if (entry.isIntersecting) {
-          section.classList.add('is-playing')
-          section
-            .querySelectorAll<HTMLElement>('.scene-element, .why-card')
-            .forEach((el) => el.classList.add('is-visible'))
-          observer.disconnect()
-        }
-      },
-      { threshold: 0.1, rootMargin: '300px 0px' },
-    )
-
-    if (reducedMotion) {
-      section.classList.add('is-playing')
-      section
-        .querySelectorAll<HTMLElement>('.scene-element, .why-card')
-        .forEach((el) => {
-          el.classList.add('is-visible')
-          el.style.opacity = '1'
-          el.style.transform = 'none'
-        })
-      return
-    }
-
-    observer.observe(section)
-    return () => observer.disconnect()
-  }, [reducedMotion])
 
   return (
     <article

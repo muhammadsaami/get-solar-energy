@@ -6,5 +6,6 @@ export { useActiveSection } from './useActiveSection'
 export { useAuthStatus } from './useAuthStatus'
 export { useIntersectionCounter } from './useIntersectionCounter'
 export { useAnimatedCounter } from './useAnimatedCounter'
-export { useMouseFollowGlow } from './useMouseFollowGlow'
 export { useCinematicParallax } from './useCinematicParallax'
+export { useSceneVisibility } from './useSceneVisibility'
+

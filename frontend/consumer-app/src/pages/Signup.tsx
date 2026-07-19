@@ -1,5 +1,6 @@
 import { useState, useRef, useEffect, type FormEvent } from 'react'
 import { useNavigate, Link } from 'react-router-dom'
+import { useAuth } from '../contexts/AuthContext'
 
 import AnimatedBackground from '../components/auth/AnimatedBackground'
 import FloatingKpiWidgets from '../components/auth/FloatingKpiWidgets'
@@ -23,6 +24,7 @@ interface FieldErrors {
 
 export default function Signup() {
   const navigate = useNavigate()
+  const { setSession } = useAuth() as unknown as { setSession: (token: string, user: unknown) => void }
 
   const [name, setName] = useState('')
   const [mobile, setMobile] = useState('')
@@ -157,6 +159,7 @@ export default function Signup() {
       if (result.token) {
         localStorage.setItem('access_token', result.token)
         localStorage.setItem('user', JSON.stringify(result.user))
+        setSession(result.token, result.user)
       }
 
       navigate('/app/home')

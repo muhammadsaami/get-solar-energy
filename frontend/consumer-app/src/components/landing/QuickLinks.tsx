@@ -10,7 +10,7 @@ const LINKS = [
 
 export default function QuickLinks() {
   return (
-    <div className="footer-nav-col">
+    <nav className="footer-nav-col" aria-label="Quick links">
       <h5 className="footer-nav-title">Quick Links</h5>
       {LINKS.map((link) => (
         <a
@@ -27,6 +27,6 @@ export default function QuickLinks() {
           {link.label}
         </a>
       ))}
-    </div>
+    </nav>
   )
 }

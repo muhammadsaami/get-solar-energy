@@ -14,7 +14,7 @@ interface GalleryGridProps {
 export default function GalleryGrid({ items }: GalleryGridProps) {
   return (
     <div
-      className="layer-fg scene-element"
+      className="lifestyle-gallery layer-fg scene-element"
       style={{
         display: 'grid',
         gridTemplateColumns: 'repeat(3, 1fr)',

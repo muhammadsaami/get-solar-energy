@@ -21,15 +21,6 @@
  */
 
 
-/* --- RESET & COLOR VARIABLES --- */
-* {
-  margin: 0;
-  padding: 0;
-  box-sizing: border-box;
-  font-family: 'Outfit', sans-serif;
-  scroll-behavior: smooth;
-}
-
 /* Skip Navigation Link (Accessibility) */
 .skip-nav {
   position: absolute;

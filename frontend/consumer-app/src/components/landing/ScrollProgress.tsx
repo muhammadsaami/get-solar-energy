@@ -1,15 +1,24 @@
+import { useEffect, useRef } from 'react'
 import { useScrollPosition } from '../../hooks/useScrollPosition'
 
 export default function ScrollProgress() {
   const scrollY = useScrollPosition()
+  const scrollableHeightRef = useRef(0)
 
-  let scrolled = 0
-  if (typeof document !== 'undefined') {
-    const height =
-      document.documentElement.scrollHeight -
-      document.documentElement.clientHeight
-    scrolled = height > 0 ? (scrollY / height) * 100 : 0
-  }
+  useEffect(() => {
+    const updateHeight = () => {
+      scrollableHeightRef.current =
+        document.documentElement.scrollHeight -
+        document.documentElement.clientHeight
+    }
+
+    updateHeight()
+    window.addEventListener('resize', updateHeight, { passive: true })
+    return () => window.removeEventListener('resize', updateHeight)
+  }, [])
+
+  const maxScroll = scrollableHeightRef.current
+  const scrolled = maxScroll > 0 ? (scrollY / maxScroll) * 100 : 0
 
   return (
     <div
