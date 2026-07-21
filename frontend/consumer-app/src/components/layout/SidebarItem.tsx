@@ -1,5 +1,5 @@
 import React from 'react'
-import { NavLink } from 'react-router-dom'
+import { useLocation } from 'react-router-dom'
 import type { SidebarItemConfig } from '../../config/sidebar'
 
 interface SidebarItemProps {
@@ -9,45 +9,28 @@ interface SidebarItemProps {
 }
 
 export default function SidebarItem({ item, isCollapsed: _isCollapsed, icon }: SidebarItemProps) {
-  const isLocked = item.route === '#'
-
-  if (isLocked) {
-    return (
-      <li
-        className="menu-item"
-        data-tab={item.id}
-        data-color={item.color}
-        data-tooltip={item.label}
-      >
-        <a
-          href="#"
-          data-tooltip={item.label}
-          onClick={(e) => e.preventDefault()}
-          style={{ cursor: 'not-allowed', opacity: 0.45 }}
-          aria-disabled="true"
-        >
-          {icon}
-          <span>{item.label}</span>
-        </a>
-      </li>
-    )
-  }
+  const location = useLocation()
+  
+  // React Router v6: Check if current path starts with item route
+  // For dashboard it might be exact, but we'll keep it simple:
+  const isActive = item.route !== '#' && location.pathname === item.route
+  const className = `menu-item ${isActive ? 'active' : ''}`.trim()
 
   return (
     <li
-      className="menu-item"
+      className={className}
       data-tab={item.id}
       data-color={item.color}
       data-tooltip={item.label}
     >
-      <NavLink
-        to={item.route}
+      <a
+        href={item.route}
         data-tooltip={item.label}
-        className={({ isActive }) => (isActive ? 'active' : '')}
+        onClick={item.route === '#' ? (e) => e.preventDefault() : undefined}
       >
         {icon}
         <span>{item.label}</span>
-      </NavLink>
+      </a>
     </li>
   )
 }
