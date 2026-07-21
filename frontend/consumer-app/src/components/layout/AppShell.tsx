@@ -16,19 +16,13 @@ export default function AppShell({ children }: AppShellProps) {
   }, [isSidebarCollapsed])
 
   return (
-    <div className="app-shell">
-      <div className="app-container">
-        <Sidebar />
-        <main className="main-panel" id="main-content">
-          <a href="#main-content" className="skip-link" style={{ position: 'absolute', left: '-9999px' }}>
-            Skip to main content
-          </a>
-          <Topbar />
-          <div className="tab-content active" role="tabpanel">
-            {children}
-          </div>
-        </main>
-      </div>
+    <div className="app-container">
+      <a href="#main-content" className="skip-link">Skip to main content</a>
+      <Sidebar />
+      <main className="main-panel" id="main-content">
+        <Topbar />
+        {children}
+      </main>
     </div>
   )
 }
