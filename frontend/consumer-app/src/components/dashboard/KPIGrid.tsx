@@ -1,4 +1,70 @@
+import React, { useEffect } from 'react';
+import {
+  Chart as ChartJS,
+  CategoryScale,
+  LinearScale,
+  LineElement,
+  PointElement,
+  Tooltip,
+  Legend,
+  Filler,
+  LineController
+} from 'chart.js';
+
+ChartJS.register(
+  CategoryScale,
+  LinearScale,
+  LineElement,
+  PointElement,
+  Tooltip,
+  Legend,
+  Filler,
+  LineController
+);
+
 export default function KPIGrid() {
+  useEffect(() => {
+    // 1. Readiness gauge animation
+    const readinessCircle = document.getElementById('readinessFillCircle');
+    if (readinessCircle) {
+      const totalCircumference = 220; // 2 * PI * 35 approx
+      const readinessScore = 92;
+      const offset = totalCircumference - (readinessScore / 100 * totalCircumference);
+      readinessCircle.style.strokeDasharray = `${totalCircumference}`;
+      readinessCircle.style.strokeDashoffset = `${offset}`;
+    }
+
+    // 2. Savings sparkline chart
+    const savingsCtx = document.getElementById('savingsSparklineCanvas') as HTMLCanvasElement | null;
+    let sparklineChart: ChartJS | null = null;
+    if (savingsCtx) {
+      sparklineChart = new ChartJS(savingsCtx, {
+        type: 'line',
+        data: {
+          labels: ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"],
+          datasets: [{
+            data: [1200, 1400, 1800, 2100, 2500, 2300, 2400, 2600, 2200, 2100, 1900, 2486],
+            borderColor: '#ff8a1d',
+            borderWidth: 1.5,
+            pointRadius: 0,
+            fill: true,
+            backgroundColor: 'rgba(255, 138, 29, 0.08)',
+            tension: 0.4
+          }]
+        },
+        options: {
+          responsive: true,
+          maintainAspectRatio: false,
+          plugins: { legend: { display: false }, tooltip: { enabled: false } },
+          scales: { x: { display: false }, y: { display: false } }
+        }
+      });
+    }
+
+    return () => {
+      if (sparklineChart) sparklineChart.destroy();
+    };
+  }, []);
   return (
     <section className="kpi-container" aria-label="Key Performance Metrics">
                 {/* Solar Readiness card */}
@@ -6,7 +72,7 @@ export default function KPIGrid() {
                   <div className="readiness-details">
                     <span className="readiness-title">Solar Readiness Score</span>
                     <p className="readiness-desc">Excellent! Your home is ready for solar.</p>
-                    <button className="readiness-btn" id="readinessDetailsBtn" onClick={() => console.log("clicked")}>View Details</button>
+                    <button className="readiness-btn" id="readinessDetailsBtn" onClick={(e) => { e.preventDefault(); }}>View Details</button>
                   </div>
                   <div className="readiness-gauge-wrapper">
                     <svg className="readiness-gauge-svg">
