@@ -3,7 +3,10 @@ import DashboardHeroCard from './DashboardHeroCard';
 import LiveSummaryPanel from './LiveSummaryPanel';
 import KPIGrid from './KPIGrid';
 import SubKPIGrid from './SubKPIGrid';
+import QuickActionsGrid from './QuickActionsGrid';
 import AnalyticsCharts from './AnalyticsCharts';
+import AIIntelligencePanel from './AIIntelligencePanel';
+import FooterGrid from './FooterGrid';
 import DashboardSprites from './DashboardSprites';
 
 export default function DashboardOverview() {
@@ -20,9 +23,10 @@ export default function DashboardOverview() {
         </div>
         
         <SubKPIGrid />
+        <QuickActionsGrid />
         <AnalyticsCharts />
-        {/* Placeholder for QuickActionsGrid */}
-        {/* Placeholder for Footer */}
+        <AIIntelligencePanel />
+        <FooterGrid />
       </div>
     </>
   );
