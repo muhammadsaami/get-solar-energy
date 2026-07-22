@@ -4,31 +4,30 @@ import type { SidebarItemConfig } from '../../config/sidebar'
 
 interface SidebarItemProps {
   item: SidebarItemConfig
-  isCollapsed: boolean
-  icon: React.ReactNode
+  isCollapsed?: boolean
 }
 
-export default function SidebarItem({ item, isCollapsed: _isCollapsed, icon }: SidebarItemProps) {
+export default function SidebarItem({ item }: SidebarItemProps) {
   const location = useLocation()
   
-  // React Router v6: Check if current path starts with item route
-  // For dashboard it might be exact, but we'll keep it simple:
   const isActive = item.route !== '#' && location.pathname === item.route
   const className = `menu-item ${isActive ? 'active' : ''}`.trim()
+  const idAttr = item.id === 'admin-dashboard' ? 'menu-item-admin' : item.id === 'crm-dashboard' ? 'menu-item-crm' : item.id === 'audit-monitoring' ? 'menu-item-audit' : item.id === 'business-intelligence' ? 'menu-item-bi' : item.id === 'mlops-dashboard' ? 'menu-item-mlops' : undefined
 
   return (
     <li
+      id={idAttr}
       className={className}
       data-tab={item.id}
       data-color={item.color}
-      data-tooltip={item.label}
+      style={!item.visible ? { display: 'none' } : undefined}
     >
       <a
         href={item.route}
         data-tooltip={item.label}
         onClick={item.route === '#' ? (e) => e.preventDefault() : undefined}
       >
-        {icon}
+        <svg><use href={`#icon-${item.symbolId}`}></use></svg>
         <span>{item.label}</span>
       </a>
     </li>

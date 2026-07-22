@@ -107,13 +107,11 @@ export default function Sidebar() {
                   <span>{group.groupName}</span>
                 </li>
                 {group.items
-                  .filter((item) => item.visible)
                   .map((item) => (
                     <SidebarItem
                       key={item.id}
                       item={item}
                       isCollapsed={isSidebarCollapsed}
-                      icon={iconMap[item.id] || <MdDashboard />}
                     />
                   ))}
               </React.Fragment>
