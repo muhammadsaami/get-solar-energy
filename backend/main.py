@@ -9,6 +9,7 @@ from google import genai
 from google.genai import types
 from dotenv import load_dotenv
 from database import engine, Base
+import technician_models  # noqa: F401 — must import before create_all() so Phase 3 tables are registered
 import os
 import json
 import time
@@ -52,6 +53,14 @@ from project_routes import router as project_router
 from vendor_routes import router as vendor_router
 from admin_routes import router as admin_router
 
+# ── Phase 3: Technician Network ──────────────────────────────────────────
+from technician_models import *  # registers Technician / Training / Job / WorkOrder / Earning tables with Base
+from technician_auth import router as technician_auth_router
+from training import router as training_router
+from job_marketplace import router as job_marketplace_router
+from work_orders import router as work_orders_router
+from earnings import router as earnings_router
+
 app.include_router(roof_router)
 app.include_router(roi_router)
 app.include_router(chat_router)
@@ -70,6 +79,13 @@ app.include_router(mlops_router)
 app.include_router(project_router)
 app.include_router(vendor_router)
 app.include_router(admin_router)
+
+# ── Phase 3: Technician Network routers ──────────────────────────────────
+app.include_router(technician_auth_router)
+app.include_router(training_router)
+app.include_router(job_marketplace_router)
+app.include_router(work_orders_router)
+app.include_router(earnings_router)
 
 @app.on_event("startup")
 async def startup_event():
