@@ -2,6 +2,7 @@ import React, { useEffect } from 'react'
 import { useUI } from '../../contexts/UIContext'
 import Sidebar from './Sidebar'
 import Topbar from './Topbar'
+import DashboardSprites from '../dashboard/DashboardSprites'
 
 interface AppShellProps {
   children: React.ReactNode
@@ -17,6 +18,7 @@ export default function AppShell({ children }: AppShellProps) {
 
   return (
     <div className="app-container">
+      <DashboardSprites />
       <a href="#main-content" className="skip-link">Skip to main content</a>
       <Sidebar />
       <main className="main-panel" id="main-content">

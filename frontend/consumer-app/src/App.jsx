@@ -25,6 +25,7 @@ import Journey from './pages/Journey';
 
 // Planning pages
 import Bills from './pages/Bills';
+import BillAnalyzer from './pages/BillAnalyzer';
 import Roof from './pages/Roof';
 import Proposal from './pages/Proposal';
 
@@ -64,7 +65,8 @@ function AppRoutes() {
         <Route path="/app/journey" element={<AppRoute><Journey /></AppRoute>} />
 
         {/* Planning Workspaces (Functional in Slice 2) */}
-        <Route path="/app/planning/bills" element={<AppRoute><Bills /></AppRoute>} />
+        <Route path="/app/bill-analyzer" element={<AppRoute><BillAnalyzer /></AppRoute>} />
+        <Route path="/app/planning/bills" element={<AppRoute><BillAnalyzer /></AppRoute>} />
         <Route path="/app/planning/roof" element={<AppRoute><Roof /></AppRoute>} />
         <Route path="/app/planning/proposal" element={<AppRoute><Proposal /></AppRoute>} />
 
