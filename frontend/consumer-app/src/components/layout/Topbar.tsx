@@ -17,9 +17,10 @@ export default function Topbar() {
   const location = useLocation()
 
   const pathParts = location.pathname.split('/').filter(x => x && x !== 'app')
-  const breadcrumbText = pathParts.length > 0
-    ? pathParts.map(p => p.charAt(0).toUpperCase() + p.slice(1)).join(' / ')
-    : 'Dashboard'
+  const isDashboard = !pathParts.length || pathParts[0].toLowerCase() === 'home'
+  const breadcrumbText = isDashboard
+    ? 'Dashboard'
+    : pathParts.map(p => p.charAt(0).toUpperCase() + p.slice(1)).join(' / ')
 
   const greeting = user?.name
     ? `Good ${new Date().getHours() < 12 ? 'Morning' : new Date().getHours() < 18 ? 'Afternoon' : 'Evening'}, ${user.name.split(' ')[0]}`
@@ -36,15 +37,12 @@ export default function Topbar() {
               <line x1="3" y1="18" x2="21" y2="18" />
             </svg>
           </button>
-          <h1 className="header-title">
-            {breadcrumbText === 'Dashboard' ? greeting : breadcrumbText}
-            {breadcrumbText === 'Dashboard' && <span className="wave">👋</span>}
+          <h1 className="header-title" id="dashGreeting">
+            {greeting} <span className="wave">👋</span>
           </h1>
         </div>
         <span className="header-subtitle">
-          {breadcrumbText === 'Dashboard'
-            ? "Here's what's happening with your solar journey today."
-            : `Manage your ${breadcrumbText.toLowerCase()} settings`}
+          Here's what's happening with your solar journey today.
         </span>
       </div>
 

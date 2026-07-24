@@ -10,7 +10,10 @@ interface SidebarItemProps {
 export default function SidebarItem({ item }: SidebarItemProps) {
   const location = useLocation()
   
-  const isActive = item.route !== '#' && location.pathname === item.route
+  const isActive = item.route !== '#' && (
+    location.pathname === item.route ||
+    (item.id === 'bill-analyzer' && (location.pathname === '/app/bill-analyzer' || location.pathname === '/app/planning/bills'))
+  )
   const className = `menu-item ${isActive ? 'active' : ''}`.trim()
   const idAttr = item.id === 'admin-dashboard' ? 'menu-item-admin' : item.id === 'crm-dashboard' ? 'menu-item-crm' : item.id === 'audit-monitoring' ? 'menu-item-audit' : item.id === 'business-intelligence' ? 'menu-item-bi' : item.id === 'mlops-dashboard' ? 'menu-item-mlops' : undefined
 
