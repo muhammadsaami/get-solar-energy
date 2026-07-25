@@ -35,3 +35,68 @@ export function formatInrCompact(amount: number): string {
 export function calculateLifetimeReturn(annualSavings: number): number {
   return Math.round(annualSavings * 25 * 0.82)
 }
+
+export interface FallbackROIInput {
+  monthlyBill: number
+  systemSize: number
+}
+
+export interface FallbackROIResult {
+  recommendedKw: number
+  systemCost: number
+  governmentSubsidy: number
+  netCost: number
+  monthlySavings: number
+  annualSavings: number
+  annualGeneration: number
+  paybackPeriod: number
+  lifetimeSavings: number
+  roiPercentage: number
+  co2Reduction: number
+}
+
+export function calculateFallbackROI(input: FallbackROIInput): FallbackROIResult {
+  const { monthlyBill, systemSize } = input
+
+  const systemCost = systemSize * 55000
+
+  let governmentSubsidy = 0
+  if (systemSize >= 3) {
+    governmentSubsidy = 78000
+  } else if (systemSize >= 2) {
+    governmentSubsidy = 60000 + Math.round((systemSize - 2) * 18000)
+  } else {
+    governmentSubsidy = Math.round(systemSize * 30000)
+  }
+
+  const netCost = systemCost - governmentSubsidy
+  const monthlySavings = Math.round(monthlyBill * 0.9)
+  const annualSavings = monthlySavings * 12
+  const monthlyGeneration = systemSize * 4.5 * 30
+  const annualGeneration = Math.round(monthlyGeneration * 12)
+
+  const paybackPeriod = annualSavings > 0
+    ? parseFloat((netCost / annualSavings).toFixed(1))
+    : 0
+
+  const lifetimeSavings = Math.round((annualSavings * 25) - netCost)
+  const roiPercentage = netCost > 0
+    ? parseFloat((((lifetimeSavings - netCost) / netCost) * 100).toFixed(1))
+    : 0
+
+  const co2Reduction = parseFloat((annualGeneration * 0.82 / 1000).toFixed(2))
+
+  return {
+    recommendedKw: systemSize,
+    systemCost,
+    governmentSubsidy,
+    netCost,
+    monthlySavings,
+    annualSavings,
+    annualGeneration,
+    paybackPeriod,
+    lifetimeSavings,
+    roiPercentage,
+    co2Reduction,
+  }
+}

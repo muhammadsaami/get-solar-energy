@@ -487,7 +487,7 @@ export function useBillAnalyzer(): BillAnalyzerReturn {
     }
 
     let progress = 0
-    const statuses = ['Uploading...', 'Reading Bill...', 'Running OCR...', 'Analyzing Consumption...', 'Calculating Solar Intelligence...']
+    const statuses = ['Uploading...', 'Reading Bill...', 'Running OCR...', 'Analyzing Consumption...', 'Calculating Solar Analysis...']
     clearBillProgressInterval()
     billProgressInterval.current = setInterval(() => {
       if (progress < 90) {
@@ -570,7 +570,7 @@ export function useBillAnalyzer(): BillAnalyzerReturn {
     solarProgressInterval.current = setInterval(() => {
       if (progress < 85) {
         progress = Math.min(85, progress + 15)
-        const status = progress <= 50 ? 'Analyzing Solar Production...' : 'Calculating Solar Intelligence...'
+        const status = progress <= 50 ? 'Analyzing Solar Production...' : 'Calculating Solar Analysis...'
         updateSolarProgress(progress, status)
       }
     }, 300)

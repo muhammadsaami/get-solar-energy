@@ -56,7 +56,6 @@ function BillUploadCard({
           </svg>
           <span className="kpi-title">Upload Electricity Bill</span>
         </div>
-        <span className="api-tag">POST /api/analyze-bill</span>
       </div>
 
       {state === 'complete' ? (
@@ -193,7 +192,7 @@ function SolarReportUploadCard({
           </svg>
           <span className="kpi-title">Upload Solar Production Report</span>
         </div>
-        <span className="api-tag" style={{ background: 'rgba(255,138,29,0.08)', color: 'var(--accent-orange)', borderColor: 'rgba(255,138,29,0.2)' }}>AI VISION</span>
+        <span className="api-tag" style={{ background: 'rgba(255,138,29,0.08)', color: 'var(--accent-orange)', borderColor: 'rgba(255,138,29,0.2)' }}>SCANNED</span>
       </div>
 
       {state === 'complete' ? (
@@ -370,9 +369,9 @@ function AnalysisResults({
       {/* Premium Summary Snapshot */}
       <div className="card-base" style={{ '--card-theme': '54, 211, 153', marginBottom: '15px', padding: '12px 14px', background: 'rgba(54, 211, 153, 0.04)', border: '1px solid rgba(54, 211, 153, 0.25)' } as React.CSSProperties}>
         <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', borderBottom: '1px solid rgba(54, 211, 153, 0.15)', paddingBottom: '6px', marginBottom: '10px' }}>
-          <span style={{ fontSize: '10px', fontWeight: '800', color: 'var(--accent-green)', textTransform: 'uppercase', letterSpacing: '0.5px' }}>Solar Intelligence Snapshot</span>
+          <span style={{ fontSize: '10px', fontWeight: '800', color: 'var(--accent-green)', textTransform: 'uppercase', letterSpacing: '0.5px' }}>Analysis Summary</span>
           <div style={{ display: 'flex', gap: '6px', alignItems: 'center' }}>
-            <span style={{ fontSize: '9px', background: 'var(--accent-green)', color: '#fff', padding: '1px 5px', borderRadius: '3px', fontWeight: '700', fontFamily: "'Outfit', sans-serif" }}>AI EXTRACTED</span>
+            <span style={{ fontSize: '9px', background: 'var(--accent-green)', color: '#fff', padding: '1px 5px', borderRadius: '3px', fontWeight: '700', fontFamily: "'Outfit', sans-serif" }}>EXTRACTED</span>
             <span id="resExtractionConfidenceBadge" className={`confidence-badge ${d.extractionConfidence.badgeClass}`}>{d.extractionConfidence.label}</span>
           </div>
         </div>
@@ -387,7 +386,7 @@ function AnalysisResults({
       {/* Extracted Bill Details */}
       <h3 style={{ fontSize: '11px', fontWeight: '700', color: 'var(--text-navy)', marginBottom: '10px', display: 'flex', alignItems: 'center', gap: '6px' }}>
         <svg style={{ width: '14px', height: '14px', stroke: 'var(--accent-green)', fill: 'none', strokeWidth: '2' }}><polyline points="22 11.08 20 11.08 17 22 12 1 7 22 4 11.08 2 11.08" /></svg>
-        Extracted Bill Details & Recommendations
+        Bill Details & Recommendations
       </h3>
       <div style={{ display: 'grid', gridTemplateColumns: 'repeat(2, 1fr)', gap: '8px' }}>
         {detailFields.map((field) => (
@@ -413,7 +412,7 @@ function AnalysisResults({
       <div className="solar-util-section">
         <h3 style={{ fontSize: '11px', fontWeight: '700', color: 'var(--text-navy)', marginBottom: '10px', display: 'flex', alignItems: 'center', gap: '6px' }}>
           <svg style={{ width: '14px', height: '14px', stroke: 'var(--accent-orange)', fill: 'none', strokeWidth: '2' }} viewBox="0 0 24 24"><circle cx="12" cy="12" r="10" /><polyline points="12 6 12 12 16 14" /></svg>
-          Solar Utilization Intelligence
+Solar Utilization Summary
         </h3>
         <div className="solar-util-grid">
           {solarUtilFields.map((item) => (
@@ -433,7 +432,7 @@ function AnalysisResults({
       <div className="solar-util-section" id="secSolarConsumerIntel">
         <h3 style={{ fontSize: '11px', fontWeight: '700', color: 'var(--text-navy)', marginBottom: '10px', display: 'flex', alignItems: 'center', gap: '6px' }}>
           <svg style={{ width: '14px', height: '14px', stroke: 'var(--accent-green)', fill: 'none', strokeWidth: '2' }} viewBox="0 0 24 24"><path d="M12 2L2 7l10 5 10-5-10-5zM2 17l10 5 10-5M2 12l10 5 10-5" /></svg>
-          Solar Consumer Intelligence
+Consumer Profile Summary
         </h3>
         <div className="solar-util-grid">
           <div className="card-base" style={{ '--card-theme': '255, 138, 29', padding: '10px', gridColumn: 'span 2', background: 'rgba(255, 138, 29, 0.02)', border: '1px solid var(--border-color)' } as React.CSSProperties}>
@@ -468,7 +467,7 @@ function AnalysisResults({
         <div className="solar-util-section plant-performance-section" id="secPlantPerformance">
           <h3 style={{ fontSize: '11px', fontWeight: '700', color: 'var(--text-navy)', marginBottom: '10px', display: 'flex', alignItems: 'center', gap: '6px' }}>
             <svg style={{ width: '14px', height: '14px', stroke: 'var(--accent-orange)', fill: 'none', strokeWidth: '2' }} viewBox="0 0 24 24"><polyline points="22 12 18 12 15 21 9 3 6 12 2 12" /></svg>
-            Plant Performance Intelligence
+Plant Performance
           </h3>
           <div style={{ display: 'grid', gridTemplateColumns: 'repeat(2, 1fr)', gap: '8px', marginBottom: '8px' }}>
             <div className="card-base" style={{ '--card-theme': '255, 138, 29', padding: '10px', background: 'rgba(255,138,29,0.02)', border: '1px solid var(--border-color)' } as React.CSSProperties}>
@@ -509,7 +508,7 @@ function AnalysisResults({
         <div className="solar-util-section unified-energy-section" id="secUnifiedEnergy">
           <h3 style={{ fontSize: '11px', fontWeight: '700', color: 'var(--text-navy)', marginBottom: '10px', display: 'flex', alignItems: 'center', gap: '6px' }}>
             <svg style={{ width: '14px', height: '14px', stroke: 'var(--accent-blue)', fill: 'none', strokeWidth: '2' }} viewBox="0 0 24 24"><polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2" /></svg>
-            Unified Energy Intelligence
+Energy Summary
             <span style={{ fontSize: '8px', background: 'linear-gradient(135deg,var(--accent-orange),var(--accent-green))', color: '#fff', padding: '1px 6px', borderRadius: '3px', fontWeight: '700', marginLeft: '4px' }}>LIVE</span>
           </h3>
           <div className="solar-util-grid">
@@ -636,7 +635,6 @@ export default function BillAnalyzer() {
               <span className="kpi-value-text" id="billTabCurrentBill">{d ? formatCurrency(d.bill_amount) : `₹${defaultBill.toLocaleString('en-IN')}`}</span>
             </div>
             <p className="kpi-card-subdesc" style={{ fontSize: '10px', color: 'var(--text-muted)', marginTop: '4px' }}>Extracted from latest billing cycle</p>
-            <span className="api-tag">API: analyze-bill</span>
           </div>
           <div className="card-base shadow-lift" style={{ '--card-theme': '23, 168, 229' } as React.CSSProperties}>
             <div className="kpi-header-row">
@@ -647,7 +645,6 @@ export default function BillAnalyzer() {
               <span className="kpi-value-text" id="billTabUnits">{d ? `${Math.round(d.monthly_units)} kWh` : `${defaultUnits} kWh`}</span>
             </div>
             <p className="kpi-card-subdesc" style={{ fontSize: '10px', color: 'var(--text-muted)', marginTop: '4px' }}>{d ? `Average consumption: ${Math.round((d.monthly_units / 30) * 10) / 10} kWh/day` : `Average consumption: ${defaultConsumptionPerDay} kWh/day`}</p>
-            <span className="api-tag">API: analyze-bill</span>
           </div>
           <div className="card-base shadow-lift" style={{ '--card-theme': '54, 211, 153' } as React.CSSProperties}>
             <div className="kpi-header-row">
@@ -658,7 +655,6 @@ export default function BillAnalyzer() {
               <span className="kpi-value-text" id="billTabSavings">{d ? formatCurrencyPerMonth(d.monthly_savings_rs) : `₹${defaultSavings.toLocaleString('en-IN')}/mo`}</span>
             </div>
             <p className="kpi-card-subdesc" style={{ fontSize: '10px', color: 'var(--text-muted)', marginTop: '4px' }}>{d ? `Equivalent to ~${d.bill_amount > 0 ? Math.round((d.monthly_savings_rs / d.bill_amount) * 100) : 75}% reduction` : 'Equivalent to ~75% reduction'}</p>
-            <span className="api-tag">API: analyze-bill</span>
           </div>
         </div>
       </div>
@@ -667,7 +663,6 @@ export default function BillAnalyzer() {
       <div className="card-base chart-fullwidth-card" style={{ marginTop: '20px', '--card-theme': '23, 168, 229' } as React.CSSProperties}>
         <div className="kpi-header-row">
           <span className="kpi-title">Historical Consumption & Potential Savings Trend</span>
-          <span className="api-tag">API: analyze-bill</span>
         </div>
         <div style={{ height: '250px', position: 'relative' }}>
           <canvas id="billHistoryChart"></canvas>

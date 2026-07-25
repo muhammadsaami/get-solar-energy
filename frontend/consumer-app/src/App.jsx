@@ -26,8 +26,13 @@ import Journey from './pages/Journey';
 // Planning pages
 import Bills from './pages/Bills';
 import BillAnalyzer from './pages/BillAnalyzer';
-import Roof from './pages/Roof';
+import RoofAnalyzer from './pages/RoofAnalyzer';
 import Proposal from './pages/Proposal';
+import ROICalculatorPage from './pages/ROICalculatorPage';
+
+// AI pages
+import AIAdvisor from './pages/AIAdvisor';
+import EnterpriseAI from './pages/EnterpriseAI';
 
 // Vendor pages
 import ProjectTracking from './pages/ProjectTracking';
@@ -64,11 +69,18 @@ function AppRoutes() {
         <Route path="/app/home" element={<AppRoute><Home /></AppRoute>} />
         <Route path="/app/journey" element={<AppRoute><Journey /></AppRoute>} />
 
-        {/* Planning Workspaces (Functional in Slice 2) */}
+        {/* Planning Workspaces */}
         <Route path="/app/bill-analyzer" element={<AppRoute><BillAnalyzer /></AppRoute>} />
         <Route path="/app/planning/bills" element={<AppRoute><BillAnalyzer /></AppRoute>} />
-        <Route path="/app/planning/roof" element={<AppRoute><Roof /></AppRoute>} />
+        <Route path="/app/roof-analysis" element={<AppRoute><RoofAnalyzer /></AppRoute>} />
+        <Route path="/app/roof" element={<AppRoute><RoofAnalyzer /></AppRoute>} />
+        <Route path="/app/planning/roof" element={<AppRoute><RoofAnalyzer /></AppRoute>} />
         <Route path="/app/planning/proposal" element={<AppRoute><Proposal /></AppRoute>} />
+        <Route path="/app/roi-calculator" element={<AppRoute><ROICalculatorPage /></AppRoute>} />
+
+        {/* AI Workspaces */}
+        <Route path="/app/ai-advisor" element={<AppRoute><AIAdvisor /></AppRoute>} />
+        <Route path="/app/enterprise-ai" element={<AppRoute><EnterpriseAI /></AppRoute>} />
 
         {/* Installation Workspaces (Locked placeholders) */}
         <Route path="/app/installation/progress" element={<AppRoute><LockedWorkspace targetStageId="ST-08" /></AppRoute>} />

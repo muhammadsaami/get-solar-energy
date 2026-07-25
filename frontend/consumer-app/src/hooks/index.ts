@@ -8,4 +8,14 @@ export { useIntersectionCounter } from './useIntersectionCounter'
 export { useAnimatedCounter } from './useAnimatedCounter'
 export { useCinematicParallax } from './useCinematicParallax'
 export { useSceneVisibility } from './useSceneVisibility'
+export { useROICalculator } from './useROICalculator'
+export type {
+  ROIFormData,
+  ROIResult,
+  ROIState,
+  ChartDataPoint,
+  PanelQuality,
+  UseROICalculatorReturn,
+  ROIPersistence,
+} from './roiCalculator.types'
 

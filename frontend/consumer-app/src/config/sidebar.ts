@@ -17,11 +17,11 @@ export const SIDEBAR_ITEMS: SidebarGroupConfig[] = [
     groupName: 'Customer Tools',
     items: [
       { id: 'dashboard', label: 'Dashboard', route: '/app/home', color: 'blue', symbolId: 'home', visible: true },
-      { id: 'bill-analyzer', label: 'Bill Analyzer', route: '/app/planning/bills', color: 'cyan', symbolId: 'bill', visible: true },
+      { id: 'bill-analyzer', label: 'Bill Analyzer', route: '/app/bill-analyzer', color: 'cyan', symbolId: 'bill', visible: true },
       { id: 'roof-analysis', label: 'Roof Analysis', route: '/app/planning/roof', color: 'orange', symbolId: 'roof', visible: true },
-      { id: 'roi-calculator', label: 'ROI Calculator', route: '#', color: 'green', symbolId: 'calculator', visible: true },
-      { id: 'ai-assistant', label: 'AI Assistant', route: '#', color: 'purple', symbolId: 'sparkles', visible: true },
-      { id: 'enterprise-ai', label: 'Enterprise AI', route: '#', color: 'indigo', symbolId: 'bot', visible: true },
+      { id: 'roi-calculator', label: 'ROI Calculator', route: '/app/roi-calculator', color: 'green', symbolId: 'calculator', visible: true },
+      { id: 'ai-assistant', label: 'AI Assistant', route: '/app/ai-advisor', color: 'purple', symbolId: 'sparkles', visible: true },
+      { id: 'enterprise-ai', label: 'Enterprise AI', route: '/app/enterprise-ai', color: 'indigo', symbolId: 'bot', visible: true },
     ],
   },
   {

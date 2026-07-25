@@ -1,6 +1,8 @@
 import React from 'react';
+import { useNavigate } from 'react-router-dom';
 
 export default function QuickActionsGrid() {
+  const navigate = useNavigate();
   return (
     <section aria-labelledby="quickActionsTitle">
               <div className="quick-actions-title-row">
@@ -60,7 +62,7 @@ export default function QuickActionsGrid() {
                 </div>
     
                 {/* Card 4 */}
-                <div className="action-card" tabIndex={0} role="button" data-tab="ai-assistant" id="actAI" onClick={(e) => { e.preventDefault(); }}>
+                <div className="action-card" tabIndex={0} role="button" data-tab="ai-assistant" id="actAI" onClick={() => navigate('/app/ai-advisor')}>
                   <div className="action-header-row">
                     <div className="action-icon-box">
                       <svg><use href="#icon-chat"></use></svg>

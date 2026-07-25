@@ -32,7 +32,7 @@ export default function Bills() {
         <div className="glass-card" style={{ padding: '30px', textAlign: 'center', border: '1px solid rgba(255,255,255,0.08)', borderRadius: '16px', background: 'rgba(8, 24, 42, 0.72)' }}>
           <div style={{ fontSize: '14px', fontWeight: '700', color: 'var(--color-blue)', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '10px' }}>
             <div className="spinner" style={{ width: '20px', height: '20px', border: '2px solid rgba(255,255,255,0.1)', borderTopColor: 'var(--color-blue)', borderRadius: '50%', animation: 'spin 1s linear infinite' }} />
-            Analyzing bill details with GenAI...
+            Analyzing bill details...
           </div>
         </div>
       ) : activeBillOcr ? (

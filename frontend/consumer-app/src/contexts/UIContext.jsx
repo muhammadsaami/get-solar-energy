@@ -4,7 +4,7 @@ const UIContext = createContext(null);
 
 export function UIProvider({ children }) {
   const [isSidebarCollapsed, setIsSidebarCollapsed] = useState(() => {
-    const saved = localStorage.getItem('sidebar_collapsed');
+    const saved = localStorage.getItem('sidebarCollapsed');
     return saved === 'true';
   });
   const [isDrawerOpen, setIsDrawerOpen] = useState(false);
@@ -13,7 +13,7 @@ export function UIProvider({ children }) {
   const toggleSidebar = () => {
     setIsSidebarCollapsed(prev => {
       const next = !prev;
-      localStorage.setItem('sidebar_collapsed', String(next));
+      localStorage.setItem('sidebarCollapsed', String(next));
       return next;
     });
   };

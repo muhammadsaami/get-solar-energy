@@ -32,7 +32,6 @@ export default function NotificationMenu({ notificationCount = 0 }: Notification
           <path d="M13.73 21a2 2 0 0 1-3.46 0" />
         </svg>
         {notificationCount > 0 && <span className="notification-badge">{notificationCount}</span>}
-        {notificationCount === 0 && <span className="notification-badge" />}
       </button>
     </div>
   )

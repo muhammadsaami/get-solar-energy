@@ -40,6 +40,7 @@ export const ROUTES = {
   ROI_CALCULATOR: '/app/roi-calculator',
   ROOF_ANALYSIS: '/app/roof-analysis',
   AI_ADVISOR: '/app/ai-advisor',
+  ENTERPRISE_AI: '/app/enterprise-ai',
   REWARDS: '/app/rewards',
 
   // Vendor
