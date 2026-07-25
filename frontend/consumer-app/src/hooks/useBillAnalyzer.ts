@@ -1,4 +1,5 @@
 import { useState, useRef, useCallback, useEffect } from 'react'
+import api from '../services/api/client'
 import type { Chart, ChartConfiguration } from 'chart.js'
 import {
   Chart as ChartJS,
@@ -22,7 +23,6 @@ import type {
   UploadProgress,
 } from './billAnalyzer.types'
 import {
-  API_BASE,
   SOLAR_YIELD,
   NET_METERING_RATE,
   MAX_FILE_SIZE,
@@ -284,24 +284,6 @@ function enrichAnalysisData(apiData: Record<string, unknown>, filename: string, 
   return enriched
 }
 
-function generateMockBillResponse(): Record<string, unknown> {
-  return {
-    customer_name: 'Rakesh Sharma',
-    consumer_number: 'TTPDL293847561',
-    discom: 'Tata Power Delhi Distribution Limited',
-    billing_period: 'May 2026',
-    monthly_units: 580,
-    bill_amount: 4930,
-    per_unit_rate: 8.50,
-    recommended_kw: 5.2,
-    monthly_generation_units: 650,
-    monthly_savings_rs: 3640,
-    system_cost_rs: 390000,
-    payback_years: 5.2,
-    savings_25_years_rs: 1092000,
-  }
-}
-
 export interface BillAnalyzerState {
   analysis: BillAnalysisData | null
   solarReport: SolarReportData | null
@@ -515,24 +497,19 @@ export function useBillAnalyzer(): BillAnalyzerReturn {
       setBillUploadState('error')
     }
 
-    fetch(`${API_BASE}/analyze-bill`, {
-      method: 'POST',
-      body: (() => {
-        const fd = new FormData()
-        fd.append('image', file)
-        return fd
-      })(),
-    })
-      .then(async (res) => {
-        if (!res.ok) throw new Error('API server returned an error.')
-        const result = await res.json()
+    const fd = new FormData()
+    fd.append('image', file)
+    api.post('/analyze-bill', fd)
+      .then((res) => {
+        const result = res.data
         if (!result || result.success !== true || !result.data) throw new Error(result?.error || 'Invalid API response format.')
         if (!validateBillAnalysisResponse(result.data)) throw new Error('Analysis returned invalid data. Please upload a clearer image.')
         return result.data as Record<string, unknown>
       })
       .then(doComplete)
-      .catch((err: Error) => {
-        doError(err)
+      .catch((err: unknown) => {
+        const msg = (err as { response?: { data?: { detail?: string } }, message?: string })?.response?.data?.detail || (err as Error)?.message || 'Analysis failed. Check the file or try again.'
+        doError(new Error(msg))
       })
   }, [clearBillProgressInterval, updateBillProgress])
 
@@ -589,29 +566,23 @@ export function useBillAnalyzer(): BillAnalyzerReturn {
       setSolarUploadState('error')
     }
 
-    fetch(`${API_BASE}/analyze-bill`, {
-      method: 'POST',
-      body: (() => {
-        const fd = new FormData()
-        fd.append('image', file)
-        return fd
-      })(),
-    })
-      .then(async (res) => {
-        if (!res.ok) throw new Error('API error')
-        const result = await res.json()
+    const fd = new FormData()
+    fd.append('image', file)
+    api.post('/analyze-bill', fd)
+      .then((res) => {
+        const result = res.data
         let apiText = ''
         if (result?.data) {
           apiText = [result.data._raw_text || '', result.data.customer_name || '', result.data.billing_period || ''].join(' ')
         }
-        const combinedText = apiText
-        const prodData = extractSolarProductionData(combinedText, file.name)
+        const prodData = extractSolarProductionData(apiText, file.name)
         if (prodData.productionKwh == null) throw new Error('Could not extract solar production data.')
         return prodData
       })
       .then(doComplete)
-      .catch((err: Error) => {
-        doError(err)
+      .catch((err: unknown) => {
+        const msg = (err as { response?: { data?: { detail?: string } }, message?: string })?.response?.data?.detail || (err as Error)?.message || 'Could not read solar report. Try another file.'
+        doError(new Error(msg))
       })
   }, [clearSolarProgressInterval, updateSolarProgress])
 

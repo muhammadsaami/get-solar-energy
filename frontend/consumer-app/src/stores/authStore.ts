@@ -26,24 +26,8 @@ export const useAuthStore = create<AuthState>()(
       user: null,
       loading: false,
 
-      login: async (email, password) => {
-        if (email && password) {
-          const mockToken = 'mock_jwt_access_token_value_xyz'
-          const mockUser: User = {
-            id: 1,
-            email,
-            name: email.split('@')[0].toUpperCase(),
-            role: 'customer',
-            avatar: 'https://api.dicebear.com/7.x/bottts/svg?seed=GETSolar',
-          }
-
-          localStorage.setItem('access_token', mockToken)
-          localStorage.setItem('user', JSON.stringify(mockUser))
-
-          set({ isAuthenticated: true, token: mockToken, user: mockUser })
-          return { success: true }
-        }
-        return { success: false, error: 'Invalid username or password' }
+      login: async () => {
+        return { success: false, error: 'Login not available through this store' }
       },
 
       logout: () => {

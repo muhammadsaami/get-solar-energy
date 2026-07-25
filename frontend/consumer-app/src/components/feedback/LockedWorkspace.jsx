@@ -1,8 +1,9 @@
 import React from 'react';
+import { Link } from 'react-router-dom';
 import { useJourney } from '../../contexts/JourneyContext';
 import { JOURNEY_CONFIG } from '../../constants/journey.config';
 
-export default function LockedWorkspace({ targetStageId }) {
+export default function LockedWorkspace({ targetStageId, featureTitle }) {
   const { currentStageId } = useJourney();
   const targetConfig = JOURNEY_CONFIG[targetStageId] || JOURNEY_CONFIG['ST-02'];
   const currentConfig = JOURNEY_CONFIG[currentStageId] || JOURNEY_CONFIG['ST-01'];
@@ -38,9 +39,14 @@ export default function LockedWorkspace({ targetStageId }) {
       }}>
         🔒
       </div>
-      <h2 style={{ fontSize: '24px', fontWeight: '800', marginBottom: '12px', color: 'var(--text-primary)' }}>
-        Workspace Locked
+      <h2 style={{ fontSize: '28px', fontWeight: '800', marginBottom: '6px', color: 'var(--text-primary)' }}>
+        {featureTitle || 'Workspace Locked'}
       </h2>
+      {featureTitle && (
+        <p style={{ fontSize: '14px', fontWeight: '500', marginBottom: '12px', color: 'var(--color-orange)', textTransform: 'uppercase', letterSpacing: '1.5px' }}>
+          Workspace Locked
+        </p>
+      )}
       <p style={{ fontSize: '15px', color: 'var(--text-secondary)', lineHeight: '1.6', marginBottom: '30px', maxWidth: '460px' }}>
         This page will become available once your journey reaches the <strong>{targetConfig.displayName}</strong> phase.
       </p>
@@ -62,7 +68,7 @@ export default function LockedWorkspace({ targetStageId }) {
         </div>
       </div>
 
-      <a href="/app/journey" style={{
+      <Link to="/app/journey" style={{
         background: 'linear-gradient(135deg, var(--color-orange), #ff9d3d)',
         color: 'white',
         textDecoration: 'none',
@@ -74,7 +80,7 @@ export default function LockedWorkspace({ targetStageId }) {
         transition: 'all var(--duration-fast) var(--ease-standard)'
       }}>
         View Journey Roadmap
-      </a>
+      </Link>
     </div>
   );
 }

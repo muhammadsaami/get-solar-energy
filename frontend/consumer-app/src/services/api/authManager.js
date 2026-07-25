@@ -1,5 +1,4 @@
 // src/services/api/authManager.js
-import axios from 'axios';
 
 let inMemoryToken = null;
 
@@ -17,17 +16,9 @@ export const authManager = {
   },
   logout() {
     inMemoryToken = null;
-    localStorage.clear();
+    localStorage.removeItem('access_token');
+    localStorage.removeItem('refresh_token');
+    localStorage.removeItem('user');
     window.location.href = '/';
   },
-  async refreshToken() {
-    const refresh = localStorage.getItem('refresh_token');
-    if (!refresh) throw new Error("No refresh token active");
-    
-    const baseURL = import.meta.env.VITE_API_URL || '/api';
-    const res = await axios.post(`${baseURL}/auth/refresh`, { refresh_token: refresh });
-    const newToken = res.data.access_token;
-    this.setAccessToken(newToken);
-    return newToken;
-  }
 };

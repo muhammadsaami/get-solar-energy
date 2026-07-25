@@ -1,3 +1,5 @@
+import api from './api/client';
+
 const STAGES = [
   { id: 'lead', label: 'Lead', icon: '📋', color: 'var(--color-blue)' },
   { id: 'site-survey', label: 'Site Survey', icon: '🔍', color: 'var(--color-purple)' },
@@ -393,20 +395,23 @@ function delay(ms) {
 }
 
 async function getProjects() {
-  await delay(300);
-  return [...projects];
+  const res = await api.get('/projects');
+  const body = res.data;
+  const list = body?.data || [];
+  return list.map((raw) => new ProjectModel(raw));
 }
 
 async function getProject(projectId) {
-  await delay(200);
-  const p = projects.find(prj => prj.id === projectId);
-  if (!p) throw new Error(`Project ${projectId} not found`);
-  return new ProjectModel({ ...p });
+  const res = await api.get(`/projects/${encodeURIComponent(projectId)}`);
+  const body = res.data;
+  if (!body?.data) throw new Error(`Project ${projectId} not found`);
+  return new ProjectModel(body.data);
 }
 
 async function getProjectKpis() {
-  await delay(200);
-  return computeKpis(projects);
+  const res = await api.get('/projects/metrics');
+  const body = res.data;
+  return body?.data || {};
 }
 
 async function getProjectAnalytics() {
@@ -432,78 +437,28 @@ async function getProjectActivities() {
 }
 
 async function updateProjectStage(projectId, newStage) {
-  await delay(150);
-  const project = projects.find(p => p.id === projectId);
-  if (!project) throw new Error(`Project ${projectId} not found`);
-  const oldStage = project.currentStage;
-  project.currentStage = newStage;
-  project.stageHistory.push({ stage: newStage, enteredAt: new Date().toISOString() });
-  project.lastUpdated = new Date().toISOString();
-  if (newStage === 'completed') {
-    project.actualEndDate = new Date().toISOString();
-    project.status = 'completed';
-    project.completionPercent = 100;
-  }
-  if (newStage === 'amc') {
-    project.status = 'completed';
-    project.completionPercent = 100;
-  }
-  project.milestones = generateMilestones(newStage, project.startDate);
-  return { success: true, oldStage, newStage };
+  const res = await api.patch(`/projects/${encodeURIComponent(projectId)}/stage`, { stage: newStage });
+  const body = res.data;
+  return { success: true, oldStage: body?.data?.currentStage || '', newStage };
 }
 
 async function searchProjects(query) {
-  await delay(150);
-  if (!query || !query.trim()) return [...projects];
-  const q = query.toLowerCase().trim();
-  return projects.filter(p =>
-    p.projectName.toLowerCase().includes(q) ||
-    p.customerName.toLowerCase().includes(q) ||
-    p.city.toLowerCase().includes(q) ||
-    p.id.toLowerCase().includes(q) ||
-    p.assignedEngineer.name.toLowerCase().includes(q) ||
-    p.assignedInstaller.name.toLowerCase().includes(q)
-  );
+  if (!query || !query.trim()) return getProjects();
+  const res = await api.get('/projects', { params: { search: query.trim() } });
+  const body = res.data;
+  const list = body?.data || [];
+  return list.map((raw) => new ProjectModel(raw));
 }
 
 async function filterProjects(filters) {
-  await delay(150);
-  let result = [...projects];
-
-  if (filters.status) {
-    result = result.filter(p => p.status === filters.status);
-  }
-  if (filters.customer) {
-    result = result.filter(p => p.customerName.toLowerCase().includes(filters.customer.toLowerCase()));
-  }
-  if (filters.city) {
-    result = result.filter(p => p.city.toLowerCase() === filters.city.toLowerCase());
-  }
-  if (filters.engineer) {
-    result = result.filter(p => p.assignedEngineer.name.includes(filters.engineer));
-  }
-  if (filters.installer) {
-    result = result.filter(p => p.assignedInstaller.name.includes(filters.installer));
-  }
-  if (filters.capacity) {
-    const [min, max] = filters.capacity.split('-').map(Number);
-    if (max) {
-      result = result.filter(p => p.capacityKw >= min && p.capacityKw <= max);
-    } else {
-      result = result.filter(p => p.capacityKw >= min);
-    }
-  }
-  if (filters.priority) {
-    result = result.filter(p => p.priority === filters.priority);
-  }
-  if (filters.projectType) {
-    result = result.filter(p => p.projectType === filters.projectType);
-  }
-  if (filters.stage) {
-    result = result.filter(p => p.currentStage === filters.stage);
-  }
-
-  return result;
+  const params = {};
+  if (filters.status) params.status = filters.status;
+  if (filters.priority) params.priority = filters.priority;
+  if (filters.stage) params.stage = filters.stage;
+  const res = await api.get('/projects', { params });
+  const body = res.data;
+  const list = body?.data || [];
+  return list.map((raw) => new ProjectModel(raw));
 }
 
 export {

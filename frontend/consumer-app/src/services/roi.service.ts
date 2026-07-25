@@ -26,6 +26,6 @@ export interface ROIApiResponse {
 }
 
 export async function calculateROI(request: ROIApiRequest): Promise<ROIApiResponse> {
-  const { data } = await api.post<ROIApiResponse>('/api/calculate-roi', request)
+  const { data } = await api.post<ROIApiResponse>('/calculate-roi', request)
   return data
 }

@@ -1,5 +1,3 @@
-export const API_BASE = import.meta.env.VITE_API_URL || '/api'
-
 export const SOLAR_YIELD = 125
 export const NET_METERING_RATE = 7
 export const MAX_FILE_SIZE = 10 * 1024 * 1024

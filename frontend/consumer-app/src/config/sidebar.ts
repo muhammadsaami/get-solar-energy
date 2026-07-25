@@ -1,3 +1,5 @@
+import { ROUTES } from './routes'
+
 export interface SidebarItemConfig {
   id: string
   label: string
@@ -16,45 +18,65 @@ export const SIDEBAR_ITEMS: SidebarGroupConfig[] = [
   {
     groupName: 'Customer Tools',
     items: [
-      { id: 'dashboard', label: 'Dashboard', route: '/app/home', color: 'blue', symbolId: 'home', visible: true },
-      { id: 'bill-analyzer', label: 'Bill Analyzer', route: '/app/bill-analyzer', color: 'cyan', symbolId: 'bill', visible: true },
-      { id: 'roof-analysis', label: 'Roof Analysis', route: '/app/planning/roof', color: 'orange', symbolId: 'roof', visible: true },
-      { id: 'roi-calculator', label: 'ROI Calculator', route: '/app/roi-calculator', color: 'green', symbolId: 'calculator', visible: true },
-      { id: 'ai-assistant', label: 'AI Assistant', route: '/app/ai-advisor', color: 'purple', symbolId: 'sparkles', visible: true },
-      { id: 'enterprise-ai', label: 'Enterprise AI', route: '/app/enterprise-ai', color: 'indigo', symbolId: 'bot', visible: true },
+      { id: 'dashboard', label: 'Dashboard', route: ROUTES.HOME, color: 'blue', symbolId: 'home', visible: true },
+      { id: 'bill-analyzer', label: 'Bill Analyzer', route: ROUTES.BILL_ANALYZER, color: 'cyan', symbolId: 'bill', visible: true },
+      { id: 'roof-analysis', label: 'Roof Analysis', route: ROUTES.ROOF_ANALYSIS, color: 'orange', symbolId: 'roof', visible: true },
+      { id: 'roi-calculator', label: 'ROI Calculator', route: ROUTES.ROI_CALCULATOR, color: 'green', symbolId: 'calculator', visible: true },
+      { id: 'ai-assistant', label: 'AI Assistant', route: ROUTES.AI_ADVISOR, color: 'purple', symbolId: 'sparkles', visible: true },
+      { id: 'enterprise-ai', label: 'Enterprise AI', route: ROUTES.ENTERPRISE_AI, color: 'indigo', symbolId: 'bot', visible: true },
     ],
   },
   {
     groupName: 'Engagement',
     items: [
-      { id: 'rewards', label: 'Rewards & Referrals', route: '/app/support/referrals', color: 'pink', symbolId: 'gift', visible: true },
-      { id: 'reports-center', label: 'Reports Center', route: '/app/ownership/reports', color: 'teal', symbolId: 'reports', visible: true },
-      { id: 'activity-center', label: 'Activity Center', route: '/app/support/notifications', color: 'sky', symbolId: 'activity', visible: true },
-      { id: 'performance', label: 'System Performance', route: '#', color: 'lime', symbolId: 'server', visible: true },
+      { id: 'rewards', label: 'Rewards & Referrals', route: ROUTES.REWARDS, color: 'pink', symbolId: 'gift', visible: true },
+      { id: 'activity-center', label: 'Activity Center', route: ROUTES.SUPPORT_NOTIFICATIONS, color: 'sky', symbolId: 'activity', visible: true },
+      { id: 'performance', label: 'System Performance', route: ROUTES.SYSTEM_PERFORMANCE, color: 'lime', symbolId: 'server', visible: true },
+    ],
+  },
+  {
+    groupName: 'Reports',
+    items: [
+      { id: 'reports-center', label: 'Reports Center', route: ROUTES.OWNERSHIP_REPORTS, color: 'teal', symbolId: 'reports', visible: true },
     ],
   },
   {
     groupName: 'Maintenance',
     items: [
-      { id: 'amc', label: 'AMC', route: '#', color: 'blue', symbolId: 'wrench', visible: true },
+      { id: 'amc', label: 'AMC', route: ROUTES.AMC, color: 'blue', symbolId: 'wrench', visible: true },
     ],
   },
   {
     groupName: 'Operations',
     items: [
-      { id: 'site-survey', label: 'Site Survey', route: '#', color: 'purple', symbolId: 'clipboard', visible: true },
+      { id: 'site-survey', label: 'Site Survey', route: ROUTES.SITE_SURVEY, color: 'purple', symbolId: 'clipboard', visible: true },
     ],
   },
   {
     groupName: 'Platform',
     items: [
-      { id: 'settings', label: 'Settings', route: '/app/account/settings', color: 'gray', symbolId: 'settings', visible: true },
-      { id: 'vendor-portal', label: 'Vendor Portal', route: '/app/vendor/project-tracking', color: 'amber', symbolId: 'briefcase', visible: true },
-      { id: 'admin-dashboard', label: 'Admin Dashboard', route: '#', color: 'gold', symbolId: 'crown', visible: false },
-      { id: 'crm-dashboard', label: 'CRM & Leads', route: '#', color: 'indigo', symbolId: 'users', visible: false },
-      { id: 'audit-monitoring', label: 'Audit & Monitoring', route: '#', color: 'red', symbolId: 'activity', visible: false },
-      { id: 'business-intelligence', label: 'Business Intelligence', route: '#', color: 'emerald', symbolId: 'trending', visible: false },
-      { id: 'mlops-dashboard', label: 'MLOps', route: '#', color: 'red', symbolId: 'mlops', visible: false },
+      { id: 'settings', label: 'Settings', route: ROUTES.ACCOUNT_SETTINGS, color: 'gray', symbolId: 'settings', visible: true },
+      { id: 'vendor-portal', label: 'Vendor Portal', route: ROUTES.VENDOR_PROJECT_TRACKING, color: 'amber', symbolId: 'briefcase', visible: true },
+    ],
+  },
+  {
+    groupName: 'Administration',
+    items: [
+      { id: 'admin-dashboard', label: 'Admin Dashboard', route: ROUTES.ADMIN_DASHBOARD, color: 'gold', symbolId: 'crown', visible: true },
+      { id: 'crm-dashboard', label: 'CRM & Leads', route: ROUTES.CRM_LEADS, color: 'indigo', symbolId: 'users', visible: true },
+    ],
+  },
+  {
+    groupName: 'Analytics',
+    items: [
+      { id: 'business-intelligence', label: 'Business Intelligence', route: ROUTES.BUSINESS_INTELLIGENCE, color: 'emerald', symbolId: 'trending', visible: true },
+      { id: 'audit-monitoring', label: 'Audit & Monitoring', route: ROUTES.AUDIT_MONITORING, color: 'red', symbolId: 'activity', visible: true },
+    ],
+  },
+  {
+    groupName: 'AI / ML',
+    items: [
+      { id: 'mlops-dashboard', label: 'MLOps', route: ROUTES.MLOPS, color: 'red', symbolId: 'mlops', visible: true },
     ],
   },
 ]

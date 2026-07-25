@@ -1,5 +1,7 @@
 import React, { useState, useRef, useEffect } from 'react'
+import { useNavigate } from 'react-router-dom'
 import { useAuth } from '../../contexts/AuthContext'
+import { ROUTES } from '../../config/routes'
 
 interface AuthUser {
   name: string
@@ -9,6 +11,7 @@ interface AuthUser {
 
 export default function UserMenu() {
   const { user, logout } = useAuth() as unknown as { user: AuthUser | null; logout: () => void }
+  const navigate = useNavigate()
   const [isOpen, setIsOpen] = useState(false)
   const ref = useRef<HTMLDivElement>(null)
 
@@ -37,7 +40,7 @@ export default function UserMenu() {
 
   const handleLogout = () => {
     logout()
-    window.location.href = '/'
+    navigate(ROUTES.LANDING)
   }
 
   return (
@@ -76,25 +79,25 @@ export default function UserMenu() {
             </div>
           </div>
           <div className="profile-dropdown-divider" />
-          <button className="profile-dropdown-item" role="menuitem" tabIndex={0}>
+          <button className="profile-dropdown-item" role="menuitem" tabIndex={0} onClick={() => { navigate(ROUTES.ACCOUNT_PROFILE); setIsOpen(false); }}>
             <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round">
               <circle cx="12" cy="8" r="4" /><path d="M4 20c0-4 3.6-7 8-7s8 3 8 7" />
             </svg>
             Profile
           </button>
-          <button className="profile-dropdown-item" role="menuitem" tabIndex={0}>
+          <button className="profile-dropdown-item" role="menuitem" tabIndex={0} onClick={() => { navigate(ROUTES.ACCOUNT_SETTINGS); setIsOpen(false); }}>
             <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round">
               <circle cx="12" cy="12" r="3" /><path d="M19.07 4.93a10 10 0 0 1 0 14.14M4.93 4.93a10 10 0 0 0 0 14.14" />
             </svg>
             Account Settings
           </button>
-          <button className="profile-dropdown-item" role="menuitem" tabIndex={0}>
+          <button className="profile-dropdown-item" role="menuitem" tabIndex={0} onClick={() => { navigate(ROUTES.SUPPORT_NOTIFICATIONS); setIsOpen(false); }}>
             <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round">
               <path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9" /><path d="M13.73 21a2 2 0 0 1-3.46 0" />
             </svg>
             Notifications
           </button>
-          <button className="profile-dropdown-item" role="menuitem" tabIndex={0}>
+          <button className="profile-dropdown-item" role="menuitem" tabIndex={0} onClick={() => { navigate(ROUTES.REWARDS); setIsOpen(false); }}>
             <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round">
               <path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z" />
             </svg>

@@ -1,4 +1,5 @@
 import React, { createContext, useState, useEffect, useContext } from 'react';
+import api from '../services/api/client';
 
 const AuthContext = createContext(null);
 
@@ -21,28 +22,22 @@ export function AuthProvider({ children }) {
   }, []);
 
   const login = async (email, password) => {
-    // Mock login call - matches production schemas
-    if (email && password) {
-      const mockToken = "mock_jwt_access_token_value_xyz";
-      const mockRefreshToken = "mock_jwt_refresh_token_value_123";
-      const mockUser = {
-        id: 1,
-        email: email,
-        name: email.split('@')[0].toUpperCase(),
-        role: "customer",
-        avatar: "https://api.dicebear.com/7.x/bottts/svg?seed=GETSolar"
-      };
-
-      localStorage.setItem('access_token', mockToken);
-      localStorage.setItem('refresh_token', mockRefreshToken);
-      localStorage.setItem('user', JSON.stringify(mockUser));
-
-      setToken(mockToken);
-      setUser(mockUser);
-      setIsAuthenticated(true);
-      return { success: true };
+    try {
+      const res = await api.post('/login', { email, password });
+      if (res.data.success) {
+        const { token, user } = res.data;
+        localStorage.setItem('access_token', token);
+        localStorage.setItem('user', JSON.stringify(user));
+        setToken(token);
+        setUser(user);
+        setIsAuthenticated(true);
+        return { success: true };
+      }
+      return { success: false, error: 'Login failed' };
+    } catch (err) {
+      const detail = err.response?.data?.detail || 'Login failed';
+      return { success: false, error: detail };
     }
-    return { success: false, error: "Invalid username or password" };
   };
 
   const logout = () => {

@@ -1,4 +1,5 @@
 import { useState, useRef, useCallback, useEffect } from 'react'
+import api from '../services/api/client'
 import L from 'leaflet'
 import html2canvas from 'html2canvas'
 import type { Map as LeafletMap, TileLayer as LeafletTileLayer, Marker as LeafletMarker } from 'leaflet'
@@ -12,7 +13,6 @@ import type {
   RoofAnalyzerReturn,
 } from './roofAnalyzer.types'
 import {
-  API_BASE,
   MAX_FILE_SIZE,
   VALID_EXTENSIONS,
   VALID_IMAGE_TYPES,
@@ -464,58 +464,24 @@ export function useRoofAnalyzer(): RoofAnalyzerReturn {
     if (widthFt) formData.append('width_ft', widthFt)
     if (city) formData.append('city', city)
 
-    fetch(`${API_BASE}/analyze-roof`, {
-      method: 'POST',
-      body: formData,
-    })
-      .then(async (res) => {
-        if (!res.ok) throw new Error('API server returned an error.')
-        const result = await res.json()
+    api.post('/analyze-roof', formData)
+      .then((res) => {
+        clearProgressInterval()
+        analysisInProgressRef.current = false
+        setRoofProgress({ percent: 100, status: 'Roof Analysis Complete' })
+        const result = res.data
         const apiData = result?.data || result || {}
-        return apiData as Record<string, unknown>
-      })
-      .then((data) => {
-        clearProgressInterval()
-        analysisInProgressRef.current = false
-        setRoofProgress({ percent: 100, status: 'Roof Analysis Complete' })
-        const enriched = enrichRoofData(data, filename, isSatellite)
+        const enriched = enrichRoofData(apiData as Record<string, unknown>, filename, isSatellite)
         setAnalysis(enriched)
         writeLS(LS_KEY_ROOF, enriched)
         setRoofUploadState('complete')
       })
-      .catch(() => {
-        // Graceful fallback simulation if backend endpoint is unavailable
+      .catch((err: unknown) => {
         clearProgressInterval()
         analysisInProgressRef.current = false
-        setRoofProgress({ percent: 100, status: 'Roof Analysis Complete' })
-        const mockData = {
-          roof_area_sqft: Number(lengthFt || 40) * Number(widthFt || 30) || 520,
-          usable_roof_area_sqft: 380,
-          facing_direction: 'South (180°)',
-          compass_angle: 180,
-          roof_condition: 'Good',
-          roof_type: 'Flat Concrete',
-          shading_issues: 'None / Minimal',
-          solar_potential: 'High',
-          obstacles: 'Water tank (Small)',
-          recommended_system: '5.2 kW Standard Array',
-          system_size_kw: 5.2,
-          total_panels: 16,
-          panel_rows: 2,
-          panels_per_row: 8,
-          total_legs: 12,
-          front_legs: 6,
-          back_legs: 6,
-          front_leg_height_ft: 1.5,
-          back_leg_height_ft: 3.8,
-          monthly_generation_units: 650,
-          annual_generation_units: 7800,
-          analysis_notes: `Analyzed rooftop image for ${city || 'Mumbai'}. Excellent South-facing orientation with minimal shading impact.`,
-        }
-        const enriched = enrichRoofData(mockData, filename, isSatellite)
-        setAnalysis(enriched)
-        writeLS(LS_KEY_ROOF, enriched)
-        setRoofUploadState('complete')
+        const msg = (err as { response?: { data?: { detail?: string } }, message?: string })?.response?.data?.detail || (err as Error)?.message || 'Roof analysis failed. Please try again.'
+        setRoofError(msg)
+        setRoofUploadState('error')
       })
   }, [clearProgressInterval, city, lengthFt, widthFt])
 

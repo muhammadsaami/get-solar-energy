@@ -1,6 +1,10 @@
 import React from 'react';
 import { BrowserRouter as Router, Routes, Route, Navigate } from 'react-router-dom';
 
+// Config
+import { ROUTES } from './config/routes';
+import { FEATURE_METADATA } from './config/featureMetadata';
+
 // Providers
 import { AuthProvider, useAuth } from './contexts/AuthContext';
 import { JourneyProvider } from './contexts/JourneyContext';
@@ -24,7 +28,6 @@ import Home from './pages/Home';
 import Journey from './pages/Journey';
 
 // Planning pages
-import Bills from './pages/Bills';
 import BillAnalyzer from './pages/BillAnalyzer';
 import RoofAnalyzer from './pages/RoofAnalyzer';
 import Proposal from './pages/Proposal';
@@ -33,6 +36,9 @@ import ROICalculatorPage from './pages/ROICalculatorPage';
 // AI pages
 import AIAdvisor from './pages/AIAdvisor';
 import EnterpriseAI from './pages/EnterpriseAI';
+
+// Rewards page
+import RewardsReferrals from './pages/RewardsReferrals';
 
 // Vendor pages
 import ProjectTracking from './pages/ProjectTracking';
@@ -66,44 +72,35 @@ function AppRoutes() {
         <Route path="/reset-password" element={<ResetPassword />} />
 
         {/* Customer Portal - Authenticated */}
-        <Route path="/app/home" element={<AppRoute><Home /></AppRoute>} />
-        <Route path="/app/journey" element={<AppRoute><Journey /></AppRoute>} />
+        <Route path={ROUTES.HOME} element={<AppRoute><Home /></AppRoute>} />
+        <Route path={ROUTES.JOURNEY} element={<AppRoute><Journey /></AppRoute>} />
 
-        {/* Planning Workspaces */}
-        <Route path="/app/bill-analyzer" element={<AppRoute><BillAnalyzer /></AppRoute>} />
-        <Route path="/app/planning/bills" element={<AppRoute><BillAnalyzer /></AppRoute>} />
-        <Route path="/app/roof-analysis" element={<AppRoute><RoofAnalyzer /></AppRoute>} />
-        <Route path="/app/roof" element={<AppRoute><RoofAnalyzer /></AppRoute>} />
-        <Route path="/app/planning/roof" element={<AppRoute><RoofAnalyzer /></AppRoute>} />
-        <Route path="/app/planning/proposal" element={<AppRoute><Proposal /></AppRoute>} />
-        <Route path="/app/roi-calculator" element={<AppRoute><ROICalculatorPage /></AppRoute>} />
+        {/* Canonical Workspace Routes */}
+        <Route path={ROUTES.BILL_ANALYZER} element={<AppRoute><BillAnalyzer /></AppRoute>} />
+        <Route path={ROUTES.ROOF_ANALYSIS} element={<AppRoute><RoofAnalyzer /></AppRoute>} />
+        <Route path={ROUTES.PLANNING_PROPOSAL} element={<AppRoute><Proposal /></AppRoute>} />
+        <Route path={ROUTES.ROI_CALCULATOR} element={<AppRoute><ROICalculatorPage /></AppRoute>} />
 
         {/* AI Workspaces */}
-        <Route path="/app/ai-advisor" element={<AppRoute><AIAdvisor /></AppRoute>} />
-        <Route path="/app/enterprise-ai" element={<AppRoute><EnterpriseAI /></AppRoute>} />
+        <Route path={ROUTES.AI_ADVISOR} element={<AppRoute><AIAdvisor /></AppRoute>} />
+        <Route path={ROUTES.ENTERPRISE_AI} element={<AppRoute><EnterpriseAI /></AppRoute>} />
 
-        {/* Installation Workspaces (Locked placeholders) */}
-        <Route path="/app/installation/progress" element={<AppRoute><LockedWorkspace targetStageId="ST-08" /></AppRoute>} />
-        <Route path="/app/installation/qa" element={<AppRoute><LockedWorkspace targetStageId="ST-10" /></AppRoute>} />
-        <Route path="/app/installation/grid" element={<AppRoute><LockedWorkspace targetStageId="ST-11" /></AppRoute>} />
+        {/* Legacy route aliases — redirect to canonical */}
+        <Route path="/app/dashboard" element={<Navigate to={ROUTES.HOME} replace />} />
+        <Route path="/app/planning/bills" element={<Navigate to={ROUTES.BILL_ANALYZER} replace />} />
+        <Route path="/app/roof" element={<Navigate to={ROUTES.ROOF_ANALYSIS} replace />} />
+        <Route path="/app/planning/roof" element={<Navigate to={ROUTES.ROOF_ANALYSIS} replace />} />
 
-        {/* Ownership Workspaces (Locked placeholders) */}
-        <Route path="/app/ownership/system" element={<AppRoute><LockedWorkspace targetStageId="ST-12" /></AppRoute>} />
-        <Route path="/app/ownership/savings" element={<AppRoute><LockedWorkspace targetStageId="ST-12" /></AppRoute>} />
-        <Route path="/app/ownership/reports" element={<AppRoute><LockedWorkspace targetStageId="ST-12" /></AppRoute>} />
-        <Route path="/app/ownership/docs" element={<AppRoute><LockedWorkspace targetStageId="ST-12" /></AppRoute>} />
+        {/* Locked Workspaces — driven by config/featureMetadata.ts */}
+        {Object.entries(FEATURE_METADATA).map(([path, meta]) => (
+          <Route key={path} path={path} element={<AppRoute><LockedWorkspace targetStageId={meta.stageId} featureTitle={meta.title} /></AppRoute>} />
+        ))}
 
-        {/* Support Workspaces (Locked placeholders) */}
-        <Route path="/app/support/notifications" element={<AppRoute><LockedWorkspace targetStageId="ST-02" /></AppRoute>} />
-        <Route path="/app/support/help" element={<AppRoute><LockedWorkspace targetStageId="ST-02" /></AppRoute>} />
-        <Route path="/app/support/referrals" element={<AppRoute><LockedWorkspace targetStageId="ST-02" /></AppRoute>} />
-
-        {/* Account Workspaces (Locked placeholders) */}
-        <Route path="/app/account/profile" element={<AppRoute><LockedWorkspace targetStageId="ST-02" /></AppRoute>} />
-        <Route path="/app/account/settings" element={<AppRoute><LockedWorkspace targetStageId="ST-02" /></AppRoute>} />
+        {/* Support */}
+        <Route path={ROUTES.REWARDS} element={<AppRoute><RewardsReferrals /></AppRoute>} />
 
         {/* Vendor Portal */}
-        <Route path="/app/vendor/project-tracking" element={<AppRoute><ProjectTracking /></AppRoute>} />
+        <Route path={ROUTES.VENDOR_PROJECT_TRACKING} element={<AppRoute><ProjectTracking /></AppRoute>} />
 
         {/* Fallback 404 */}
         <Route path="*" element={<NotFound />} />
