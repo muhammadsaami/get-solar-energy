@@ -46,6 +46,9 @@ import ActivityCenter from './activities/pages/ActivityCenter';
 // Reports Center
 import ReportsCenter from './reports/pages/ReportsCenter';
 
+// System Performance
+import SystemPerformance from './performance/pages/SystemPerformance';
+
 // Vendor pages
 import ProjectTracking from './pages/ProjectTracking';
 
@@ -103,6 +106,9 @@ function AppRoutes() {
 
         {/* Reports Center — unlocked workspace */}
         <Route path={ROUTES.OWNERSHIP_REPORTS} element={<AppRoute><ReportsCenter /></AppRoute>} />
+
+        {/* System Performance — unlocked workspace */}
+        <Route path={ROUTES.SYSTEM_PERFORMANCE} element={<AppRoute><SystemPerformance /></AppRoute>} />
 
         {/* Locked Workspaces — driven by config/featureMetadata.ts */}
         {Object.entries(FEATURE_METADATA).map(([path, meta]) => (

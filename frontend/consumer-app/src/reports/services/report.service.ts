@@ -131,7 +131,7 @@ async function fetchProjectMetrics(signal?: AbortSignal): Promise<Record<string,
       const { data } = await api.get<ApiSuccessResponse<ProjectItem[]>>('/projects/metrics', {
         signal,
       })
-      return data.data
+      return data.data as unknown as Record<string, unknown>
     },
     signal,
   )
