@@ -25,7 +25,6 @@ export const FEATURE_METADATA: Record<string, FeatureMetadata> = {
   [ROUTES.ACCOUNT_SETTINGS]: { title: 'Settings', stageId: 'ST-02', icon: 'settings' },
 
   // Sidebar parity — visible locked features
-  [ROUTES.AMC]: { title: 'AMC (Annual Maintenance Contract)', stageId: 'ST-13', icon: 'wrench' },
   [ROUTES.SITE_SURVEY]: { title: 'Site Survey', stageId: 'ST-07', icon: 'clipboard' },
 
   // Sidebar parity — hidden platform features

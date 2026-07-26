@@ -49,6 +49,9 @@ import ReportsCenter from './reports/pages/ReportsCenter';
 // System Performance
 import SystemPerformance from './performance/pages/SystemPerformance';
 
+// AMC
+import AMC from './amc/pages/AMC';
+
 // Vendor pages
 import ProjectTracking from './pages/ProjectTracking';
 
@@ -109,6 +112,9 @@ function AppRoutes() {
 
         {/* System Performance — unlocked workspace */}
         <Route path={ROUTES.SYSTEM_PERFORMANCE} element={<AppRoute><SystemPerformance /></AppRoute>} />
+
+        {/* AMC — unlocked workspace */}
+        <Route path={ROUTES.AMC} element={<AppRoute><AMC /></AppRoute>} />
 
         {/* Locked Workspaces — driven by config/featureMetadata.ts */}
         {Object.entries(FEATURE_METADATA).map(([path, meta]) => (
