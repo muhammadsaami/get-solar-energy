@@ -24,6 +24,7 @@ export const ROUTES = {
   OWNERSHIP_DOCS: '/app/ownership/docs',
 
   // Support
+  ACTIVITY_CENTER: '/app/activity-center',
   SUPPORT_NOTIFICATIONS: '/app/support/notifications',
   SUPPORT_HELP: '/app/support/help',
   SUPPORT_REFERRALS: '/app/support/referrals',

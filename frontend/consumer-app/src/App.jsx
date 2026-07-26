@@ -40,6 +40,12 @@ import EnterpriseAI from './pages/EnterpriseAI';
 // Rewards page
 import RewardsReferrals from './pages/RewardsReferrals';
 
+// Activity Center
+import ActivityCenter from './activities/pages/ActivityCenter';
+
+// Reports Center
+import ReportsCenter from './reports/pages/ReportsCenter';
+
 // Vendor pages
 import ProjectTracking from './pages/ProjectTracking';
 
@@ -90,6 +96,13 @@ function AppRoutes() {
         <Route path="/app/planning/bills" element={<Navigate to={ROUTES.BILL_ANALYZER} replace />} />
         <Route path="/app/roof" element={<Navigate to={ROUTES.ROOF_ANALYSIS} replace />} />
         <Route path="/app/planning/roof" element={<Navigate to={ROUTES.ROOF_ANALYSIS} replace />} />
+        <Route path={ROUTES.SUPPORT_NOTIFICATIONS} element={<Navigate to={ROUTES.ACTIVITY_CENTER} replace />} />
+
+        {/* Activity Center — unlocked workspace */}
+        <Route path={ROUTES.ACTIVITY_CENTER} element={<AppRoute><ActivityCenter /></AppRoute>} />
+
+        {/* Reports Center — unlocked workspace */}
+        <Route path={ROUTES.OWNERSHIP_REPORTS} element={<AppRoute><ReportsCenter /></AppRoute>} />
 
         {/* Locked Workspaces — driven by config/featureMetadata.ts */}
         {Object.entries(FEATURE_METADATA).map(([path, meta]) => (

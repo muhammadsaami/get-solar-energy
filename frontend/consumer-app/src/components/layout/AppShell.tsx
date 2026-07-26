@@ -3,6 +3,7 @@ import { useUI } from '../../contexts/UIContext'
 import Sidebar from './Sidebar'
 import Topbar from './Topbar'
 import DashboardSprites from '../dashboard/DashboardSprites'
+import ToastHost from '../auth/ToastHost'
 
 interface AppShellProps {
   children: React.ReactNode
@@ -25,6 +26,7 @@ export default function AppShell({ children }: AppShellProps) {
         <Topbar />
         {children}
       </main>
+      <ToastHost />
     </div>
   )
 }

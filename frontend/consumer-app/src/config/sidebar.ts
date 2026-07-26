@@ -30,7 +30,7 @@ export const SIDEBAR_ITEMS: SidebarGroupConfig[] = [
     groupName: 'Engagement',
     items: [
       { id: 'rewards', label: 'Rewards & Referrals', route: ROUTES.REWARDS, color: 'pink', symbolId: 'gift', visible: true },
-      { id: 'activity-center', label: 'Activity Center', route: ROUTES.SUPPORT_NOTIFICATIONS, color: 'sky', symbolId: 'activity', visible: true },
+      { id: 'activity-center', label: 'Activity Center', route: ROUTES.ACTIVITY_CENTER, color: 'sky', symbolId: 'activity', visible: true },
       { id: 'performance', label: 'System Performance', route: ROUTES.SYSTEM_PERFORMANCE, color: 'lime', symbolId: 'server', visible: true },
     ],
   },
