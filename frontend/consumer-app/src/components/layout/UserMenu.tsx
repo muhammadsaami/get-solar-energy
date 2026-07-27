@@ -2,6 +2,7 @@ import React, { useState, useRef, useEffect } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { useAuth } from '../../contexts/AuthContext'
 import { ROUTES } from '../../config/routes'
+import { getDisplayRole } from '../../utils/role'
 
 interface AuthUser {
   name: string
@@ -32,11 +33,7 @@ export default function UserMenu() {
     : 'GU'
 
   const userName = user?.name || 'User'
-  const userRole = user?.role
-    ? user.role === 'customer' ? 'Standard User'
-    : user.role === 'admin' ? 'Administrator'
-    : user.role.charAt(0).toUpperCase() + user.role.slice(1)
-    : 'Standard User'
+  const userRole = getDisplayRole(user?.role)
 
   const handleLogout = () => {
     logout()

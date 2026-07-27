@@ -52,6 +52,12 @@ import SystemPerformance from './performance/pages/SystemPerformance';
 // AMC
 import AMC from './amc/pages/AMC';
 
+// Settings
+import SettingsPage from './settings/pages/SettingsPage';
+
+// Auth & Permissions
+import PermissionGuard from './routes/PermissionGuard';
+
 // Vendor pages
 import ProjectTracking from './pages/ProjectTracking';
 
@@ -84,18 +90,18 @@ function AppRoutes() {
         <Route path="/reset-password" element={<ResetPassword />} />
 
         {/* Customer Portal - Authenticated */}
-        <Route path={ROUTES.HOME} element={<AppRoute><Home /></AppRoute>} />
-        <Route path={ROUTES.JOURNEY} element={<AppRoute><Journey /></AppRoute>} />
+        <Route path={ROUTES.HOME} element={<AppRoute><PermissionGuard feature="dashboard"><Home /></PermissionGuard></AppRoute>} />
+        <Route path={ROUTES.JOURNEY} element={<AppRoute><PermissionGuard feature="dashboard"><Journey /></PermissionGuard></AppRoute>} />
 
         {/* Canonical Workspace Routes */}
-        <Route path={ROUTES.BILL_ANALYZER} element={<AppRoute><BillAnalyzer /></AppRoute>} />
-        <Route path={ROUTES.ROOF_ANALYSIS} element={<AppRoute><RoofAnalyzer /></AppRoute>} />
-        <Route path={ROUTES.PLANNING_PROPOSAL} element={<AppRoute><Proposal /></AppRoute>} />
-        <Route path={ROUTES.ROI_CALCULATOR} element={<AppRoute><ROICalculatorPage /></AppRoute>} />
+        <Route path={ROUTES.BILL_ANALYZER} element={<AppRoute><PermissionGuard feature="bill-analyzer"><BillAnalyzer /></PermissionGuard></AppRoute>} />
+        <Route path={ROUTES.ROOF_ANALYSIS} element={<AppRoute><PermissionGuard feature="roof-analysis"><RoofAnalyzer /></PermissionGuard></AppRoute>} />
+        <Route path={ROUTES.PLANNING_PROPOSAL} element={<AppRoute><PermissionGuard feature="roof-analysis"><Proposal /></PermissionGuard></AppRoute>} />
+        <Route path={ROUTES.ROI_CALCULATOR} element={<AppRoute><PermissionGuard feature="roi-calculator"><ROICalculatorPage /></PermissionGuard></AppRoute>} />
 
         {/* AI Workspaces */}
-        <Route path={ROUTES.AI_ADVISOR} element={<AppRoute><AIAdvisor /></AppRoute>} />
-        <Route path={ROUTES.ENTERPRISE_AI} element={<AppRoute><EnterpriseAI /></AppRoute>} />
+        <Route path={ROUTES.AI_ADVISOR} element={<AppRoute><PermissionGuard feature="ai-assistant"><AIAdvisor /></PermissionGuard></AppRoute>} />
+        <Route path={ROUTES.ENTERPRISE_AI} element={<AppRoute><PermissionGuard feature="enterprise-ai"><EnterpriseAI /></PermissionGuard></AppRoute>} />
 
         {/* Legacy route aliases — redirect to canonical */}
         <Route path="/app/dashboard" element={<Navigate to={ROUTES.HOME} replace />} />
@@ -104,17 +110,20 @@ function AppRoutes() {
         <Route path="/app/planning/roof" element={<Navigate to={ROUTES.ROOF_ANALYSIS} replace />} />
         <Route path={ROUTES.SUPPORT_NOTIFICATIONS} element={<Navigate to={ROUTES.ACTIVITY_CENTER} replace />} />
 
-        {/* Activity Center — unlocked workspace */}
-        <Route path={ROUTES.ACTIVITY_CENTER} element={<AppRoute><ActivityCenter /></AppRoute>} />
+        {/* Activity Center */}
+        <Route path={ROUTES.ACTIVITY_CENTER} element={<AppRoute><PermissionGuard feature="activity-center"><ActivityCenter /></PermissionGuard></AppRoute>} />
 
-        {/* Reports Center — unlocked workspace */}
-        <Route path={ROUTES.OWNERSHIP_REPORTS} element={<AppRoute><ReportsCenter /></AppRoute>} />
+        {/* Reports Center */}
+        <Route path={ROUTES.OWNERSHIP_REPORTS} element={<AppRoute><PermissionGuard feature="reports-center"><ReportsCenter /></PermissionGuard></AppRoute>} />
 
-        {/* System Performance — unlocked workspace */}
-        <Route path={ROUTES.SYSTEM_PERFORMANCE} element={<AppRoute><SystemPerformance /></AppRoute>} />
+        {/* System Performance */}
+        <Route path={ROUTES.SYSTEM_PERFORMANCE} element={<AppRoute><PermissionGuard feature="system-performance"><SystemPerformance /></PermissionGuard></AppRoute>} />
 
-        {/* AMC — unlocked workspace */}
-        <Route path={ROUTES.AMC} element={<AppRoute><AMC /></AppRoute>} />
+        {/* AMC */}
+        <Route path={ROUTES.AMC} element={<AppRoute><PermissionGuard feature="amc"><AMC /></PermissionGuard></AppRoute>} />
+
+        {/* Settings */}
+        <Route path={ROUTES.ACCOUNT_SETTINGS} element={<AppRoute><PermissionGuard feature="settings"><SettingsPage /></PermissionGuard></AppRoute>} />
 
         {/* Locked Workspaces — driven by config/featureMetadata.ts */}
         {Object.entries(FEATURE_METADATA).map(([path, meta]) => (
@@ -122,10 +131,10 @@ function AppRoutes() {
         ))}
 
         {/* Support */}
-        <Route path={ROUTES.REWARDS} element={<AppRoute><RewardsReferrals /></AppRoute>} />
+        <Route path={ROUTES.REWARDS} element={<AppRoute><PermissionGuard feature="rewards"><RewardsReferrals /></PermissionGuard></AppRoute>} />
 
         {/* Vendor Portal */}
-        <Route path={ROUTES.VENDOR_PROJECT_TRACKING} element={<AppRoute><ProjectTracking /></AppRoute>} />
+        <Route path={ROUTES.VENDOR_PROJECT_TRACKING} element={<AppRoute><PermissionGuard feature="vendor-portal"><ProjectTracking /></PermissionGuard></AppRoute>} />
 
         {/* Fallback 404 */}
         <Route path="*" element={<NotFound />} />

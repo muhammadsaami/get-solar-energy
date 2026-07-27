@@ -1,6 +1,7 @@
 import React from 'react'
 import { useLocation, Link } from 'react-router-dom'
 import type { SidebarItemConfig } from '../../config/sidebar'
+import { usePermissions } from '../../hooks/usePermissions'
 
 interface SidebarItemProps {
   item: SidebarItemConfig
@@ -8,13 +9,16 @@ interface SidebarItemProps {
 }
 
 export default function SidebarItem({ item }: SidebarItemProps) {
+  const { canAccess } = usePermissions()
   const location = useLocation()
-  
-  const isActive = item.route !== '#' && location.pathname === item.route
+
+  const isDisabled = item.route === '#'
+  const hasAccess = !item.requiredFeature || canAccess(item.requiredFeature)
+  const isActive = !isDisabled && location.pathname === item.route
   const className = `menu-item ${isActive ? 'active' : ''}`.trim()
   const idAttr = item.id === 'admin-dashboard' ? 'menu-item-admin' : item.id === 'crm-dashboard' ? 'menu-item-crm' : item.id === 'audit-monitoring' ? 'menu-item-audit' : item.id === 'business-intelligence' ? 'menu-item-bi' : item.id === 'mlops-dashboard' ? 'menu-item-mlops' : undefined
 
-  const isDisabled = item.route === '#'
+  if (!hasAccess) return null
 
   return (
     <li

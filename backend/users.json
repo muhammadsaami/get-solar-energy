@@ -1,1 +1,101 @@
-{"saami@getsolar.com": {"id": "f606a405-0b62-4c7b-8f96-7a79a986426f", "name": "Saami Khan", "phone": "9876543210", "email": "saami@getsolar.com", "password": "$2b$12$3XwveHfSAvTe.RTgSID2h.f4bAN5jYDrn.k7nf1LIYxuqe8JviNaO", "city": "Lucknow", "referral_code": "SAAF606A", "points": 0}, "saamikhan7310@gmail.com": {"id": "2247e719-bb87-45f9-a0c9-d67edc2c55a3", "name": "Muhammad Sami", "phone": "7310543798", "email": "saamikhan7310@gmail.com", "password": "$2b$12$D2EhjNaD9gj7hI4RT2ripO69h0cDI.yHek5jiWZj77cCIB4Usnawu", "city": "Agra", "referral_code": "MUH2247E", "points": 0}, "hammaad@test.com": {"id": "e8957ca6-4f6c-4dce-bce2-855fc9e0d0fe", "name": "Muhammad Hammaad Haque", "phone": "9876543210", "email": "hammaad@test.com", "password": "$2b$12$08NIkkZv/aiyyQSPBrWpWunUjXEG.WKwqHVH8YmAplXE4xUf3dBRa", "city": "Lucknow", "referral_code": "MUHE8957", "points": 100}, "newtest@getsolar.com": {"id": "e03ec6cc-adfe-435d-b875-b5a15a7e5cf9", "name": "Sami Khan", "phone": "7310543798", "email": "newtest@getsolar.com", "password": "$2b$12$2bVIWRFAv8Cr.gh/SqFoOeXYRUqPIaw9mXv2dhgDcpyqWbj/J5QMW", "city": "Lucknow", "referral_code": "SAME03EC", "points": 0}, "hammaadhaque@gmail.com": {"id": "1c5c73ab-e0d8-417c-9169-fbaf998a8c64", "name": "Hammaad", "phone": "9696769860", "email": "hammaadhaque@gmail.com", "password": "$2b$12$eiMEcNBdB6TNvjKiknALZ.mf8FB7BLTbFJXLH37ECmKQNqNscj9lC", "city": "Lucknow", "referral_code": "HAM1C5C7", "points": 0}, "demo@getsolar.in": {"id": "9ca2538e-0274-4264-97e7-7e900c132860", "name": "Muhammad Haq", "phone": "9876543210", "email": "demo@getsolar.in", "password": "$2b$12$hXpFEmBZEXrDMNYHzoCGZu3vRhzs8utxD1fWXEPn4W5vfR1bExkUy", "city": "Lucknow", "referral_code": "MUH9CA25", "points": 50}, "admin@getsolar.in": {"id": "admin-session-id-00000", "name": "Admin User", "phone": "9999999999", "email": "admin@getsolar.in", "password": "$2b$12$BFnXcP6UQ22k6cKfiwh9OePAQH7aKFh1E3O5c2IYCM/pU6yEAkytC", "city": "Lucknow", "referral_code": "ADMIN999", "points": 1999}, "testcustomer@getsolar.in": {"id": "594f87fd-3d72-43c6-b5a2-535358ca9a83", "name": "Test User", "phone": "9876543210", "email": "testcustomer@getsolar.in", "password": "$2b$12$DKhgNbro6/KwhQab1eFqqO5uBmVRpzKK7aHDOZTlVaH9xV25FfqEW", "city": "Lucknow", "referral_code": "TES594F8", "points": 0}, "khansaami942@gmail.com": {"id": "5b9397bc-9e9c-466f-a036-bfa41b93a2bc", "name": "Muhammad Sami", "phone": "7310543798", "email": "khansaami942@gmail.com", "password": "$2b$12$/PNsLgEqqS/6HGmE/O2M/OdoiG/JMMyaQgCisZqPBHC1Pn.uAvbJW", "city": "Lucknow", "referral_code": "MUH5B939", "points": 0}}
+{
+  "saami@getsolar.com": {
+    "id": "f606a405-0b62-4c7b-8f96-7a79a986426f",
+    "name": "Saami Khan",
+    "phone": "9876543210",
+    "email": "saami@getsolar.com",
+    "password": "$2b$12$3XwveHfSAvTe.RTgSID2h.f4bAN5jYDrn.k7nf1LIYxuqe8JviNaO",
+    "city": "Lucknow",
+    "referral_code": "SAAF606A",
+    "points": 0,
+    "role": "customer"
+  },
+  "saamikhan7310@gmail.com": {
+    "id": "2247e719-bb87-45f9-a0c9-d67edc2c55a3",
+    "name": "Muhammad Sami",
+    "phone": "7310543798",
+    "email": "saamikhan7310@gmail.com",
+    "password": "$2b$12$D2EhjNaD9gj7hI4RT2ripO69h0cDI.yHek5jiWZj77cCIB4Usnawu",
+    "city": "Agra",
+    "referral_code": "MUH2247E",
+    "points": 0,
+    "role": "customer"
+  },
+  "hammaad@test.com": {
+    "id": "e8957ca6-4f6c-4dce-bce2-855fc9e0d0fe",
+    "name": "Muhammad Hammaad Haque",
+    "phone": "9876543210",
+    "email": "hammaad@test.com",
+    "password": "$2b$12$08NIkkZv/aiyyQSPBrWpWunUjXEG.WKwqHVH8YmAplXE4xUf3dBRa",
+    "city": "Lucknow",
+    "referral_code": "MUHE8957",
+    "points": 100,
+    "role": "customer"
+  },
+  "newtest@getsolar.com": {
+    "id": "e03ec6cc-adfe-435d-b875-b5a15a7e5cf9",
+    "name": "Sami Khan",
+    "phone": "7310543798",
+    "email": "newtest@getsolar.com",
+    "password": "$2b$12$2bVIWRFAv8Cr.gh/SqFoOeXYRUqPIaw9mXv2dhgDcpyqWbj/J5QMW",
+    "city": "Lucknow",
+    "referral_code": "SAME03EC",
+    "points": 0,
+    "role": "customer"
+  },
+  "hammaadhaque@gmail.com": {
+    "id": "1c5c73ab-e0d8-417c-9169-fbaf998a8c64",
+    "name": "Hammaad",
+    "phone": "9696769860",
+    "email": "hammaadhaque@gmail.com",
+    "password": "$2b$12$eiMEcNBdB6TNvjKiknALZ.mf8FB7BLTbFJXLH37ECmKQNqNscj9lC",
+    "city": "Lucknow",
+    "referral_code": "HAM1C5C7",
+    "points": 0,
+    "role": "customer"
+  },
+  "demo@getsolar.in": {
+    "id": "9ca2538e-0274-4264-97e7-7e900c132860",
+    "name": "Muhammad Haq",
+    "phone": "9876543210",
+    "email": "demo@getsolar.in",
+    "password": "$2b$12$hXpFEmBZEXrDMNYHzoCGZu3vRhzs8utxD1fWXEPn4W5vfR1bExkUy",
+    "city": "Lucknow",
+    "referral_code": "MUH9CA25",
+    "points": 50,
+    "role": "customer"
+  },
+  "admin@getsolar.in": {
+    "id": "admin-session-id-00000",
+    "name": "Admin User",
+    "phone": "9999999999",
+    "email": "admin@getsolar.in",
+    "password": "$2b$12$BFnXcP6UQ22k6cKfiwh9OePAQH7aKFh1E3O5c2IYCM/pU6yEAkytC",
+    "city": "Lucknow",
+    "referral_code": "ADMIN999",
+    "points": 1999,
+    "role": "admin"
+  },
+  "testcustomer@getsolar.in": {
+    "id": "594f87fd-3d72-43c6-b5a2-535358ca9a83",
+    "name": "Test User",
+    "phone": "9876543210",
+    "email": "testcustomer@getsolar.in",
+    "password": "$2b$12$DKhgNbro6/KwhQab1eFqqO5uBmVRpzKK7aHDOZTlVaH9xV25FfqEW",
+    "city": "Lucknow",
+    "referral_code": "TES594F8",
+    "points": 0,
+    "role": "customer"
+  },
+  "khansaami942@gmail.com": {
+    "id": "5b9397bc-9e9c-466f-a036-bfa41b93a2bc",
+    "name": "Muhammad Sami",
+    "phone": "7310543798",
+    "email": "khansaami942@gmail.com",
+    "password": "$2b$12$/PNsLgEqqS/6HGmE/O2M/OdoiG/JMMyaQgCisZqPBHC1Pn.uAvbJW",
+    "city": "Lucknow",
+    "referral_code": "MUH5B939",
+    "points": 0,
+    "role": "customer"
+  }
+}

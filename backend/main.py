@@ -129,7 +129,8 @@ try:
             "password": hash_password(ADMIN_PASSWORD),
             "city": "Lucknow",
             "referral_code": "ADMIN999",
-            "points": 9999
+            "points": 9999,
+            "role": "admin"
         }
         with open(USERS_FILE, "w", encoding="utf-8") as f:
             json.dump(users_data, f, indent=2, ensure_ascii=False)

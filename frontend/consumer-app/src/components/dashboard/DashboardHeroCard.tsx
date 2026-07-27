@@ -1,5 +1,6 @@
 import React from 'react';
 import { useAuth } from '../../contexts/AuthContext';
+import { getDisplayRole } from '../../utils/role';
 
 interface DashboardHeroCardProps {
   children?: React.ReactNode;
@@ -8,7 +9,7 @@ interface DashboardHeroCardProps {
 export default function DashboardHeroCard({ children }: DashboardHeroCardProps) {
   const { user } = useAuth() as unknown as { user: { name: string; role: string } | null };
   const greeting = user?.name ? `Good Morning, ${user.name.split(' ')[0]}` : 'Good Morning, User';
-  const roleText = user?.role ? user.role.charAt(0).toUpperCase() + user.role.slice(1) : 'Standard User';
+  const roleText = getDisplayRole(user?.role);
 
   return (
     <section className="hero-card" id="heroCard">

@@ -1,6 +1,7 @@
 import React from 'react'
 import { useUI } from '../../contexts/UIContext'
 import { SIDEBAR_ITEMS } from '../../config/sidebar'
+import { usePermissions } from '../../hooks/usePermissions'
 import SidebarItem from './SidebarItem'
 import {
   MdDashboard, MdReceiptLong, MdRoofing, MdCalculate, MdAutoAwesome, MdSmartToy,
@@ -31,7 +32,14 @@ const iconMap: Record<string, React.ReactNode> = {
   'mlops-dashboard': <MdPsychology />,
 }
 
+import type { FeatureId } from '../../config/permissions'
+
+function sidebarItemVisible(item: { requiredFeature?: FeatureId }, accessCheck: (f: FeatureId) => boolean): boolean {
+  return !item.requiredFeature || accessCheck(item.requiredFeature)
+}
+
 export default function Sidebar() {
+  const { canAccess } = usePermissions()
   const { isSidebarCollapsed, toggleSidebar, isMobileDrawerOpen, toggleMobileDrawer } = useUI() as unknown as {
     isSidebarCollapsed: boolean
     toggleSidebar: () => void
@@ -101,21 +109,24 @@ export default function Sidebar() {
 
         <nav className="sidebar-menu-wrapper">
           <ul className="sidebar-menu">
-            {SIDEBAR_ITEMS.map((group, gIdx) => (
-              <React.Fragment key={gIdx}>
-                <li className="sidebar-section-label">
-                  <span>{group.groupName}</span>
-                </li>
-                {group.items
-                  .map((item) => (
+            {SIDEBAR_ITEMS.map((group, gIdx) => {
+              const visibleItems = group.items.filter((item) => sidebarItemVisible(item, canAccess))
+              if (visibleItems.length === 0) return null
+              return (
+                <React.Fragment key={gIdx}>
+                  <li className="sidebar-section-label">
+                    <span>{group.groupName}</span>
+                  </li>
+                  {visibleItems.map((item) => (
                     <SidebarItem
                       key={item.id}
                       item={item}
                       isCollapsed={isSidebarCollapsed}
                     />
                   ))}
-              </React.Fragment>
-            ))}
+                </React.Fragment>
+              )
+            })}
           </ul>
         </nav>
 

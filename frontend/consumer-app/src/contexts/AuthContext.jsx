@@ -1,7 +1,19 @@
 import React, { createContext, useState, useEffect, useContext } from 'react';
 import api from '../services/api/client';
+import { normalizeRole, getDisplayRole } from '../utils/role';
 
 const AuthContext = createContext(null);
+
+function normalizeUser(raw) {
+  if (!raw) return null;
+  const canonicalRole = normalizeRole(raw.role);
+  return {
+    ...raw,
+    role: canonicalRole,
+    displayRole: getDisplayRole(canonicalRole),
+    subscriptionTier: raw.subscriptionTier || raw.subscription_tier || getDisplayRole(canonicalRole),
+  };
+}
 
 export function AuthProvider({ children }) {
   const [isAuthenticated, setIsAuthenticated] = useState(false);
@@ -10,12 +22,11 @@ export function AuthProvider({ children }) {
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    // Restore session on startup
     const savedToken = localStorage.getItem('access_token');
     const savedUser = localStorage.getItem('user');
     if (savedToken && savedUser) {
       setToken(savedToken);
-      setUser(JSON.parse(savedUser));
+      setUser(normalizeUser(JSON.parse(savedUser)));
       setIsAuthenticated(true);
     }
     setLoading(false);
@@ -29,7 +40,7 @@ export function AuthProvider({ children }) {
         localStorage.setItem('access_token', token);
         localStorage.setItem('user', JSON.stringify(user));
         setToken(token);
-        setUser(user);
+        setUser(normalizeUser(user));
         setIsAuthenticated(true);
         return { success: true };
       }
@@ -51,7 +62,7 @@ export function AuthProvider({ children }) {
 
   const setSession = (token, user) => {
     setToken(token);
-    setUser(user);
+    setUser(normalizeUser(user));
     setIsAuthenticated(true);
   };
 

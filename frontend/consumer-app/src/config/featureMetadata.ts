@@ -22,7 +22,6 @@ export const FEATURE_METADATA: Record<string, FeatureMetadata> = {
 
   // Account
   [ROUTES.ACCOUNT_PROFILE]: { title: 'Profile', stageId: 'ST-02', icon: 'user' },
-  [ROUTES.ACCOUNT_SETTINGS]: { title: 'Settings', stageId: 'ST-02', icon: 'settings' },
 
   // Sidebar parity — visible locked features
   [ROUTES.SITE_SURVEY]: { title: 'Site Survey', stageId: 'ST-07', icon: 'clipboard' },
