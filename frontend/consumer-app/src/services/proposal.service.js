@@ -1,4 +1,4 @@
-// src/services/proposal.service.js
+import api from './api/client';
 import { ProposalModel } from '../models/ProposalModel';
 
 let localProposal = new ProposalModel({
@@ -23,6 +23,25 @@ export const proposalService = {
   async getProposal() {
     return Promise.resolve(localProposal);
   },
+
+  async generateProposal(formData) {
+    const res = await api.post('/generate-proposal', {
+      customer_name: formData.customerName,
+      customer_address: formData.address,
+      city: formData.city,
+      monthly_units: parseFloat(formData.monthlyUnits) || 0,
+      monthly_bill_rs: parseFloat(formData.monthlyBill) || 0,
+      per_unit_rate: parseFloat(formData.electricityRate) || 0,
+      recommended_kw: parseFloat(formData.recommendedKw) || 0,
+      roof_area_sqft: parseFloat(formData.roofArea) || 0,
+      vendor_name: formData.vendorName || 'Get Solar Energy',
+    });
+    if (!res.data?.success) throw new Error(res.data?.error || 'Proposal generation failed');
+    const model = new ProposalModel(res.data.data);
+    localProposal = model;
+    return model;
+  },
+
   async approve() {
     localProposal = new ProposalModel({
       ...localProposal,

@@ -41,7 +41,18 @@ export const ROUTES = {
   ENTERPRISE_AI: '/app/enterprise-ai',
   REWARDS: '/app/support/referrals',
 
-  // Vendor
+  // Vendor Portal
+  VENDOR_DASHBOARD: '/app/vendor',
+  VENDOR_MY_WORK: '/app/vendor/my-work',
+  VENDOR_TASKS: '/app/vendor/my-work/tasks',
+  VENDOR_VISITS: '/app/vendor/my-work/visits',
+  VENDOR_INSTALLATIONS: '/app/vendor/my-work/installations',
+  VENDOR_WORK_ORDERS: '/app/vendor/my-work/orders',
+  VENDOR_PROJECTS_ACTIVE: '/app/vendor/projects/active',
+  VENDOR_PROJECTS_COMPLETED: '/app/vendor/projects/completed',
+  VENDOR_CUSTOMERS: '/app/vendor/customers',
+  VENDOR_AMC: '/app/vendor/amc',
+  VENDOR_REPORTS: '/app/vendor/reports',
   VENDOR_PROJECT_TRACKING: '/app/vendor/project-tracking',
 
   // Locked placeholders (full sidebar parity)

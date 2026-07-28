@@ -16,6 +16,11 @@ export type FeatureId =
   | 'settings'
   | 'settings-admin'
   | 'vendor-portal'
+  | 'vendor-dashboard'
+  | 'vendor-projects'
+  | 'vendor-customers'
+  | 'vendor-reports'
+  | 'proposal-generator'
   | 'admin-dashboard'
   | 'crm-dashboard'
   | 'business-intelligence'
@@ -39,9 +44,14 @@ export const FEATURE_PERMISSIONS: Record<FeatureId, FeaturePermission> = {
   'reports-center': { roles: [ROLES.CUSTOMER, ROLES.ADMIN] },
   amc: { roles: [ROLES.CUSTOMER, ROLES.ADMIN] },
   'site-survey': { roles: [ROLES.VENDOR, ROLES.ADMIN] },
+  'proposal-generator': { roles: [ROLES.CUSTOMER, ROLES.ADMIN] },
   settings: { roles: [ROLES.CUSTOMER, ROLES.VENDOR, ROLES.ADMIN, ROLES.ENGINEER] },
   'settings-admin': { roles: [ROLES.ADMIN] },
   'vendor-portal': { roles: [ROLES.VENDOR, ROLES.ADMIN, ROLES.ENGINEER] },
+  'vendor-dashboard': { roles: [ROLES.VENDOR, ROLES.ADMIN, ROLES.ENGINEER] },
+  'vendor-projects': { roles: [ROLES.VENDOR, ROLES.ADMIN, ROLES.ENGINEER] },
+  'vendor-customers': { roles: [ROLES.VENDOR, ROLES.ADMIN] },
+  'vendor-reports': { roles: [ROLES.VENDOR, ROLES.ADMIN] },
   'admin-dashboard': { roles: [ROLES.ADMIN] },
   'crm-dashboard': { roles: [ROLES.ADMIN] },
   'business-intelligence': { roles: [ROLES.ADMIN] },

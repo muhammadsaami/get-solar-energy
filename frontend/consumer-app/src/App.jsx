@@ -60,6 +60,12 @@ import PermissionGuard from './routes/PermissionGuard';
 
 // Vendor pages
 import ProjectTracking from './pages/ProjectTracking';
+import VendorDashboard from './vendor/pages/VendorDashboard';
+import MyWork from './vendor/pages/MyWork';
+import VendorProjects from './vendor/pages/VendorProjects';
+import VendorCustomers from './vendor/pages/VendorCustomers';
+import VendorAMC from './vendor/pages/VendorAMC';
+import VendorReports from './vendor/pages/VendorReports';
 
 // Protected Route Guard
 function ProtectedRoute({ children }) {
@@ -96,7 +102,8 @@ function AppRoutes() {
         {/* Canonical Workspace Routes */}
         <Route path={ROUTES.BILL_ANALYZER} element={<AppRoute><PermissionGuard feature="bill-analyzer"><BillAnalyzer /></PermissionGuard></AppRoute>} />
         <Route path={ROUTES.ROOF_ANALYSIS} element={<AppRoute><PermissionGuard feature="roof-analysis"><RoofAnalyzer /></PermissionGuard></AppRoute>} />
-        <Route path={ROUTES.PLANNING_PROPOSAL} element={<AppRoute><PermissionGuard feature="roof-analysis"><Proposal /></PermissionGuard></AppRoute>} />
+        <Route path={ROUTES.PLANNING_PROPOSAL} element={<AppRoute><PermissionGuard feature="proposal-generator"><Proposal /></PermissionGuard></AppRoute>} />
+        <Route path="/app/proposal" element={<Navigate to={ROUTES.PLANNING_PROPOSAL} replace />} />
         <Route path={ROUTES.ROI_CALCULATOR} element={<AppRoute><PermissionGuard feature="roi-calculator"><ROICalculatorPage /></PermissionGuard></AppRoute>} />
 
         {/* AI Workspaces */}
@@ -134,6 +141,17 @@ function AppRoutes() {
         <Route path={ROUTES.REWARDS} element={<AppRoute><PermissionGuard feature="rewards"><RewardsReferrals /></PermissionGuard></AppRoute>} />
 
         {/* Vendor Portal */}
+        <Route path={ROUTES.VENDOR_DASHBOARD} element={<AppRoute><PermissionGuard feature="vendor-dashboard"><VendorDashboard /></PermissionGuard></AppRoute>} />
+        <Route path={ROUTES.VENDOR_MY_WORK} element={<AppRoute><PermissionGuard feature="vendor-portal"><MyWork /></PermissionGuard></AppRoute>} />
+        <Route path={ROUTES.VENDOR_TASKS} element={<AppRoute><PermissionGuard feature="vendor-portal"><MyWork /></PermissionGuard></AppRoute>} />
+        <Route path={ROUTES.VENDOR_VISITS} element={<AppRoute><PermissionGuard feature="vendor-portal"><MyWork /></PermissionGuard></AppRoute>} />
+        <Route path={ROUTES.VENDOR_INSTALLATIONS} element={<AppRoute><PermissionGuard feature="vendor-portal"><MyWork /></PermissionGuard></AppRoute>} />
+        <Route path={ROUTES.VENDOR_WORK_ORDERS} element={<AppRoute><PermissionGuard feature="vendor-portal"><MyWork /></PermissionGuard></AppRoute>} />
+        <Route path={ROUTES.VENDOR_PROJECTS_ACTIVE} element={<AppRoute><PermissionGuard feature="vendor-projects"><VendorProjects /></PermissionGuard></AppRoute>} />
+        <Route path={ROUTES.VENDOR_PROJECTS_COMPLETED} element={<AppRoute><PermissionGuard feature="vendor-projects"><VendorProjects /></PermissionGuard></AppRoute>} />
+        <Route path={ROUTES.VENDOR_CUSTOMERS} element={<AppRoute><PermissionGuard feature="vendor-customers"><VendorCustomers /></PermissionGuard></AppRoute>} />
+        <Route path={ROUTES.VENDOR_AMC} element={<AppRoute><PermissionGuard feature="amc"><VendorAMC /></PermissionGuard></AppRoute>} />
+        <Route path={ROUTES.VENDOR_REPORTS} element={<AppRoute><PermissionGuard feature="vendor-reports"><VendorReports /></PermissionGuard></AppRoute>} />
         <Route path={ROUTES.VENDOR_PROJECT_TRACKING} element={<AppRoute><PermissionGuard feature="vendor-portal"><ProjectTracking /></PermissionGuard></AppRoute>} />
 
         {/* Fallback 404 */}
