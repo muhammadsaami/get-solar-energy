@@ -104,8 +104,9 @@ def run_cdp_migrations(engine) -> None:
          (crm_timeline, crm_tasks, crm_followups, crm_meetings, crm_audit_log).
     """
     from sqlalchemy import text
-    import crm_models   # registers models on BaseSqlite.metadata
-    import crm_audit    # registers audit log model on BaseSqlite.metadata
+    import crm_models
+    import crm_audit
+    import site_survey_models
 
     with engine.connect() as conn:
         # Ensure migration tracking table exists
@@ -179,7 +180,16 @@ def run_cdp_migrations(engine) -> None:
             conn.commit()
             _log.info("Migration applied successfully", extra={"migration": "phase_12_4b_crm_ops"})
 
-    # Create all tables: crm_timeline, crm_tasks, crm_followups, crm_meetings, crm_audit_log, and operations tables
+        already_run_survey = conn.execute(
+            text("SELECT id FROM crm_migrations WHERE migration_name = 'phase_17_14b_site_survey'")
+        ).fetchone()
+
+        if not already_run_survey:
+            BaseSqlite.metadata.create_all(bind=engine)
+            conn.execute(text("INSERT INTO crm_migrations (migration_name) VALUES ('phase_17_14b_site_survey')"))
+            conn.commit()
+            _log.info("Migration applied successfully", extra={"migration": "phase_17_14b_site_survey"})
+
     BaseSqlite.metadata.create_all(bind=engine)
     _log.info("All CRM and operations tables verified / created via create_all")
 

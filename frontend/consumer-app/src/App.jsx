@@ -10,6 +10,7 @@ import { AuthProvider, useAuth } from './contexts/AuthContext';
 import { JourneyProvider } from './contexts/JourneyContext';
 import { UIProvider } from './contexts/UIContext';
 import { PlanningProvider } from './contexts/PlanningContext';
+import { SiteSurveyProvider } from './contexts/SiteSurveyContext';
 
 // Layouts & Primitives
 import AppShell from './components/layout/AppShell';
@@ -26,6 +27,7 @@ import NotFound from './pages/NotFound';
 // Portal pages
 import Home from './pages/Home';
 import Journey from './pages/Journey';
+import SiteSurveyPage from './pages/SiteSurveyPage';
 
 // Planning pages
 import BillAnalyzer from './pages/BillAnalyzer';
@@ -132,10 +134,16 @@ function AppRoutes() {
         {/* Settings */}
         <Route path={ROUTES.ACCOUNT_SETTINGS} element={<AppRoute><PermissionGuard feature="settings"><SettingsPage /></PermissionGuard></AppRoute>} />
 
+        {/* Site Survey Operations */}
+        <Route path={ROUTES.SITE_SURVEY} element={<AppRoute><PermissionGuard feature="site-survey"><SiteSurveyPage /></PermissionGuard></AppRoute>} />
+
         {/* Locked Workspaces — driven by config/featureMetadata.ts */}
-        {Object.entries(FEATURE_METADATA).map(([path, meta]) => (
-          <Route key={path} path={path} element={<AppRoute><LockedWorkspace targetStageId={meta.stageId} featureTitle={meta.title} /></AppRoute>} />
-        ))}
+        {Object.entries(FEATURE_METADATA).map(([path, meta]) => {
+          if (path === ROUTES.SITE_SURVEY) return null;
+          return (
+            <Route key={path} path={path} element={<AppRoute><LockedWorkspace targetStageId={meta.stageId} featureTitle={meta.title} /></AppRoute>} />
+          );
+        })}
 
         {/* Support */}
         <Route path={ROUTES.REWARDS} element={<AppRoute><PermissionGuard feature="rewards"><RewardsReferrals /></PermissionGuard></AppRoute>} />
@@ -166,9 +174,11 @@ export default function App() {
     <AuthProvider>
       <JourneyProvider>
         <PlanningProvider>
-          <UIProvider>
-            <AppRoutes />
-          </UIProvider>
+          <SiteSurveyProvider>
+            <UIProvider>
+              <AppRoutes />
+            </UIProvider>
+          </SiteSurveyProvider>
         </PlanningProvider>
       </JourneyProvider>
     </AuthProvider>

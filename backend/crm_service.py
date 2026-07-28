@@ -33,6 +33,7 @@ from crm_models import (
     CRMPaymentModel,
 )
 from crm_scoring import calculate_lead_score, calculate_health_score
+from site_survey_models import SiteSurveyModel
 from utils.logger import get_logger, log_crm_event
 
 logger = get_logger(__name__)
@@ -750,15 +751,24 @@ def get_customer_360(db: Session, customer_id: int) -> dict:
             "savings_25yr": bill.savings_25yr
         }
         
-    # Derive site survey mock based on lead stage
+    # Derive site survey from real data
     site_survey = None
-    if customer.status in ("Survey Completed", "Site Survey Scheduled", "Proposal Generated", "Proposal Sent", "Negotiation", "Won", "Completed"):
+    survey = db.query(SiteSurveyModel).filter(SiteSurveyModel.customer_id == customer_id).order_by(desc(SiteSurveyModel.created_at)).first()
+    if survey:
         site_survey = {
-            "id": customer_id,
-            "status": "Completed" if customer.status != "Site Survey Scheduled" else "Scheduled",
-            "scheduled_date": "2026-07-06",
-            "surveyor_name": "Ramesh Patel",
-            "findings": "Roof in excellent condition, minor shadow from east tree."
+            "id": survey.id,
+            "status": survey.status,
+            "scheduled_date": survey.scheduled_date,
+            "completed_date": survey.completed_date,
+            "surveyor_name": survey.assigned_name,
+            "priority": survey.priority,
+            "findings": survey.obstacles or None,
+            "roof_type": survey.roof_type,
+            "roof_area_sqft": survey.total_roof_area_sqft,
+            "proposed_system_kw": survey.proposed_system_kw,
+            "structure_condition": survey.structure_condition,
+            "completion": survey.completion_percentage,
+            "checklist_completion": survey.checklist_completion,
         }
 
     # Standard entities

@@ -8,6 +8,7 @@ from database_sqlite import get_sqlite_db
 from security import verify_token
 from utils.responses import ok, server_error
 from utils.logger import log_api_request, log_api_response
+from site_survey_models import SiteSurveyModel
 from services.project_service import get_projects, get_project_metrics, _to_frontend_dict
 from project_models import ProjectModel
 from crm_models import CRMTaskModel, CRMMeetingModel, CRMInstallationModel, CRMAMCModel
@@ -63,6 +64,15 @@ def vendor_dashboard(
             CRMAMCModel.assigned_engineer.ilike(f"%{team}%")
         ).all()
 
+        surveys = db.query(SiteSurveyModel).filter(
+            SiteSurveyModel.assigned_name.ilike(f"%{team}%")
+        ).all()
+        surveys_today = [s for s in surveys if s.scheduled_date == today_str]
+        surveys_pending = [s for s in surveys if s.status not in ("approved", "cancelled")]
+        surveys_approved = [s for s in surveys if s.status == "approved"]
+        surveys_on_site = [s for s in surveys if s.status == "on_site"]
+        surveys_review = [s for s in surveys if s.status == "review"]
+
         score = round(sum(p.health_score or 80 for p in projects) / max(total, 1), 1)
         progress = round(sum(p.progress or 0 for p in active) / max(len(active), 1), 1) if active else 0
 
@@ -81,6 +91,12 @@ def vendor_dashboard(
                 "delayedProjects": len(delayed),
                 "avgHealthScore": score,
                 "avgProgress": progress,
+                "surveysToday": len(surveys_today),
+                "surveysPending": len(surveys_pending),
+                "surveysApproved": len(surveys_approved),
+                "surveysOnSite": len(surveys_on_site),
+                "surveysReview": len(surveys_review),
+                "totalSurveys": len(surveys),
             },
             "projects": project_list,
             "todaysVisits": [{
@@ -115,6 +131,18 @@ def vendor_dashboard(
                 "status": t.status,
                 "overdueDays": (date.today() - datetime.strptime(t.due_date, "%Y-%m-%d").date()).days if t.due_date else 0,
             } for t in overdue_tasks],
+            "surveys": [{
+                "id": s.id,
+                "customerName": s.customer_name,
+                "customerId": s.customer_id,
+                "status": s.status,
+                "priority": s.priority,
+                "scheduledDate": s.scheduled_date,
+                "city": s.city,
+                "roofType": s.roof_type,
+                "proposedKw": s.proposed_system_kw,
+                "completion": s.completion_percentage,
+            } for s in surveys],
             "team": team,
         }, message="Vendor dashboard data retrieved")
     except Exception:
