@@ -233,6 +233,21 @@
   border-left: none;
   border-right: none;
   font-family: var(--font-family);
+  position: relative;
+}
+.drawer-section-tab::after {
+  content: '';
+  position: absolute;
+  bottom: -2px;
+  left: 0;
+  width: 0;
+  height: 2px;
+  background: var(--color-blue);
+  transition: width var(--transition-normal);
+  border-radius: 1px;
+}
+.drawer-section-tab.active::after {
+  width: 100%;
 }
 .drawer-section-tab:hover {
   color: var(--text-secondary);

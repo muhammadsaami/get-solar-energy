@@ -50,6 +50,7 @@ from ai.routes import router as assistant_router
 from mlops.routes import router as mlops_router
 from project_routes import router as project_router
 from vendor_routes import router as vendor_router
+from admin_routes import router as admin_router
 
 app.include_router(roof_router)
 app.include_router(roi_router)
@@ -68,6 +69,7 @@ app.include_router(assistant_router)
 app.include_router(mlops_router)
 app.include_router(project_router)
 app.include_router(vendor_router)
+app.include_router(admin_router)
 
 @app.on_event("startup")
 async def startup_event():

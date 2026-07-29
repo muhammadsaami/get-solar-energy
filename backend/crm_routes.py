@@ -691,7 +691,7 @@ def get_crm_reports(report_type: str, db: Session = Depends(get_sqlite_db)):
         generator, filename = generator_map[report_type]
         data = generator(db)
 
-        logger.info("CSV report downloaded", extra={"report_type": report_type, "filename": filename})
+        logger.info("CSV report downloaded", extra={"report_type": report_type, "csv_filename": filename})
         return Response(
             content=data,
             media_type="text/csv",

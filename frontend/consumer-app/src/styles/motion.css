@@ -54,6 +54,18 @@
   to   { opacity: 0; transform: scale(0.94); }
 }
 
+/* Slide left exit — right-panel dismiss */
+@keyframes gs-slide-left-exit {
+  from { opacity: 1; transform: translateX(0); }
+  to   { opacity: 0; transform: translateX(24px); }
+}
+
+/* Fade out — overlay dismiss */
+@keyframes gs-fade-out {
+  from { opacity: 1; }
+  to   { opacity: 0; }
+}
+
 /* Float — idle hover animation for cards/icons */
 @keyframes gs-float {
   0%   { transform: translateY(0); }
@@ -164,6 +176,14 @@
 
 .animate-scale-in {
   animation: gs-scale-in var(--duration-normal) var(--ease-bounce) both;
+}
+
+.animate-slide-left-exit {
+  animation: gs-slide-left-exit var(--duration-slow) var(--ease-accelerate) both;
+}
+
+.animate-fade-out {
+  animation: gs-fade-out var(--duration-fast) var(--ease-accelerate) both;
 }
 
 .animate-float {

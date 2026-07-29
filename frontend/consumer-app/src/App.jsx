@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { Suspense, lazy } from 'react';
 import { BrowserRouter as Router, Routes, Route, Navigate } from 'react-router-dom';
 
 // Config
@@ -6,74 +6,63 @@ import { ROUTES } from './config/routes';
 import { FEATURE_METADATA } from './config/featureMetadata';
 
 // Providers
+import { QueryClientProvider } from '@tanstack/react-query';
+import { queryClient } from './config/queryClient';
 import { AuthProvider, useAuth } from './contexts/AuthContext';
 import { JourneyProvider } from './contexts/JourneyContext';
 import { UIProvider } from './contexts/UIContext';
 import { PlanningProvider } from './contexts/PlanningContext';
 import { SiteSurveyProvider } from './contexts/SiteSurveyContext';
 
-// Layouts & Primitives
+// Layouts & Primitives (keep eager — always needed)
 import AppShell from './components/layout/AppShell';
 import LayoutSkeleton from './components/layout/LayoutSkeleton';
 import LockedWorkspace from './components/feedback/LockedWorkspace';
 
-// Public pages
-import Landing from './pages/Landing';
-import Login from './pages/Login';
-import Signup from './pages/Signup';
-import ResetPassword from './pages/ResetPassword';
-import NotFound from './pages/NotFound';
-
-// Portal pages
-import Home from './pages/Home';
-import Journey from './pages/Journey';
-import SiteSurveyPage from './pages/SiteSurveyPage';
-
-// Planning pages
-import BillAnalyzer from './pages/BillAnalyzer';
-import RoofAnalyzer from './pages/RoofAnalyzer';
-import Proposal from './pages/Proposal';
-import ROICalculatorPage from './pages/ROICalculatorPage';
-
-// AI pages
-import AIAdvisor from './pages/AIAdvisor';
-import EnterpriseAI from './pages/EnterpriseAI';
-
-// Rewards page
-import RewardsReferrals from './pages/RewardsReferrals';
-
-// Activity Center
-import ActivityCenter from './activities/pages/ActivityCenter';
-
-// Reports Center
-import ReportsCenter from './reports/pages/ReportsCenter';
-
-// System Performance
-import SystemPerformance from './performance/pages/SystemPerformance';
-
-// AMC
-import AMC from './amc/pages/AMC';
-
-// Settings
-import SettingsPage from './settings/pages/SettingsPage';
-
-// Auth & Permissions
+// Auth & Permissions (keep eager — always needed)
 import PermissionGuard from './routes/PermissionGuard';
+import AdminGuard from './routes/AdminGuard';
 
-// Vendor pages
-import ProjectTracking from './pages/ProjectTracking';
-import VendorDashboard from './vendor/pages/VendorDashboard';
-import MyWork from './vendor/pages/MyWork';
-import VendorProjects from './vendor/pages/VendorProjects';
-import VendorCustomers from './vendor/pages/VendorCustomers';
-import VendorAMC from './vendor/pages/VendorAMC';
-import VendorReports from './vendor/pages/VendorReports';
+// Lazy-loaded pages — improves initial bundle size
+const Landing = lazy(() => import('./pages/Landing'));
+const Login = lazy(() => import('./pages/Login'));
+const Signup = lazy(() => import('./pages/Signup'));
+const ResetPassword = lazy(() => import('./pages/ResetPassword'));
+const NotFound = lazy(() => import('./pages/NotFound'));
+const Home = lazy(() => import('./pages/Home'));
+const Journey = lazy(() => import('./pages/Journey'));
+const SiteSurveyPage = lazy(() => import('./pages/SiteSurveyPage'));
+const BillAnalyzer = lazy(() => import('./pages/BillAnalyzer'));
+const RoofAnalyzer = lazy(() => import('./pages/RoofAnalyzer'));
+const Proposal = lazy(() => import('./pages/Proposal'));
+const ROICalculatorPage = lazy(() => import('./pages/ROICalculatorPage'));
+const AIAdvisor = lazy(() => import('./pages/AIAdvisor'));
+const EnterpriseAI = lazy(() => import('./pages/EnterpriseAI'));
+const RewardsReferrals = lazy(() => import('./pages/RewardsReferrals'));
+const ActivityCenter = lazy(() => import('./activities/pages/ActivityCenter'));
+const ReportsCenter = lazy(() => import('./reports/pages/ReportsCenter'));
+const SystemPerformance = lazy(() => import('./performance/pages/SystemPerformance'));
+const AMC = lazy(() => import('./amc/pages/AMC'));
+const SettingsPage = lazy(() => import('./settings/pages/SettingsPage'));
+const AdminDashboardPage = lazy(() => import('./pages/admin/AdminDashboard'));
+const CrmDashboardPage = lazy(() => import('./pages/crm/CrmDashboard'));
+const ProjectTracking = lazy(() => import('./pages/ProjectTracking'));
+const VendorDashboard = lazy(() => import('./vendor/pages/VendorDashboard'));
+const MyWork = lazy(() => import('./vendor/pages/MyWork'));
+const VendorProjects = lazy(() => import('./vendor/pages/VendorProjects'));
+const VendorCustomers = lazy(() => import('./vendor/pages/VendorCustomers'));
+const VendorAMC = lazy(() => import('./vendor/pages/VendorAMC'));
+const VendorReports = lazy(() => import('./vendor/pages/VendorReports'));
+
+function PageSuspense({ children }) {
+  return <Suspense fallback={<LayoutSkeleton />}>{children}</Suspense>;
+}
 
 // Protected Route Guard
 function ProtectedRoute({ children }) {
   const { isAuthenticated, loading } = useAuth();
   if (loading) return <LayoutSkeleton />;
-  return isAuthenticated ? children : <Navigate to="/" replace />;
+  return isAuthenticated ? children : <Navigate to={ROUTES.LOGIN} replace />;
 }
 
 // Shell-Wrapped Route Layout
@@ -92,25 +81,25 @@ function AppRoutes() {
     <Router>
       <Routes>
         {/* Public routes */}
-        <Route path="/" element={<Landing />} />
-        <Route path="/login" element={<Login />} />
-        <Route path="/signup" element={<Signup />} />
-        <Route path="/reset-password" element={<ResetPassword />} />
+        <Route path="/" element={<PageSuspense><Landing /></PageSuspense>} />
+        <Route path="/login" element={<PageSuspense><Login /></PageSuspense>} />
+        <Route path="/signup" element={<PageSuspense><Signup /></PageSuspense>} />
+        <Route path="/reset-password" element={<PageSuspense><ResetPassword /></PageSuspense>} />
 
         {/* Customer Portal - Authenticated */}
-        <Route path={ROUTES.HOME} element={<AppRoute><PermissionGuard feature="dashboard"><Home /></PermissionGuard></AppRoute>} />
-        <Route path={ROUTES.JOURNEY} element={<AppRoute><PermissionGuard feature="dashboard"><Journey /></PermissionGuard></AppRoute>} />
+        <Route path={ROUTES.HOME} element={<AppRoute><PermissionGuard feature="dashboard"><PageSuspense><Home /></PageSuspense></PermissionGuard></AppRoute>} />
+        <Route path={ROUTES.JOURNEY} element={<AppRoute><PermissionGuard feature="dashboard"><PageSuspense><Journey /></PageSuspense></PermissionGuard></AppRoute>} />
 
         {/* Canonical Workspace Routes */}
-        <Route path={ROUTES.BILL_ANALYZER} element={<AppRoute><PermissionGuard feature="bill-analyzer"><BillAnalyzer /></PermissionGuard></AppRoute>} />
-        <Route path={ROUTES.ROOF_ANALYSIS} element={<AppRoute><PermissionGuard feature="roof-analysis"><RoofAnalyzer /></PermissionGuard></AppRoute>} />
-        <Route path={ROUTES.PLANNING_PROPOSAL} element={<AppRoute><PermissionGuard feature="proposal-generator"><Proposal /></PermissionGuard></AppRoute>} />
+        <Route path={ROUTES.BILL_ANALYZER} element={<AppRoute><PermissionGuard feature="bill-analyzer"><PageSuspense><BillAnalyzer /></PageSuspense></PermissionGuard></AppRoute>} />
+        <Route path={ROUTES.ROOF_ANALYSIS} element={<AppRoute><PermissionGuard feature="roof-analysis"><PageSuspense><RoofAnalyzer /></PageSuspense></PermissionGuard></AppRoute>} />
+        <Route path={ROUTES.PLANNING_PROPOSAL} element={<AppRoute><PermissionGuard feature="proposal-generator"><PageSuspense><Proposal /></PageSuspense></PermissionGuard></AppRoute>} />
         <Route path="/app/proposal" element={<Navigate to={ROUTES.PLANNING_PROPOSAL} replace />} />
-        <Route path={ROUTES.ROI_CALCULATOR} element={<AppRoute><PermissionGuard feature="roi-calculator"><ROICalculatorPage /></PermissionGuard></AppRoute>} />
+        <Route path={ROUTES.ROI_CALCULATOR} element={<AppRoute><PermissionGuard feature="roi-calculator"><PageSuspense><ROICalculatorPage /></PageSuspense></PermissionGuard></AppRoute>} />
 
         {/* AI Workspaces */}
-        <Route path={ROUTES.AI_ADVISOR} element={<AppRoute><PermissionGuard feature="ai-assistant"><AIAdvisor /></PermissionGuard></AppRoute>} />
-        <Route path={ROUTES.ENTERPRISE_AI} element={<AppRoute><PermissionGuard feature="enterprise-ai"><EnterpriseAI /></PermissionGuard></AppRoute>} />
+        <Route path={ROUTES.AI_ADVISOR} element={<AppRoute><PermissionGuard feature="ai-assistant"><PageSuspense><AIAdvisor /></PageSuspense></PermissionGuard></AppRoute>} />
+        <Route path={ROUTES.ENTERPRISE_AI} element={<AppRoute><PermissionGuard feature="enterprise-ai"><PageSuspense><EnterpriseAI /></PageSuspense></PermissionGuard></AppRoute>} />
 
         {/* Legacy route aliases — redirect to canonical */}
         <Route path="/app/dashboard" element={<Navigate to={ROUTES.HOME} replace />} />
@@ -120,50 +109,58 @@ function AppRoutes() {
         <Route path={ROUTES.SUPPORT_NOTIFICATIONS} element={<Navigate to={ROUTES.ACTIVITY_CENTER} replace />} />
 
         {/* Activity Center */}
-        <Route path={ROUTES.ACTIVITY_CENTER} element={<AppRoute><PermissionGuard feature="activity-center"><ActivityCenter /></PermissionGuard></AppRoute>} />
+        <Route path={ROUTES.ACTIVITY_CENTER} element={<AppRoute><PermissionGuard feature="activity-center"><PageSuspense><ActivityCenter /></PageSuspense></PermissionGuard></AppRoute>} />
 
         {/* Reports Center */}
-        <Route path={ROUTES.OWNERSHIP_REPORTS} element={<AppRoute><PermissionGuard feature="reports-center"><ReportsCenter /></PermissionGuard></AppRoute>} />
+        <Route path={ROUTES.OWNERSHIP_REPORTS} element={<AppRoute><PermissionGuard feature="reports-center"><PageSuspense><ReportsCenter /></PageSuspense></PermissionGuard></AppRoute>} />
 
         {/* System Performance */}
-        <Route path={ROUTES.SYSTEM_PERFORMANCE} element={<AppRoute><PermissionGuard feature="system-performance"><SystemPerformance /></PermissionGuard></AppRoute>} />
+        <Route path={ROUTES.SYSTEM_PERFORMANCE} element={<AppRoute><PermissionGuard feature="system-performance"><PageSuspense><SystemPerformance /></PageSuspense></PermissionGuard></AppRoute>} />
 
         {/* AMC */}
-        <Route path={ROUTES.AMC} element={<AppRoute><PermissionGuard feature="amc"><AMC /></PermissionGuard></AppRoute>} />
+        <Route path={ROUTES.AMC} element={<AppRoute><PermissionGuard feature="amc"><PageSuspense><AMC /></PageSuspense></PermissionGuard></AppRoute>} />
 
         {/* Settings */}
-        <Route path={ROUTES.ACCOUNT_SETTINGS} element={<AppRoute><PermissionGuard feature="settings"><SettingsPage /></PermissionGuard></AppRoute>} />
+        <Route path={ROUTES.ACCOUNT_SETTINGS} element={<AppRoute><PermissionGuard feature="settings"><PageSuspense><SettingsPage /></PageSuspense></PermissionGuard></AppRoute>} />
 
         {/* Site Survey Operations */}
-        <Route path={ROUTES.SITE_SURVEY} element={<AppRoute><PermissionGuard feature="site-survey"><SiteSurveyPage /></PermissionGuard></AppRoute>} />
+        <Route path={ROUTES.SITE_SURVEY} element={<AppRoute><PermissionGuard feature="site-survey"><PageSuspense><SiteSurveyPage /></PageSuspense></PermissionGuard></AppRoute>} />
+
+        {/* Admin Dashboard */}
+        <Route path={ROUTES.ADMIN_DASHBOARD} element={<AppRoute><AdminGuard><PageSuspense><AdminDashboardPage /></PageSuspense></AdminGuard></AppRoute>} />
+
+        {/* CRM & Leads */}
+        <Route path={ROUTES.CRM_LEADS} element={<AppRoute><AdminGuard><PageSuspense><CrmDashboardPage /></PageSuspense></AdminGuard></AppRoute>} />
 
         {/* Locked Workspaces — driven by config/featureMetadata.ts */}
         {Object.entries(FEATURE_METADATA).map(([path, meta]) => {
           if (path === ROUTES.SITE_SURVEY) return null;
+          if (path === ROUTES.ADMIN_DASHBOARD) return null;
+          if (path === ROUTES.CRM_LEADS) return null;
           return (
             <Route key={path} path={path} element={<AppRoute><LockedWorkspace targetStageId={meta.stageId} featureTitle={meta.title} /></AppRoute>} />
           );
         })}
 
         {/* Support */}
-        <Route path={ROUTES.REWARDS} element={<AppRoute><PermissionGuard feature="rewards"><RewardsReferrals /></PermissionGuard></AppRoute>} />
+        <Route path={ROUTES.REWARDS} element={<AppRoute><PermissionGuard feature="rewards"><PageSuspense><RewardsReferrals /></PageSuspense></PermissionGuard></AppRoute>} />
 
         {/* Vendor Portal */}
-        <Route path={ROUTES.VENDOR_DASHBOARD} element={<AppRoute><PermissionGuard feature="vendor-dashboard"><VendorDashboard /></PermissionGuard></AppRoute>} />
-        <Route path={ROUTES.VENDOR_MY_WORK} element={<AppRoute><PermissionGuard feature="vendor-portal"><MyWork /></PermissionGuard></AppRoute>} />
-        <Route path={ROUTES.VENDOR_TASKS} element={<AppRoute><PermissionGuard feature="vendor-portal"><MyWork /></PermissionGuard></AppRoute>} />
-        <Route path={ROUTES.VENDOR_VISITS} element={<AppRoute><PermissionGuard feature="vendor-portal"><MyWork /></PermissionGuard></AppRoute>} />
-        <Route path={ROUTES.VENDOR_INSTALLATIONS} element={<AppRoute><PermissionGuard feature="vendor-portal"><MyWork /></PermissionGuard></AppRoute>} />
-        <Route path={ROUTES.VENDOR_WORK_ORDERS} element={<AppRoute><PermissionGuard feature="vendor-portal"><MyWork /></PermissionGuard></AppRoute>} />
-        <Route path={ROUTES.VENDOR_PROJECTS_ACTIVE} element={<AppRoute><PermissionGuard feature="vendor-projects"><VendorProjects /></PermissionGuard></AppRoute>} />
-        <Route path={ROUTES.VENDOR_PROJECTS_COMPLETED} element={<AppRoute><PermissionGuard feature="vendor-projects"><VendorProjects /></PermissionGuard></AppRoute>} />
-        <Route path={ROUTES.VENDOR_CUSTOMERS} element={<AppRoute><PermissionGuard feature="vendor-customers"><VendorCustomers /></PermissionGuard></AppRoute>} />
-        <Route path={ROUTES.VENDOR_AMC} element={<AppRoute><PermissionGuard feature="amc"><VendorAMC /></PermissionGuard></AppRoute>} />
-        <Route path={ROUTES.VENDOR_REPORTS} element={<AppRoute><PermissionGuard feature="vendor-reports"><VendorReports /></PermissionGuard></AppRoute>} />
-        <Route path={ROUTES.VENDOR_PROJECT_TRACKING} element={<AppRoute><PermissionGuard feature="vendor-portal"><ProjectTracking /></PermissionGuard></AppRoute>} />
+        <Route path={ROUTES.VENDOR_DASHBOARD} element={<AppRoute><PermissionGuard feature="vendor-dashboard"><PageSuspense><VendorDashboard /></PageSuspense></PermissionGuard></AppRoute>} />
+        <Route path={ROUTES.VENDOR_MY_WORK} element={<AppRoute><PermissionGuard feature="vendor-portal"><PageSuspense><MyWork /></PageSuspense></PermissionGuard></AppRoute>} />
+        <Route path={ROUTES.VENDOR_TASKS} element={<AppRoute><PermissionGuard feature="vendor-portal"><PageSuspense><MyWork /></PageSuspense></PermissionGuard></AppRoute>} />
+        <Route path={ROUTES.VENDOR_VISITS} element={<AppRoute><PermissionGuard feature="vendor-portal"><PageSuspense><MyWork /></PageSuspense></PermissionGuard></AppRoute>} />
+        <Route path={ROUTES.VENDOR_INSTALLATIONS} element={<AppRoute><PermissionGuard feature="vendor-portal"><PageSuspense><MyWork /></PageSuspense></PermissionGuard></AppRoute>} />
+        <Route path={ROUTES.VENDOR_WORK_ORDERS} element={<AppRoute><PermissionGuard feature="vendor-portal"><PageSuspense><MyWork /></PageSuspense></PermissionGuard></AppRoute>} />
+        <Route path={ROUTES.VENDOR_PROJECTS_ACTIVE} element={<AppRoute><PermissionGuard feature="vendor-projects"><PageSuspense><VendorProjects /></PageSuspense></PermissionGuard></AppRoute>} />
+        <Route path={ROUTES.VENDOR_PROJECTS_COMPLETED} element={<AppRoute><PermissionGuard feature="vendor-projects"><PageSuspense><VendorProjects /></PageSuspense></PermissionGuard></AppRoute>} />
+        <Route path={ROUTES.VENDOR_CUSTOMERS} element={<AppRoute><PermissionGuard feature="vendor-customers"><PageSuspense><VendorCustomers /></PageSuspense></PermissionGuard></AppRoute>} />
+        <Route path={ROUTES.VENDOR_AMC} element={<AppRoute><PermissionGuard feature="amc"><PageSuspense><VendorAMC /></PageSuspense></PermissionGuard></AppRoute>} />
+        <Route path={ROUTES.VENDOR_REPORTS} element={<AppRoute><PermissionGuard feature="vendor-reports"><PageSuspense><VendorReports /></PageSuspense></PermissionGuard></AppRoute>} />
+        <Route path={ROUTES.VENDOR_PROJECT_TRACKING} element={<AppRoute><PermissionGuard feature="vendor-portal"><PageSuspense><ProjectTracking /></PageSuspense></PermissionGuard></AppRoute>} />
 
         {/* Fallback 404 */}
-        <Route path="*" element={<NotFound />} />
+        <Route path="*" element={<PageSuspense><NotFound /></PageSuspense>} />
       </Routes>
     </Router>
   );
@@ -171,16 +168,18 @@ function AppRoutes() {
 
 export default function App() {
   return (
-    <AuthProvider>
-      <JourneyProvider>
-        <PlanningProvider>
-          <SiteSurveyProvider>
-            <UIProvider>
-              <AppRoutes />
-            </UIProvider>
-          </SiteSurveyProvider>
-        </PlanningProvider>
-      </JourneyProvider>
-    </AuthProvider>
+    <QueryClientProvider client={queryClient}>
+      <AuthProvider>
+        <JourneyProvider>
+          <PlanningProvider>
+            <SiteSurveyProvider>
+              <UIProvider>
+                <AppRoutes />
+              </UIProvider>
+            </SiteSurveyProvider>
+          </PlanningProvider>
+        </JourneyProvider>
+      </AuthProvider>
+    </QueryClientProvider>
   );
 }

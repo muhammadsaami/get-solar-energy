@@ -97,5 +97,15 @@
     "referral_code": "MUH5B939",
     "points": 0,
     "role": "customer"
+  },
+  "admin@getsolar.com": {
+    "id": 999,
+    "name": "Admin User",
+    "email": "admin@getsolar.com",
+    "password": "$2b$12$4XLNxrAMC4xbCQ6FXHNEA.RgvwyfD8Bhlr4.E4YhZDmZgp1mQqnxS",
+    "role": "admin",
+    "city": "Lucknow",
+    "referral_code": "ADMIN",
+    "points": 0
   }
 }

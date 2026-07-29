@@ -1,21 +1,18 @@
 import json
 import os
 
-
-ADMIN_EMAILS_FILE = "admin_emails.json"
-
-
-def _load_admin_emails():
-    if not os.path.exists(ADMIN_EMAILS_FILE):
-        return set()
-    try:
-        with open(ADMIN_EMAILS_FILE) as f:
-            data = json.load(f)
-            return set(data.get("emails", []))
-    except (json.JSONDecodeError, IOError):
-        return set()
+USERS_FILE = "users.json"
 
 
 def has_admin_access(user_email: str) -> bool:
-    admin_emails = _load_admin_emails()
-    return user_email in admin_emails
+    if not os.path.exists(USERS_FILE):
+        return False
+    try:
+        with open(USERS_FILE, encoding="utf-8") as f:
+            users = json.load(f)
+        user = users.get(user_email)
+        if user and user.get("role") in ("admin", "Administrator"):
+            return True
+    except (json.JSONDecodeError, IOError):
+        pass
+    return False

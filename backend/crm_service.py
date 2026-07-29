@@ -18,6 +18,7 @@ Every write function:
 """
 
 from datetime import datetime
+from sqlalchemy import desc
 from sqlalchemy.orm import Session
 
 from database_sqlite import CustomerModel, BillModel
