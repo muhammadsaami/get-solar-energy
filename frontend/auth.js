@@ -25,7 +25,7 @@ const AUTH_CONFIG = {
   /** Mobile prefix shorthand (treat 10-digit numbers as mobile logins) */
   MOBILE_REGEX: /^[6-9]\d{9}$/,
   SPINNER_DELAY_MS: 1200,
-  DASHBOARD_URL: 'index.html',
+  DASHBOARD_URL: 'dashboard.html',
   LOGIN_URL:     'login.html',
   SIGNUP_URL:    'signup.html',
   PARTICLE_COUNT: 25,
@@ -373,17 +373,44 @@ function initLoginPage() {
   const forgotEmailInput = document.getElementById('forgotEmail');
   const forgotSuccessCard = document.getElementById('forgotSuccessCard');
 
+  let _previousActiveElement = null;
+
+  const _trapFocus = (e) => {
+    if (!forgotModal?.classList.contains('active')) return;
+    const focusable = forgotModal.querySelectorAll(
+      'button, [href], input, select, textarea, [tabindex]:not([tabindex="-1"])'
+    );
+    if (focusable.length === 0) return;
+    const first = focusable[0];
+    const last = focusable[focusable.length - 1];
+    if (e.key === 'Tab') {
+      if (e.shiftKey) {
+        if (document.activeElement === first) {
+          e.preventDefault();
+          last.focus();
+        }
+      } else {
+        if (document.activeElement === last) {
+          e.preventDefault();
+          first.focus();
+        }
+      }
+    }
+  };
+
   const openForgotModal = () => {
     if (!forgotModal) return;
+    _previousActiveElement = document.activeElement;
     forgotModal.classList.add('active');
     forgotModal.setAttribute('aria-hidden', 'false');
-    document.body.style.overflow = 'hidden'; // lock scroll
+    document.body.style.overflow = 'hidden';
     if (forgotEmailInput) {
       forgotEmailInput.value = '';
       clearFieldError('forgotEmail');
     }
     if (forgotForm) forgotForm.style.display = 'block';
     if (forgotSuccessCard) forgotSuccessCard.style.display = 'none';
+    document.addEventListener('keydown', _trapFocus);
     setTimeout(() => forgotEmailInput?.focus(), 150);
   };
 
@@ -391,8 +418,12 @@ function initLoginPage() {
     if (!forgotModal) return;
     forgotModal.classList.remove('active');
     forgotModal.setAttribute('aria-hidden', 'true');
-    document.body.style.overflow = ''; // unlock scroll
-    document.getElementById('forgotPasswordBtn')?.focus();
+    document.body.style.overflow = '';
+    document.removeEventListener('keydown', _trapFocus);
+    if (_previousActiveElement && typeof _previousActiveElement.focus === 'function') {
+      _previousActiveElement.focus();
+    }
+    _previousActiveElement = null;
   };
 
   document.getElementById('forgotPasswordBtn')?.addEventListener('click', (e) => {
@@ -620,12 +651,13 @@ function initSignupPage() {
     setButtonLoading('signupBtn', 'signupSpinner', true);
 
     try {
+      const est = window.__solarEstimate || {};
       const result = await signup({
         name,
         phone: mobile,
         email,
         password: pwd,
-        city: "Lucknow"
+        city: est.city || "Lucknow"
       });
 
       showToast(`Account created! Welcome, ${result.user.name} 🌞`, 'success', 2000);

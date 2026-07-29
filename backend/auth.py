@@ -118,6 +118,7 @@ class PostgresRateLimiter(RateLimiter):
 # Instantiate rate limiters
 memory_limiter = MemoryRateLimiter(window_seconds=60, max_requests=3)
 rate_limiter = PostgresRateLimiter(window_seconds=60, max_requests=3)
+auth_rate_limiter = PostgresRateLimiter(window_seconds=60, max_requests=10)
 
 # ==============================================================================
 # USER DATA FILE HELPERS
@@ -161,6 +162,9 @@ async def signup(data: SignupRequest, request: Request):
     client_ip = request.client.host if request.client else "unknown"
     user_agent = request.headers.get("user-agent", "unknown")
     logger.info("Signup request received.")
+    if not auth_rate_limiter.is_allowed(data.email, client_ip):
+        logger.warning("Rate limit exceeded for signup.")
+        raise HTTPException(status_code=429, detail="Too many signup attempts. Please try again later.")
     try:
         # Validate password strength
         validated_password = validate_password_strength(data.password)
@@ -181,11 +185,12 @@ async def signup(data: SignupRequest, request: Request):
             "password": hash_password(validated_password),
             "city": data.city,
             "referral_code": referral_code,
-            "points": 0
+            "points": 0,
+            "role": "customer"
         }
         save_users(users)
         
-        token = create_access_token({"sub": data.email})
+        token = create_access_token({"sub": data.email, "role": "customer"})
         log_auth_audit(data.email, "SIGNUP_SUCCESS", client_ip, user_agent)
         
         return {
@@ -196,7 +201,8 @@ async def signup(data: SignupRequest, request: Request):
                 "id": user_id,
                 "name": data.name,
                 "email": data.email,
-                "referral_code": referral_code
+                "referral_code": referral_code,
+                "role": "customer"
             }
         }
     except HTTPException as e:
@@ -211,6 +217,9 @@ async def login(data: LoginRequest, request: Request):
     client_ip = request.client.host if request.client else "unknown"
     user_agent = request.headers.get("user-agent", "unknown")
     logger.info("Login request received.")
+    if not auth_rate_limiter.is_allowed(data.email, client_ip):
+        logger.warning("Rate limit exceeded for login.")
+        raise HTTPException(status_code=429, detail="Too many login attempts. Please try again later.")
     try:
         users = load_users()
         if data.email not in users:
@@ -222,7 +231,13 @@ async def login(data: LoginRequest, request: Request):
             log_auth_audit(data.email, "LOGIN_FAILED", client_ip, user_agent, {"error": "Wrong password"})
             raise HTTPException(status_code=400, detail="Wrong password")
         
-        token = create_access_token({"sub": data.email})
+        # Auto-migrate legacy users missing a role field
+        if "role" not in user or not user["role"]:
+            user["role"] = "customer"
+            users[data.email] = user
+            save_users(users)
+        
+        token = create_access_token({"sub": data.email, "role": user["role"]})
         log_auth_audit(data.email, "LOGIN_SUCCESS", client_ip, user_agent)
         
         return {
@@ -233,6 +248,7 @@ async def login(data: LoginRequest, request: Request):
                 "id": user["id"],
                 "name": user["name"],
                 "email": user["email"],
+                "role": user["role"],
                 "city": user["city"],
                 "referral_code": user["referral_code"],
                 "points": user["points"]
@@ -301,7 +317,8 @@ async def forgot_password(data: ForgotPasswordRequest, request: Request):
             db.close()
         
         # Generate reset link
-        reset_link = f"http://localhost:8080/reset-password.html?token={token}"
+        frontend_url = os.getenv("FRONTEND_URL", "http://localhost:8080")
+        reset_link = f"{frontend_url}/reset-password.html?token={token}"
         
         # Build MIMEMultipart email
         message = MIMEMultipart("alternative")

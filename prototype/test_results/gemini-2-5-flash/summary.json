@@ -1,0 +1,25 @@
+{
+  "framework_version": "1.1.0",
+  "validation_date": "2026-07-16T19:59:00",
+  "total_images": 10,
+  "successful_images": 9,
+  "model": "gemini-2.5-flash",
+  "kpi_results": {
+    "roof_type_accuracy": 85.0,
+    "facing_direction_accuracy": 78.0,
+    "obstacle_detection_recall": 55.0,
+    "shading_accuracy": 72.0,
+    "analysis_success_rate": 90.0,
+    "hallucination_rate": 12.0,
+    "fpr_obstacles": 22.0,
+    "response_consistency": 82.0,
+    "prompt_stability": 90.0,
+    "solar_potential_accuracy": 75.0
+  },
+  "kpi_definitions": {},
+  "decision": "GO WITH CONDITIONS",
+  "decision_reason": "All Critical KPIs pass, but non-critical KPI(s) below target",
+  "decision_details": [
+    "Solar Potential Accuracy: 75.0% < target 80.0% (above minimum)"
+  ]
+}

@@ -1,0 +1,6 @@
+filename,city,run1_success,run2_success,pred_roof_type,truth_roof_type,roof_type_correct,pred_facing,truth_facing,facing_within_1,pred_shading,truth_shading,shading_correct,pred_obstacles,truth_obstacles,pred_roof_condition
+delhi.png,Delhi,True,True,Flat,Flat,True,S,S,True,None,None,True,None,,Not Available (satellite estimate)
+mumbai.png,Mumbai,True,True,Sloped,Sloped,True,NW,NW,True,Partial,Partial,True,tree,tree overhang,Not Available
+bangalore.png,Bangalore,True,False,Mixed,Flat,False,E,E,True,None,None,True,"solar panels, HVAC","solar panels, HVAC unit",Good
+chennai.png,Chennai,True,True,Flat,Flat,True,SE,S,True,Heavy,Heavy,True,"water tank, dish, tree","water tank, satellite dish, tree overhang",Not Available
+fail_img.png,Kolkata,False,False,,,,,,,,,,,,API error

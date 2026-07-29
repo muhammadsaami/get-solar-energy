@@ -1,13 +1,16 @@
-import api from './api';
+import api from './api/client';
 
 export const authService = {
-  async login(username, password) {
-    // Delegates to contexts in mock stage, but prepares endpoint contract
-    const res = await api.post('/auth/login', { username, password });
+  async signup(userData) {
+    const res = await api.post('/signup', userData);
     return res.data;
   },
-  async getProfile() {
-    const res = await api.get('/auth/me');
+  async forgotPassword(email) {
+    const res = await api.post('/forgot-password', { email });
+    return res.data;
+  },
+  async resetPassword(token, newPassword) {
+    const res = await api.post('/reset-password', { token, new_password: newPassword });
     return res.data;
   }
 };

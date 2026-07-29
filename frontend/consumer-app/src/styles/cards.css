@@ -84,6 +84,7 @@
 .card-glass:hover {
   border-color: var(--glass-border-active);
   box-shadow: var(--shadow-hover), var(--shadow-inset);
+  transform: translateY(-2px);
 }
 
 /* ── METRIC / KPI CARD ──────────────────────────────────── */

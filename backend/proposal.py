@@ -1,4 +1,6 @@
-from fastapi import APIRouter
+from fastapi import APIRouter, Depends, Request
+from security import verify_token
+from auth import auth_rate_limiter
 from pydantic import BaseModel
 from google import genai
 from google.genai import types
@@ -7,7 +9,7 @@ import os, json
 
 load_dotenv()
 client = genai.Client(api_key=os.getenv("GEMINI_API_KEY"))
-router = APIRouter()
+router = APIRouter(dependencies=[Depends(verify_token)])
 
 
 class ProposalRequest(BaseModel):
@@ -23,7 +25,10 @@ class ProposalRequest(BaseModel):
 
 
 @router.post("/api/generate-proposal")
-async def generate_proposal(data: ProposalRequest):
+async def generate_proposal(data: ProposalRequest, req: Request = None, user_email: str = Depends(verify_token)):
+    client_ip = req.client.host if req else "unknown"
+    if not auth_rate_limiter.is_allowed(user_email, client_ip):
+        return {"success": False, "error": "Rate limit exceeded. Please try again later."}
     try:
         prompt = f"""
         You are a professional solar proposal writer for an Indian solar EPC company.

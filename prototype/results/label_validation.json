@@ -1,0 +1,21 @@
+{
+  "framework_version": "1.1.0",
+  "validation_date": "2026-07-16T20:11:40.199061",
+  "labels_file": "E:\\GET SOLAR ENERGY\\get-solar-energy\\prototype\\sample_labels.json",
+  "total_samples": 10,
+  "error_count": 0,
+  "warning_count": 0,
+  "passed": true,
+  "issues": [],
+  "checks_performed": [
+    "file_exists",
+    "json_parse",
+    "samples_not_empty",
+    "required_fields",
+    "enum_values",
+    "zoom_range",
+    "date_format",
+    "duplicate_filenames",
+    "obstacles_field"
+  ]
+}

@@ -1,0 +1,12 @@
+{
+  "admin@getsolar.in": {
+    "id": "admin-session-id-00000",
+    "name": "Admin User",
+    "phone": "9999999999",
+    "email": "admin@getsolar.in",
+    "password": "$2b$12$.mCxc5XPSZywRXB/Xx/VU.NpRjsukuiodFrjt7wXAiMpPJvXnQ2Pi",
+    "city": "Lucknow",
+    "referral_code": "ADMIN999",
+    "points": 9999
+  }
+}

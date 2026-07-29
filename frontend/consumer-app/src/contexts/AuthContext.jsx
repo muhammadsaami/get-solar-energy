@@ -1,6 +1,19 @@
 import React, { createContext, useState, useEffect, useContext } from 'react';
+import api from '../services/api/client';
+import { normalizeRole, getDisplayRole } from '../utils/role';
 
 const AuthContext = createContext(null);
+
+function normalizeUser(raw) {
+  if (!raw) return null;
+  const canonicalRole = normalizeRole(raw.role);
+  return {
+    ...raw,
+    role: canonicalRole,
+    displayRole: getDisplayRole(canonicalRole),
+    subscriptionTier: raw.subscriptionTier || raw.subscription_tier || getDisplayRole(canonicalRole),
+  };
+}
 
 export function AuthProvider({ children }) {
   const [isAuthenticated, setIsAuthenticated] = useState(false);
@@ -8,41 +21,47 @@ export function AuthProvider({ children }) {
   const [user, setUser] = useState(null);
   const [loading, setLoading] = useState(true);
 
+  function isTokenExpired(token) {
+    try {
+      const payload = JSON.parse(atob(token.split('.')[1]));
+      return payload.exp * 1000 < Date.now();
+    } catch {
+      return true;
+    }
+  }
+
   useEffect(() => {
-    // Restore session on startup
     const savedToken = localStorage.getItem('access_token');
     const savedUser = localStorage.getItem('user');
-    if (savedToken && savedUser) {
+    if (savedToken && savedUser && !isTokenExpired(savedToken)) {
       setToken(savedToken);
-      setUser(JSON.parse(savedUser));
+      setUser(normalizeUser(JSON.parse(savedUser)));
       setIsAuthenticated(true);
+    } else if (savedToken && isTokenExpired(savedToken)) {
+      localStorage.removeItem('access_token');
+      localStorage.removeItem('refresh_token');
+      localStorage.removeItem('user');
     }
     setLoading(false);
   }, []);
 
   const login = async (email, password) => {
-    // Mock login call - matches production schemas
-    if (email && password) {
-      const mockToken = "mock_jwt_access_token_value_xyz";
-      const mockRefreshToken = "mock_jwt_refresh_token_value_123";
-      const mockUser = {
-        id: 1,
-        email: email,
-        name: email.split('@')[0].toUpperCase(),
-        role: "customer",
-        avatar: "https://api.dicebear.com/7.x/bottts/svg?seed=GETSolar"
-      };
-
-      localStorage.setItem('access_token', mockToken);
-      localStorage.setItem('refresh_token', mockRefreshToken);
-      localStorage.setItem('user', JSON.stringify(mockUser));
-
-      setToken(mockToken);
-      setUser(mockUser);
-      setIsAuthenticated(true);
-      return { success: true };
+    try {
+      const res = await api.post('/login', { email, password });
+      if (res.data.success) {
+        const { token, user } = res.data;
+        localStorage.setItem('access_token', token);
+        localStorage.setItem('user', JSON.stringify(user));
+        setToken(token);
+        setUser(normalizeUser(user));
+        setIsAuthenticated(true);
+        return { success: true };
+      }
+      return { success: false, error: 'Login failed' };
+    } catch (err) {
+      const detail = err.response?.data?.detail || 'Login failed';
+      return { success: false, error: detail };
     }
-    return { success: false, error: "Invalid username or password" };
   };
 
   const logout = () => {
@@ -54,13 +73,20 @@ export function AuthProvider({ children }) {
     setIsAuthenticated(false);
   };
 
+  const setSession = (token, user) => {
+    setToken(token);
+    setUser(normalizeUser(user));
+    setIsAuthenticated(true);
+  };
+
   const value = {
     isAuthenticated,
     token,
     user,
     loading,
     login,
-    logout
+    logout,
+    setSession
   };
 
   return (

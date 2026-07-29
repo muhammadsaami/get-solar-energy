@@ -1,0 +1,18 @@
+{
+  "name": "savings_model",
+  "version": "1.0.0",
+  "algorithm": "RandomForestRegressor",
+  "framework": "sklearn",
+  "task": "regression",
+  "status": "active",
+  "checksum": "69034d334e7a270b9ccae9d843e256050f77c2bd414f7a24c8443ab480a2f9bc",
+  "file_size": 119897,
+  "file_path": "E:\\GET SOLAR ENERGY\\get-solar-energy\\ml-models\\savings_model.pkl",
+  "model_type": "pkl",
+  "training_date": "2026-07-18",
+  "metrics": {
+    "n_estimators": 100
+  },
+  "created_at": "2026-07-29T19:27:42.092782Z",
+  "updated_at": "2026-07-29T19:27:42.092782Z"
+}
