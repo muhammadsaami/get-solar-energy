@@ -4,7 +4,7 @@ function snakeToCamel(str: string): string {
   return str.replace(/_(\w)/g, (_, c) => c.toUpperCase())
 }
 
-function deepMapKeys(obj: unknown): unknown {
+export function deepMapKeys(obj: unknown): unknown {
   if (Array.isArray(obj)) return obj.map(deepMapKeys)
   if (obj !== null && typeof obj === 'object') {
     const result: Record<string, unknown> = {}

@@ -283,11 +283,11 @@ class DriftDetector:
     ) -> Dict[str, Any]:
         """Detect prediction value drift."""
         baseline_vals = [
-            float(e.get("prediction_hash", "0"), 16) % 1000 / 1000.0
+            (int(e.get("prediction_hash", "0"), 16) % 1000) / 1000.0
             for e in baseline if e.get("prediction_hash")
         ]
         current_vals = [
-            float(e.get("prediction_hash", "0"), 16) % 1000 / 1000.0
+            (int(e.get("prediction_hash", "0"), 16) % 1000) / 1000.0
             for e in current if e.get("prediction_hash")
         ]
 

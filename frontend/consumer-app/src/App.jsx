@@ -46,6 +46,9 @@ const AMC = lazy(() => import('./amc/pages/AMC'));
 const SettingsPage = lazy(() => import('./settings/pages/SettingsPage'));
 const AdminDashboardPage = lazy(() => import('./pages/admin/AdminDashboard'));
 const CrmDashboardPage = lazy(() => import('./pages/crm/CrmDashboard'));
+const BusinessIntelligencePage = lazy(() => import('./pages/business-intelligence/BusinessIntelligencePage'));
+const AuditMonitoringPage = lazy(() => import('./pages/audit/AuditMonitoringPage'));
+const MlOpsPage = lazy(() => import('./pages/mlops/MlOpsPage'));
 const ProjectTracking = lazy(() => import('./pages/ProjectTracking'));
 const VendorDashboard = lazy(() => import('./vendor/pages/VendorDashboard'));
 const MyWork = lazy(() => import('./vendor/pages/MyWork'));
@@ -132,11 +135,23 @@ function AppRoutes() {
         {/* CRM & Leads */}
         <Route path={ROUTES.CRM_LEADS} element={<AppRoute><AdminGuard><PageSuspense><CrmDashboardPage /></PageSuspense></AdminGuard></AppRoute>} />
 
+        {/* Business Intelligence */}
+        <Route path={ROUTES.BUSINESS_INTELLIGENCE} element={<AppRoute><AdminGuard><PageSuspense><BusinessIntelligencePage /></PageSuspense></AdminGuard></AppRoute>} />
+
+        {/* Audit & Monitoring */}
+        <Route path={ROUTES.AUDIT_MONITORING} element={<AppRoute><AdminGuard><PageSuspense><AuditMonitoringPage /></PageSuspense></AdminGuard></AppRoute>} />
+
+        {/* Enterprise MLOps */}
+        <Route path={ROUTES.MLOPS} element={<AppRoute><PermissionGuard feature="mlops-dashboard"><PageSuspense><MlOpsPage /></PageSuspense></PermissionGuard></AppRoute>} />
+
         {/* Locked Workspaces — driven by config/featureMetadata.ts */}
         {Object.entries(FEATURE_METADATA).map(([path, meta]) => {
           if (path === ROUTES.SITE_SURVEY) return null;
           if (path === ROUTES.ADMIN_DASHBOARD) return null;
           if (path === ROUTES.CRM_LEADS) return null;
+          if (path === ROUTES.BUSINESS_INTELLIGENCE) return null;
+          if (path === ROUTES.AUDIT_MONITORING) return null;
+          if (path === ROUTES.MLOPS) return null;
           return (
             <Route key={path} path={path} element={<AppRoute><LockedWorkspace targetStageId={meta.stageId} featureTitle={meta.title} /></AppRoute>} />
           );
