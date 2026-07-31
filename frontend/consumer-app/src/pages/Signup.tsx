@@ -1,6 +1,7 @@
 import { useState, useRef, useEffect, type FormEvent } from 'react'
-import { useNavigate, Link } from 'react-router-dom'
+import { useNavigate, Link, useSearchParams } from 'react-router-dom'
 import { useAuth } from '../contexts/AuthContext'
+import { AUTH_PROVIDERS } from '../config/auth'
 
 import AnimatedBackground from '../components/auth/AnimatedBackground'
 import FloatingKpiWidgets from '../components/auth/FloatingKpiWidgets'
@@ -24,8 +25,15 @@ interface FieldErrors {
 
 export default function Signup() {
   const navigate = useNavigate()
-  const { setSession } = useAuth() as unknown as { setSession: (token: string, user: unknown) => void }
+  const [searchParams] = useSearchParams()
+  const { setSession, technicianSignup } = useAuth() as unknown as {
+    setSession: (token: string, user: unknown) => void
+    technicianSignup: (data: Record<string, string>) => Promise<{ success: boolean; error?: string }>
+  }
 
+  const [signupMode, setSignupMode] = useState<'customer' | 'technician'>(
+    (searchParams.get('role') === 'technician' ? 'technician' : 'customer')
+  )
   const [name, setName] = useState('')
   const [mobile, setMobile] = useState('')
   const [email, setEmail] = useState('')
@@ -146,6 +154,28 @@ export default function Signup() {
     setLoading(true)
 
     try {
+      setLoading(true)
+
+      if (signupMode === 'technician') {
+        const res = await technicianSignup({
+          name: trimmedName,
+          phone: trimmedMobile,
+          email: trimmedEmail,
+          password: pwd,
+          city: 'Lucknow',
+        })
+
+        setLoading(false)
+
+        if (res.success) {
+          navigate('/app/technician/dashboard')
+        } else {
+          showFieldError('email', res.error || 'Signup failed')
+          setError(res.error || 'Signup failed. Please try again.')
+        }
+        return
+      }
+
       const est = ((window as unknown as Record<string, { city?: string }>).__solarEstimate)
       const result = await authService.signup({
         name: trimmedName,
@@ -183,7 +213,22 @@ export default function Signup() {
 
           <div className="auth-heading-block">
             <h1 className="auth-heading">Create Account</h1>
-            <p className="auth-subheading">Start your solar intelligence journey today</p>
+            <p className="auth-subheading">{signupMode === 'technician' ? 'Join the Technician Network' : 'Start your solar intelligence journey today'}</p>
+          </div>
+
+          <div className="auth-role-toggle" role="radiogroup" aria-label="Account type">
+            {Object.entries(AUTH_PROVIDERS).map(([key, provider]) => (
+              <button
+                key={key}
+                type="button"
+                className={`auth-role-btn${signupMode === key ? ' active' : ''}`}
+                role="radio"
+                aria-checked={signupMode === key}
+                onClick={() => { setSignupMode(key as 'customer' | 'technician'); setError(''); setFieldErrors({}); }}
+              >
+                {provider.label}
+              </button>
+            ))}
           </div>
 
           <div
@@ -375,7 +420,7 @@ export default function Signup() {
 
           <p className="auth-footer-text">
             Already have an account?
-            <Link to="/" className="auth-link"> Login</Link>
+            <Link to={signupMode === 'technician' ? '/login?role=technician' : '/'} className="auth-link"> Login</Link>
           </p>
         </div>
       </main>

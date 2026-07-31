@@ -1,10 +1,12 @@
 import { ROLES, type Role } from '../config/roles'
+import { DEFAULT_ROUTE_BY_ROLE } from '../config/routes'
 
 const ROLE_DISPLAY: Record<string, string> = {
   [ROLES.CUSTOMER]: 'Standard User',
   [ROLES.VENDOR]: 'Vendor',
   [ROLES.ADMIN]: 'Administrator',
   [ROLES.ENGINEER]: 'Field Engineer',
+  [ROLES.TECHNICIAN]: 'Technician',
 }
 
 const LEGACY_ROLE_MAP: Record<string, Role> = {
@@ -16,6 +18,7 @@ const LEGACY_ROLE_MAP: Record<string, Role> = {
   'vendor': ROLES.VENDOR,
   'admin': ROLES.ADMIN,
   'engineer': ROLES.ENGINEER,
+  'technician': ROLES.TECHNICIAN,
 }
 
 export function normalizeRole(rawRole: unknown): Role {
@@ -42,4 +45,8 @@ export function normalizeRole(rawRole: unknown): Role {
 export function getDisplayRole(role?: Role | string | null): string {
   if (!role) return 'Standard User'
   return ROLE_DISPLAY[role] || role.charAt(0).toUpperCase() + role.slice(1)
+}
+
+export function getDefaultRoute(role: Role): string {
+  return DEFAULT_ROUTE_BY_ROLE[role] || '/app/home'
 }

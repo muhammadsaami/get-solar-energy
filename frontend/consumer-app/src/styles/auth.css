@@ -254,6 +254,43 @@ html, body {
   z-index: 1;
 }
 
+.auth-role-toggle {
+  display: flex;
+  gap: 0;
+  background: rgba(255, 255, 255, 0.04);
+  border-radius: var(--radius-md);
+  padding: 3px;
+  width: 100%;
+  max-width: 320px;
+  margin: 0 auto;
+  border: 1px solid rgba(255, 255, 255, 0.06);
+}
+
+.auth-role-btn {
+  flex: 1;
+  padding: 8px 16px;
+  border: none;
+  border-radius: calc(var(--radius-md) - 2px);
+  background: transparent;
+  color: var(--text-muted);
+  font-size: 13px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all var(--duration-fast) var(--ease-standard);
+  text-align: center;
+}
+
+.auth-role-btn.active {
+  background: var(--color-orange);
+  color: #fff;
+  box-shadow: 0 2px 8px rgba(255, 138, 29, 0.3);
+}
+
+.auth-role-btn:hover:not(.active) {
+  color: var(--text-primary);
+  background: rgba(255, 255, 255, 0.05);
+}
+
 .auth-card-wide {
   max-width: 720px;
 }
@@ -854,6 +891,35 @@ html, body {
 .auth-toast.success { border-color: rgba(54, 211, 153, 0.5); color: var(--accent-green); }
 .auth-toast.error   { border-color: rgba(239, 68, 68, 0.5);  color: #fca5a5; }
 .auth-toast.info    { border-color: rgba(23, 168, 229, 0.5); color: var(--accent-blue); }
+
+/* ── SESSION FLASH (cross-tab auth change notification) ───────────────────── */
+.session-flash {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 10px;
+  padding: 12px 20px;
+  background: rgba(8, 24, 42, 0.97);
+  border-bottom: 1px solid rgba(23, 168, 229, 0.3);
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--accent-blue);
+  box-shadow: 0 4px 20px rgba(0,0,0,0.5);
+  z-index: 9999;
+  cursor: pointer;
+  animation: sessionFlashSlideDown 0.35s var(--ease-out);
+  backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(12px);
+}
+
+@keyframes sessionFlashSlideDown {
+  from { transform: translateY(-100%); opacity: 0; }
+  to   { transform: translateY(0); opacity: 1; }
+}
 
 /* ── RESPONSIVE & HEIGHT ADJUSTMENTS ──────────────────────────────────────── */
 

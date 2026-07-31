@@ -1,12 +1,15 @@
 import { useState, useRef, type FormEvent } from 'react'
-import { useNavigate, Link } from 'react-router-dom'
+import { useNavigate, Link, useSearchParams } from 'react-router-dom'
 import { useAuth } from '../contexts/AuthContext'
+import { AUTH_PROVIDERS } from '../config/auth'
+import type { Role } from '../config/roles'
 
 type AuthContextType = {
   login: (email: string, password: string) => Promise<{ success: boolean; error?: string }>
+  technicianLogin: (email: string, password: string) => Promise<{ success: boolean; error?: string }>
   isAuthenticated?: boolean
   loading?: boolean
-  user?: unknown
+  user?: { role: Role } | null
   logout?: () => void
 }
 import AnimatedBackground from '../components/auth/AnimatedBackground'
@@ -17,9 +20,13 @@ import ForgotPasswordModal from '../components/auth/ForgotPasswordModal'
 import ToastHost from '../components/auth/ToastHost'
 
 export default function Login() {
-  const { login } = useAuth() as unknown as AuthContextType
+  const { login, technicianLogin } = useAuth() as unknown as AuthContextType
   const navigate = useNavigate()
 
+  const [searchParams] = useSearchParams()
+  const [authMode, setAuthMode] = useState<'customer' | 'technician'>(
+    (searchParams.get('role') === 'technician' ? 'technician' : 'customer')
+  )
   const [email, setEmail] = useState('')
   const [password, setPassword] = useState('')
   const [error, setError] = useState('')
@@ -86,12 +93,14 @@ export default function Login() {
     setLoading(true)
 
     try {
-      const res = await login(identifier, pwd)
+      const loginFn = authMode === 'technician' ? technicianLogin : login
+      const provider = AUTH_PROVIDERS[authMode]
+      const res = await loginFn(identifier, pwd)
       if (res.success) {
         showFieldSuccess('email')
         showFieldSuccess('password')
         setLoading(false)
-        navigate('/app/home')
+        navigate(provider.defaultRoute)
       } else {
         setLoading(false)
         showFieldError('email', res.error || 'Invalid credentials')
@@ -139,7 +148,22 @@ export default function Login() {
 
           <div className="auth-heading-block">
             <h1 className="auth-heading">Welcome Back</h1>
-            <p className="auth-subheading">Login to access your Solar Intelligence Dashboard</p>
+            <p className="auth-subheading">{AUTH_PROVIDERS[authMode].description}</p>
+          </div>
+
+          <div className="auth-role-toggle" role="radiogroup" aria-label="Login type">
+            {Object.entries(AUTH_PROVIDERS).map(([key, provider]) => (
+              <button
+                key={key}
+                type="button"
+                className={`auth-role-btn${authMode === key ? ' active' : ''}`}
+                role="radio"
+                aria-checked={authMode === key}
+                onClick={() => { setAuthMode(key as 'customer' | 'technician'); setError(''); setFieldErrors({}); }}
+              >
+                {provider.label}
+              </button>
+            ))}
           </div>
 
           <div
@@ -299,8 +323,11 @@ export default function Login() {
           <TrustBadges />
 
           <p className="auth-footer-text">
-            New to GET Solar Energy?
-            <Link to="/signup" className="auth-link" id="goToSignup"> Create Account</Link>
+            {authMode === 'technician' ? (
+              <>New Technician? <Link to="/signup?role=technician" className="auth-link" id="goToTechnicianSignup">Register Here</Link></>
+            ) : (
+              <>New to GET Solar Energy? <Link to="/signup" className="auth-link" id="goToSignup"> Create Account</Link></>
+            )}
           </p>
         </div>
       </main>

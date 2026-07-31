@@ -7,6 +7,7 @@ export type FeatureId =
   | 'roi-calculator'
   | 'ai-assistant'
   | 'enterprise-ai'
+  | 'knowledge-base'
   | 'rewards'
   | 'activity-center'
   | 'system-performance'
@@ -26,6 +27,14 @@ export type FeatureId =
   | 'business-intelligence'
   | 'audit-monitoring'
   | 'mlops-dashboard'
+  | 'technician-dashboard'
+  | 'technician-training'
+  | 'technician-certifications'
+  | 'technician-marketplace'
+  | 'technician-work-orders'
+  | 'technician-earnings'
+  | 'technician-profile'
+  | 'technician-ai'
 
 interface FeaturePermission {
   roles: Role[]
@@ -38,6 +47,7 @@ export const FEATURE_PERMISSIONS: Record<FeatureId, FeaturePermission> = {
   'roi-calculator': { roles: [ROLES.CUSTOMER, ROLES.ADMIN] },
   'ai-assistant': { roles: [ROLES.CUSTOMER, ROLES.ADMIN] },
   'enterprise-ai': { roles: [ROLES.CUSTOMER, ROLES.ADMIN] },
+  'knowledge-base': { roles: [ROLES.CUSTOMER, ROLES.VENDOR, ROLES.ENGINEER, ROLES.ADMIN, ROLES.TECHNICIAN] },
   rewards: { roles: [ROLES.CUSTOMER, ROLES.ADMIN] },
   'activity-center': { roles: [ROLES.CUSTOMER, ROLES.VENDOR, ROLES.ADMIN, ROLES.ENGINEER] },
   'system-performance': { roles: [ROLES.CUSTOMER, ROLES.VENDOR, ROLES.ADMIN, ROLES.ENGINEER] },
@@ -57,6 +67,14 @@ export const FEATURE_PERMISSIONS: Record<FeatureId, FeaturePermission> = {
   'business-intelligence': { roles: [ROLES.ADMIN] },
   'audit-monitoring': { roles: [ROLES.ADMIN] },
   'mlops-dashboard': { roles: [ROLES.ADMIN] },
+  'technician-dashboard': { roles: [ROLES.TECHNICIAN] },
+  'technician-training': { roles: [ROLES.TECHNICIAN] },
+  'technician-certifications': { roles: [ROLES.TECHNICIAN] },
+  'technician-marketplace': { roles: [ROLES.TECHNICIAN] },
+  'technician-work-orders': { roles: [ROLES.TECHNICIAN] },
+  'technician-earnings': { roles: [ROLES.TECHNICIAN] },
+  'technician-profile': { roles: [ROLES.TECHNICIAN] },
+  'technician-ai': { roles: [ROLES.TECHNICIAN] },
 }
 
 export const SETTINGS_SECTIONS: Record<string, FeatureId> = {

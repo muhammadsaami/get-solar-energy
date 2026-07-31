@@ -39,6 +39,7 @@ export const ROUTES = {
   ROOF_ANALYSIS: '/app/roof-analysis',
   AI_ADVISOR: '/app/ai-advisor',
   ENTERPRISE_AI: '/app/enterprise-ai',
+  KNOWLEDGE_BASE: '/app/knowledge-base',
   REWARDS: '/app/support/referrals',
 
   // Vendor Portal
@@ -65,6 +66,26 @@ export const ROUTES = {
   BUSINESS_INTELLIGENCE: '/app/business-intelligence',
   MLOPS: '/app/mlops',
 
+  // Technician Network
+  TECHNICIAN_DASHBOARD: '/app/technician/dashboard',
+  TECHNICIAN_TRAINING: '/app/technician/training',
+  TECHNICIAN_CERTIFICATIONS: '/app/technician/certifications',
+  TECHNICIAN_MARKETPLACE: '/app/technician/marketplace',
+  TECHNICIAN_WORK_ORDERS: '/app/technician/work-orders',
+  TECHNICIAN_EARNINGS: '/app/technician/earnings',
+  TECHNICIAN_PROFILE: '/app/technician/profile',
+  TECHNICIAN_AI: '/app/technician/ai-troubleshooting',
+
   // Catch-all
   NOT_FOUND: '*',
 } as const
+
+import { ROLES, type Role } from './roles'
+
+export const DEFAULT_ROUTE_BY_ROLE: Record<Role, string> = {
+  [ROLES.CUSTOMER]: '/app/home',
+  [ROLES.VENDOR]: '/app/vendor',
+  [ROLES.ENGINEER]: '/app/vendor',
+  [ROLES.ADMIN]: '/app/admin/dashboard',
+  [ROLES.TECHNICIAN]: '/app/technician/dashboard',
+}

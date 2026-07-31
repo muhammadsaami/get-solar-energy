@@ -1,5 +1,6 @@
 import { ROUTES } from './routes'
 import type { FeatureId } from './permissions'
+import { TECHNICIAN_SIDEBAR_GROUPS } from './sidebar.technician'
 
 export interface SidebarItemConfig {
   id: string
@@ -9,6 +10,7 @@ export interface SidebarItemConfig {
   symbolId: string
   visible: boolean
   requiredFeature?: FeatureId
+  badge?: number
 }
 
 export interface SidebarGroupConfig {
@@ -92,4 +94,5 @@ export const SIDEBAR_ITEMS: SidebarGroupConfig[] = [
       { id: 'mlops-dashboard', label: 'MLOps', route: ROUTES.MLOPS, color: 'red', symbolId: 'mlops', visible: true, requiredFeature: 'mlops-dashboard' },
     ],
   },
+  ...TECHNICIAN_SIDEBAR_GROUPS,
 ]

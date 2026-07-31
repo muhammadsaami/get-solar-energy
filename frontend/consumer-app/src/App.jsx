@@ -22,6 +22,7 @@ import LockedWorkspace from './components/feedback/LockedWorkspace';
 // Auth & Permissions (keep eager — always needed)
 import PermissionGuard from './routes/PermissionGuard';
 import AdminGuard from './routes/AdminGuard';
+import technicianRouteElements from './routes/technician.routes';
 
 // Lazy-loaded pages — improves initial bundle size
 const Landing = lazy(() => import('./pages/Landing'));
@@ -38,6 +39,7 @@ const Proposal = lazy(() => import('./pages/Proposal'));
 const ROICalculatorPage = lazy(() => import('./pages/ROICalculatorPage'));
 const AIAdvisor = lazy(() => import('./pages/AIAdvisor'));
 const EnterpriseAI = lazy(() => import('./pages/EnterpriseAI'));
+const KnowledgeBase = lazy(() => import('./features/knowledgeBase/KnowledgeBase'));
 const RewardsReferrals = lazy(() => import('./pages/RewardsReferrals'));
 const ActivityCenter = lazy(() => import('./activities/pages/ActivityCenter'));
 const ReportsCenter = lazy(() => import('./reports/pages/ReportsCenter'));
@@ -104,6 +106,9 @@ function AppRoutes() {
         <Route path={ROUTES.AI_ADVISOR} element={<AppRoute><PermissionGuard feature="ai-assistant"><PageSuspense><AIAdvisor /></PageSuspense></PermissionGuard></AppRoute>} />
         <Route path={ROUTES.ENTERPRISE_AI} element={<AppRoute><PermissionGuard feature="enterprise-ai"><PageSuspense><EnterpriseAI /></PageSuspense></PermissionGuard></AppRoute>} />
 
+        {/* Knowledge Base */}
+        <Route path={ROUTES.KNOWLEDGE_BASE} element={<AppRoute><PermissionGuard feature="knowledge-base"><PageSuspense><KnowledgeBase /></PageSuspense></PermissionGuard></AppRoute>} />
+
         {/* Legacy route aliases — redirect to canonical */}
         <Route path="/app/dashboard" element={<Navigate to={ROUTES.HOME} replace />} />
         <Route path="/app/planning/bills" element={<Navigate to={ROUTES.BILL_ANALYZER} replace />} />
@@ -152,6 +157,7 @@ function AppRoutes() {
           if (path === ROUTES.BUSINESS_INTELLIGENCE) return null;
           if (path === ROUTES.AUDIT_MONITORING) return null;
           if (path === ROUTES.MLOPS) return null;
+          if (path.startsWith('/app/technician/')) return null;
           return (
             <Route key={path} path={path} element={<AppRoute><LockedWorkspace targetStageId={meta.stageId} featureTitle={meta.title} /></AppRoute>} />
           );
@@ -173,6 +179,9 @@ function AppRoutes() {
         <Route path={ROUTES.VENDOR_AMC} element={<AppRoute><PermissionGuard feature="amc"><PageSuspense><VendorAMC /></PageSuspense></PermissionGuard></AppRoute>} />
         <Route path={ROUTES.VENDOR_REPORTS} element={<AppRoute><PermissionGuard feature="vendor-reports"><PageSuspense><VendorReports /></PageSuspense></PermissionGuard></AppRoute>} />
         <Route path={ROUTES.VENDOR_PROJECT_TRACKING} element={<AppRoute><PermissionGuard feature="vendor-portal"><PageSuspense><ProjectTracking /></PageSuspense></PermissionGuard></AppRoute>} />
+
+        {/* Technician Network Routes */}
+        {technicianRouteElements}
 
         {/* Fallback 404 */}
         <Route path="*" element={<PageSuspense><NotFound /></PageSuspense>} />
