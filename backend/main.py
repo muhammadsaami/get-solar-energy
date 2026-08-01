@@ -6,6 +6,8 @@ from google.genai import types
 from dotenv import load_dotenv
 from database import engine, Base
 import technician_models  # noqa: F401 — must import before create_all() so Phase 3 tables are registered
+import monitoring_models  # noqa: F401 — must import before create_all() so Phase 4 tables are registered
+import work_order_extras_models  # noqa: F401 — must import before create_all() so notes/attachments/checklist tables are registered
 import os
 import json
 import time
@@ -48,6 +50,14 @@ from job_marketplace import router as job_marketplace_router
 from work_orders import router as work_orders_router
 from earnings import router as earnings_router
 
+# ── Phase 4: Plant Monitoring & Analytics ────────────────────────────────
+from plants import router as plants_router
+from plant_monitoring import router as plant_monitoring_router
+from alerts import router as alerts_router
+
+# ── Phase 3 extension: Shared Upload API ─────────────────────────────────
+from uploads import router as uploads_router
+
 app.include_router(roof_router)
 app.include_router(roi_router)
 app.include_router(chat_router)
@@ -65,6 +75,14 @@ app.include_router(training_router)
 app.include_router(job_marketplace_router)
 app.include_router(work_orders_router)
 app.include_router(earnings_router)
+
+# ── Phase 4: Plant Monitoring & Analytics routers ─────────────────────────
+app.include_router(plants_router)
+app.include_router(plant_monitoring_router)
+app.include_router(alerts_router)
+
+# ── Phase 3 extension: Shared Upload API ─────────────────────────────────
+app.include_router(uploads_router)
 
 @app.on_event("startup")
 async def startup_event():
@@ -736,6 +754,10 @@ def get_admin_activity():
 
 # Serve frontend static files at /frontend/
 app.mount("/frontend", StaticFiles(directory="../frontend", html=True), name="frontend")
+
+# Serve uploaded files (work order photos, documents, profile photos, etc.)
+os.makedirs("uploads", exist_ok=True)
+app.mount("/uploads", StaticFiles(directory="uploads"), name="uploads")
 
 @app.get("/")
 def home():
