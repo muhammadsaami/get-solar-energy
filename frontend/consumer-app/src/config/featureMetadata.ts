@@ -36,10 +36,10 @@ export const FEATURE_METADATA: Record<string, FeatureMetadata> = {
   // Technician Network
   [ROUTES.TECHNICIAN_DASHBOARD]: { title: 'Technician Dashboard', stageId: 'PHASE_18_3', icon: 'dashboard' },
   [ROUTES.TECHNICIAN_TRAINING]: { title: 'Training Academy', stageId: 'PHASE_18_4', icon: 'book' },
-  [ROUTES.TECHNICIAN_CERTIFICATIONS]: { title: 'Certifications', stageId: 'PHASE_18_5', icon: 'badge' },
-  [ROUTES.TECHNICIAN_MARKETPLACE]: { title: 'Job Marketplace', stageId: 'PHASE_18_6', icon: 'briefcase' },
-  [ROUTES.TECHNICIAN_WORK_ORDERS]: { title: 'Work Orders', stageId: 'PHASE_18_7', icon: 'clipboard' },
-  [ROUTES.TECHNICIAN_EARNINGS]: { title: 'Earnings', stageId: 'PHASE_18_8', icon: 'currency' },
-  [ROUTES.TECHNICIAN_PROFILE]: { title: 'Profile & Performance', stageId: 'PHASE_18_9', icon: 'user' },
-  [ROUTES.TECHNICIAN_AI]: { title: 'AI Troubleshooting', stageId: 'PHASE_18_10', icon: 'sparkles' },
+  [ROUTES.TECHNICIAN_CERTIFICATIONS]: { title: 'Certifications', stageId: 'PHASE_18_6', icon: 'badge' },
+  [ROUTES.TECHNICIAN_MARKETPLACE]: { title: 'Job Marketplace', stageId: 'PHASE_18_7', icon: 'briefcase' },
+  [ROUTES.TECHNICIAN_WORK_ORDERS]: { title: 'Work Orders', stageId: 'PHASE_18_8', icon: 'clipboard' },
+  [ROUTES.TECHNICIAN_EARNINGS]: { title: 'Earnings', stageId: 'PHASE_18_9', icon: 'currency' },
+  [ROUTES.TECHNICIAN_PROFILE]: { title: 'Profile & Performance', stageId: 'PHASE_18_10', icon: 'user' },
+  [ROUTES.TECHNICIAN_AI]: { title: 'AI Troubleshooting', stageId: 'PHASE_18_11', icon: 'sparkles' },
 } as const

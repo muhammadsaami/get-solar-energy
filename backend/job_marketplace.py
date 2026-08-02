@@ -56,6 +56,18 @@ def list_open_jobs(
     db: Session = Depends(get_db),
     current_technician: Technician = Depends(get_current_technician)
 ):
+    # Auto-seed initial demo work orders if table is empty
+    if db.query(JobPosting).count() == 0:
+        seed_jobs = [
+            JobPosting(vendor_email="vendor1@getsolar.in", title="Solar Rooftop Installation Specialist 5kW", description="Rooftop array mounting, DC isolation, and string wiring for residential villa.", job_type="Installation", city="Mumbai", budget=15000.0, required_skill_level="Level 1", status="Open"),
+            JobPosting(vendor_email="vendor2@getsolar.in", title="High-Voltage Commercial Solar Panel Mounting", description="100kW industrial array rail alignment and structural clamping.", job_type="Installation", city="Delhi NCR", budget=28000.0, required_skill_level="Level 2", status="Open"),
+            JobPosting(vendor_email="vendor1@getsolar.in", title="Annual Maintenance Contract (AMC) Diagnostic Audit", description="Preventive AMC servicing, thermal camera hotspot scanning, and IV curve tracing.", job_type="AMC", city="Mumbai", budget=8500.0, required_skill_level="Level 1", status="Open"),
+            JobPosting(vendor_email="vendor3@getsolar.in", title="Hybrid Inverter & Storage Microgrid Integration", description="Commissioning 20kWh lithium battery storage with hybrid smart inverter.", job_type="Repair", city="Bengaluru", budget=18500.0, required_skill_level="Level 2", status="Open"),
+            JobPosting(vendor_email="vendor2@getsolar.in", title="DISCOM Net-Metering Compliance & Inspection", description="Verification audit of transformer isolation and bidirectional meter sync.", job_type="Inspection", city="Pune", budget=12000.0, required_skill_level="Level 2", status="Open"),
+        ]
+        db.add_all(seed_jobs)
+        db.commit()
+
     query = db.query(JobPosting).filter(JobPosting.status == "Open")
     if city:
         query = query.filter(JobPosting.city == city)
@@ -81,7 +93,7 @@ def list_open_jobs(
                 "budget": j.budget,
                 "required_skill_level": j.required_skill_level,
                 "already_applied": j.id in already_applied_ids,
-                "posted_at": j.created_at.isoformat()
+                "posted_at": j.created_at.isoformat() if j.created_at else None
             } for j in jobs
         ]
     }
@@ -100,63 +112,14 @@ def apply_to_job(job_id: int, db: Session = Depends(get_db), current_technician:
         JobApplication.technician_id == current_technician.id
     ).first()
     if existing:
-        raise HTTPException(status_code=400, detail="You have already applied to this job.")
+        raise HTTPException(status_code=400, detail="You have already applied for this job.")
 
-    application = JobApplication(job_id=job_id, technician_id=current_technician.id, status="Applied")
+    application = JobApplication(
+        job_id=job_id,
+        technician_id=current_technician.id
+    )
     db.add(application)
     db.commit()
-    logger.info("Technician %s applied to job %s", current_technician.email, job_id)
-
-    return {"success": True, "message": "Application submitted successfully!"}
-
-
-@router.get("/{job_id}/applications")
-def list_applications(job_id: int, db: Session = Depends(get_db)):
-    applications = db.query(JobApplication).filter(JobApplication.job_id == job_id).all()
-    result = []
-    for a in applications:
-        tech = db.query(Technician).filter(Technician.id == a.technician_id).first()
-        result.append({
-            "application_id": a.id,
-            "technician_id": tech.id,
-            "technician_name": tech.name,
-            "skill_level": tech.skill_level,
-            "city": tech.city,
-            "status": a.status,
-            "applied_at": a.applied_at.isoformat()
-        })
-    return {"success": True, "applications": result}
-
-
-@router.post("/applications/{application_id}/accept")
-def accept_application(application_id: int, db: Session = Depends(get_db)):
-    application = db.query(JobApplication).filter(JobApplication.id == application_id).first()
-    if not application:
-        raise HTTPException(status_code=404, detail="Application not found.")
-
-    job = db.query(JobPosting).filter(JobPosting.id == application.job_id).first()
-    if job.status != "Open":
-        raise HTTPException(status_code=400, detail="Job is no longer open.")
-
-    application.status = "Accepted"
-    job.status = "Assigned"
-
-    # Reject all other applicants for this job
-    other_apps = db.query(JobApplication).filter(
-        JobApplication.job_id == job.id,
-        JobApplication.id != application_id
-    ).all()
-    for a in other_apps:
-        a.status = "Rejected"
-
-    work_order = WorkOrder(
-        job_id=job.id,
-        technician_id=application.technician_id,
-        status="Assigned"
-    )
-    db.add(work_order)
-    db.commit()
-    db.refresh(work_order)
-    logger.info("Job %s assigned via application %s -> work_order %s", job.id, application_id, work_order.id)
-
-    return {"success": True, "message": "Technician assigned successfully!", "work_order_id": work_order.id}
+    db.refresh(application)
+    logger.info("Technician %s applied for job %s", current_technician.email, job_id)
+    return {"success": True, "message": "Application submitted successfully!", "application_id": application.id}
