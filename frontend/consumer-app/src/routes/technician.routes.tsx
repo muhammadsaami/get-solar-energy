@@ -10,6 +10,7 @@ import LayoutSkeleton from '../components/layout/LayoutSkeleton'
 
 const TechnicianDashboard = lazy(() => import('../technician/pages/TechnicianDashboard'))
 const TrainingAcademy = lazy(() => import('../features/training/TrainingAcademy'))
+const CertificationsPage = lazy(() => import('../features/certifications/pages/CertificationsPage'))
 
 function TechnicianShell({ children }: { children: React.ReactNode }) {
   return <AppShell>{children}</AppShell>
@@ -44,7 +45,15 @@ const technicianRouteElements = [
       </PermissionGuard>
     </TechnicianShell>
   } />,
-  <Route key="t-certifications" path={ROUTES.TECHNICIAN_CERTIFICATIONS} element={<TechnicianLocked feature="technician-certifications" stageId="PHASE_18_5" title="Certifications" />} />,
+  <Route key="t-certifications" path={ROUTES.TECHNICIAN_CERTIFICATIONS} element={
+    <TechnicianShell>
+      <PermissionGuard feature="technician-certifications">
+        <Suspense fallback={<LayoutSkeleton />}>
+          <CertificationsPage />
+        </Suspense>
+      </PermissionGuard>
+    </TechnicianShell>
+  } />,
   <Route key="t-marketplace" path={ROUTES.TECHNICIAN_MARKETPLACE} element={<TechnicianLocked feature="technician-marketplace" stageId="PHASE_18_6" title="Job Marketplace" />} />,
   <Route key="t-work-orders" path={ROUTES.TECHNICIAN_WORK_ORDERS} element={<TechnicianLocked feature="technician-work-orders" stageId="PHASE_18_7" title="Work Orders" />} />,
   <Route key="t-earnings" path={ROUTES.TECHNICIAN_EARNINGS} element={<TechnicianLocked feature="technician-earnings" stageId="PHASE_18_8" title="Earnings" />} />,
