@@ -12,6 +12,7 @@ const TechnicianDashboard = lazy(() => import('../technician/pages/TechnicianDas
 const TrainingAcademy = lazy(() => import('../features/training/TrainingAcademy'))
 const CertificationsPage = lazy(() => import('../features/certifications/pages/CertificationsPage'))
 const JobMarketplacePage = lazy(() => import('../features/jobMarketplace/pages/JobMarketplacePage'))
+const WorkOrdersPage = lazy(() => import('../features/workOrders/pages/WorkOrdersPage'))
 
 function TechnicianShell({ children }: { children: React.ReactNode }) {
   return <AppShell>{children}</AppShell>
@@ -64,10 +65,18 @@ const technicianRouteElements = [
       </PermissionGuard>
     </TechnicianShell>
   } />,
-  <Route key="t-work-orders" path={ROUTES.TECHNICIAN_WORK_ORDERS} element={<TechnicianLocked feature="technician-work-orders" stageId="PHASE_18_7" title="Work Orders" />} />,
-  <Route key="t-earnings" path={ROUTES.TECHNICIAN_EARNINGS} element={<TechnicianLocked feature="technician-earnings" stageId="PHASE_18_8" title="Earnings" />} />,
-  <Route key="t-profile" path={ROUTES.TECHNICIAN_PROFILE} element={<TechnicianLocked feature="technician-profile" stageId="PHASE_18_9" title="Profile & Performance" />} />,
-  <Route key="t-ai" path={ROUTES.TECHNICIAN_AI} element={<TechnicianLocked feature="technician-ai" stageId="PHASE_18_10" title="AI Troubleshooting" />} />,
+  <Route key="t-work-orders" path={ROUTES.TECHNICIAN_WORK_ORDERS} element={
+    <TechnicianShell>
+      <PermissionGuard feature="technician-work-orders">
+        <Suspense fallback={<LayoutSkeleton />}>
+          <WorkOrdersPage />
+        </Suspense>
+      </PermissionGuard>
+    </TechnicianShell>
+  } />,
+  <Route key="t-earnings" path={ROUTES.TECHNICIAN_EARNINGS} element={<TechnicianLocked feature="technician-earnings" stageId="PHASE_18_9" title="Earnings" />} />,
+  <Route key="t-profile" path={ROUTES.TECHNICIAN_PROFILE} element={<TechnicianLocked feature="technician-profile" stageId="PHASE_18_10" title="Profile & Performance" />} />,
+  <Route key="t-ai" path={ROUTES.TECHNICIAN_AI} element={<TechnicianLocked feature="technician-ai" stageId="PHASE_18_11" title="AI Troubleshooting" />} />,
 ]
 
 export default technicianRouteElements
