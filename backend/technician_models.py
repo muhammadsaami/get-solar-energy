@@ -115,3 +115,9 @@ class Earning(Base):
     payout_status = Column(String, default="Pending")   # Pending, Paid
     created_at = Column(DateTime, default=datetime.utcnow)
     paid_at = Column(DateTime, nullable=True)
+
+    # --- NEW fields added for enhanced earnings endpoints ---
+    payment_status = Column(String, default="Unpaid")   # Unpaid, Processing, Paid, Failed
+    payout_date = Column(DateTime, nullable=True)
+    reference_number = Column(String, nullable=True)
+    payment_method = Column(String, nullable=True)

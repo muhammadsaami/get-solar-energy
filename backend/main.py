@@ -8,6 +8,10 @@ from database import engine, Base
 import technician_models  # noqa: F401 — must import before create_all() so Phase 3 tables are registered
 import monitoring_models  # noqa: F401 — must import before create_all() so Phase 4 tables are registered
 import work_order_extras_models  # noqa: F401 — must import before create_all() so notes/attachments/checklist tables are registered
+import performance_models  # noqa: F401 — must import before create_all() so ratings/skills/badges/profile-photo tables are registered
+import knowledge_base_models  # noqa: F401 — must import before create_all() so knowledge base tables are registered
+import ai_troubleshoot_models  # noqa: F401 — must import before create_all() so AI conversation log table is registered
+import notifications_models  # noqa: F401 — must import before create_all() so notifications table is registered
 import os
 import json
 import time
@@ -47,6 +51,7 @@ from technician_models import *  # registers Technician / Training / Job / WorkO
 from technician_auth import router as technician_auth_router
 from training import router as training_router
 from job_marketplace import router as job_marketplace_router
+from job_marketplace import technician_jobs_router
 from work_orders import router as work_orders_router
 from earnings import router as earnings_router
 
@@ -57,6 +62,21 @@ from alerts import router as alerts_router
 
 # ── Phase 3 extension: Shared Upload API ─────────────────────────────────
 from uploads import router as uploads_router
+
+# ── Phase 3 extension: Technician Dashboard ──────────────────────────────
+from technician_dashboard import router as technician_dashboard_router
+
+# ── Phase 3 extension: Performance, Ratings, Skills, Badges ──────────────
+from performance import router as performance_router
+
+# ── Phase 3 extension: Knowledge Base ────────────────────────────────────
+from knowledge_base import router as knowledge_base_router
+
+# ── Phase 3 extension: AI Troubleshooting Assistant ──────────────────────
+from ai_troubleshoot import router as ai_troubleshoot_router
+
+# ── Phase 3 extension: Notifications ─────────────────────────────────────
+from notifications import router as notifications_router
 
 app.include_router(roof_router)
 app.include_router(roi_router)
@@ -73,6 +93,7 @@ app.include_router(customer_router)
 app.include_router(technician_auth_router)
 app.include_router(training_router)
 app.include_router(job_marketplace_router)
+app.include_router(technician_jobs_router)
 app.include_router(work_orders_router)
 app.include_router(earnings_router)
 
@@ -83,6 +104,21 @@ app.include_router(alerts_router)
 
 # ── Phase 3 extension: Shared Upload API ─────────────────────────────────
 app.include_router(uploads_router)
+
+# ── Phase 3 extension: Technician Dashboard ──────────────────────────────
+app.include_router(technician_dashboard_router)
+
+# ── Phase 3 extension: Performance, Ratings, Skills, Badges ──────────────
+app.include_router(performance_router)
+
+# ── Phase 3 extension: Knowledge Base ────────────────────────────────────
+app.include_router(knowledge_base_router)
+
+# ── Phase 3 extension: AI Troubleshooting Assistant ──────────────────────
+app.include_router(ai_troubleshoot_router)
+
+# ── Phase 3 extension: Notifications ─────────────────────────────────────
+app.include_router(notifications_router)
 
 @app.on_event("startup")
 async def startup_event():
