@@ -1,4 +1,4 @@
-import { useState, useCallback } from 'react'
+import { useState, useCallback, useEffect } from 'react'
 import { technicianAiApi } from '../services/technicianAi.api'
 import type { ChatMessage, RawDiagnosisPayload } from '../types/technicianAi.types'
 import { useNotificationStore } from '../../../stores/notificationStore'
@@ -19,6 +19,44 @@ export function useTechnicianAi() {
   const [isDrawerOpen, setIsDrawerOpen] = useState(false)
 
   const addToast = useNotificationStore(s => s.addToast)
+
+  useEffect(() => {
+    let isMounted = true
+    technicianAiApi
+      .getHistory()
+      .then(history => {
+        if (isMounted && history && history.length > 0) {
+          const historyMsgs: ChatMessage[] = []
+          const reversed = history.slice().reverse()
+          for (const item of reversed) {
+            if (item.user_message) {
+              historyMsgs.push({
+                id: `user-hist-${item.id}`,
+                sender: 'user',
+                text: item.user_message,
+                timestamp: item.created_at ? new Date(item.created_at).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }) : '',
+              })
+            }
+            if (item.ai_response) {
+              historyMsgs.push({
+                id: `ai-hist-${item.id}`,
+                sender: 'ai',
+                text: item.ai_response,
+                timestamp: item.created_at ? new Date(item.created_at).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }) : '',
+              })
+            }
+          }
+          setMessages(prev => [prev[0], ...historyMsgs])
+        }
+      })
+      .catch(() => {
+        // Ignore history errors
+      })
+
+    return () => {
+      isMounted = false
+    }
+  }, [])
 
   const openDrawer = useCallback((diagnosis: RawDiagnosisPayload) => {
     setSelectedDiagnosis(diagnosis)

@@ -1,6 +1,14 @@
 import api from '../../../services/api/client'
 import type { RawDiagnosisPayload } from '../types/technicianAi.types'
 
+export interface AIHistoryItem {
+  id: number
+  interaction_type: string
+  user_message: string
+  ai_response: string
+  created_at: string
+}
+
 export const technicianAiService = {
   async troubleshoot(
     query: string,
@@ -31,5 +39,17 @@ export const technicianAiService = {
       suggested_kb_title: 'Standard Solar Inspection Procedures',
       recommended_training_module: 'Level 1: Safety Protocols',
     }
+  },
+
+  async getHistory(): Promise<AIHistoryItem[]> {
+    try {
+      const res = await api.get('/technician/ai/history')
+      if (res.data && res.data.success && Array.isArray(res.data.history)) {
+        return res.data.history
+      }
+    } catch {
+      // Return empty array if history fetch fails or endpoint is not available
+    }
+    return []
   },
 }

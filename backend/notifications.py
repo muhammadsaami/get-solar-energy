@@ -28,6 +28,7 @@ def create_notification(db: Session, technician_id: int, title: str, message: st
 
 
 @router.get("")
+@router.get("/")
 def list_notifications(db: Session = Depends(get_db), current_technician: Technician = Depends(get_current_technician)):
     notifications = db.query(TechnicianNotification).filter(
         TechnicianNotification.technician_id == current_technician.id

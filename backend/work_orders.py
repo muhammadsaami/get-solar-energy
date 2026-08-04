@@ -24,6 +24,7 @@ class WorkOrderStatusUpdate(BaseModel):
     proof_photo_url: str = None
 
 
+@router.get("")
 @router.get("/")
 def list_my_work_orders(db: Session = Depends(get_db), current_technician: Technician = Depends(get_current_technician)):
     orders = db.query(WorkOrder).filter(

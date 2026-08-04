@@ -9,10 +9,10 @@
   "file_size": 119897,
   "file_path": "E:\\GET SOLAR ENERGY\\get-solar-energy\\ml-models\\savings_model.pkl",
   "model_type": "pkl",
-  "training_date": "2026-07-18",
+  "training_date": "2026-08-04",
   "metrics": {
     "n_estimators": 100
   },
-  "created_at": "2026-08-02T13:02:53.370357Z",
-  "updated_at": "2026-08-02T13:02:53.370357Z"
+  "created_at": "2026-08-04T07:50:28.526861Z",
+  "updated_at": "2026-08-04T07:50:28.526861Z"
 }

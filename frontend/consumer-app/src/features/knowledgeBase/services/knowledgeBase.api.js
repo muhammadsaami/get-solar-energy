@@ -3,7 +3,7 @@ import { searchDocuments } from './searchDocuments'
 
 export const knowledgeBaseApi = {
   getDashboard() {
-    return Promise.resolve(knowledgeBaseService.getDashboard())
+    return knowledgeBaseService.getDashboard()
   },
 
   searchDocuments(query) {

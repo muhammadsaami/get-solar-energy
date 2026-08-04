@@ -34,6 +34,7 @@ def _log_recent_view(db: Session, technician_id: int, article_id: int):
 
 
 @router.get("")
+@router.get("/")
 def list_articles(
     category: str = None,
     db: Session = Depends(get_db),

@@ -1,3 +1,5 @@
+import api from '../../../services/api/client'
+
 const MOCK_DOCUMENTS = [
   {
     id: 'doc-001',
@@ -324,7 +326,46 @@ export const knowledgeBaseService = {
     return MOCK_DOCUMENTS.map((d) => ({ ...d }))
   },
 
-  getDashboard() {
+  async getDashboard() {
+    try {
+      const res = await api.get('/knowledge-base')
+      if (res.data?.success && Array.isArray(res.data.articles) && res.data.articles.length > 0) {
+        const liveArticles = res.data.articles.map((a, idx) => ({
+          id: `kb-${a.id}`,
+          title: a.title,
+          category: a.category || 'General',
+          equipment: 'PV Array',
+          difficulty: 'Intermediate',
+          author: 'GET Solar Engineering',
+          readingTime: 10,
+          updatedAt: a.created_at ? a.created_at.split('T')[0] : '2026-08-01',
+          summary: `Technical guide for ${a.title} under ${a.category || 'General'} protocols.`,
+          tags: [a.category ? a.category.toLowerCase() : 'general', 'solar'],
+          featured: idx === 0,
+          bookmarked: false,
+          recentlyViewed: true,
+          downloads: 100 + a.id * 10,
+          views: 500 + a.id * 50,
+          rating: 4.8,
+          offline: true,
+          relatedDocumentIds: [],
+        }))
+
+        return {
+          allDocuments: liveArticles,
+          featuredDocuments: liveArticles.filter((d) => d.featured),
+          bookmarkedDocuments: [],
+          recentlyViewedDocuments: liveArticles.slice(0, 5),
+          popularDocuments: liveArticles.slice(0, 6),
+          latestDocuments: liveArticles.slice(0, 6),
+          categories: [...new Set(liveArticles.map((d) => d.category))],
+          score: 85,
+        }
+      }
+    } catch {
+      // Return null or fallback
+    }
+
     const docs = this.getDocuments()
     return {
       allDocuments: docs,
