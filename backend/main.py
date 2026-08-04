@@ -10,6 +10,10 @@ from google.genai import types
 from dotenv import load_dotenv
 from database import engine, Base
 import technician_models  # noqa: F401 — must import before create_all() so Phase 3 tables are registered
+import performance_models  # noqa: F401 — must import before create_all() so ratings/skills/badges/profile-photo tables are registered
+import knowledge_base_models  # noqa: F401 — must import before create_all() so knowledge base tables are registered
+import ai_troubleshoot_models  # noqa: F401 — must import before create_all() so AI conversation log table is registered
+import notifications_models  # noqa: F401 — must import before create_all() so notifications table is registered
 import os
 import json
 import time
@@ -60,6 +64,11 @@ from training import router as training_router
 from job_marketplace import router as job_marketplace_router
 from work_orders import router as work_orders_router
 from earnings import router as earnings_router
+from technician_dashboard import router as technician_dashboard_router
+from performance import router as performance_router
+from knowledge_base import router as knowledge_base_router
+from ai_troubleshoot import router as ai_troubleshoot_router
+from notifications import router as notifications_router
 
 app.include_router(roof_router)
 app.include_router(roi_router)
@@ -88,6 +97,11 @@ app.include_router(work_orders_router)
 app.include_router(earnings_router)
 from technician_ai import router as technician_ai_router
 app.include_router(technician_ai_router)
+app.include_router(technician_dashboard_router)
+app.include_router(performance_router)
+app.include_router(knowledge_base_router)
+app.include_router(ai_troubleshoot_router)
+app.include_router(notifications_router)
 
 @app.on_event("startup")
 async def startup_event():

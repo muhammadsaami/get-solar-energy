@@ -1,4 +1,5 @@
 """
+Phase 3 - Job Marketplace
 Vendors post jobs -> technicians browse/apply -> vendor accepts an applicant
 -> a WorkOrder is created automatically for the accepted technician.
 
@@ -19,6 +20,10 @@ import logging
 logger = logging.getLogger(__name__)
 router = APIRouter(prefix="/api/jobs", tags=["Job Marketplace"])
 
+# Separate router for technician-facing job endpoints — different URL prefix
+# ("/api/technician/jobs/...") than the main job marketplace routes above.
+technician_jobs_router = APIRouter(prefix="/api/technician/jobs", tags=["Job Marketplace"])
+
 
 class JobPostRequest(BaseModel):
     vendor_email: str
@@ -28,6 +33,10 @@ class JobPostRequest(BaseModel):
     city: str
     budget: float = None
     required_skill_level: str = "Level 1"
+
+
+class ApplicationStatusUpdate(BaseModel):
+    status: str   # "Withdrawn" is the main technician-facing use case
 
 
 @router.post("/post")
@@ -56,18 +65,6 @@ def list_open_jobs(
     db: Session = Depends(get_db),
     current_technician: Technician = Depends(get_current_technician)
 ):
-    # Auto-seed initial demo work orders if table is empty
-    if db.query(JobPosting).count() == 0:
-        seed_jobs = [
-            JobPosting(vendor_email="vendor1@getsolar.in", title="Solar Rooftop Installation Specialist 5kW", description="Rooftop array mounting, DC isolation, and string wiring for residential villa.", job_type="Installation", city="Mumbai", budget=15000.0, required_skill_level="Level 1", status="Open"),
-            JobPosting(vendor_email="vendor2@getsolar.in", title="High-Voltage Commercial Solar Panel Mounting", description="100kW industrial array rail alignment and structural clamping.", job_type="Installation", city="Delhi NCR", budget=28000.0, required_skill_level="Level 2", status="Open"),
-            JobPosting(vendor_email="vendor1@getsolar.in", title="Annual Maintenance Contract (AMC) Diagnostic Audit", description="Preventive AMC servicing, thermal camera hotspot scanning, and IV curve tracing.", job_type="AMC", city="Mumbai", budget=8500.0, required_skill_level="Level 1", status="Open"),
-            JobPosting(vendor_email="vendor3@getsolar.in", title="Hybrid Inverter & Storage Microgrid Integration", description="Commissioning 20kWh lithium battery storage with hybrid smart inverter.", job_type="Repair", city="Bengaluru", budget=18500.0, required_skill_level="Level 2", status="Open"),
-            JobPosting(vendor_email="vendor2@getsolar.in", title="DISCOM Net-Metering Compliance & Inspection", description="Verification audit of transformer isolation and bidirectional meter sync.", job_type="Inspection", city="Pune", budget=12000.0, required_skill_level="Level 2", status="Open"),
-        ]
-        db.add_all(seed_jobs)
-        db.commit()
-
     query = db.query(JobPosting).filter(JobPosting.status == "Open")
     if city:
         query = query.filter(JobPosting.city == city)
@@ -93,9 +90,36 @@ def list_open_jobs(
                 "budget": j.budget,
                 "required_skill_level": j.required_skill_level,
                 "already_applied": j.id in already_applied_ids,
-                "posted_at": j.created_at.isoformat() if j.created_at else None
+                "posted_at": j.created_at.isoformat()
             } for j in jobs
         ]
+    }
+
+
+@router.get("/{job_id}")
+def get_job_detail(job_id: int, db: Session = Depends(get_db), current_technician: Technician = Depends(get_current_technician)):
+    job = db.query(JobPosting).filter(JobPosting.id == job_id).first()
+    if not job:
+        raise HTTPException(status_code=404, detail="Job not found.")
+
+    my_application = db.query(JobApplication).filter(
+        JobApplication.job_id == job_id, JobApplication.technician_id == current_technician.id
+    ).first()
+
+    return {
+        "success": True,
+        "job": {
+            "id": job.id,
+            "title": job.title,
+            "description": job.description,
+            "job_type": job.job_type,
+            "city": job.city,
+            "budget": job.budget,
+            "required_skill_level": job.required_skill_level,
+            "status": job.status,
+            "posted_at": job.created_at.isoformat(),
+            "my_application_status": my_application.status if my_application else None
+        }
     }
 
 
@@ -112,14 +136,150 @@ def apply_to_job(job_id: int, db: Session = Depends(get_db), current_technician:
         JobApplication.technician_id == current_technician.id
     ).first()
     if existing:
-        raise HTTPException(status_code=400, detail="You have already applied for this job.")
+        raise HTTPException(status_code=400, detail="You have already applied to this job.")
 
-    application = JobApplication(
-        job_id=job_id,
-        technician_id=current_technician.id
-    )
+    application = JobApplication(job_id=job_id, technician_id=current_technician.id, status="Applied")
     db.add(application)
     db.commit()
-    db.refresh(application)
-    logger.info("Technician %s applied for job %s", current_technician.email, job_id)
-    return {"success": True, "message": "Application submitted successfully!", "application_id": application.id}
+    logger.info("Technician %s applied to job %s", current_technician.email, job_id)
+
+    return {"success": True, "message": "Application submitted successfully!"}
+
+
+@router.get("/{job_id}/applications")
+def list_applications(job_id: int, db: Session = Depends(get_db)):
+    applications = db.query(JobApplication).filter(JobApplication.job_id == job_id).all()
+    result = []
+    for a in applications:
+        tech = db.query(Technician).filter(Technician.id == a.technician_id).first()
+        result.append({
+            "application_id": a.id,
+            "technician_id": tech.id,
+            "technician_name": tech.name,
+            "skill_level": tech.skill_level,
+            "city": tech.city,
+            "status": a.status,
+            "applied_at": a.applied_at.isoformat()
+        })
+    return {"success": True, "applications": result}
+
+
+@router.post("/applications/{application_id}/accept")
+def accept_application(application_id: int, db: Session = Depends(get_db)):
+    application = db.query(JobApplication).filter(JobApplication.id == application_id).first()
+    if not application:
+        raise HTTPException(status_code=404, detail="Application not found.")
+
+    job = db.query(JobPosting).filter(JobPosting.id == application.job_id).first()
+    if job.status != "Open":
+        raise HTTPException(status_code=400, detail="Job is no longer open.")
+
+    application.status = "Accepted"
+    job.status = "Assigned"
+
+    other_apps = db.query(JobApplication).filter(
+        JobApplication.job_id == job.id,
+        JobApplication.id != application_id
+    ).all()
+    for a in other_apps:
+        a.status = "Rejected"
+
+    work_order = WorkOrder(
+        job_id=job.id,
+        technician_id=application.technician_id,
+        status="Assigned"
+    )
+    db.add(work_order)
+    db.commit()
+    db.refresh(work_order)
+    logger.info("Job %s assigned via application %s -> work_order %s", job.id, application_id, work_order.id)
+
+    return {"success": True, "message": "Technician assigned successfully!", "work_order_id": work_order.id}
+
+
+# ── Technician-facing application management ──────────────────────────────
+
+@technician_jobs_router.get("/applied")
+def list_my_applied_jobs(db: Session = Depends(get_db), current_technician: Technician = Depends(get_current_technician)):
+    """Jobs the technician has applied to but that aren't finished yet."""
+    applications = db.query(JobApplication).filter(
+        JobApplication.technician_id == current_technician.id,
+        JobApplication.status.in_(["Applied", "Accepted"])
+    ).order_by(JobApplication.applied_at.desc()).all()
+
+    result = []
+    for a in applications:
+        job = db.query(JobPosting).filter(JobPosting.id == a.job_id).first()
+        result.append({
+            "application_id": a.id,
+            "job_id": job.id if job else None,
+            "job_title": job.title if job else "N/A",
+            "job_type": job.job_type if job else "N/A",
+            "city": job.city if job else "N/A",
+            "application_status": a.status,
+            "job_status": job.status if job else "N/A",
+            "applied_at": a.applied_at.isoformat()
+        })
+    return {"success": True, "applied_jobs": result}
+
+
+@technician_jobs_router.get("/history")
+def list_my_job_history(db: Session = Depends(get_db), current_technician: Technician = Depends(get_current_technician)):
+    """Jobs that reached a final state (rejected, withdrawn) or whose job posting is completed."""
+    applications = db.query(JobApplication).filter(
+        JobApplication.technician_id == current_technician.id
+    ).order_by(JobApplication.applied_at.desc()).all()
+
+    result = []
+    for a in applications:
+        job = db.query(JobPosting).filter(JobPosting.id == a.job_id).first()
+        is_history = a.status in ("Rejected", "Withdrawn") or (job and job.status == "Completed")
+        if is_history:
+            result.append({
+                "application_id": a.id,
+                "job_id": job.id if job else None,
+                "job_title": job.title if job else "N/A",
+                "job_type": job.job_type if job else "N/A",
+                "city": job.city if job else "N/A",
+                "application_status": a.status,
+                "job_status": job.status if job else "N/A",
+                "applied_at": a.applied_at.isoformat()
+            })
+    return {"success": True, "history": result}
+
+
+@router.patch("/application/{application_id}")
+def update_application_status(
+    application_id: int,
+    data: ApplicationStatusUpdate,
+    db: Session = Depends(get_db),
+    current_technician: Technician = Depends(get_current_technician)
+):
+    application = db.query(JobApplication).filter(
+        JobApplication.id == application_id,
+        JobApplication.technician_id == current_technician.id
+    ).first()
+    if not application:
+        raise HTTPException(status_code=404, detail="Application not found.")
+    if application.status == "Accepted":
+        raise HTTPException(status_code=400, detail="This application has already been accepted and cannot be changed here.")
+
+    application.status = data.status
+    db.commit()
+    return {"success": True, "message": f"Application status updated to '{data.status}'."}
+
+
+@router.delete("/application/{application_id}")
+def delete_application(application_id: int, db: Session = Depends(get_db), current_technician: Technician = Depends(get_current_technician)):
+    application = db.query(JobApplication).filter(
+        JobApplication.id == application_id,
+        JobApplication.technician_id == current_technician.id
+    ).first()
+    if not application:
+        raise HTTPException(status_code=404, detail="Application not found.")
+    if application.status == "Accepted":
+        raise HTTPException(status_code=400, detail="This application has already been accepted and cannot be withdrawn.")
+
+    db.delete(application)
+    db.commit()
+    return {"success": True, "message": "Application withdrawn successfully."}
