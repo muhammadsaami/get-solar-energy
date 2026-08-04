@@ -2,10 +2,8 @@ import React, { Suspense, lazy } from 'react'
 import { Route } from 'react-router-dom'
 
 import { ROUTES } from '../config/routes'
-import type { FeatureId } from '../config/permissions'
 import PermissionGuard from './PermissionGuard'
 import AppShell from '../components/layout/AppShell'
-import LockedWorkspace from '../components/feedback/LockedWorkspace'
 import LayoutSkeleton from '../components/layout/LayoutSkeleton'
 
 const TechnicianDashboard = lazy(() => import('../technician/pages/TechnicianDashboard'))
@@ -13,19 +11,12 @@ const TrainingAcademy = lazy(() => import('../features/training/TrainingAcademy'
 const CertificationsPage = lazy(() => import('../features/certifications/pages/CertificationsPage'))
 const JobMarketplacePage = lazy(() => import('../features/jobMarketplace/pages/JobMarketplacePage'))
 const WorkOrdersPage = lazy(() => import('../features/workOrders/pages/WorkOrdersPage'))
+const EarningsPage = lazy(() => import('../features/earnings/pages/EarningsPage'))
+const ProfilePage = lazy(() => import('../features/profile/pages/ProfilePage'))
+const TechnicianAiPage = lazy(() => import('../features/technicianAi/pages/TechnicianAiPage'))
 
 function TechnicianShell({ children }: { children: React.ReactNode }) {
   return <AppShell>{children}</AppShell>
-}
-
-function TechnicianLocked({ feature, stageId, title }: { feature: FeatureId; stageId: string; title: string }) {
-  return (
-    <TechnicianShell>
-      <PermissionGuard feature={feature}>
-        <LockedWorkspace targetStageId={stageId} featureTitle={title} />
-      </PermissionGuard>
-    </TechnicianShell>
-  )
 }
 
 const technicianRouteElements = [
@@ -74,9 +65,33 @@ const technicianRouteElements = [
       </PermissionGuard>
     </TechnicianShell>
   } />,
-  <Route key="t-earnings" path={ROUTES.TECHNICIAN_EARNINGS} element={<TechnicianLocked feature="technician-earnings" stageId="PHASE_18_9" title="Earnings" />} />,
-  <Route key="t-profile" path={ROUTES.TECHNICIAN_PROFILE} element={<TechnicianLocked feature="technician-profile" stageId="PHASE_18_10" title="Profile & Performance" />} />,
-  <Route key="t-ai" path={ROUTES.TECHNICIAN_AI} element={<TechnicianLocked feature="technician-ai" stageId="PHASE_18_11" title="AI Troubleshooting" />} />,
+  <Route key="t-earnings" path={ROUTES.TECHNICIAN_EARNINGS} element={
+    <TechnicianShell>
+      <PermissionGuard feature="technician-earnings">
+        <Suspense fallback={<LayoutSkeleton />}>
+          <EarningsPage />
+        </Suspense>
+      </PermissionGuard>
+    </TechnicianShell>
+  } />,
+  <Route key="t-profile" path={ROUTES.TECHNICIAN_PROFILE} element={
+    <TechnicianShell>
+      <PermissionGuard feature="technician-profile">
+        <Suspense fallback={<LayoutSkeleton />}>
+          <ProfilePage />
+        </Suspense>
+      </PermissionGuard>
+    </TechnicianShell>
+  } />,
+  <Route key="t-ai" path={ROUTES.TECHNICIAN_AI} element={
+    <TechnicianShell>
+      <PermissionGuard feature="technician-ai">
+        <Suspense fallback={<LayoutSkeleton />}>
+          <TechnicianAiPage />
+        </Suspense>
+      </PermissionGuard>
+    </TechnicianShell>
+  } />,
 ]
 
 export default technicianRouteElements

@@ -86,6 +86,8 @@ app.include_router(training_router)
 app.include_router(job_marketplace_router)
 app.include_router(work_orders_router)
 app.include_router(earnings_router)
+from technician_ai import router as technician_ai_router
+app.include_router(technician_ai_router)
 
 @app.on_event("startup")
 async def startup_event():

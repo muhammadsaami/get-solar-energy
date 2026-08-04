@@ -13,6 +13,16 @@ router = APIRouter(prefix="/api/technician/earnings", tags=["Earnings"])
 
 @router.get("/")
 def list_earnings(db: Session = Depends(get_db), current_technician: Technician = Depends(get_current_technician)):
+    # Auto-seed sample earnings for demo/testing if technician has none
+    if db.query(Earning).filter(Earning.technician_id == current_technician.id).count() == 0:
+        seed_earnings = [
+            Earning(technician_id=current_technician.id, work_order_id=101, amount=15000.0, payout_status="Paid"),
+            Earning(technician_id=current_technician.id, work_order_id=102, amount=12000.0, payout_status="Paid"),
+            Earning(technician_id=current_technician.id, work_order_id=103, amount=8500.0, payout_status="Pending"),
+        ]
+        db.add_all(seed_earnings)
+        db.commit()
+
     earnings = db.query(Earning).filter(
         Earning.technician_id == current_technician.id
     ).order_by(Earning.created_at.desc()).all()

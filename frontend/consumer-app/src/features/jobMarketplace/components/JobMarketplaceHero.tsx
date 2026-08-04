@@ -1,5 +1,7 @@
 import React from 'react'
-import { MdWork, MdLocationOn, MdCheckCircle, MdFlashOn } from 'react-icons/md'
+import { Link } from 'react-router-dom'
+import { ROUTES } from '../../../config/routes'
+import { MdWork, MdLocationOn, MdCheckCircle, MdFlashOn, MdAssignment } from 'react-icons/md'
 
 interface JobMarketplaceHeroProps {
   onQuickApplyClick: () => void
@@ -18,13 +20,23 @@ export default function JobMarketplaceHero({ onQuickApplyClick }: JobMarketplace
           </p>
         </div>
 
-        <button
-          className="btn btn-primary"
-          style={{ display: 'flex', alignItems: 'center', gap: '8px' }}
-          onClick={onQuickApplyClick}
-        >
-          <MdFlashOn /> Quick Match & Apply
-        </button>
+        <div style={{ display: 'flex', gap: '10px' }}>
+          <Link
+            to={ROUTES.TECHNICIAN_WORK_ORDERS}
+            className="btn btn-secondary"
+            style={{ display: 'flex', alignItems: 'center', gap: '6px' }}
+          >
+            <MdAssignment /> Active Work Orders
+          </Link>
+
+          <button
+            className="btn btn-primary"
+            style={{ display: 'flex', alignItems: 'center', gap: '8px' }}
+            onClick={onQuickApplyClick}
+          >
+            <MdFlashOn /> Quick Match & Apply
+          </button>
+        </div>
       </div>
 
       <div style={{ display: 'flex', flexWrap: 'wrap', gap: '20px', fontSize: '13px', color: '#94a3b8', borderTop: '1px solid rgba(255,255,255,0.08)', paddingTop: '16px' }}>
