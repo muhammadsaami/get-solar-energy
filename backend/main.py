@@ -12,6 +12,7 @@ import performance_models  # noqa: F401 — must import before create_all() so r
 import knowledge_base_models  # noqa: F401 — must import before create_all() so knowledge base tables are registered
 import ai_troubleshoot_models  # noqa: F401 — must import before create_all() so AI conversation log table is registered
 import notifications_models  # noqa: F401 — must import before create_all() so notifications table is registered
+import session_auth  # noqa: F401 — must import before create_all() so the user_sessions table is registered
 import os
 import json
 import time
@@ -28,9 +29,22 @@ client = genai.Client(api_key=os.getenv("GEMINI_API_KEY"))
 
 app = FastAPI(title="GET Solar Energy API")
 
+# ── CORS ──────────────────────────────────────────────────────────────────
+# NOTE: allow_origins=["*"] cannot be combined with allow_credentials=True —
+# browsers reject that combination outright. Since the new session-auth flow
+# relies on HttpOnly cookies (withCredentials: true on the frontend), the
+# origin list must be explicit — and since this is a real deployed project
+# (not just localhost), it comes from .env, not a hardcoded value, so dev/
+# staging/production can each set their own without touching code.
+#
+# .env: CORS_ALLOWED_ORIGINS=http://localhost:5173,https://app.getsolarenergy.in
+_cors_origins_raw = os.getenv("CORS_ALLOWED_ORIGINS", "http://localhost:5173")
+CORS_ALLOWED_ORIGINS = [origin.strip() for origin in _cors_origins_raw.split(",") if origin.strip()]
+
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["*"],
+    allow_origins=CORS_ALLOWED_ORIGINS,
+    allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],
 )
@@ -78,6 +92,9 @@ from ai_troubleshoot import router as ai_troubleshoot_router
 # ── Phase 3 extension: Notifications ─────────────────────────────────────
 from notifications import router as notifications_router
 
+# ── Phase 4: Session / Refresh Token Auth (Access + Refresh + Sessions) ──
+from session_auth import router as session_auth_router
+
 app.include_router(roof_router)
 app.include_router(roi_router)
 app.include_router(chat_router)
@@ -120,6 +137,9 @@ app.include_router(ai_troubleshoot_router)
 # ── Phase 3 extension: Notifications ─────────────────────────────────────
 app.include_router(notifications_router)
 
+# ── Phase 4: Session / Refresh Token Auth ─────────────────────────────────
+app.include_router(session_auth_router)
+
 @app.on_event("startup")
 async def startup_event():
     from security import run_startup_health_check
@@ -139,8 +159,11 @@ async def startup_event():
 # ═════════════════════════════════════════════════════════════
 # ADMINISTRATOR CONFIGURATION HARDENING & SEEDING
 # ═════════════════════════════════════════════════════════════
-ADMIN_EMAIL = "admin@getsolar.in"
-ADMIN_PASSWORD = "Admin@5678"
+ADMIN_EMAIL = os.getenv("ADMIN_EMAIL", "admin@getsolar.in")
+ADMIN_PASSWORD = os.getenv("ADMIN_PASSWORD")
+
+if not ADMIN_PASSWORD:
+    raise RuntimeError("ADMIN_PASSWORD not set in .env — refusing to start with no admin password.")
 
 # In-memory monitoring state for Gemini AI
 last_gemini_success_time = time.time()
