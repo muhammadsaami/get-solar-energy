@@ -1,12 +1,14 @@
 import React from 'react'
 import type { HiringCompany } from '../types/jobMarketplace.types'
 import { MdVerified, MdStar, MdLocationOn, MdWork, MdAccessTime, MdPeople, MdChevronRight } from 'react-icons/md'
+import { useNotificationStore } from '../../../stores/notificationStore'
 
 interface HiringCompaniesProps {
   companies: HiringCompany[]
 }
 
 export default function HiringCompanies({ companies }: HiringCompaniesProps) {
+  const addToast = useNotificationStore((s) => s.addToast)
   return (
     <div className="job-companies-container">
       <h3 className="job-companies-heading">
@@ -47,7 +49,7 @@ export default function HiringCompanies({ companies }: HiringCompaniesProps) {
 
                 <button
                   className="btn btn-secondary btn-sm"
-                  onClick={() => alert(`Viewing vendor profile for ${comp.name}`)}
+                  onClick={() => addToast({ type: 'info', message: `Viewing vendor profile for ${comp.name}` })}
                 >
                   Quick View <MdChevronRight />
                 </button>

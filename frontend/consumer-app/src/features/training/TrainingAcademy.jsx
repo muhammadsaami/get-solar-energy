@@ -11,26 +11,31 @@ import Achievements from './components/Achievements'
 import Leaderboard from './components/Leaderboard'
 import TrainingAnalytics from './components/TrainingAnalytics'
 import TrainingSkeleton from './components/TrainingSkeleton'
-import { getTrainingDashboard } from './services/training.service'
+import { getTrainingDashboard, syncFromBackend } from './services/training.service'
 
 export default function TrainingAcademy() {
   const [data, setData] = useState(null)
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState(null)
+  const [attempt, setAttempt] = useState(0)
 
   useEffect(() => {
     const load = async () => {
+      setLoading(true)
+      setError(null)
       try {
+        await syncFromBackend()
         const result = await Promise.resolve(getTrainingDashboard())
         setData(result)
-      } catch {
-        setError('Failed to load training data')
+      } catch (err) {
+        setError(err?.message || 'Failed to load training data')
+        setData(null)
       } finally {
         setLoading(false)
       }
     }
     load()
-  }, [])
+  }, [attempt])
 
   if (loading) return <><DashboardSprites /><TrainingSkeleton /></>
   if (error || !data) {
@@ -41,6 +46,9 @@ export default function TrainingAcademy() {
           <div className="tab-header-block">
             <h2 className="tab-heading">Training Academy</h2>
             <p className="tab-subheading" style={{ color: 'var(--color-red)' }}>{error || 'Could not load training data'}</p>
+            <button className="calc-btn" style={{ width: 'auto', marginTop: 12 }} onClick={() => setAttempt((a) => a + 1)}>
+              Retry
+            </button>
           </div>
         </div>
       </>

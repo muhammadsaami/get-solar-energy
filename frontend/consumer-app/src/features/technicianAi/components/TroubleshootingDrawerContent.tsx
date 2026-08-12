@@ -3,12 +3,14 @@ import { Link } from 'react-router-dom'
 import { ROUTES } from '../../../config/routes'
 import type { RawDiagnosisPayload } from '../types/technicianAi.types'
 import { MdWarning, MdCheckCircle, MdBook, MdSchool, MdBuild } from 'react-icons/md'
+import { useNotificationStore } from '../../../stores/notificationStore'
 
 interface TroubleshootingDrawerContentProps {
   diagnosis: RawDiagnosisPayload
 }
 
 export default function TroubleshootingDrawerContent({ diagnosis }: TroubleshootingDrawerContentProps) {
+  const addToast = useNotificationStore((s) => s.addToast)
   return (
     <>
       <div style={{ background: 'linear-gradient(135deg, #0b2233 0%, #061524 100%)', border: '1px solid rgba(0,174,239,0.2)', borderRadius: '12px', padding: '20px' }}>
@@ -93,7 +95,7 @@ export default function TroubleshootingDrawerContent({ diagnosis }: Troubleshoot
         <button
           className="btn btn-secondary"
           style={{ width: '100%', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '6px' }}
-          onClick={() => alert(`Saved diagnostic report for ${diagnosis.error_code} to field log`)}
+          onClick={() => addToast({ type: 'info', message: `Saved diagnostic report for ${diagnosis.error_code} to field log` })}
         >
           <MdCheckCircle /> Log Resolution in Work Order History
         </button>

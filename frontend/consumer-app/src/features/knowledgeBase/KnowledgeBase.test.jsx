@@ -35,7 +35,18 @@ function renderPage() {
 describe('KnowledgeBase page (runtime smoke)', () => {
   beforeEach(() => {
     useNotificationStore.setState({ toasts: [] })
-    knowledgeBaseApi.getDashboard.mockReturnValue(resolveWith(knowledgeBaseService.getDashboard()))
+    const docs = knowledgeBaseService.getDocuments()
+    const mockDashboard = {
+      allDocuments: docs,
+      featuredDocuments: docs.filter((d) => d.featured),
+      bookmarkedDocuments: docs.filter((d) => d.bookmarked),
+      recentlyViewedDocuments: docs.filter((d) => d.recentlyViewed).slice(0, 5),
+      popularDocuments: docs.slice(0, 6),
+      latestDocuments: docs.slice(0, 6),
+      categories: [...new Set(docs.map((d) => d.category))],
+      score: 85,
+    }
+    knowledgeBaseApi.getDashboard.mockImplementation(() => resolveWith(mockDashboard))
     knowledgeBaseApi.getDocument.mockImplementation((id) => resolveWith(knowledgeBaseService.getDocument(id)))
     knowledgeBaseApi.getRelatedDocuments.mockImplementation((id) => resolveWith(knowledgeBaseService.getRelatedDocuments(id)))
     knowledgeBaseApi.toggleBookmark.mockImplementation((id) => resolveWith(knowledgeBaseService.toggleBookmark(id)))

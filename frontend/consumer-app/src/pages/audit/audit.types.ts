@@ -1,5 +1,3 @@
-import type { AdminHealth, AdminHealthService } from '../admin/admin.types'
-
 export interface AuditLogEntry {
   id: number
   action: string
@@ -12,6 +10,24 @@ export interface AuditLogEntry {
   reason: string | null
   ipAddress: string | null
   createdAt: string
+}
+
+export type AuditSeverity = 'critical' | 'warning' | 'success' | 'info'
+
+export interface AuditEvent {
+  id: string
+  timestamp: string
+  user: string
+  action: string
+  module: string
+  severity: AuditSeverity
+  entityType?: string
+  entityId?: number | null
+  detail?: string
+  ipAddress?: string | null
+  oldValue?: string | null
+  newValue?: string | null
+  source: 'audit' | 'activity'
 }
 
 export interface AuditFilterState {

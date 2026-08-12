@@ -1,25 +1,12 @@
 // src/services/api/interceptors.js
-import { authManager } from './authManager';
+// Infrastructure only: attach tokens, detect auth failures. No business logic.
+import { tokenManager } from '../auth/tokenManager';
+import { authEvents, AuthEventTypes } from '../auth/authEvents';
 import { errorHandler } from './errorHandler';
-
-function isTokenExpired() {
-  const token = authManager.getAccessToken();
-  if (!token) return false;
-  try {
-    const payload = JSON.parse(atob(token.split('.')[1]));
-    return payload.exp * 1000 < Date.now();
-  } catch {
-    return false;
-  }
-}
 
 export const requestInterceptors = {
   injectToken(config) {
-    if (isTokenExpired()) {
-      authManager.logout();
-      return Promise.reject(new Error('Session expired'));
-    }
-    const token = authManager.getAccessToken();
+    const token = tokenManager.getAccessToken();
     if (token) {
       config.headers.Authorization = `Bearer ${token}`;
     }
@@ -35,8 +22,9 @@ export const responseInterceptors = {
     return response;
   },
   onError(error) {
-    if (error.response?.status === 401 && authManager.getAccessToken()) {
-      authManager.logout();
+    if (error.response?.status === 401 && tokenManager.getAccessToken()) {
+      // Notify the session layer — it owns the decision (refresh vs logout).
+      authEvents.emit(AuthEventTypes.UNAUTHORIZED, { reason: 'http-401' });
     }
     return Promise.reject(errorHandler.normalize(error));
   }

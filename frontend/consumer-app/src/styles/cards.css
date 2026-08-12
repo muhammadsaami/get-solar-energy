@@ -138,6 +138,8 @@
 .card-metric.accent-blue    { border-top: 3px solid var(--color-blue); }
 .card-metric.accent-green   { border-top: 3px solid var(--color-green); }
 .card-metric.accent-purple  { border-top: 3px solid var(--color-purple); }
+.card-metric.accent-red     { border-top: 3px solid var(--color-red); }
+.card-metric.accent-teal    { border-top: 3px solid var(--color-teal); }
 
 /* ── DASHBOARD CARD ─────────────────────────────────────── */
 .card-dashboard {
@@ -259,9 +261,9 @@
   gap: var(--space-6);
 }
 
-.card-grid-2 { grid-template-columns: repeat(2, 1fr); }
-.card-grid-3 { grid-template-columns: repeat(3, 1fr); }
-.card-grid-4 { grid-template-columns: repeat(4, 1fr); }
+.card-grid-2 { display: grid; gap: var(--space-6); grid-template-columns: repeat(2, 1fr); }
+.card-grid-3 { display: grid; gap: var(--space-6); grid-template-columns: repeat(3, 1fr); }
+.card-grid-4 { display: grid; gap: var(--space-6); grid-template-columns: repeat(4, 1fr); }
 
 @media (max-width: 1024px) {
   .card-grid-4 { grid-template-columns: repeat(2, 1fr); }

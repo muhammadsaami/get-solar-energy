@@ -5,7 +5,7 @@ import AnimatedBackground from '../components/auth/AnimatedBackground'
 import AuthLogo from '../components/auth/AuthLogo'
 import PasswordRequirements from '../components/auth/PasswordRequirements'
 import ToastHost from '../components/auth/ToastHost'
-import { authService } from '../services/auth.service'
+import { authService } from '../services/auth/auth.service'
 import { getPasswordRequirements } from '../utils/password'
 
 export default function ResetPassword() {

@@ -1,5 +1,6 @@
 from fastapi import APIRouter, HTTPException, Request
 from pydantic import BaseModel
+from typing import Optional
 from security import hash_password, verify_password, create_access_token, create_reset_token, verify_reset_token, validate_password_strength
 import json
 import os
@@ -136,16 +137,22 @@ def save_users(users):
 # ==============================================================================
 # SCHEMAS
 # ==============================================================================
+# Valid roles that can be self-registered via /api/signup
+ALLOWED_SIGNUP_ROLES = {"customer", "vendor"}
+
 class SignupRequest(BaseModel):
     name: str
     phone: str
     email: str
     password: str
     city: str
+    role: Optional[str] = "customer"   # "customer" | "vendor"
+    gst: Optional[str] = None           # vendor GST number (optional)
 
 class LoginRequest(BaseModel):
     email: str
     password: str
+    role_hint: Optional[str] = None    # portal hint from frontend: "customer" | "vendor"
 
 class ForgotPasswordRequest(BaseModel):
     email: str
@@ -177,6 +184,11 @@ async def signup(data: SignupRequest, request: Request):
         user_id = str(uuid.uuid4())
         referral_code = data.name[:3].upper() + user_id[:5].upper()
         
+        # Validate requested role
+        requested_role = (data.role or "customer").lower().strip()
+        if requested_role not in ALLOWED_SIGNUP_ROLES:
+            raise HTTPException(status_code=400, detail=f"Invalid role '{requested_role}'. Allowed: customer, vendor")
+
         users[data.email] = {
             "id": user_id,
             "name": data.name,
@@ -186,12 +198,13 @@ async def signup(data: SignupRequest, request: Request):
             "city": data.city,
             "referral_code": referral_code,
             "points": 0,
-            "role": "customer"
+            "role": requested_role,
+            "gst": data.gst or ""
         }
         save_users(users)
         
-        token = create_access_token({"sub": data.email, "role": "customer"})
-        log_auth_audit(data.email, "SIGNUP_SUCCESS", client_ip, user_agent)
+        token = create_access_token({"sub": data.email, "role": requested_role})
+        log_auth_audit(data.email, "SIGNUP_SUCCESS", client_ip, user_agent, {"role": requested_role})
         
         return {
             "success": True,
@@ -202,7 +215,8 @@ async def signup(data: SignupRequest, request: Request):
                 "name": data.name,
                 "email": data.email,
                 "referral_code": referral_code,
-                "role": "customer"
+                "role": requested_role,
+                "gst": data.gst or ""
             }
         }
     except HTTPException as e:
@@ -236,9 +250,27 @@ async def login(data: LoginRequest, request: Request):
             user["role"] = "customer"
             users[data.email] = user
             save_users(users)
-        
-        token = create_access_token({"sub": data.email, "role": user["role"]})
-        log_auth_audit(data.email, "LOGIN_SUCCESS", client_ip, user_agent)
+
+        stored_role = user["role"]
+
+        # Portal integrity check: if frontend sent a role_hint, validate it matches.
+        # Admin accounts act as superusers and are allowed to log in through any portal.
+        if data.role_hint and stored_role != "admin":
+            requested = data.role_hint.lower().strip()
+            if requested != stored_role:
+                role_labels = {"customer": "Customer", "vendor": "Vendor", "admin": "Administrator", "technician": "Technician"}
+                requested_label = role_labels.get(requested, requested.capitalize())
+                stored_label = role_labels.get(stored_role, stored_role.capitalize())
+                log_auth_audit(data.email, "LOGIN_PORTAL_MISMATCH", client_ip, user_agent, {
+                    "requested": requested, "stored": stored_role
+                })
+                raise HTTPException(
+                    status_code=403,
+                    detail=f"This account is registered as a {stored_label}, not a {requested_label}. Please use the correct portal."
+                )
+
+        token = create_access_token({"sub": data.email, "role": stored_role})
+        log_auth_audit(data.email, "LOGIN_SUCCESS", client_ip, user_agent, {"role": stored_role})
         
         return {
             "success": True,
@@ -248,7 +280,7 @@ async def login(data: LoginRequest, request: Request):
                 "id": user["id"],
                 "name": user["name"],
                 "email": user["email"],
-                "role": user["role"],
+                "role": stored_role,
                 "city": user["city"],
                 "referral_code": user["referral_code"],
                 "points": user["points"]

@@ -62,39 +62,56 @@ export default function RoofAnalyzer() {
   return (
     <>
       <DashboardSprites />
-      <div className="tab-content active" role="tabpanel" aria-label="roof analysis" id="tab-roof-analysis">
-        <div className="tab-header-block">
-          <h2 className="tab-heading">Roof Analysis</h2>
-          <p className="tab-subheading">Analyze your rooftop using camera photos or satellite imagery.</p>
-        </div>
+      <div className="ew-page tab-content active" role="tabpanel" aria-label="roof analysis" id="tab-roof-analysis">
+        <header className="ew-mission-bar" role="banner" aria-label="Roof Analysis Header">
+          <div className="ew-mission-scope">
+            <span className="ew-live-dot" />
+            <span className="ew-scope-badge">ROOF / COMPUTER-VISION</span>
+            <span style={{ color: 'var(--text-muted)' }}>|</span>
+            <span style={{ fontWeight: 700, color: 'var(--text-primary)' }}>Rooftop Azimuth &amp; Satellite Photogrammetry</span>
+          </div>
 
-        <div className="tab-grid-layout" style={{ display: 'grid', gridTemplateColumns: '1.8fr 1.2fr', gap: '20px', marginBottom: '20px' }}>
+          <div className="ew-mission-stats">
+            <div className="ew-mission-stat-item">
+              <span>Readiness:</span>
+              <strong style={{ color: 'var(--color-green)' }}>{d ? `${d.suitabilityScore}%` : `${defaultReadiness}%`}</strong>
+            </div>
+            <div className="ew-mission-stat-item">
+              <span>Usable Area:</span>
+              <strong style={{ color: 'var(--color-cyan)' }}>{d ? `${d.roof_area_sqft} sqft` : defaultArea}</strong>
+            </div>
+          </div>
+        </header>
+
+        <div className="tab-grid-layout" style={{ display: 'grid', gridTemplateColumns: '1.8fr 1.2fr', gap: 'var(--space-4)', marginBottom: 'var(--space-4)' }}>
           {/* LEFT COLUMN: Dual Mode Form + Map + Results */}
-          <div className="card-glass">
-            <div className="card-header">
-              <span className="card-title">Roof Assessment</span>
+          <div className="card-glass" style={{ padding: 'var(--space-5)' }}>
+            <div className="card-header" style={{ marginBottom: 'var(--space-3)' }}>
+              <span className="card-title">Rooftop Structural Assessment</span>
             </div>
 
             {/* Mode Toggle Pill Strip */}
-            <div className="satellite-mode-toggle" role="tablist" aria-label="Analysis mode">
-              <button
-                className={`btn btn-sm ${mode === 'camera' ? 'btn-primary active' : 'btn-ghost'}`}
-                id="roofModeCamera"
-                role="tab"
-                aria-selected={mode === 'camera'}
-                onClick={() => setMode('camera')}
-              >
-                Camera Upload
-              </button>
-              <button
-                className={`btn btn-sm ${mode === 'satellite' ? 'btn-primary active' : 'btn-ghost'}`}
-                id="roofModeSatellite"
-                role="tab"
-                aria-selected={mode === 'satellite'}
-                onClick={() => setMode('satellite')}
-              >
-                Satellite Analysis {mode === 'satellite' && <span className="badge badge-warning badge-sm" id="satelliteBetaBadge">Beta</span>}
-              </button>
+            <div className="card-glass" style={{ padding: '4px', marginBottom: 'var(--space-4)' }}>
+              <div className="ew-nav-pill-bar" role="tablist" aria-label="Analysis mode">
+                <button
+                  className={`ew-nav-pill ${mode === 'camera' ? 'active' : ''}`}
+                  id="roofModeCamera"
+                  role="tab"
+                  aria-selected={mode === 'camera'}
+                  onClick={() => setMode('camera')}
+                >
+                  Camera Photo Upload
+                </button>
+                <button
+                  className={`ew-nav-pill ${mode === 'satellite' ? 'active' : ''}`}
+                  id="roofModeSatellite"
+                  role="tab"
+                  aria-selected={mode === 'satellite'}
+                  onClick={() => setMode('satellite')}
+                >
+                  Satellite Analysis {mode === 'satellite' && <span className="badge badge-warning badge-sm" id="satelliteBetaBadge" style={{ marginLeft: 6 }}>Beta</span>}
+                </button>
+              </div>
             </div>
 
             {/* ======== CAMERA MODE PANEL ======== */}
@@ -102,28 +119,39 @@ export default function RoofAnalyzer() {
               <div
                 className="form-upload"
                 id="roofDragDropArea"
-                style={{ marginBottom: 'var(--space-5)', cursor: 'pointer' }}
+                style={{
+                  marginBottom: 'var(--space-4)',
+                  cursor: 'pointer',
+                  padding: 'var(--space-6)',
+                  borderRadius: 'var(--radius-md)',
+                  border: '1.5px dashed var(--border-color)',
+                  background: 'var(--bg-input)',
+                  textAlign: 'center',
+                  transition: 'all var(--transition-fast)',
+                }}
                 onClick={() => fileInputRef.current?.click()}
-                onDragOver={(e) => { e.preventDefault(); e.currentTarget.style.borderColor = 'var(--accent-green)'; e.currentTarget.style.backgroundColor = 'rgba(54,211,153,0.08)' }}
-                onDragLeave={(e) => { e.currentTarget.style.borderColor = 'var(--border-color)'; e.currentTarget.style.backgroundColor = 'transparent' }}
+                onDragOver={(e) => { e.preventDefault(); e.currentTarget.style.borderColor = 'var(--color-green)'; e.currentTarget.style.backgroundColor = 'rgba(54,211,153,0.08)' }}
+                onDragLeave={(e) => { e.currentTarget.style.borderColor = 'var(--border-color)'; e.currentTarget.style.backgroundColor = 'var(--bg-input)' }}
                 onDrop={(e) => {
                   e.preventDefault()
                   e.currentTarget.style.borderColor = 'var(--border-color)'
-                  e.currentTarget.style.backgroundColor = 'transparent'
+                  e.currentTarget.style.backgroundColor = 'var(--bg-input)'
                   if (e.dataTransfer.files.length > 0) handleCameraFileSelect(e.dataTransfer.files[0])
                 }}
               >
-                <svg className="form-upload-icon" style={{ width: '40px', height: '40px', stroke: 'var(--color-green)' }} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5">
+                <svg style={{ width: '36px', height: '36px', stroke: 'var(--color-green)', fill: 'none', strokeWidth: '1.5', margin: '0 auto var(--space-2)' }} viewBox="0 0 24 24">
                   <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4" />
                   <polyline points="17 8 12 3 7 8" />
                   <line x1="12" y1="3" x2="12" y2="15" />
                 </svg>
                 {cameraFile ? (
-                  <span className="form-upload-title" style={{ color: 'var(--accent-green)', fontWeight: '700' }}>✓ {cameraFile.name}</span>
+                  <span style={{ color: 'var(--color-green)', fontWeight: 700, display: 'block', fontSize: '13px' }}>✓ {cameraFile.name}</span>
                 ) : (
-                  <span className="form-upload-title">Drag &amp; drop rooftop image here, or <span className="btn-link">browse</span></span>
+                  <span style={{ color: 'var(--text-primary)', fontWeight: 600, display: 'block', fontSize: '13px' }}>
+                    Drag &amp; drop rooftop photograph here, or <span style={{ color: 'var(--color-blue)', textDecoration: 'underline' }}>browse file</span>
+                  </span>
                 )}
-                <span className="form-upload-subtitle">Supports PNG, JPG, JPEG up to 10MB</span>
+                <span style={{ fontSize: '11px', color: 'var(--text-muted)', display: 'block', marginTop: '4px' }}>Supports PNG, JPG, JPEG up to 10MB</span>
                 <input
                   ref={fileInputRef}
                   type="file"
@@ -134,97 +162,96 @@ export default function RoofAnalyzer() {
                 />
               </div>
 
-              <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 'var(--space-4)', marginBottom: 'var(--space-4)' }}>
-                <div className="form-group">
-                  <label className="form-label form-label-required" htmlFor="roofLengthInput">Roof Length (ft)</label>
+              <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 'var(--space-3)', marginBottom: 'var(--space-4)' }}>
+                <div className="form-group" style={{ display: 'flex', flexDirection: 'column', gap: 4 }}>
+                  <label htmlFor="roofLengthInput" style={{ fontSize: '11px', fontWeight: 700, color: 'var(--text-secondary)' }}>Roof Length (ft) *</label>
                   <input
                     type="number"
-                    className="form-input"
                     id="roofLengthInput"
                     min="0.1"
                     step="0.1"
                     placeholder="e.g. 40"
                     value={lengthFt}
                     onChange={(e) => setLengthFt(e.target.value)}
+                    style={{ width: '100%', padding: '8px 10px', borderRadius: '6px', background: 'var(--bg-input)', border: '1px solid var(--border-color)', color: 'var(--text-primary)', fontSize: '12px' }}
                   />
                 </div>
-                <div className="form-group">
-                  <label className="form-label form-label-required" htmlFor="roofWidthInput">Roof Width (ft)</label>
+                <div className="form-group" style={{ display: 'flex', flexDirection: 'column', gap: 4 }}>
+                  <label htmlFor="roofWidthInput" style={{ fontSize: '11px', fontWeight: 700, color: 'var(--text-secondary)' }}>Roof Width (ft) *</label>
                   <input
                     type="number"
-                    className="form-input"
                     id="roofWidthInput"
                     min="0.1"
                     step="0.1"
                     placeholder="e.g. 30"
                     value={widthFt}
                     onChange={(e) => setWidthFt(e.target.value)}
+                    style={{ width: '100%', padding: '8px 10px', borderRadius: '6px', background: 'var(--bg-input)', border: '1px solid var(--border-color)', color: 'var(--text-primary)', fontSize: '12px' }}
                   />
                 </div>
-                <div className="form-group" style={{ gridColumn: 'span 2' }}>
-                  <label className="form-label form-label-required" htmlFor="roofCityInput">City</label>
+                <div className="form-group" style={{ gridColumn: 'span 2', display: 'flex', flexDirection: 'column', gap: 4 }}>
+                  <label htmlFor="roofCityInput" style={{ fontSize: '11px', fontWeight: 700, color: 'var(--text-secondary)' }}>Installation City *</label>
                   <input
                     type="text"
-                    className="form-input"
                     id="roofCityInput"
-                    placeholder="e.g. Mumbai"
+                    placeholder="e.g. Mumbai, Jaipur, Bangalore"
                     value={city}
                     onChange={(e) => setCity(e.target.value)}
+                    style={{ width: '100%', padding: '8px 10px', borderRadius: '6px', background: 'var(--bg-input)', border: '1px solid var(--border-color)', color: 'var(--text-primary)', fontSize: '12px' }}
                   />
                 </div>
               </div>
 
               <button
-                className={`btn btn-success btn-full${roofUploadState === 'uploading' ? ' loading' : ''}`}
+                className={`btn btn-primary${roofUploadState === 'uploading' ? ' loading' : ''}`}
                 id="roofAnalyzeBtn"
                 disabled={!isCameraValid || roofUploadState === 'uploading'}
                 onClick={triggerCameraAnalysis}
                 style={{
+                  width: '100%',
+                  padding: '10px 16px',
                   opacity: isCameraValid ? 1 : 0.45,
                   cursor: isCameraValid ? 'pointer' : 'not-allowed',
-                  boxShadow: isCameraValid ? '0 4px 18px rgba(54,211,153,0.35)' : 'none',
                 }}
               >
-                {roofUploadState === 'uploading' ? 'Analyzing Roof...' : 'Analyze Roof'}
+                {roofUploadState === 'uploading' ? 'Analyzing Roof Geometry...' : 'Analyze Rooftop Geometry'}
               </button>
             </div>
 
             {/* ======== SATELLITE MODE PANEL ======== */}
             <div className={`satellite-panel ${mode === 'satellite' ? 'active' : ''}`} id="roofSatellitePanel" role="tabpanel">
               {/* Beta Banner */}
-              <div className="satellite-beta-banner">
+              <div style={{ padding: '8px 12px', borderRadius: '6px', background: 'rgba(251,191,36,0.08)', border: '1px solid rgba(251,191,36,0.25)', marginBottom: 'var(--space-3)', display: 'flex', alignItems: 'center', gap: 8 }}>
                 <span className="badge badge-warning badge-sm">Beta</span>
-                <span>Results are estimated from satellite imagery and should be confirmed through an on-site survey before installation or purchasing decisions.</span>
+                <span style={{ fontSize: '11px', color: 'var(--text-secondary)', lineHeight: 1.4 }}>
+                  Satellite imagery estimate. An on-site engineering check will confirm precision measurements.
+                </span>
               </div>
 
               {/* Three-Step Workflow Indicator */}
-              <div className="satellite-step-indicator" aria-label="Workflow progress">
-                <div className={`satellite-step ${selectedLocation ? 'completed' : 'active'}`} data-step="1">
-                  <span className="step-num">1</span>
+              <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 'var(--space-3)', padding: '6px 10px', background: 'var(--bg-input)', borderRadius: '6px' }}>
+                <div style={{ display: 'flex', alignItems: 'center', gap: 6, fontSize: '11px', fontWeight: 700, color: selectedLocation ? 'var(--color-green)' : 'var(--color-cyan)' }}>
+                  <span style={{ width: 18, height: 18, borderRadius: '50%', background: selectedLocation ? 'var(--color-green)' : 'var(--color-cyan)', color: '#000', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '10px' }}>1</span>
                   <span>Search</span>
                 </div>
-                <div className={`satellite-step-connector ${selectedLocation ? 'completed' : ''}`} data-connector="1" />
-                <div className={`satellite-step ${captureData ? 'completed' : selectedLocation ? 'active' : ''}`} data-step="2">
-                  <span className="step-num">2</span>
+                <span style={{ color: 'var(--border-color)' }}>──</span>
+                <div style={{ display: 'flex', alignItems: 'center', gap: 6, fontSize: '11px', fontWeight: 700, color: captureData ? 'var(--color-green)' : selectedLocation ? 'var(--color-cyan)' : 'var(--text-muted)' }}>
+                  <span style={{ width: 18, height: 18, borderRadius: '50%', background: captureData ? 'var(--color-green)' : selectedLocation ? 'var(--color-cyan)' : 'rgba(255,255,255,0.1)', color: captureData || selectedLocation ? '#000' : 'var(--text-muted)', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '10px' }}>2</span>
                   <span>Capture</span>
                 </div>
-                <div className={`satellite-step-connector ${captureData ? 'completed' : ''}`} data-connector="2" />
-                <div className={`satellite-step ${analysis ? 'completed' : captureData ? 'active' : ''}`} data-step="3">
-                  <span className="step-num">3</span>
+                <span style={{ color: 'var(--border-color)' }}>──</span>
+                <div style={{ display: 'flex', alignItems: 'center', gap: 6, fontSize: '11px', fontWeight: 700, color: analysis ? 'var(--color-green)' : captureData ? 'var(--color-cyan)' : 'var(--text-muted)' }}>
+                  <span style={{ width: 18, height: 18, borderRadius: '50%', background: analysis ? 'var(--color-green)' : captureData ? 'var(--color-cyan)' : 'rgba(255,255,255,0.1)', color: analysis || captureData ? '#000' : 'var(--text-muted)', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '10px' }}>3</span>
                   <span>Analyze</span>
                 </div>
               </div>
 
               {/* Address Search */}
-              <div className="satellite-search-wrapper">
-                <svg className="satellite-search-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round">
-                  <circle cx="11" cy="11" r="8" /><line x1="21" y1="21" x2="16.65" y2="16.65" />
-                </svg>
+              <div className="satellite-search-wrapper" style={{ position: 'relative', marginBottom: 'var(--space-3)' }}>
                 <input
                   type="text"
-                  className="form-input"
                   id="satelliteAddressInput"
-                  placeholder="Search address or location..."
+                  placeholder="Search residential address or building location..."
                   autoComplete="off"
                   aria-label="Search address"
                   value={searchQuery}
@@ -237,9 +264,10 @@ export default function RoofAnalyzer() {
                       dismissSearchResults()
                     }
                   }}
+                  style={{ width: '100%', padding: '9px 12px', borderRadius: '6px', background: 'var(--bg-input)', border: '1px solid var(--border-color)', color: 'var(--text-primary)', fontSize: '12px' }}
                 />
                 {searchResults.length > 0 && (
-                  <div className="satellite-address-results" id="satelliteAddressResults" role="listbox" style={{ display: 'block' }}>
+                  <div className="satellite-address-results" id="satelliteAddressResults" role="listbox" style={{ display: 'block', position: 'absolute', top: '100%', left: 0, right: 0, zIndex: 10, background: 'var(--bg-card)', border: '1px solid var(--border-color)', borderRadius: '6px', marginTop: 4, maxHeight: 180, overflowY: 'auto' }}>
                     {searchResults.map((res, idx) => (
                       <div
                         key={idx}
@@ -247,6 +275,7 @@ export default function RoofAnalyzer() {
                         role="option"
                         aria-selected={false}
                         onClick={() => selectAddressResult(res)}
+                        style={{ padding: '8px 12px', fontSize: '11px', color: 'var(--text-primary)', cursor: 'pointer', borderBottom: '1px solid var(--border-subtle)' }}
                       >
                         {res.display_name}
                       </div>
@@ -258,93 +287,64 @@ export default function RoofAnalyzer() {
                 )}
               </div>
 
-              <div className="satellite-location-label" id="satelliteLocationLabel">
-                {selectedLocation ? `Selected: ${selectedLocation.label}` : 'Search for an address to begin.'}
+              <div className="satellite-location-label" id="satelliteLocationLabel" style={{ fontSize: '11px', color: 'var(--text-secondary)', marginBottom: 'var(--space-3)' }}>
+                {selectedLocation ? `Selected: ${selectedLocation.label}` : 'Search for an address to center the map.'}
               </div>
 
               {/* Map Container */}
-              <div className="satellite-map-container" id="satelliteMap" ref={mapContainerRef} />
+              <div className="satellite-map-container" id="satelliteMap" ref={mapContainerRef} style={{ height: '220px', borderRadius: '6px', overflow: 'hidden', border: '1px solid var(--border-color)', marginBottom: 'var(--space-3)' }} />
 
-              {/* Layer Toggle */}
-              <div className="satellite-layer-toggle">
+              {/* Layer Toggle & Capture Button */}
+              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', gap: 8, marginBottom: 'var(--space-3)' }}>
+                <div style={{ display: 'flex', gap: 4 }}>
+                  <button
+                    className={`btn btn-ghost btn-sm ${activeLayer === 'street' ? 'active' : ''}`}
+                    id="satelliteToggleStreet"
+                    aria-pressed={activeLayer === 'street'}
+                    onClick={() => toggleMapLayer('street')}
+                    style={{ fontSize: '11px', padding: '4px 10px' }}
+                  >
+                    Street
+                  </button>
+                  <button
+                    className={`btn btn-ghost btn-sm ${activeLayer === 'satellite' ? 'active' : ''}`}
+                    id="satelliteToggleSat"
+                    aria-pressed={activeLayer === 'satellite'}
+                    onClick={() => toggleMapLayer('satellite')}
+                    style={{ fontSize: '11px', padding: '4px 10px' }}
+                  >
+                    Satellite
+                  </button>
+                </div>
                 <button
-                  className={`btn btn-ghost btn-sm ${activeLayer === 'street' ? 'active' : ''}`}
-                  id="satelliteToggleStreet"
-                  aria-pressed={activeLayer === 'street'}
-                  onClick={() => toggleMapLayer('street')}
-                >
-                  Street
-                </button>
-                <button
-                  className={`btn btn-ghost btn-sm ${activeLayer === 'satellite' ? 'active' : ''}`}
-                  id="satelliteToggleSat"
-                  aria-pressed={activeLayer === 'satellite'}
-                  onClick={() => toggleMapLayer('satellite')}
-                >
-                  Satellite
-                </button>
-              </div>
-
-              {/* Capture Button */}
-              <div className="satellite-capture-row">
-                <button
-                  className="btn btn-primary"
+                  className="btn btn-secondary btn-sm"
                   id="satelliteCaptureBtn"
                   onClick={captureSatelliteView}
                   aria-label="Capture current map view"
                   disabled={isCapturing}
+                  style={{ fontSize: '11px', padding: '5px 12px' }}
                 >
-                  {isCapturing ? 'Capturing...' : 'Capture from Satellite'}
+                  {isCapturing ? 'Capturing...' : 'Capture Map Frame'}
                 </button>
               </div>
 
               {/* Capture Validation Status */}
               {captureStatus && (
-                <div className="satellite-capture-status" id="satelliteCaptureStatus" role="alert" style={{ display: 'block' }}>
+                <div className="satellite-capture-status" id="satelliteCaptureStatus" role="alert" style={{ fontSize: '11px', color: 'var(--color-yellow)', marginBottom: 'var(--space-2)' }}>
                   {captureStatus}
                 </div>
               )}
 
-              {/* Satellite Preview Card */}
-              {captureData && (
-                <div className="satellite-preview-card" id="satellitePreviewCard" style={{ display: 'block' }}>
-                  <div className="preview-header">
-                    <span className="preview-title">Satellite Capture</span>
-                    <span className="badge badge-success badge-sm" id="satellitePreviewStatus">Ready for Analysis</span>
-                  </div>
-                  <div className="preview-body">
-                    <div className="preview-thumb-wrap">
-                      <img className="preview-thumb" id="satellitePreviewThumb" src={captureData.blobUrl} alt="Satellite capture preview" />
-                    </div>
-                    <div className="preview-details">
-                      <div className="detail-row">
-                        <span className="detail-label">Resolution</span>
-                        <span className="detail-value" id="satellitePreviewRes">{captureData.resolution}</span>
-                      </div>
-                      <div className="detail-row">
-                        <span className="detail-label">Captured</span>
-                        <span className="detail-value" id="satellitePreviewTime">{captureData.timestamp}</span>
-                      </div>
-                      <div className="detail-row">
-                        <span className="detail-label">Location</span>
-                        <span className="detail-value" id="satellitePreviewLoc">{captureData.locationLabel}</span>
-                      </div>
-                    </div>
-                  </div>
-                </div>
-              )}
-
               {/* Analyze Button (satellite mode) */}
-              <div className="satellite-analyze-area">
-                <button
-                  className={`btn btn-secondary btn-full${roofUploadState === 'uploading' ? ' loading' : ''}`}
-                  id="roofAnalyzeBtnSatellite"
-                  disabled={!captureData || roofUploadState === 'uploading'}
-                  onClick={triggerSatelliteAnalysis}
-                >
-                  {roofUploadState === 'uploading' ? 'Analyzing Satellite Capture...' : 'Analyze Satellite Capture'}
-                </button>
-              </div>
+              <button
+                className={`btn btn-primary${roofUploadState === 'uploading' ? ' loading' : ''}`}
+                id="roofAnalyzeBtnSatellite"
+                disabled={!captureData || roofUploadState === 'uploading'}
+                onClick={triggerSatelliteAnalysis}
+                style={{ width: '100%', padding: '10px 16px', fontSize: '12px' }}
+              >
+                {roofUploadState === 'uploading' ? 'Analyzing Satellite Capture...' : 'Analyze Satellite Photogrammetry'}
+              </button>
             </div>
 
             {/* Shared Progress Bar */}
@@ -353,19 +353,19 @@ export default function RoofAnalyzer() {
               id="roofScanProgressBox"
               style={{
                 display: roofUploadState === 'uploading' ? 'block' : 'none',
-                marginTop: '15px',
+                marginTop: 'var(--space-3)',
                 background: 'var(--bg-input)',
-                padding: '12px',
+                padding: '10px 12px',
                 borderRadius: '6px',
                 border: '1px solid var(--border-color)',
               }}
             >
-              <div className="progress-info-row" style={{ display: 'flex', justifyContent: 'space-between', fontSize: '11px', marginBottom: '6px', color: 'var(--text-navy)' }}>
+              <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '11px', marginBottom: '6px', color: 'var(--text-primary)' }}>
                 <span id="roofScanStatus">{roofProgress.status || 'Analyzing shading & roof azimuth...'}</span>
-                <span id="roofScanPercent" style={{ fontWeight: '800', color: 'var(--accent-green)' }}>{roofProgress.percent}%</span>
+                <span id="roofScanPercent" style={{ fontWeight: 800, color: 'var(--color-green)' }}>{roofProgress.percent}%</span>
               </div>
-              <div className="progress-bar-track" style={{ height: '6px', background: 'var(--border-color)', borderRadius: '3px', overflow: 'hidden', width: '100%' }}>
-                <div className="progress-bar-fill" id="roofScanProgressFill" style={{ width: `${roofProgress.percent}%`, height: '100%', background: 'var(--accent-green)', transition: 'width 0.1s ease' }} />
+              <div style={{ height: '5px', background: 'var(--border-color)', borderRadius: '3px', overflow: 'hidden', width: '100%' }}>
+                <div id="roofScanProgressFill" style={{ width: `${roofProgress.percent}%`, height: '100%', background: 'var(--color-green)', transition: 'width 0.1s ease' }} />
               </div>
             </div>
 
@@ -374,23 +374,22 @@ export default function RoofAnalyzer() {
               id="roofAnalysisErrorBox"
               style={{
                 display: roofUploadState === 'error' ? 'block' : 'none',
-                marginTop: '15px',
-                padding: '12px',
+                marginTop: 'var(--space-3)',
+                padding: '10px 14px',
                 borderRadius: '6px',
-                background: 'rgba(231, 76, 60, 0.05)',
-                border: '1px dashed rgba(231, 76, 60, 0.25)',
+                background: 'rgba(239, 68, 68, 0.08)',
+                border: '1px solid rgba(239, 68, 68, 0.25)',
                 textAlign: 'center',
               }}
             >
-              <span style={{ fontSize: '11px', color: '#ef4444', display: 'block', marginBottom: '8px', fontWeight: '600' }}>
+              <span style={{ fontSize: '11px', color: 'var(--color-red)', display: 'block', marginBottom: '8px', fontWeight: 600 }}>
                 {roofError || 'Analysis failed. Please check the file format or try again.'}
               </span>
               <button
                 type="button"
-                className="calc-btn"
+                className="btn btn-outline btn-sm"
                 id="roofAnalysisRetryBtn"
                 onClick={retryRoofUpload}
-                style={{ margin: '0 auto', width: 'auto', padding: '6px 16px', fontSize: '11px', height: 'auto', borderColor: 'var(--accent-green)', color: 'var(--accent-green)', background: 'transparent' }}
               >
                 Retry Upload
               </button>
@@ -398,114 +397,62 @@ export default function RoofAnalyzer() {
 
             {/* Shared Analysis Results */}
             {d && (
-              <div id="roofAnalysisResults" style={{ display: 'block', marginTop: '15px', borderTop: '1px solid var(--border-color)', paddingTop: '15px' }}>
-                <div className="card-base" style={{ '--card-theme': '54, 211, 153', marginBottom: '15px', padding: '12px 14px', background: 'rgba(54, 211, 153, 0.04)', border: '1px solid rgba(54, 211, 153, 0.25)' } as React.CSSProperties}>
-                  <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', borderBottom: '1px solid rgba(54, 211, 153, 0.15)', paddingBottom: '6px', marginBottom: '10px' }}>
-                    <span style={{ fontSize: '10px', fontWeight: '800', color: 'var(--accent-green)', textTransform: 'uppercase', letterSpacing: '0.5px' }}>Roof Analytics Snapshot</span>
-                    <span id="snapTagBadge" style={{ fontSize: '9px', background: d.satellite_analysis ? 'var(--color-yellow)' : 'var(--accent-green)', color: d.satellite_analysis ? '#000' : '#fff', padding: '1px 5px', borderRadius: '3px', fontWeight: '700', fontFamily: "'Outfit', sans-serif" }}>
+              <div id="roofAnalysisResults" style={{ display: 'block', marginTop: 'var(--space-4)', borderTop: '1px solid var(--border-color)', paddingTop: 'var(--space-3)' }}>
+                <div className="card-base" style={{ '--card-theme': '54, 211, 153', marginBottom: 'var(--space-3)', padding: '10px 12px' } as React.CSSProperties}>
+                  <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', borderBottom: '1px solid rgba(54, 211, 153, 0.15)', paddingBottom: '6px', marginBottom: '8px' }}>
+                    <span style={{ fontSize: '10px', fontWeight: 800, color: 'var(--color-green)', textTransform: 'uppercase', letterSpacing: '0.5px' }}>Roof Analytics Snapshot</span>
+                    <span id="snapTagBadge" className={`badge badge-sm ${d.satellite_analysis ? 'badge-warning' : 'badge-success'}`}>
                       {d.satellite_analysis ? 'BETA' : 'EXTRACTED'}
                     </span>
                   </div>
                   <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: '6px', textAlign: 'center' }}>
                     <div>
-                      <span style={{ fontSize: '8px', color: 'var(--text-muted)', display: 'block', textTransform: 'uppercase', fontWeight: '700' }}>Roof Suitability</span>
-                      <span style={{ fontSize: '16px', fontWeight: '900', color: 'var(--accent-green)', display: 'block', marginTop: '2px' }} id="snapRoofSuitability">{d.suitabilityScore}%</span>
+                      <span style={{ fontSize: '8px', color: 'var(--text-muted)', display: 'block', textTransform: 'uppercase', fontWeight: 700 }}>Roof Suitability</span>
+                      <span style={{ fontSize: '15px', fontWeight: 900, color: 'var(--color-green)', display: 'block', marginTop: '2px' }} id="snapRoofSuitability">{d.suitabilityScore}%</span>
                     </div>
                     <div>
-                      <span style={{ fontSize: '8px', color: 'var(--text-muted)', display: 'block', textTransform: 'uppercase', fontWeight: '700' }}>Recommended Size</span>
-                      <span style={{ fontSize: '16px', fontWeight: '900', color: 'var(--accent-blue)', display: 'block', marginTop: '2px' }} id="snapRoofSystemSize">{d.system_size_kw} kW</span>
+                      <span style={{ fontSize: '8px', color: 'var(--text-muted)', display: 'block', textTransform: 'uppercase', fontWeight: 700 }}>Recommended Size</span>
+                      <span style={{ fontSize: '15px', fontWeight: 900, color: 'var(--color-cyan)', display: 'block', marginTop: '2px' }} id="snapRoofSystemSize">{d.system_size_kw} kW</span>
                     </div>
                     <div>
-                      <span style={{ fontSize: '8px', color: 'var(--text-muted)', display: 'block', textTransform: 'uppercase', fontWeight: '700' }}>Monthly Gen</span>
-                      <span style={{ fontSize: '16px', fontWeight: '900', color: 'var(--accent-blue)', display: 'block', marginTop: '2px' }} id="snapRoofMonthlyGen">{d.monthly_generation_units} units</span>
+                      <span style={{ fontSize: '8px', color: 'var(--text-muted)', display: 'block', textTransform: 'uppercase', fontWeight: 700 }}>Monthly Gen</span>
+                      <span style={{ fontSize: '15px', fontWeight: 900, color: 'var(--color-cyan)', display: 'block', marginTop: '2px' }} id="snapRoofMonthlyGen">{d.monthly_generation_units} units</span>
                     </div>
                     <div>
-                      <span style={{ fontSize: '8px', color: 'var(--text-muted)', display: 'block', textTransform: 'uppercase', fontWeight: '700' }}>Number of Panels</span>
-                      <span style={{ fontSize: '16px', fontWeight: '900', color: 'var(--accent-orange)', display: 'block', marginTop: '2px' }} id="snapRoofPanels">{d.total_panels}</span>
+                      <span style={{ fontSize: '8px', color: 'var(--text-muted)', display: 'block', textTransform: 'uppercase', fontWeight: 700 }}>Number of Panels</span>
+                      <span style={{ fontSize: '15px', fontWeight: 900, color: 'var(--color-orange)', display: 'block', marginTop: '2px' }} id="snapRoofPanels">{d.total_panels}</span>
                     </div>
                   </div>
                 </div>
 
-                <h3 style={{ fontSize: '11px', fontWeight: '700', color: 'var(--text-navy)', marginBottom: '10px', display: 'flex', alignItems: 'center', gap: '6px' }}>
-                  <svg style={{ width: '14px', height: '14px', stroke: 'var(--accent-green)', fill: 'none', strokeWidth: '2' }}><polyline points="22 11.08 20 11.08 17 22 12 1 7 22 4 11.08 2 11.08" /></svg>
-                  Detected Roof Specifications
-                </h3>
-                <div style={{ display: 'grid', gridTemplateColumns: 'repeat(2, 1fr)', gap: '8px' }}>
+                <div className="ew-divider-head">
+                  <h3 className="ew-divider-title">Detected Structural Parameters</h3>
+                </div>
+
+                <div style={{ display: 'grid', gridTemplateColumns: 'repeat(2, 1fr)', gap: '6px' }}>
                   <div style={{ background: 'rgba(255, 255, 255, 0.02)', border: '1px solid var(--border-color)', padding: '6px 10px', borderRadius: '4px' }}>
-                    <span style={{ fontSize: '8px', color: 'var(--text-muted)', display: 'block', textTransform: 'uppercase', fontWeight: '700' }}>Roof Area (sqft)</span>
-                    <span style={{ fontSize: '11px', fontWeight: '800', color: 'var(--text-navy)' }} id="resTotalRoofArea">{d.roof_area_sqft} sq ft</span>
+                    <span style={{ fontSize: '8px', color: 'var(--text-muted)', display: 'block', textTransform: 'uppercase', fontWeight: 700 }}>Roof Area (sqft)</span>
+                    <span style={{ fontSize: '11px', fontWeight: 800, color: 'var(--text-primary)' }} id="resTotalRoofArea">{d.roof_area_sqft} sq ft</span>
                   </div>
                   <div style={{ background: 'rgba(255, 255, 255, 0.02)', border: '1px solid var(--border-color)', padding: '6px 10px', borderRadius: '4px' }}>
-                    <span style={{ fontSize: '8px', color: 'var(--text-muted)', display: 'block', textTransform: 'uppercase', fontWeight: '700' }}>Facing Direction</span>
-                    <span style={{ fontSize: '11px', fontWeight: '800', color: 'var(--text-navy)' }} id="resFacingDirection">{d.facing_direction}</span>
+                    <span style={{ fontSize: '8px', color: 'var(--text-muted)', display: 'block', textTransform: 'uppercase', fontWeight: 700 }}>Facing Direction</span>
+                    <span style={{ fontSize: '11px', fontWeight: 800, color: 'var(--text-primary)' }} id="resFacingDirection">{d.facing_direction}</span>
                   </div>
                   <div style={{ background: 'rgba(255, 255, 255, 0.02)', border: '1px solid var(--border-color)', padding: '6px 10px', borderRadius: '4px' }}>
-                    <span style={{ fontSize: '8px', color: 'var(--text-muted)', display: 'block', textTransform: 'uppercase', fontWeight: '700' }}>Compass Angle</span>
-                    <span style={{ fontSize: '11px', fontWeight: '800', color: 'var(--text-navy)' }} id="resCompassAngle">{d.compass_angle ? `${d.compass_angle}°` : 'Not Available'}</span>
+                    <span style={{ fontSize: '8px', color: 'var(--text-muted)', display: 'block', textTransform: 'uppercase', fontWeight: 700 }}>Compass Angle</span>
+                    <span style={{ fontSize: '11px', fontWeight: 800, color: 'var(--text-primary)' }} id="resCompassAngle">{d.compass_angle ? `${d.compass_angle}°` : 'Not Available'}</span>
                   </div>
                   <div style={{ background: 'rgba(255, 255, 255, 0.02)', border: '1px solid var(--border-color)', padding: '6px 10px', borderRadius: '4px' }}>
-                    <span style={{ fontSize: '8px', color: 'var(--text-muted)', display: 'block', textTransform: 'uppercase', fontWeight: '700' }}>Roof Condition</span>
-                    <span style={{ fontSize: '11px', fontWeight: '800', color: 'var(--text-navy)' }} id="resRoofCondition">{d.roof_condition}</span>
+                    <span style={{ fontSize: '8px', color: 'var(--text-muted)', display: 'block', textTransform: 'uppercase', fontWeight: 700 }}>Roof Condition</span>
+                    <span style={{ fontSize: '11px', fontWeight: 800, color: 'var(--text-primary)' }} id="resRoofCondition">{d.roof_condition}</span>
                   </div>
                   <div style={{ background: 'rgba(255, 255, 255, 0.02)', border: '1px solid var(--border-color)', padding: '6px 10px', borderRadius: '4px' }}>
-                    <span style={{ fontSize: '8px', color: 'var(--text-muted)', display: 'block', textTransform: 'uppercase', fontWeight: '700' }}>Roof Type</span>
-                    <span style={{ fontSize: '11px', fontWeight: '800', color: 'var(--text-navy)' }} id="resRoofType">{d.roof_type}</span>
+                    <span style={{ fontSize: '8px', color: 'var(--text-muted)', display: 'block', textTransform: 'uppercase', fontWeight: 700 }}>Solar Potential</span>
+                    <span style={{ fontSize: '11px', fontWeight: 800, color: 'var(--color-green)' }} id="resSolarPotential">{d.solar_potential}</span>
                   </div>
                   <div style={{ background: 'rgba(255, 255, 255, 0.02)', border: '1px solid var(--border-color)', padding: '6px 10px', borderRadius: '4px' }}>
-                    <span style={{ fontSize: '8px', color: 'var(--text-muted)', display: 'block', textTransform: 'uppercase', fontWeight: '700' }}>Shading Issues</span>
-                    <span style={{ fontSize: '11px', fontWeight: '800', color: 'var(--text-navy)' }} id="resRoofShading">{d.shading_issues}</span>
-                  </div>
-                  <div style={{ background: 'rgba(255, 255, 255, 0.02)', border: '1px solid var(--border-color)', padding: '6px 10px', borderRadius: '4px' }}>
-                    <span style={{ fontSize: '8px', color: 'var(--text-muted)', display: 'block', textTransform: 'uppercase', fontWeight: '700' }}>Solar Potential</span>
-                    <span style={{ fontSize: '11px', fontWeight: '800', color: 'var(--accent-green)' }} id="resSolarPotential">{d.solar_potential}</span>
-                  </div>
-                  <div style={{ background: 'rgba(255, 255, 255, 0.02)', border: '1px solid var(--border-color)', padding: '6px 10px', borderRadius: '4px' }}>
-                    <span style={{ fontSize: '8px', color: 'var(--text-muted)', display: 'block', textTransform: 'uppercase', fontWeight: '700' }}>Obstacles</span>
-                    <span style={{ fontSize: '11px', fontWeight: '800', color: 'var(--text-navy)' }} id="resObstacles">{d.obstacles}</span>
-                  </div>
-                  <div style={{ background: 'rgba(255, 255, 255, 0.02)', border: '1px solid var(--border-color)', padding: '6px 10px', borderRadius: '4px' }}>
-                    <span style={{ fontSize: '8px', color: 'var(--text-muted)', display: 'block', textTransform: 'uppercase', fontWeight: '700' }}>Recommended System</span>
-                    <span style={{ fontSize: '11px', fontWeight: '800', color: 'var(--accent-blue)' }} id="resRoofRecommendedSolarSize">{d.recommended_system}</span>
-                  </div>
-                  <div style={{ background: 'rgba(255, 255, 255, 0.02)', border: '1px solid var(--border-color)', padding: '6px 10px', borderRadius: '4px' }}>
-                    <span style={{ fontSize: '8px', color: 'var(--text-muted)', display: 'block', textTransform: 'uppercase', fontWeight: '700' }}>System Size (kW)</span>
-                    <span style={{ fontSize: '11px', fontWeight: '800', color: 'var(--accent-blue)' }} id="resSystemSizeKw">{d.system_size_kw} kW</span>
-                  </div>
-                  <div style={{ background: 'rgba(255, 255, 255, 0.02)', border: '1px solid var(--border-color)', padding: '6px 10px', borderRadius: '4px' }}>
-                    <span style={{ fontSize: '8px', color: 'var(--text-muted)', display: 'block', textTransform: 'uppercase', fontWeight: '700' }}>Total Panels</span>
-                    <span style={{ fontSize: '11px', fontWeight: '800', color: 'var(--accent-blue)' }} id="resRoofNumberOfPanels">{d.total_panels}</span>
-                  </div>
-                  <div style={{ background: 'rgba(255, 255, 255, 0.02)', border: '1px solid var(--border-color)', padding: '6px 10px', borderRadius: '4px' }}>
-                    <span style={{ fontSize: '8px', color: 'var(--text-muted)', display: 'block', textTransform: 'uppercase', fontWeight: '700' }}>Panel Layout</span>
-                    <span style={{ fontSize: '11px', fontWeight: '800', color: 'var(--text-navy)' }} id="resPanelLayout">{`${d.panel_rows} rows × ${d.panels_per_row} per row`}</span>
-                  </div>
-                  <div style={{ background: 'rgba(255, 255, 255, 0.02)', border: '1px solid var(--border-color)', padding: '6px 10px', borderRadius: '4px' }}>
-                    <span style={{ fontSize: '8px', color: 'var(--text-muted)', display: 'block', textTransform: 'uppercase', fontWeight: '700' }}>Total Legs</span>
-                    <span style={{ fontSize: '11px', fontWeight: '800', color: 'var(--text-navy)' }} id="resTotalLegs">{d.total_legs}</span>
-                  </div>
-                  <div style={{ background: 'rgba(255, 255, 255, 0.02)', border: '1px solid var(--border-color)', padding: '6px 10px', borderRadius: '4px' }}>
-                    <span style={{ fontSize: '8px', color: 'var(--text-muted)', display: 'block', textTransform: 'uppercase', fontWeight: '700' }}>Front / Back Legs</span>
-                    <span style={{ fontSize: '11px', fontWeight: '800', color: 'var(--text-navy)' }} id="resFrontBackLegs">{`${d.front_legs}F / ${d.back_legs}B`}</span>
-                  </div>
-                  <div style={{ background: 'rgba(255, 255, 255, 0.02)', border: '1px solid var(--border-color)', padding: '6px 10px', borderRadius: '4px' }}>
-                    <span style={{ fontSize: '8px', color: 'var(--text-muted)', display: 'block', textTransform: 'uppercase', fontWeight: '700' }}>Front Leg Height (ft)</span>
-                    <span style={{ fontSize: '11px', fontWeight: '800', color: 'var(--text-navy)' }} id="resFrontLegHeight">{d.front_leg_height_ft} ft</span>
-                  </div>
-                  <div style={{ background: 'rgba(255, 255, 255, 0.02)', border: '1px solid var(--border-color)', padding: '6px 10px', borderRadius: '4px' }}>
-                    <span style={{ fontSize: '8px', color: 'var(--text-muted)', display: 'block', textTransform: 'uppercase', fontWeight: '700' }}>Back Leg Height (ft)</span>
-                    <span style={{ fontSize: '11px', fontWeight: '800', color: 'var(--text-navy)' }} id="resBackLegHeight">{d.back_leg_height_ft} ft</span>
-                  </div>
-                  <div style={{ background: 'rgba(255, 255, 255, 0.02)', border: '1px solid var(--border-color)', padding: '6px 10px', borderRadius: '4px' }}>
-                    <span style={{ fontSize: '8px', color: 'var(--text-muted)', display: 'block', textTransform: 'uppercase', fontWeight: '700' }}>Monthly Generation</span>
-                    <span style={{ fontSize: '11px', fontWeight: '800', color: 'var(--accent-green)' }} id="resRoofMonthlyGeneration">{d.monthly_generation_units} units/month</span>
-                  </div>
-                  <div style={{ background: 'rgba(255, 255, 255, 0.02)', border: '1px solid var(--border-color)', padding: '6px 10px', borderRadius: '4px' }}>
-                    <span style={{ fontSize: '8px', color: 'var(--text-muted)', display: 'block', textTransform: 'uppercase', fontWeight: '700' }}>Annual Generation</span>
-                    <span style={{ fontSize: '11px', fontWeight: '800', color: 'var(--accent-green)' }} id="resAnnualGeneration">{d.annual_generation_units} units/year</span>
-                  </div>
-                  <div style={{ background: 'rgba(255, 255, 255, 0.02)', border: '1px solid var(--border-color)', padding: '6px 10px', borderRadius: '4px', gridColumn: 'span 2' }}>
-                    <span style={{ fontSize: '8px', color: 'var(--text-muted)', display: 'block', textTransform: 'uppercase', fontWeight: '700' }}>Analysis Notes</span>
-                    <span style={{ fontSize: '11px', fontWeight: '700', color: 'var(--text-navy)', lineHeight: '1.4' }} id="resAnalysisNotes">{d.analysis_notes}</span>
+                    <span style={{ fontSize: '8px', color: 'var(--text-muted)', display: 'block', textTransform: 'uppercase', fontWeight: 700 }}>System Size (kW)</span>
+                    <span style={{ fontSize: '11px', fontWeight: 800, color: 'var(--color-cyan)' }} id="resSystemSizeKw">{d.system_size_kw} kW</span>
                   </div>
                 </div>
               </div>
@@ -513,49 +460,49 @@ export default function RoofAnalyzer() {
           </div>
 
           {/* RIGHT COLUMN: KPI Cards Stack */}
-          <div className="kpis-stack-column" style={{ display: 'flex', flexDirection: 'column', gap: '15px' }}>
-            <div className="card-base shadow-lift" style={{ '--card-theme': '54, 211, 153' } as React.CSSProperties}>
+          <div className="kpis-stack-column" style={{ display: 'flex', flexDirection: 'column', gap: 'var(--space-3)' }}>
+            <div className="card-base" style={{ '--card-theme': '54, 211, 153' } as React.CSSProperties}>
               <div className="kpi-header-row">
                 <span className="kpi-title">Solar Readiness Score</span>
-                <svg className="kpi-title-icon green"><use href="#icon-solar-readiness" xlinkHref="#icon-solar-readiness" /></svg>
+                <svg className="kpi-title-icon green" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><circle cx="12" cy="12" r="9" /><path d="M12 7v5l3 3" /></svg>
               </div>
               <div className="kpi-value-block">
                 <span className="kpi-value-text" id="roofTabReadiness">{d ? `${d.suitabilityScore}%` : `${defaultReadiness}%`}</span>
               </div>
-              <p className="kpi-card-subdesc" style={{ fontSize: '10px', color: 'var(--text-muted)', marginTop: '4px' }}>Azimuth: 180° South (Optimal)</p>
+              <p className="kpi-card-subdesc" style={{ fontSize: '11px', color: 'var(--text-muted)', marginTop: '4px' }}>Azimuth: 180° South (Optimal)</p>
             </div>
 
-            <div className="card-base shadow-lift" style={{ '--card-theme': '23, 168, 229' } as React.CSSProperties}>
+            <div className="card-base" style={{ '--card-theme': '23, 168, 229' } as React.CSSProperties}>
               <div className="kpi-header-row">
                 <span className="kpi-title">Usable Roof Area</span>
-                <svg className="kpi-title-icon blue"><use href="#icon-roof" xlinkHref="#icon-roof" /></svg>
+                <svg className="kpi-title-icon blue" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z" /></svg>
               </div>
               <div className="kpi-value-block">
                 <span className="kpi-value-text" id="roofTabArea">{d ? `${d.roof_area_sqft} sq ft` : defaultArea}</span>
               </div>
-              <p className="kpi-card-subdesc" style={{ fontSize: '10px', color: 'var(--text-muted)', marginTop: '4px' }}>Out of 520 sq ft total area</p>
+              <p className="kpi-card-subdesc" style={{ fontSize: '11px', color: 'var(--text-muted)', marginTop: '4px' }}>Out of 520 sq ft total area</p>
             </div>
 
-            <div className="card-base shadow-lift" style={{ '--card-theme': '255, 138, 29' } as React.CSSProperties}>
+            <div className="card-base" style={{ '--card-theme': '255, 138, 29' } as React.CSSProperties}>
               <div className="kpi-header-row">
                 <span className="kpi-title">Shade Factor</span>
-                <svg className="kpi-title-icon orange"><use href="#icon-settings" xlinkHref="#icon-settings" /></svg>
+                <svg className="kpi-title-icon orange" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><circle cx="12" cy="12" r="3" /><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1 0 2.83 2 2 0 0 1-2.83 0l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-2 2 2 2 0 0 1-2-2v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83 0 2 2 0 0 1 0-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1-2-2 2 2 0 0 1 2-2h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 0-2.83 2 2 0 0 1 2.83 0l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 2-2 2 2 0 0 1 2 2v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 0 2 2 0 0 1 0 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 2 2 2 2 0 0 1-2 2h-.09a1.65 1.65 0 0 0-1.51 1z" /></svg>
               </div>
               <div className="kpi-value-block">
                 <span className="kpi-value-text" id="roofTabShade">{d ? d.shadePercent : defaultShade}</span>
               </div>
-              <p className="kpi-card-subdesc" style={{ fontSize: '10px', color: 'var(--text-muted)', marginTop: '4px' }}>Minimal shade from surrounding structures</p>
+              <p className="kpi-card-subdesc" style={{ fontSize: '11px', color: 'var(--text-muted)', marginTop: '4px' }}>Minimal shade from surrounding structures</p>
             </div>
 
-            <div className="card-base shadow-lift" style={{ '--card-theme': '23, 168, 229' } as React.CSSProperties}>
+            <div className="card-base" style={{ '--card-theme': '23, 168, 229' } as React.CSSProperties}>
               <div className="kpi-header-row">
                 <span className="kpi-title">Recommended System Size</span>
-                <svg className="kpi-title-icon blue"><use href="#icon-energy-production" xlinkHref="#icon-energy-production" /></svg>
+                <svg className="kpi-title-icon blue" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2" /></svg>
               </div>
               <div className="kpi-value-block">
                 <span className="kpi-value-text" id="roofTabSystemSize">{d ? `${d.system_size_kw} kW` : defaultSystemSize}</span>
               </div>
-              <p className="kpi-card-subdesc" style={{ fontSize: '10px', color: 'var(--text-muted)', marginTop: '4px' }}>Fits 16 high-efficiency panels</p>
+              <p className="kpi-card-subdesc" style={{ fontSize: '11px', color: 'var(--text-muted)', marginTop: '4px' }}>Fits 16 high-efficiency panels</p>
             </div>
           </div>
         </div>

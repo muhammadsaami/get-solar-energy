@@ -1,15 +1,13 @@
 import React from 'react';
-import { useAuth } from '../../contexts/AuthContext';
-import { getDisplayRole } from '../../utils/role';
+import { useNavigate } from 'react-router-dom';
+import { ROUTES } from '../../config/routes';
 
 interface DashboardHeroCardProps {
   children?: React.ReactNode;
 }
 
 export default function DashboardHeroCard({ children }: DashboardHeroCardProps) {
-  const { user } = useAuth() as unknown as { user: { name: string; role: string } | null };
-  const greeting = user?.name ? `Good Morning, ${user.name.split(' ')[0]}` : 'Good Morning, User';
-  const roleText = getDisplayRole(user?.role);
+  const navigate = useNavigate();
 
   return (
     <section className="hero-card" id="heroCard">
@@ -19,28 +17,36 @@ export default function DashboardHeroCard({ children }: DashboardHeroCardProps) 
       <div className="hero-left">
         <div className="hero-meta-badges">
           <div className="hero-meta-badge">
-            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z"></path><circle cx="12" cy="10" r="3"></circle></svg>
-            <span id="heroLocationText">Location Not Set</span>
-          </div>
-          <div className="hero-meta-badge">
-            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"></path><circle cx="12" cy="7" r="4"></circle></svg>
-            <span id="heroCustomerTypeText">{roleText}</span>
-          </div>
-          <div className="hero-meta-badge">
             <span className="grid-status-dot"></span>
             <span>Grid Status: Online</span>
           </div>
         </div>
-        
-        <h2 className="hero-title" id="heroGreeting">{greeting}</h2>
-        <p className="hero-desc">Welcome back to GET Solar Energy. Manage your electricity usage, monitor your solar journey, and discover opportunities to reduce your energy costs.</p>
-        
+
+        <h2 className="hero-title" id="heroGreeting">Your Solar Dashboard</h2>
+        <p className="hero-desc">Manage your electricity usage, monitor your solar journey, and discover opportunities to reduce your energy costs.</p>
+
+        <div className="hero-insight-strip">
+          <svg className="hero-insight-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"></polygon><line x1="12" y1="6" x2="12" y2="11"></line><line x1="12" y1="14" x2="12.01" y2="14"></line></svg>
+          <span className="hero-insight-text" id="heroAiInsight">AI Insight: Analyze your bill to reveal up to 60% potential savings on your energy costs.</span>
+        </div>
+
+        <div className="hero-health-strip">
+          <span className="hero-health-item">
+            <span className="hero-health-dot ok"></span> System Online
+          </span>
+          <span className="hero-health-item">
+            <span className="hero-health-dot ok"></span> Live Data Sync
+          </span>
+          <span className="hero-health-sep"></span>
+          <span className="hero-health-item muted">Last synced just now</span>
+        </div>
+
         <div className="hero-actions">
-          <button className="hero-btn-primary" id="heroBillBtn">
+          <button className="hero-btn-primary" id="heroBillBtn" onClick={() => navigate(ROUTES.BILL_ANALYZER)}>
             <span>Analyze My Electricity Bill</span>
             <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><path d="M12 5v14M5 12h14"/></svg>
           </button>
-          <button className="hero-btn-secondary" id="heroSolutionsBtn">
+          <button className="hero-btn-secondary" id="heroSolutionsBtn" onClick={() => navigate(ROUTES.ROOF_ANALYSIS)}>
             <span>Check Roof Suitability</span>
             <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><path d="M5 12h14M12 5l7 7-7 7"/></svg>
           </button>

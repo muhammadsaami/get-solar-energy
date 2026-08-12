@@ -366,18 +366,21 @@ html, body {
 .auth-error-banner {
   display: none;
   background: rgba(239, 68, 68, 0.08);
-  border: 1px solid rgba(239, 68, 68, 0.2);
-  border-radius: var(--radius-sm);
-  padding: 10px 14px;
+  border: 1px solid rgba(239, 68, 68, 0.25);
+  border-radius: 12px;
+  padding: 12px 16px;
   font-size: 13.5px;
   color: #fca5a5;
   line-height: 1.5;
   z-index: 2;
+  display: flex;
+  align-items: center;
+  gap: 10px;
 }
 
 .auth-error-banner.visible {
-  display: block;
-  animation: shakeError 0.4s var(--ease);
+  display: flex;
+  animation: shakeError 0.4s ease;
 }
 
 @keyframes shakeError {
@@ -392,7 +395,7 @@ html, body {
 .auth-form {
   display: flex;
   flex-direction: column;
-  gap: 20px;
+  gap: 22px;
   z-index: 2;
 }
 
@@ -415,11 +418,11 @@ html, body {
 }
 
 .form-label {
-  font-size: 13.5px;
+  font-size: 13px;
   font-weight: 600;
-  color: var(--text-secondary);
-  letter-spacing: 0.2px;
-  transition: color 0.2s var(--ease);
+  color: rgba(255, 255, 255, 0.6);
+  letter-spacing: 0.15px;
+  transition: color 0.2s ease;
 }
 
 .form-group:focus-within .form-label {
@@ -433,14 +436,17 @@ html, body {
   font-size: 12.5px;
   font-weight: 600;
   color: var(--accent-blue);
-  transition: color 0.15s var(--ease), text-shadow 0.15s var(--ease);
+  transition: color 0.15s ease, text-decoration-color 0.15s ease;
   padding: 0;
   line-height: 1;
+  text-decoration: underline;
+  text-decoration-color: transparent;
+  text-underline-offset: 2px;
 }
 
 .forgot-link:hover {
   color: #fff;
-  text-shadow: 0 0 8px var(--accent-blue);
+  text-decoration-color: var(--accent-blue);
 }
 
 /* Input wrapper */
@@ -464,31 +470,35 @@ html, body {
 .form-input {
   width: 100%;
   height: 52px;
-  background: var(--bg-input);
-  border: 1px solid var(--border-color);
-  border-radius: var(--radius-sm);
-  padding: 0 16px 0 46px;
+  background: rgba(255, 255, 255, 0.06);
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  border-radius: 14px;
+  padding: 0 48px 0 46px;
   font-size: 14.5px;
   font-weight: 400;
-  color: var(--text-primary);
+  color: #ffffff;
   outline: none;
-  transition: border-color 0.2s var(--ease), box-shadow 0.2s var(--ease), background 0.2s var(--ease);
+  transition: border-color 0.2s ease, box-shadow 0.2s ease, background 0.2s ease;
   caret-color: var(--accent-blue);
+  font-family: 'Outfit', 'Inter', sans-serif;
+  backdrop-filter: blur(8px);
+  -webkit-backdrop-filter: blur(8px);
 }
 
 .form-input::placeholder {
-  color: var(--text-muted);
+  color: rgba(255, 255, 255, 0.38);
 }
 
 .form-input:hover {
-  border-color: rgba(255, 255, 255, 0.25);
-  background: rgba(14, 38, 66, 0.9);
+  border-color: rgba(255, 255, 255, 0.18);
+  background: rgba(255, 255, 255, 0.08);
 }
 
 .form-input:focus {
   border-color: var(--accent-blue);
-  box-shadow: 0 0 0 3px rgba(23, 168, 229, 0.2), 0 4px 16px rgba(0, 0, 0, 0.3);
-  background: rgba(16, 44, 76, 0.95);
+  box-shadow: 0 0 0 3px rgba(23, 168, 229, 0.18), 0 4px 16px rgba(0, 0, 0, 0.25);
+  background: rgba(23, 168, 229, 0.05);
+  outline: none;
 }
 
 .form-input:focus + .input-icon,
@@ -496,42 +506,64 @@ html, body {
   color: var(--accent-blue);
 }
 
+/* Without icon: inputs without leading icons (e.g. select) */
+.form-input.no-icon {
+  padding-left: 16px;
+}
+
 /* Success/Error States */
 .form-input.input-error {
-  border-color: rgba(239, 68, 68, 0.55) !important;
+  border-color: rgba(239, 68, 68, 0.6) !important;
   box-shadow: 0 0 0 3px rgba(239, 68, 68, 0.12) !important;
-  background: rgba(40, 10, 15, 0.8) !important;
+  background: rgba(239, 68, 68, 0.05) !important;
+  animation: inputShake 0.3s ease;
 }
 
 .form-input.input-success {
-  border-color: rgba(54, 211, 153, 0.55) !important;
-  box-shadow: 0 0 0 3px rgba(54, 211, 153, 0.1) !important;
+  border-color: rgba(54, 211, 153, 0.5) !important;
+  box-shadow: 0 0 0 3px rgba(54, 211, 153, 0.09) !important;
+  background: rgba(54, 211, 153, 0.04) !important;
 }
 
-.toggle-password {
+@keyframes inputShake {
+  0%, 100% { transform: translateX(0); }
+  25%       { transform: translateX(-4px); }
+  75%       { transform: translateX(4px); }
+}
+
+/* ── PASSWORD TOGGLE BUTTON ─────────────────────────────────────────────── */
+.toggle-password,
+.password-toggle-btn {
   position: absolute;
-  right: 14px;
+  right: 12px;
   background: none;
   border: none;
   cursor: pointer;
-  padding: 4px;
-  color: var(--text-muted);
+  padding: 8px;
+  color: rgba(255, 255, 255, 0.4);
   display: flex;
   align-items: center;
   justify-content: center;
-  transition: color 0.15s var(--ease);
+  transition: color 0.2s ease, background 0.2s ease;
+  border-radius: 8px;
+  min-width: 36px;
+  min-height: 36px;
 }
 
-.toggle-password svg {
+.toggle-password svg,
+.password-toggle-btn svg {
   width: 18px;
   height: 18px;
+  flex-shrink: 0;
 }
 
-.toggle-password:hover {
+.toggle-password:hover,
+.password-toggle-btn:hover {
   color: var(--accent-blue);
+  background: rgba(23, 168, 229, 0.08);
 }
 
-/* Inline feedback messages */
+/* ── INLINE FIELD FEEDBACK ───────────────────────────────────────────────── */
 .input-feedback {
   font-size: 11.5px;
   font-weight: 500;
@@ -540,15 +572,22 @@ html, body {
   align-items: center;
   gap: 5px;
   min-height: 16px;
-  transition: all 0.2s var(--ease);
+  transition: all 0.25s ease;
 }
 
 .input-feedback.error {
   color: #ff6b6b;
+  animation: feedbackSlideIn 0.2s ease;
 }
 
 .input-feedback.success {
   color: var(--accent-green);
+  animation: feedbackSlideIn 0.2s ease;
+}
+
+@keyframes feedbackSlideIn {
+  from { opacity: 0; transform: translateY(-4px); }
+  to   { opacity: 1; transform: translateY(0); }
 }
 
 .feedback-icon {
@@ -556,20 +595,48 @@ html, body {
   font-weight: 700;
 }
 
-/* ── CHECKBOX ─────────────────────────────────────────────────────────────── */
+/* field-feedback used in Login.tsx inline spans */
+.field-feedback {
+  display: flex;
+  align-items: center;
+  gap: 5px;
+  font-size: 11.5px;
+  font-weight: 600;
+  margin-top: 5px;
+  animation: feedbackSlideIn 0.2s ease;
+}
+
+.field-feedback.error {
+  color: #ff6b6b;
+}
+
+.field-feedback.success {
+  color: var(--accent-green);
+}
+
+/* ── CHECKBOX & REMEMBER ME / FORGOT PASSWORD ROW ────────────────────────── */
 .form-options-row {
   display: flex;
   align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  margin-top: -4px;
 }
 
 .checkbox-label {
   display: flex;
   align-items: center;
   gap: 10px;
-  font-size: 13.5px;
+  font-size: 13px;
+  font-weight: 500;
   color: var(--text-secondary);
   cursor: pointer;
   user-select: none;
+  transition: color 0.15s ease;
+}
+
+.checkbox-label:hover {
+  color: var(--text-primary);
 }
 
 .checkbox-label input[type="checkbox"] {
@@ -577,38 +644,96 @@ html, body {
 }
 
 .custom-checkbox {
-  width: 20px;
-  height: 20px;
-  border: 1.5px solid var(--border-color);
-  border-radius: 6px;
-  background: var(--bg-input);
+  width: 18px;
+  height: 18px;
+  border: 1.5px solid rgba(255, 255, 255, 0.2);
+  border-radius: 5px;
+  background: rgba(255, 255, 255, 0.05);
   display: flex;
   align-items: center;
   justify-content: center;
   flex-shrink: 0;
-  transition: all 0.15s var(--ease);
+  transition: all 0.15s ease;
   position: relative;
 }
 
 .custom-checkbox::after {
   content: '';
-  width: 5px;
-  height: 9px;
+  width: 4px;
+  height: 8px;
   border: 2px solid transparent;
   border-top: none;
   border-left: none;
   transform: rotate(45deg) translateY(-1px);
-  transition: border-color 0.15s var(--ease);
+  transition: border-color 0.15s ease;
 }
 
 .checkbox-label input:checked ~ .custom-checkbox {
   background: var(--accent-blue);
   border-color: var(--accent-blue);
-  box-shadow: 0 0 10px rgba(23, 168, 229, 0.4);
+  box-shadow: 0 0 10px rgba(23, 168, 229, 0.35);
 }
 
 .checkbox-label input:checked ~ .custom-checkbox::after {
   border-color: #fff;
+}
+
+/* Auth Form Row — Remember Me + Forgot Password */
+.auth-form-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  margin-top: -8px;
+}
+
+.remember-me-label {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 13px;
+  font-weight: 500;
+  color: rgba(255, 255, 255, 0.55);
+  cursor: pointer;
+  user-select: none;
+  transition: color 0.15s ease;
+}
+
+.remember-me-label:hover {
+  color: rgba(255, 255, 255, 0.8);
+}
+
+.remember-me-label input[type="checkbox"] {
+  width: 16px;
+  height: 16px;
+  accent-color: var(--accent-blue);
+  cursor: pointer;
+  border-radius: 4px;
+}
+
+.forgot-password-link {
+  background: none;
+  border: none;
+  cursor: pointer;
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--accent-blue);
+  padding: 0;
+  line-height: 1;
+  transition: color 0.15s ease, text-decoration-color 0.15s ease;
+  text-decoration: underline;
+  text-decoration-color: transparent;
+  text-underline-offset: 2px;
+}
+
+.forgot-password-link:hover {
+  color: #ffffff;
+  text-decoration-color: var(--accent-blue);
+}
+
+.forgot-password-link:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
 }
 
 /* ── PASSWORD STRENGTH ────────────────────────────────────────────────────── */
@@ -650,7 +775,7 @@ html, body {
 /* ── PRIMARY AUTH BUTTON ────────────────────────────────────────────────────── */
 .btn-primary-auth {
   width: 100%;
-  height: 52px;
+  height: 54px;
   display: flex;
   align-items: center;
   justify-content: center;
@@ -659,28 +784,31 @@ html, body {
   color: #fff;
   font-size: 15px;
   font-weight: 700;
+  letter-spacing: 0.2px;
   border: none;
-  border-radius: var(--radius-md);
+  border-radius: 14px;
   cursor: pointer;
   position: relative;
   overflow: hidden;
   box-shadow: 0 6px 24px rgba(255, 138, 29, 0.3), 0 0 0 1px rgba(255, 138, 29, 0.15);
   transition: all 0.25s cubic-bezier(0.25, 0.8, 0.25, 1);
+  margin-top: 8px;
+  font-family: 'Outfit', 'Inter', sans-serif;
 }
 
 .btn-primary-auth::before {
   content: '';
   position: absolute;
   inset: 0;
-  background: linear-gradient(90deg, rgba(255, 255, 255, 0.15), transparent);
+  background: linear-gradient(90deg, rgba(255, 255, 255, 0.18), transparent);
   opacity: 0;
-  transition: opacity 0.2s var(--ease);
+  transition: opacity 0.2s ease;
 }
 
 .btn-primary-auth:hover {
   transform: translateY(-2px);
-  box-shadow: 0 14px 35px rgba(255, 138, 29, 0.45), 0 0 15px rgba(255, 138, 29, 0.2);
-  filter: brightness(1.05);
+  box-shadow: 0 16px 40px rgba(255, 138, 29, 0.5), 0 0 20px rgba(255, 138, 29, 0.22);
+  filter: brightness(1.06);
 }
 
 .btn-primary-auth:hover::before {
@@ -688,7 +816,7 @@ html, body {
 }
 
 .btn-primary-auth:active {
-  transform: translateY(0);
+  transform: translateY(1px);
   box-shadow: 0 4px 15px rgba(255, 138, 29, 0.3);
 }
 
@@ -699,10 +827,64 @@ html, body {
   box-shadow: none;
 }
 
+/* Generic auth submit button from Login.tsx */
+.auth-submit-btn {
+  width: 100%;
+  height: 54px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 10px;
+  background: linear-gradient(135deg, #ff9d3b 0%, #ff8a1d 50%, #e6760f 100%);
+  color: #fff;
+  font-size: 15px;
+  font-weight: 700;
+  letter-spacing: 0.2px;
+  border: none;
+  border-radius: 14px;
+  cursor: pointer;
+  position: relative;
+  overflow: hidden;
+  box-shadow: 0 6px 24px rgba(255, 138, 29, 0.3);
+  transition: all 0.25s cubic-bezier(0.25, 0.8, 0.25, 1);
+  margin-top: 8px;
+  font-family: 'Outfit', 'Inter', sans-serif;
+}
+
+.auth-submit-btn:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 16px 40px rgba(255, 138, 29, 0.5);
+  filter: brightness(1.06);
+}
+
+.auth-submit-btn:active {
+  transform: translateY(1px);
+}
+
+.auth-submit-btn:disabled {
+  opacity: 0.65;
+  cursor: not-allowed;
+  transform: none;
+  box-shadow: none;
+}
+
+/* Spinner inside auth-submit-btn (Login.tsx renders a div.btn-spinner) */
+.auth-submit-btn .btn-spinner,
+.auth-submit-btn div.btn-spinner {
+  display: inline-block;
+  width: 20px;
+  height: 20px;
+  border: 2px solid rgba(255,255,255,0.3);
+  border-top-color: #fff;
+  border-radius: 50%;
+  animation: spin 0.7s linear infinite;
+  flex-shrink: 0;
+}
+
 .btn-arrow {
   width: 18px;
   height: 18px;
-  transition: transform 0.2s var(--ease);
+  transition: transform 0.2s ease;
   flex-shrink: 0;
 }
 

@@ -44,14 +44,10 @@ export function formatNumber(n: number): string {
   return Number(n).toLocaleString('en-IN')
 }
 
+import { tokenManager } from '../services/auth/tokenManager'
+
 export function getUser(): { email: string; name: string; referral_code: string } | null {
-  try {
-    const raw = localStorage.getItem('user')
-    if (!raw) return null
-    return JSON.parse(raw)
-  } catch {
-    return null
-  }
+  return tokenManager.getUser() as { email: string; name: string; referral_code: string } | null
 }
 
 export function getStatusBadgeStyle(status: string): { bg: string; color: string; label: string } {

@@ -1,5 +1,5 @@
 import { useEffect, useRef } from 'react'
-import { useAuthStore } from '../../stores/authStore'
+import { useAuth } from '../../contexts/AuthContext'
 import { useAuthStatus } from '../../hooks/useAuthStatus'
 
 interface MobileDrawerProps {
@@ -11,6 +11,7 @@ export default function MobileDrawer({ isOpen, onClose }: MobileDrawerProps) {
   const drawerRef = useRef<HTMLDivElement>(null)
   const toggleRef = useRef<HTMLElement | null>(null)
   const { isAuthenticated } = useAuthStatus()
+  const { logout } = useAuth() as unknown as { logout: () => void }
 
   useEffect(() => {
     if (isOpen) {
@@ -75,7 +76,7 @@ export default function MobileDrawer({ isOpen, onClose }: MobileDrawerProps) {
   }
 
   const handleLogout = () => {
-    useAuthStore.getState().logout()
+    logout()
     onClose()
   }
 

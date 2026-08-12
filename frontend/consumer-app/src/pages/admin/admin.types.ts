@@ -78,7 +78,7 @@ export const ACCENT_MAP: Record<string, string> = {
   blue: 'var(--color-blue)',
   green: 'var(--color-green)',
   orange: 'var(--color-orange)',
-  purple: 'var(--color-purple)',
-  cyan: 'var(--color-cyan)',
-  amber: 'var(--color-amber)',
+  amber: 'var(--color-yellow)',
+  cyan: 'var(--color-blue)',
+  purple: 'var(--color-blue)',
 }

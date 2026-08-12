@@ -1,5 +1,4 @@
 import React from 'react'
-import { useLocation } from 'react-router-dom'
 import { useAuth } from '../../contexts/AuthContext'
 import { useUI } from '../../contexts/UIContext'
 import NotificationMenu from './NotificationMenu'
@@ -14,13 +13,6 @@ interface AuthUser {
 export default function Topbar() {
   const { user } = useAuth() as unknown as { user: AuthUser | null; loading: boolean }
   const { toggleMobileDrawer } = useUI() as unknown as { toggleMobileDrawer: () => void }
-  const location = useLocation()
-
-  const pathParts = location.pathname.split('/').filter(x => x && x !== 'app')
-  const isDashboard = !pathParts.length || pathParts[0].toLowerCase() === 'home'
-  const breadcrumbText = isDashboard
-    ? 'Dashboard'
-    : pathParts.map(p => p.charAt(0).toUpperCase() + p.slice(1)).join(' / ')
 
   const greeting = user?.name
     ? `Good ${new Date().getHours() < 12 ? 'Morning' : new Date().getHours() < 18 ? 'Afternoon' : 'Evening'}, ${user.name.split(' ')[0]}`
@@ -28,8 +20,8 @@ export default function Topbar() {
 
   return (
     <header className="header">
-      <div className="header-left">
-        <div style={{ display: 'flex', alignItems: 'center' }}>
+      <div className="header-left header-lead">
+        <div className="header-menu-title" style={{ display: 'flex', alignItems: 'center' }}>
           <button className="menu-toggle" id="menuToggle" aria-label="Toggle Side menu drawer" onClick={toggleMobileDrawer}>
             <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round">
               <line x1="3" y1="12" x2="21" y2="12" />
@@ -37,17 +29,25 @@ export default function Topbar() {
               <line x1="3" y1="18" x2="21" y2="18" />
             </svg>
           </button>
-          <h1 className="header-title" id="dashGreeting">
-            {greeting} <span className="wave">👋</span>
-          </h1>
+          <div className="topbar-title-stack">
+            <h1 className="header-title" id="dashGreeting">
+              {greeting.split(',')[0]}
+              <span className="header-title-name">{greeting.split(',')[1] || ''}</span>
+            </h1>
+          </div>
         </div>
-        <span className="header-subtitle">
-          Here's what's happening with your solar journey today.
-        </span>
       </div>
 
-      <div className="header-right">
-        <div className="location-selector" id="locationSelector">
+      <div className="header-right headerbar-toolbar">
+        <div className="topbar-search" role="search">
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round">
+            <circle cx="11" cy="11" r="8" /><line x1="21" y1="21" x2="16.65" y2="16.65" />
+          </svg>
+          <input type="search" placeholder="Search projects, clients, reports…" aria-label="Search" />
+          <kbd className="topbar-search-kbd">⌘K</kbd>
+        </div>
+
+        <div className="location-selector topbar-workspace-chip" id="locationSelector">
           <button className="location-btn" aria-haspopup="listbox" aria-expanded="false">
             <svg className="pin" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round">
               <path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z" />
@@ -60,7 +60,7 @@ export default function Topbar() {
           </button>
         </div>
 
-        <NotificationMenu notificationCount={0} />
+        <NotificationMenu />
 
         <UserMenu />
       </div>

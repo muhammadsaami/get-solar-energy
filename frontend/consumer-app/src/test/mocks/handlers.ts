@@ -1,20 +1,18 @@
 import { http, HttpResponse } from 'msw'
 
 export const handlers = [
-  // Auth
+  // Auth — matches the real backend contract (auth.py /api/login).
   http.post('/api/login', () => {
     return HttpResponse.json({
       success: true,
-      data: {
-        access_token: 'mock_access_token',
-        refresh_token: 'mock_refresh_token',
-        user: {
-          id: 1,
-          email: 'test@getsolar.in',
-          name: 'TEST',
-          role: 'customer',
-          avatar: 'https://api.dicebear.com/7.x/bottts/svg?seed=GETSolar',
-        },
+      message: 'Login successful!',
+      token: 'mock_access_token',
+      user: {
+        id: 1,
+        email: 'test@getsolar.in',
+        name: 'TEST',
+        role: 'customer',
+        avatar: 'https://api.dicebear.com/7.x/bottts/svg?seed=GETSolar',
       },
     })
   }),

@@ -47,12 +47,24 @@ function mergeDatasets(datasets: PerformanceChartDataset[]): Record<string, stri
   })
 }
 
-function ChartTooltip({ active, payload, label }: any) {
+interface ChartTooltipPayloadItem {
+  name?: string
+  value?: number | string
+  color?: string
+}
+
+interface ChartTooltipProps {
+  active?: boolean
+  payload?: ChartTooltipPayloadItem[]
+  label?: string | number
+}
+
+function ChartTooltip({ active, payload, label }: ChartTooltipProps) {
   if (!active || !payload?.length) return null
   return (
     <div style={tooltipStyle}>
       <div style={{ fontWeight: 600, marginBottom: 4, fontSize: 11 }}>{label}</div>
-      {payload.map((entry: any, i: number) => (
+      {payload.map((entry, i) => (
         <div key={i} style={{ fontSize: 10, color: entry.color }}>
           {entry.name}: {typeof entry.value === 'number' ? entry.value.toLocaleString() : entry.value}
         </div>

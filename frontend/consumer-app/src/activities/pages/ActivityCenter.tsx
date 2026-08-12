@@ -5,7 +5,6 @@ import { ActivityAlertsPanel } from '../components/ActivityAlertsPanel'
 import { ActivityFilterBar } from '../components/ActivityFilterBar'
 import { ActivityFeed } from '../components/ActivityFeed'
 import { ActivityEmptyState } from '../components/ActivityEmptyState'
-import DashboardSprites from '../../components/dashboard/DashboardSprites'
 
 export default function ActivityCenter() {
   const {
@@ -23,56 +22,61 @@ export default function ActivityCenter() {
   } = useActivityCenter()
 
   return (
-    <>
-      <DashboardSprites />
-      <div className="tab-content" role="tabpanel" aria-label="activity center" style={{ display: 'block' }}>
-        <div className="tab-header-block">
-          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start' }}>
-            <div>
-              <h2 className="tab-heading">Activity Center</h2>
-              <p className="tab-subheading">Track chronological events and assessments throughout your solar journey.</p>
-            </div>
-            <button
-              className="btn btn-secondary"
-              onClick={refresh}
-              disabled={loading}
-              style={{ padding: '8px 16px', fontSize: '11px', width: 'auto', height: 'auto', flexShrink: 0 }}
-            >
-              {loading ? '\u23F3' : '\uD83D\uDD04'} {loading ? 'Refreshing...' : 'Refresh'}
-            </button>
+    <div className="ew-page" role="tabpanel" aria-label="activity center">
+      <header className="ew-mission-bar" role="banner" aria-label="Activity Center Header">
+        <div className="ew-mission-scope">
+          <span className="ew-live-dot" />
+          <span className="ew-scope-badge">LOGS / AUDIT-FEED</span>
+          <span style={{ color: 'var(--text-muted)' }}>|</span>
+          <span style={{ fontWeight: 700, color: 'var(--text-primary)' }}>Chronological Solar Journey &amp; Milestones</span>
+        </div>
+
+        <div className="ew-mission-stats">
+          <div className="ew-mission-stat-item">
+            <span>Events Tracked:</span>
+            <strong style={{ color: 'var(--color-cyan)' }}>{activities.length}</strong>
           </div>
         </div>
 
-        {error?.hasError && (
-          <div
-            style={{
-              marginBottom: '16px',
-              padding: '14px',
-              borderRadius: '8px',
-              background: 'rgba(231, 76, 60, 0.06)',
-              border: '1px dashed rgba(231, 76, 60, 0.3)',
-              textAlign: 'center',
-              fontSize: '12px',
-              color: '#ef4444',
-              fontWeight: 600,
-            }}
+        <div className="ew-mission-actions">
+          <button
+            className="btn btn-primary btn-sm"
+            onClick={refresh}
+            disabled={loading}
+            style={{ fontSize: 11, padding: '4px 10px' }}
           >
-            {error.message}
-          </div>
-        )}
+            {loading ? 'Refreshing...' : 'Refresh Activity'}
+          </button>
+        </div>
+      </header>
 
-        <ActivitySummaryCards summary={summaryCards} />
-        <ActivityAlertsPanel alerts={alerts} loading={loading} />
-        <ActivityFilterBar filters={filters} onFilterChange={setFilter} onSearchChange={setSearch} />
-        <ActivityFeed
-          activities={activities}
-          loading={loading}
-          hasMore={pagination.hasMore}
-          isLoadingMore={pagination.isLoadingMore}
-          onLoadMore={loadMore}
-        />
-        {!loading && activities.length === 0 && <ActivityEmptyState />}
-      </div>
-    </>
+      {error?.hasError && (
+        <div
+          style={{
+            padding: '10px 14px',
+            borderRadius: '6px',
+            background: 'rgba(239, 68, 68, 0.08)',
+            border: '1px solid rgba(239, 68, 68, 0.25)',
+            fontSize: '12px',
+            color: 'var(--color-red)',
+            fontWeight: 600,
+          }}
+        >
+          {error.message}
+        </div>
+      )}
+
+      <ActivitySummaryCards summary={summaryCards} />
+      <ActivityAlertsPanel alerts={alerts} loading={loading} />
+      <ActivityFilterBar filters={filters} onFilterChange={setFilter} onSearchChange={setSearch} />
+      <ActivityFeed
+        activities={activities}
+        loading={loading}
+        hasMore={pagination.hasMore}
+        isLoadingMore={pagination.isLoadingMore}
+        onLoadMore={loadMore}
+      />
+      {!loading && activities.length === 0 && <ActivityEmptyState />}
+    </div>
   )
 }

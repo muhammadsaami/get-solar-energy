@@ -26,7 +26,7 @@ function ReportTemplateCardComponent({
           <h4 style={{ fontSize: '13px', fontWeight: 800, color: 'var(--text-navy)', margin: 0 }}>
             {template.title}
           </h4>
-          <span className="status-badge badge-gray">Not Available</span>
+          <span className="status-badge badge-green">Ready</span>
         </div>
         <p style={{ fontSize: '10px', color: 'var(--text-secondary)', lineHeight: 1.4, margin: '0 0 12px 0' }}>
           {template.description}
@@ -41,7 +41,7 @@ function ReportTemplateCardComponent({
       <div style={{ display: 'flex', gap: '6px' }}>
         <button
           className="table-action-btn"
-          disabled={!template.generateConfig.endpoint || generating}
+          disabled={generating}
           onClick={() => onGenerate(template.id)}
           style={{ flex: 1, fontSize: '10px', padding: '5px 0' }}
         >
@@ -58,10 +58,10 @@ function ReportTemplateCardComponent({
         </button>
         <button
           className="table-action-btn"
-          disabled={!template.supportsPDF}
+          disabled={generating}
           onClick={() => onDownload(template.id)}
           style={{ fontSize: '10px', padding: '5px' }}
-          title="Download PDF"
+          title="Download CSV"
         >
           {'\uD83D\uECE5'}
         </button>

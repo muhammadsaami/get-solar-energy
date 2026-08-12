@@ -33,8 +33,8 @@ export default function AIAdvisor() {
       <div className="card-base chat-assistant-card" style={{ '--card-theme': '23, 168, 229' } as React.CSSProperties}>
         <div className="kpi-header-row" style={{ borderBottom: '1px solid var(--border-color-light)', paddingBottom: '12px', marginBottom: '12px' }}>
           <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-            <svg style={{ width: '20px', height: '20px', stroke: 'var(--accent-blue)', fill: 'none', strokeWidth: '2' }}>
-              <use href="#icon-chat" />
+            <svg style={{ width: '20px', height: '20px', stroke: 'var(--accent-blue)', fill: 'none', strokeWidth: '2' }} viewBox="0 0 24 24">
+              <path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z" />
             </svg>
             <span className="kpi-title">GET Solar Copilot</span>
           </div>

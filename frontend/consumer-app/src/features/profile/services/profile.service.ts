@@ -9,23 +9,19 @@ export const profileService = {
   },
 
   async getProfile(): Promise<CanonicalTechnicianProfile> {
-    const [profileRes, perfRes] = await Promise.all([
-      api.get('/technician/profile'),
-      api.get('/technician/performance').catch(() => null),
-    ])
-
-    const raw: RawBackendTechnicianProfile = profileRes.data?.technician || {
-      id: 1,
-      name: 'Solar Technician',
-      email: 'technician@getsolar.in',
-      phone: '+91 98200 12345',
-      city: 'Mumbai',
-      skill_level: 'Level 1',
-      kyc_status: 'Verified',
-      created_at: new Date().toISOString(),
+    const profileRes = await api.get('/technician/profile')
+    const raw: RawBackendTechnicianProfile | undefined = profileRes.data?.technician
+    if (!raw) {
+      throw new Error('Profile data unavailable.')
     }
 
-    const perfData = perfRes?.data || {}
+    let perfData: Record<string, any> = {}
+    try {
+      const perfRes = await api.get('/technician/performance')
+      perfData = (perfRes?.data || {}) as Record<string, any>
+    } catch {
+      perfData = {}
+    }
 
     const createdDate = raw.created_at ? new Date(raw.created_at) : new Date()
     const joinedDateFormatted = createdDate.toLocaleDateString('en-IN', {
@@ -33,34 +29,37 @@ export const profileService = {
       year: 'numeric',
     })
 
+    const kycStatus =
+      (perfData.kyc_status || raw.kyc_status || 'Pending') as 'Verified' | 'Pending' | 'Rejected'
+
     return {
       id: raw.id,
-      name: raw.name || 'Solar Technician',
-      email: raw.email || 'technician@getsolar.in',
-      phone: raw.phone || '+91 98200 12345',
-      city: raw.city || 'Mumbai',
+      name: raw.name || '',
+      email: raw.email || '',
+      phone: raw.phone || '',
+      city: raw.city || '',
       skillLevel: perfData.skill_level || raw.skill_level || 'Level 1',
-      kycStatus: (perfData.kyc_status || raw.kyc_status as 'Verified' | 'Pending' | 'Rejected') || 'Verified',
+      kycStatus,
       createdAt: raw.created_at || new Date().toISOString(),
       joinedDateFormatted,
-      completenessPercent: (raw.kyc_status || perfData.kyc_status) === 'Verified' ? 95 : 65,
+      completenessPercent: kycStatus === 'Verified' ? 95 : 65,
       metrics: {
-        jobsCompleted: perfData.jobs_completed ?? 12,
-        onTimeArrivalRatePercent: 98,
-        qualityScoreRating: perfData.average_rating ?? 4.9,
-        customerSatisfactionPercent: 96,
-        safetyCompliancePercent: 100,
-        totalEarnedBudget: 145000,
+        jobsCompleted: perfData.jobs_completed ?? 0,
+        onTimeArrivalRatePercent: 0,
+        qualityScoreRating: perfData.average_rating ?? 0,
+        customerSatisfactionPercent: 0,
+        safetyCompliancePercent: 0,
+        totalEarnedBudget: 0,
       },
       badges: DEFAULT_ACHIEVEMENT_BADGES,
       certificationsSummary: {
-        level1Passed: true,
-        level2Passed: true,
+        level1Passed: false,
+        level2Passed: false,
         certifiedPassed: (perfData.skill_level || raw.skill_level) === 'Certified',
-        totalCertificates: perfData.badges_earned ?? 3,
+        totalCertificates: perfData.badges_earned ?? 0,
       },
       serviceRegions: TECH_SERVICE_REGIONS,
-      bio: 'Senior Solar Field Engineer specializing in residential rooftop solar installation, high-voltage DC string inverter wiring, and DISCOM net-metering compliance inspections.',
+      bio: '',
     }
   },
 

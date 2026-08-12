@@ -13,6 +13,7 @@ import {
   MdEvent,
   MdFlag,
 } from 'react-icons/md'
+import { useNotificationStore } from '../../../stores/notificationStore'
 
 interface JobDrawerContentProps {
   job: CanonicalJob
@@ -27,18 +28,20 @@ export default function JobDrawerContent({
   onToggleSave,
   isApplying,
 }: JobDrawerContentProps) {
+  const addToast = useNotificationStore((s) => s.addToast)
+
   const handleShare = async () => {
     try {
       const shareUrl = `${window.location.origin}/app/technician/marketplace?jobId=${job.id}`
       await navigator.clipboard.writeText(shareUrl)
-      alert('Job listing link copied to clipboard!')
+      addToast({ type: 'success', message: 'Job listing link copied to clipboard!' })
     } catch {
       // ignore
     }
   }
 
   const handleReport = () => {
-    alert('Thank you. This job posting has been flagged for administrative quality review.')
+    addToast({ type: 'info', message: 'Thank you. This job posting has been flagged for administrative quality review.' })
   }
 
   return (

@@ -7,32 +7,41 @@ interface VendorEmptyStateProps {
   action?: { label: string; onClick: () => void }
 }
 
-export default function VendorEmptyState({ icon = 'icon-folder', title = 'No data', description = 'Nothing to show here yet.', action }: VendorEmptyStateProps) {
+export default function VendorEmptyState({
+  icon = 'icon-folder',
+  title = 'No Records Found',
+  description = 'No active records are currently available in this view. Create a new item or refresh to update live data.',
+  action,
+}: VendorEmptyStateProps) {
   return (
-    <div style={{
+    <div className="vendor-glass-card" style={{
       display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center',
-      padding: 'var(--space-16) var(--space-8)', textAlign: 'center',
+      padding: '48px 24px', textAlign: 'center', width: '100%', margin: '16px 0',
     }}>
       <div style={{
-        width: 64, height: 64, borderRadius: 'var(--radius-xl)',
-        background: 'var(--bg-tertiary)', border: '1px solid var(--border-subtle)',
+        width: '72px', height: '72px', borderRadius: '20px',
+        background: 'rgba(23, 168, 229, 0.12)', border: '1px solid var(--vendor-primary-border)',
         display: 'flex', alignItems: 'center', justifyContent: 'center',
-        marginBottom: 'var(--space-5)',
+        marginBottom: '18px', boxShadow: '0 0 24px rgba(23, 168, 229, 0.2)',
       }}>
-        <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="var(--text-muted)" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round">
-          <use href={`#${icon}`} />
+        <svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="var(--vendor-primary)" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
+          <circle cx="12" cy="12" r="10" />
+          <path d="M12 8v4l3 3" />
         </svg>
       </div>
-      <h3 style={{ fontSize: 'var(--font-size-lg)', fontWeight: 700, margin: '0 0 var(--space-2)', color: 'var(--text-primary)' }}>
+
+      <h3 style={{ fontSize: '18px', fontWeight: 800, margin: '0 0 8px', color: '#FFFFFF', fontFamily: "'Outfit', sans-serif" }}>
         {title}
       </h3>
+
       {description && (
-        <p style={{ fontSize: 'var(--font-size-sm)', color: 'var(--text-secondary)', margin: '0 0 var(--space-6)', maxWidth: 400, lineHeight: 1.6 }}>
+        <p style={{ fontSize: '13px', color: 'var(--vendor-text-secondary)', margin: '0 0 24px', maxWidth: '440px', lineHeight: 1.6 }}>
           {description}
         </p>
       )}
+
       {action && (
-        <button className="btn btn-primary btn-sm" onClick={action.onClick} aria-label={action.label}>
+        <button className="vendor-btn-primary" onClick={action.onClick}>
           {action.label}
         </button>
       )}

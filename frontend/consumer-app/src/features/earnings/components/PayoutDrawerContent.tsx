@@ -8,12 +8,14 @@ import {
   MdAccessTime,
   MdDownload,
 } from 'react-icons/md'
+import { useNotificationStore } from '../../../stores/notificationStore'
 
 interface PayoutDrawerContentProps {
   earning: CanonicalEarning
 }
 
 export default function PayoutDrawerContent({ earning }: PayoutDrawerContentProps) {
+  const addToast = useNotificationStore((s) => s.addToast)
   return (
     <>
       <div style={{ background: 'linear-gradient(135deg, #0b221a 0%, #061712 100%)', border: '1px solid rgba(16,185,129,0.2)', borderRadius: '12px', padding: '20px' }}>
@@ -86,7 +88,7 @@ export default function PayoutDrawerContent({ earning }: PayoutDrawerContentProp
         <button
           className="btn btn-secondary"
           style={{ width: '100%', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '6px' }}
-          onClick={() => alert(`Downloading payment voucher for ${earning.transactionRef}`)}
+          onClick={() => addToast({ type: 'info', message: `Downloading payment voucher for ${earning.transactionRef}` })}
         >
           <MdDownload /> Download Payment Slip (PDF)
         </button>

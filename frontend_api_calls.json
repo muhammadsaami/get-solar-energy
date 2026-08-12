@@ -1,0 +1,870 @@
+[
+  {
+    "file": "frontend/consumer-app/src/activities/services/activity.service.ts",
+    "line": 183,
+    "method": "GET",
+    "raw_endpoint": "/dashboard/stats",
+    "code": "const { data } = await api.get<DashboardStats>('/dashboard/stats', { signal })"
+  },
+  {
+    "file": "frontend/consumer-app/src/activities/services/activity.service.ts",
+    "line": 197,
+    "method": "GET",
+    "raw_endpoint": "/dashboard/recent-bills",
+    "code": "const { data } = await api.get<BillRecord[]>('/dashboard/recent-bills', {"
+  },
+  {
+    "file": "frontend/consumer-app/src/features/certifications/services/certifications.service.ts",
+    "line": 12,
+    "method": "GET",
+    "raw_endpoint": "/technician/training/certifications",
+    "code": "const res = await api.get('/technician/training/certifications')"
+  },
+  {
+    "file": "frontend/consumer-app/src/features/earnings/services/earnings.service.ts",
+    "line": 22,
+    "method": "GET",
+    "raw_endpoint": "/technician/earnings/",
+    "code": "const res = await api.get('/technician/earnings/')"
+  },
+  {
+    "file": "frontend/consumer-app/src/features/jobMarketplace/services/jobMarketplace.service.ts",
+    "line": 27,
+    "method": "GET",
+    "raw_endpoint": "/jobs/open",
+    "code": "const res = await api.get('/jobs/open', { params })"
+  },
+  {
+    "file": "frontend/consumer-app/src/features/jobMarketplace/services/jobMarketplace.service.ts",
+    "line": 79,
+    "method": "POST",
+    "raw_endpoint": "/jobs/${jobId}/apply",
+    "code": "const res = await api.post(`/jobs/${jobId}/apply`)"
+  },
+  {
+    "file": "frontend/consumer-app/src/features/knowledgeBase/services/knowledgeBase.service.js",
+    "line": 331,
+    "method": "GET",
+    "raw_endpoint": "/knowledge-base",
+    "code": "const res = await api.get('/knowledge-base')"
+  },
+  {
+    "file": "frontend/consumer-app/src/features/profile/services/profile.service.ts",
+    "line": 7,
+    "method": "GET",
+    "raw_endpoint": "/technician/performance",
+    "code": "const res = await api.get('/technician/performance')"
+  },
+  {
+    "file": "frontend/consumer-app/src/features/profile/services/profile.service.ts",
+    "line": 12,
+    "method": "GET",
+    "raw_endpoint": "/technician/profile",
+    "code": "const profileRes = await api.get('/technician/profile')"
+  },
+  {
+    "file": "frontend/consumer-app/src/features/profile/services/profile.service.ts",
+    "line": 20,
+    "method": "GET",
+    "raw_endpoint": "/technician/performance",
+    "code": "const perfRes = await api.get('/technician/performance')"
+  },
+  {
+    "file": "frontend/consumer-app/src/features/profile/services/profile.service.ts",
+    "line": 67,
+    "method": "PUT",
+    "raw_endpoint": "/technician/profile",
+    "code": "const res = await api.put('/technician/profile', data)"
+  },
+  {
+    "file": "frontend/consumer-app/src/features/technicianAi/services/technicianAi.service.ts",
+    "line": 18,
+    "method": "POST",
+    "raw_endpoint": "/technician/ai/troubleshoot",
+    "code": "const res = await api.post('/technician/ai/troubleshoot', {"
+  },
+  {
+    "file": "frontend/consumer-app/src/features/technicianAi/services/technicianAi.service.ts",
+    "line": 46,
+    "method": "GET",
+    "raw_endpoint": "/technician/ai/history",
+    "code": "const res = await api.get('/technician/ai/history')"
+  },
+  {
+    "file": "frontend/consumer-app/src/features/training/services/training.service.js",
+    "line": 45,
+    "method": "GET",
+    "raw_endpoint": "/technician/training/modules",
+    "code": "api.get('/technician/training/modules'),"
+  },
+  {
+    "file": "frontend/consumer-app/src/features/training/services/training.service.js",
+    "line": 46,
+    "method": "GET",
+    "raw_endpoint": "/technician/training/certifications",
+    "code": "api.get('/technician/training/certifications'),"
+  },
+  {
+    "file": "frontend/consumer-app/src/features/workOrders/services/workOrders.service.ts",
+    "line": 21,
+    "method": "GET",
+    "raw_endpoint": "/technician/work-orders/",
+    "code": "const res = await api.get('/technician/work-orders/')"
+  },
+  {
+    "file": "frontend/consumer-app/src/features/workOrders/services/workOrders.service.ts",
+    "line": 56,
+    "method": "PATCH",
+    "raw_endpoint": "/technician/work-orders/${workOrderId}/status",
+    "code": "const res = await api.patch(`/technician/work-orders/${workOrderId}/status`, payload)"
+  },
+  {
+    "file": "frontend/consumer-app/src/hooks/useBillAnalyzer.ts",
+    "line": 503,
+    "method": "POST",
+    "raw_endpoint": "/analyze-bill",
+    "code": "api.post('/analyze-bill', fd)"
+  },
+  {
+    "file": "frontend/consumer-app/src/hooks/useBillAnalyzer.ts",
+    "line": 572,
+    "method": "POST",
+    "raw_endpoint": "/analyze-bill",
+    "code": "api.post('/analyze-bill', fd)"
+  },
+  {
+    "file": "frontend/consumer-app/src/hooks/useRoofAnalyzer.ts",
+    "line": 263,
+    "method": "FETCH",
+    "raw_endpoint": "https://nominatim.openstreetmap.org/search?format=json&q=${encodeURIComponent(query.trim())}&limit=5",
+    "code": "const res = await fetch(`https://nominatim.openstreetmap.org/search?format=json&q=${encodeURIComponent(query.trim())}&limit=5`, {"
+  },
+  {
+    "file": "frontend/consumer-app/src/hooks/useRoofAnalyzer.ts",
+    "line": 467,
+    "method": "POST",
+    "raw_endpoint": "/analyze-roof",
+    "code": "api.post('/analyze-roof', formData)"
+  },
+  {
+    "file": "frontend/consumer-app/src/performance/services/performance.service.ts",
+    "line": 120,
+    "method": "GET",
+    "raw_endpoint": "/dashboard/recent-bills",
+    "code": "const { data } = await api.get<unknown[]>('/dashboard/recent-bills', {"
+  },
+  {
+    "file": "frontend/consumer-app/src/performance/services/performance.service.ts",
+    "line": 179,
+    "method": "GET",
+    "raw_endpoint": "/crm/alerts",
+    "code": "const { data } = await api.get<{ data?: unknown[] }>('/crm/alerts', { signal })"
+  },
+  {
+    "file": "frontend/consumer-app/src/reports/services/report.service.ts",
+    "line": 86,
+    "method": "GET",
+    "raw_endpoint": "/dashboard/stats",
+    "code": "const { data } = await api.get<DashboardStats>('/dashboard/stats', { signal })"
+  },
+  {
+    "file": "frontend/consumer-app/src/reports/services/report.service.ts",
+    "line": 100,
+    "method": "GET",
+    "raw_endpoint": "/dashboard/recent-bills",
+    "code": "const { data } = await api.get<BillRecord[]>('/dashboard/recent-bills', {"
+  },
+  {
+    "file": "frontend/consumer-app/src/services/admin.service.ts",
+    "line": 20,
+    "method": "GET",
+    "raw_endpoint": "/admin/dashboard",
+    "code": "const res = await api.get('/admin/dashboard')"
+  },
+  {
+    "file": "frontend/consumer-app/src/services/admin.service.ts",
+    "line": 26,
+    "method": "GET",
+    "raw_endpoint": "/admin/activity",
+    "code": "const res = await api.get('/admin/activity', { params: { limit } })"
+  },
+  {
+    "file": "frontend/consumer-app/src/services/admin.service.ts",
+    "line": 32,
+    "method": "GET",
+    "raw_endpoint": "/admin/health",
+    "code": "const res = await api.get('/admin/health')"
+  },
+  {
+    "file": "frontend/consumer-app/src/services/admin.service.ts",
+    "line": 38,
+    "method": "GET",
+    "raw_endpoint": "/crm/audit-log",
+    "code": "const res = await api.get('/crm/audit-log', { params: { limit } })"
+  },
+  {
+    "file": "frontend/consumer-app/src/services/admin.service.ts",
+    "line": 44,
+    "method": "GET",
+    "raw_endpoint": "/ml/status",
+    "code": "const res = await api.get('/ml/status')"
+  },
+  {
+    "file": "frontend/consumer-app/src/services/admin.service.ts",
+    "line": 50,
+    "method": "GET",
+    "raw_endpoint": "/ml/metrics",
+    "code": "const res = await api.get('/ml/metrics')"
+  },
+  {
+    "file": "frontend/consumer-app/src/services/bill.service.js",
+    "line": 31,
+    "method": "POST",
+    "raw_endpoint": "/analyze-bill",
+    "code": "const res = await api.post('/analyze-bill', formData, {"
+  },
+  {
+    "file": "frontend/consumer-app/src/services/crm.service.ts",
+    "line": 26,
+    "method": "GET",
+    "raw_endpoint": "/crm/pipeline-metrics",
+    "code": "const res = await api.get('/crm/pipeline-metrics')"
+  },
+  {
+    "file": "frontend/consumer-app/src/services/crm.service.ts",
+    "line": 32,
+    "method": "GET",
+    "raw_endpoint": "/customers",
+    "code": "const res = await api.get('/customers', { params: { skip, limit } })"
+  },
+  {
+    "file": "frontend/consumer-app/src/services/crm.service.ts",
+    "line": 38,
+    "method": "GET",
+    "raw_endpoint": "/customers/search",
+    "code": "const res = await api.get('/customers/search', { params: { q } })"
+  },
+  {
+    "file": "frontend/consumer-app/src/services/crm.service.ts",
+    "line": 44,
+    "method": "GET",
+    "raw_endpoint": "/customers/${id}",
+    "code": "const res = await api.get(`/customers/${id}`)"
+  },
+  {
+    "file": "frontend/consumer-app/src/services/crm.service.ts",
+    "line": 51,
+    "method": "PUT",
+    "raw_endpoint": "/crm/customers/${id}",
+    "code": "const res = await api.put(`/crm/customers/${id}`, body)"
+  },
+  {
+    "file": "frontend/consumer-app/src/services/crm.service.ts",
+    "line": 56,
+    "method": "GET",
+    "raw_endpoint": "/crm/alerts",
+    "code": "const res = await api.get('/crm/alerts')"
+  },
+  {
+    "file": "frontend/consumer-app/src/services/crm.service.ts",
+    "line": 62,
+    "method": "GET",
+    "raw_endpoint": "/crm/customers/${id}/360",
+    "code": "const res = await api.get(`/crm/customers/${id}/360`)"
+  },
+  {
+    "file": "frontend/consumer-app/src/services/crm.service.ts",
+    "line": 68,
+    "method": "GET",
+    "raw_endpoint": "/crm/customers/${id}/documents",
+    "code": "const res = await api.get(`/crm/customers/${id}/documents`, { params: { skip, limit } })"
+  },
+  {
+    "file": "frontend/consumer-app/src/services/crm.service.ts",
+    "line": 74,
+    "method": "GET",
+    "raw_endpoint": "/crm/customers/${id}/communications",
+    "code": "const res = await api.get(`/crm/customers/${id}/communications`, { params: { skip, limit } })"
+  },
+  {
+    "file": "frontend/consumer-app/src/services/crm.service.ts",
+    "line": 80,
+    "method": "GET",
+    "raw_endpoint": "/crm/customers/${id}/timeline-paginated",
+    "code": "const res = await api.get(`/crm/customers/${id}/timeline-paginated`, { params: { page, limit } })"
+  },
+  {
+    "file": "frontend/consumer-app/src/services/crm.service.ts",
+    "line": 89,
+    "method": "GET",
+    "raw_endpoint": "/crm/tasks",
+    "code": "const res = await api.get('/crm/tasks', { params })"
+  },
+  {
+    "file": "frontend/consumer-app/src/services/crm.service.ts",
+    "line": 95,
+    "method": "POST",
+    "raw_endpoint": "/crm/tasks",
+    "code": "const res = await api.post('/crm/tasks', data)"
+  },
+  {
+    "file": "frontend/consumer-app/src/services/crm.service.ts",
+    "line": 101,
+    "method": "PUT",
+    "raw_endpoint": "/crm/tasks/${id}",
+    "code": "const res = await api.put(`/crm/tasks/${id}`, data)"
+  },
+  {
+    "file": "frontend/consumer-app/src/services/crm.service.ts",
+    "line": 107,
+    "method": "DELETE",
+    "raw_endpoint": "/crm/tasks/${id}",
+    "code": "const res = await api.delete(`/crm/tasks/${id}`)"
+  },
+  {
+    "file": "frontend/consumer-app/src/services/crm.service.ts",
+    "line": 115,
+    "method": "GET",
+    "raw_endpoint": "/crm/meetings",
+    "code": "const res = await api.get('/crm/meetings', { params })"
+  },
+  {
+    "file": "frontend/consumer-app/src/services/crm.service.ts",
+    "line": 121,
+    "method": "POST",
+    "raw_endpoint": "/crm/meetings",
+    "code": "const res = await api.post('/crm/meetings', data)"
+  },
+  {
+    "file": "frontend/consumer-app/src/services/crm.service.ts",
+    "line": 127,
+    "method": "PUT",
+    "raw_endpoint": "/crm/meetings/${id}",
+    "code": "const res = await api.put(`/crm/meetings/${id}`, data)"
+  },
+  {
+    "file": "frontend/consumer-app/src/services/crm.service.ts",
+    "line": 133,
+    "method": "DELETE",
+    "raw_endpoint": "/crm/meetings/${id}",
+    "code": "const res = await api.delete(`/crm/meetings/${id}`)"
+  },
+  {
+    "file": "frontend/consumer-app/src/services/crm.service.ts",
+    "line": 141,
+    "method": "GET",
+    "raw_endpoint": "/crm/followups",
+    "code": "const res = await api.get('/crm/followups', { params })"
+  },
+  {
+    "file": "frontend/consumer-app/src/services/crm.service.ts",
+    "line": 147,
+    "method": "POST",
+    "raw_endpoint": "/crm/followups",
+    "code": "const res = await api.post('/crm/followups', data)"
+  },
+  {
+    "file": "frontend/consumer-app/src/services/crm.service.ts",
+    "line": 153,
+    "method": "PUT",
+    "raw_endpoint": "/crm/followups/${id}",
+    "code": "const res = await api.put(`/crm/followups/${id}`, data)"
+  },
+  {
+    "file": "frontend/consumer-app/src/services/crm.service.ts",
+    "line": 159,
+    "method": "DELETE",
+    "raw_endpoint": "/crm/followups/${id}",
+    "code": "const res = await api.delete(`/crm/followups/${id}`)"
+  },
+  {
+    "file": "frontend/consumer-app/src/services/crm.service.ts",
+    "line": 165,
+    "method": "POST",
+    "raw_endpoint": "/crm/communications",
+    "code": "const res = await api.post('/crm/communications', data)"
+  },
+  {
+    "file": "frontend/consumer-app/src/services/customerDashboard.service.ts",
+    "line": 31,
+    "method": "GET",
+    "raw_endpoint": "/dashboard/stats",
+    "code": "api.get('/dashboard/stats').catch(() => null),"
+  },
+  {
+    "file": "frontend/consumer-app/src/services/customerDashboard.service.ts",
+    "line": 32,
+    "method": "GET",
+    "raw_endpoint": "/dashboard/recent-bills",
+    "code": "api.get('/dashboard/recent-bills').catch(() => null),"
+  },
+  {
+    "file": "frontend/consumer-app/src/services/customerDashboard.service.ts",
+    "line": 33,
+    "method": "GET",
+    "raw_endpoint": "/dashboard/analytics",
+    "code": "api.get('/dashboard/analytics').catch(() => null),"
+  },
+  {
+    "file": "frontend/consumer-app/src/services/mlops.service.ts",
+    "line": 7,
+    "method": "GET",
+    "raw_endpoint": "/mlops/status",
+    "code": "const res = await api.get('/mlops/status')"
+  },
+  {
+    "file": "frontend/consumer-app/src/services/mlops.service.ts",
+    "line": 13,
+    "method": "GET",
+    "raw_endpoint": "/mlops/models",
+    "code": "const res = await api.get('/mlops/models')"
+  },
+  {
+    "file": "frontend/consumer-app/src/services/mlops.service.ts",
+    "line": 19,
+    "method": "GET",
+    "raw_endpoint": "/mlops/models/${encodeURIComponent(name)}",
+    "code": "const res = await api.get(`/mlops/models/${encodeURIComponent(name)}`)"
+  },
+  {
+    "file": "frontend/consumer-app/src/services/mlops.service.ts",
+    "line": 27,
+    "method": "GET",
+    "raw_endpoint": "/mlops/versions",
+    "code": "const res = await api.get('/mlops/versions', { params })"
+  },
+  {
+    "file": "frontend/consumer-app/src/services/mlops.service.ts",
+    "line": 35,
+    "method": "GET",
+    "raw_endpoint": "/mlops/health",
+    "code": "const res = await api.get('/mlops/health', { params })"
+  },
+  {
+    "file": "frontend/consumer-app/src/services/mlops.service.ts",
+    "line": 41,
+    "method": "GET",
+    "raw_endpoint": "/mlops/metrics",
+    "code": "const res = await api.get('/mlops/metrics')"
+  },
+  {
+    "file": "frontend/consumer-app/src/services/mlops.service.ts",
+    "line": 49,
+    "method": "GET",
+    "raw_endpoint": "/mlops/drift",
+    "code": "const res = await api.get('/mlops/drift', { params })"
+  },
+  {
+    "file": "frontend/consumer-app/src/services/mlops.service.ts",
+    "line": 57,
+    "method": "GET",
+    "raw_endpoint": "/mlops/events",
+    "code": "const res = await api.get('/mlops/events', { params })"
+  },
+  {
+    "file": "frontend/consumer-app/src/services/mlops.service.ts",
+    "line": 63,
+    "method": "GET",
+    "raw_endpoint": "/ml/models",
+    "code": "const res = await api.get('/ml/models')"
+  },
+  {
+    "file": "frontend/consumer-app/src/services/projectTracking.service.js",
+    "line": 398,
+    "method": "GET",
+    "raw_endpoint": "/projects",
+    "code": "const res = await api.get('/projects');"
+  },
+  {
+    "file": "frontend/consumer-app/src/services/projectTracking.service.js",
+    "line": 405,
+    "method": "GET",
+    "raw_endpoint": "/projects/${encodeURIComponent(projectId)}",
+    "code": "const res = await api.get(`/projects/${encodeURIComponent(projectId)}`);"
+  },
+  {
+    "file": "frontend/consumer-app/src/services/projectTracking.service.js",
+    "line": 412,
+    "method": "GET",
+    "raw_endpoint": "/projects/metrics",
+    "code": "const res = await api.get('/projects/metrics');"
+  },
+  {
+    "file": "frontend/consumer-app/src/services/projectTracking.service.js",
+    "line": 440,
+    "method": "PATCH",
+    "raw_endpoint": "/projects/${encodeURIComponent(projectId)}/stage",
+    "code": "const res = await api.patch(`/projects/${encodeURIComponent(projectId)}/stage`, { stage: newStage });"
+  },
+  {
+    "file": "frontend/consumer-app/src/services/projectTracking.service.js",
+    "line": 447,
+    "method": "GET",
+    "raw_endpoint": "/projects",
+    "code": "const res = await api.get('/projects', { params: { search: query.trim() } });"
+  },
+  {
+    "file": "frontend/consumer-app/src/services/projectTracking.service.js",
+    "line": 458,
+    "method": "GET",
+    "raw_endpoint": "/projects",
+    "code": "const res = await api.get('/projects', { params });"
+  },
+  {
+    "file": "frontend/consumer-app/src/services/proposal.service.js",
+    "line": 28,
+    "method": "POST",
+    "raw_endpoint": "/generate-proposal",
+    "code": "const res = await api.post('/generate-proposal', {"
+  },
+  {
+    "file": "frontend/consumer-app/src/services/reward.service.ts",
+    "line": 18,
+    "method": "POST",
+    "raw_endpoint": "/referral/apply",
+    "code": "const { data } = await api.post<ApplyCodeResponse>('/referral/apply', {"
+  },
+  {
+    "file": "frontend/consumer-app/src/services/reward.service.ts",
+    "line": 26,
+    "method": "POST",
+    "raw_endpoint": "/referral/redeem",
+    "code": "const { data } = await api.post<RedeemResponse>('/referral/redeem', payload)"
+  },
+  {
+    "file": "frontend/consumer-app/src/services/roi.service.ts",
+    "line": 29,
+    "method": "POST",
+    "raw_endpoint": "/calculate-roi",
+    "code": "const { data } = await api.post<ROIApiResponse>('/calculate-roi', request)"
+  },
+  {
+    "file": "frontend/consumer-app/src/services/roof.service.js",
+    "line": 18,
+    "method": "POST",
+    "raw_endpoint": "/analyze-roof",
+    "code": "const res = await api.post('/analyze-roof', formData, {"
+  },
+  {
+    "file": "frontend/consumer-app/src/services/siteSurvey.service.js",
+    "line": 5,
+    "method": "GET",
+    "raw_endpoint": "/site-surveys/dashboard",
+    "code": "const res = await api.get('/site-surveys/dashboard');"
+  },
+  {
+    "file": "frontend/consumer-app/src/services/siteSurvey.service.js",
+    "line": 10,
+    "method": "GET",
+    "raw_endpoint": "/site-surveys",
+    "code": "const res = await api.get('/site-surveys', { params });"
+  },
+  {
+    "file": "frontend/consumer-app/src/services/siteSurvey.service.js",
+    "line": 15,
+    "method": "GET",
+    "raw_endpoint": "/site-surveys/${id}",
+    "code": "const res = await api.get(`/site-surveys/${id}`);"
+  },
+  {
+    "file": "frontend/consumer-app/src/services/siteSurvey.service.js",
+    "line": 20,
+    "method": "POST",
+    "raw_endpoint": "/site-surveys",
+    "code": "const res = await api.post('/site-surveys', data);"
+  },
+  {
+    "file": "frontend/consumer-app/src/services/siteSurvey.service.js",
+    "line": 25,
+    "method": "PUT",
+    "raw_endpoint": "/site-surveys/${id}",
+    "code": "const res = await api.put(`/site-surveys/${id}`, data);"
+  },
+  {
+    "file": "frontend/consumer-app/src/services/siteSurvey.service.js",
+    "line": 30,
+    "method": "PATCH",
+    "raw_endpoint": "/site-surveys/${id}/status",
+    "code": "const res = await api.patch(`/site-surveys/${id}/status`, { status });"
+  },
+  {
+    "file": "frontend/consumer-app/src/services/siteSurvey.service.js",
+    "line": 35,
+    "method": "PATCH",
+    "raw_endpoint": "/site-surveys/${id}/assign",
+    "code": "const res = await api.patch(`/site-surveys/${id}/assign`, { assigned_to: assignedTo, assigned_name: assignedName });"
+  },
+  {
+    "file": "frontend/consumer-app/src/services/siteSurvey.service.js",
+    "line": 40,
+    "method": "DELETE",
+    "raw_endpoint": "/site-surveys/${id}",
+    "code": "const res = await api.delete(`/site-surveys/${id}`);"
+  },
+  {
+    "file": "frontend/consumer-app/src/services/siteSurvey.service.js",
+    "line": 45,
+    "method": "POST",
+    "raw_endpoint": "/site-survey",
+    "code": "const res = await api.post('/site-survey', data);"
+  },
+  {
+    "file": "frontend/consumer-app/src/services/siteSurvey.service.js",
+    "line": 50,
+    "method": "GET",
+    "raw_endpoint": "/site-surveys/${surveyId}/photos",
+    "code": "const res = await api.get(`/site-surveys/${surveyId}/photos`);"
+  },
+  {
+    "file": "frontend/consumer-app/src/services/siteSurvey.service.js",
+    "line": 55,
+    "method": "POST",
+    "raw_endpoint": "/site-surveys/${surveyId}/photos",
+    "code": "const res = await api.post(`/site-surveys/${surveyId}/photos`, data);"
+  },
+  {
+    "file": "frontend/consumer-app/src/services/siteSurvey.service.js",
+    "line": 60,
+    "method": "DELETE",
+    "raw_endpoint": "/site-surveys/photos/${photoId}",
+    "code": "const res = await api.delete(`/site-surveys/photos/${photoId}`);"
+  },
+  {
+    "file": "frontend/consumer-app/src/services/siteSurvey.service.js",
+    "line": 65,
+    "method": "PUT",
+    "raw_endpoint": "/site-surveys/${surveyId}/checklist",
+    "code": "const res = await api.put(`/site-surveys/${surveyId}/checklist`, { checklist });"
+  },
+  {
+    "file": "frontend/consumer-app/src/services/siteSurvey.service.js",
+    "line": 70,
+    "method": "GET",
+    "raw_endpoint": "/site-surveys/${surveyId}/proposal-prefill",
+    "code": "const res = await api.get(`/site-surveys/${surveyId}/proposal-prefill`);"
+  },
+  {
+    "file": "frontend/consumer-app/src/services/siteSurvey.service.js",
+    "line": 75,
+    "method": "POST",
+    "raw_endpoint": "/site-surveys/${surveyId}/handoff-installation",
+    "code": "const res = await api.post(`/site-surveys/${surveyId}/handoff-installation`);"
+  },
+  {
+    "file": "frontend/consumer-app/src/services/technicianDashboard.service.ts",
+    "line": 39,
+    "method": "GET",
+    "raw_endpoint": "/technician/dashboard",
+    "code": "api.get('/technician/dashboard'),"
+  },
+  {
+    "file": "frontend/consumer-app/src/services/technicianDashboard.service.ts",
+    "line": 40,
+    "method": "GET",
+    "raw_endpoint": "/technician/notifications",
+    "code": "api.get('/technician/notifications').catch(() => null),"
+  },
+  {
+    "file": "frontend/consumer-app/src/services/technicianDashboard.service.ts",
+    "line": 112,
+    "method": "GET",
+    "raw_endpoint": "/technician/notifications",
+    "code": "const res = await api.get('/technician/notifications')"
+  },
+  {
+    "file": "frontend/consumer-app/src/services/technicianDashboard.service.ts",
+    "line": 124,
+    "method": "PATCH",
+    "raw_endpoint": "/technician/notifications/${id}/read",
+    "code": "await api.patch(`/technician/notifications/${id}/read`)"
+  },
+  {
+    "file": "frontend/consumer-app/src/services/technicianDashboard.service.ts",
+    "line": 128,
+    "method": "PATCH",
+    "raw_endpoint": "/technician/notifications/read-all",
+    "code": "await api.patch('/technician/notifications/read-all')"
+  },
+  {
+    "file": "frontend/consumer-app/src/services/auth/auth.service.ts",
+    "line": 35,
+    "method": "POST",
+    "raw_endpoint": "/auth/login",
+    "code": "const res = await api.post<LoginResponse>('/auth/login', payload)"
+  },
+  {
+    "file": "frontend/consumer-app/src/services/auth/auth.service.ts",
+    "line": 40,
+    "method": "POST",
+    "raw_endpoint": "/login",
+    "code": "const fallbackRes = await api.post<LoginResponse>('/login', payload)"
+  },
+  {
+    "file": "frontend/consumer-app/src/services/auth/auth.service.ts",
+    "line": 54,
+    "method": "POST",
+    "raw_endpoint": "/auth/refresh",
+    "code": "const res = await api.post<RefreshResponse>('/auth/refresh')"
+  },
+  {
+    "file": "frontend/consumer-app/src/services/auth/auth.service.ts",
+    "line": 58,
+    "method": "POST",
+    "raw_endpoint": "/refresh",
+    "code": "const fallbackRes = await api.post<RefreshResponse>('/refresh')"
+  },
+  {
+    "file": "frontend/consumer-app/src/services/auth/auth.service.ts",
+    "line": 70,
+    "method": "GET",
+    "raw_endpoint": "/auth/me",
+    "code": "const res = await api.get('/auth/me')"
+  },
+  {
+    "file": "frontend/consumer-app/src/services/auth/auth.service.ts",
+    "line": 74,
+    "method": "GET",
+    "raw_endpoint": "/me",
+    "code": "const fallbackRes = await api.get('/me')"
+  },
+  {
+    "file": "frontend/consumer-app/src/services/auth/auth.service.ts",
+    "line": 86,
+    "method": "POST",
+    "raw_endpoint": "/auth/logout",
+    "code": "await api.post('/auth/logout')"
+  },
+  {
+    "file": "frontend/consumer-app/src/services/auth/auth.service.ts",
+    "line": 90,
+    "method": "POST",
+    "raw_endpoint": "/logout",
+    "code": "await api.post('/logout')"
+  },
+  {
+    "file": "frontend/consumer-app/src/services/auth/auth.service.ts",
+    "line": 103,
+    "method": "POST",
+    "raw_endpoint": "/auth/logout-all",
+    "code": "await api.post('/auth/logout-all')"
+  },
+  {
+    "file": "frontend/consumer-app/src/services/auth/auth.service.ts",
+    "line": 107,
+    "method": "POST",
+    "raw_endpoint": "/logout-all",
+    "code": "await api.post('/logout-all')"
+  },
+  {
+    "file": "frontend/consumer-app/src/services/auth/auth.service.ts",
+    "line": 116,
+    "method": "POST",
+    "raw_endpoint": "/signup",
+    "code": "const res = await api.post('/signup', userData)"
+  },
+  {
+    "file": "frontend/consumer-app/src/services/auth/auth.service.ts",
+    "line": 121,
+    "method": "POST",
+    "raw_endpoint": "/forgot-password",
+    "code": "const res = await api.post('/forgot-password', { email })"
+  },
+  {
+    "file": "frontend/consumer-app/src/services/auth/auth.service.ts",
+    "line": 126,
+    "method": "POST",
+    "raw_endpoint": "/reset-password",
+    "code": "const res = await api.post('/reset-password', { token, new_password: newPassword })"
+  },
+  {
+    "file": "frontend/consumer-app/src/services/auth/auth.service.ts",
+    "line": 131,
+    "method": "POST",
+    "raw_endpoint": "/technician/login",
+    "code": "const res = await api.post('/technician/login', {"
+  },
+  {
+    "file": "frontend/consumer-app/src/services/auth/auth.service.ts",
+    "line": 140,
+    "method": "POST",
+    "raw_endpoint": "/technician/signup",
+    "code": "const res = await api.post('/technician/signup', userData)"
+  },
+  {
+    "file": "frontend/consumer-app/src/services/auth/auth.service.ts",
+    "line": 145,
+    "method": "GET",
+    "raw_endpoint": "/technician/profile",
+    "code": "const res = await api.get('/technician/profile')"
+  },
+  {
+    "file": "frontend/consumer-app/src/services/auth/session.service.ts",
+    "line": 55,
+    "method": "GET",
+    "raw_endpoint": "/auth/sessions",
+    "code": "const response = await api.get('/auth/sessions')"
+  },
+  {
+    "file": "frontend/consumer-app/src/services/auth/session.service.ts",
+    "line": 124,
+    "method": "DELETE",
+    "raw_endpoint": "/auth/sessions/${sessionId}",
+    "code": "const response = await api.delete<SessionRevokeResponse>(`/auth/sessions/${sessionId}`)"
+  },
+  {
+    "file": "frontend/consumer-app/src/services/auth/session.service.ts",
+    "line": 142,
+    "method": "POST",
+    "raw_endpoint": "/auth/logout-all",
+    "code": "const response = await api.post<LogoutAllResponse>('/auth/logout-all')"
+  },
+  {
+    "file": "frontend/consumer-app/src/vendor/services/vendor.service.ts",
+    "line": 5,
+    "method": "GET",
+    "raw_endpoint": "/vendor/dashboard",
+    "code": "const res = await api.get('/vendor/dashboard')"
+  },
+  {
+    "file": "frontend/consumer-app/src/vendor/services/vendor.service.ts",
+    "line": 10,
+    "method": "GET",
+    "raw_endpoint": "/vendor/projects",
+    "code": "const res = await api.get('/vendor/projects', { params })"
+  },
+  {
+    "file": "frontend/consumer-app/src/vendor/services/vendor.service.ts",
+    "line": 15,
+    "method": "GET",
+    "raw_endpoint": "/projects/${encodeURIComponent(projectId)}",
+    "code": "const res = await api.get(`/projects/${encodeURIComponent(projectId)}`)"
+  },
+  {
+    "file": "frontend/consumer-app/src/vendor/services/vendor.service.ts",
+    "line": 20,
+    "method": "PATCH",
+    "raw_endpoint": "/projects/${encodeURIComponent(projectId)}/stage",
+    "code": "const res = await api.patch(`/projects/${encodeURIComponent(projectId)}/stage`, { stage })"
+  },
+  {
+    "file": "frontend/consumer-app/src/vendor/services/vendor.service.ts",
+    "line": 25,
+    "method": "GET",
+    "raw_endpoint": "/vendor/tasks",
+    "code": "const res = await api.get('/vendor/tasks', { params })"
+  },
+  {
+    "file": "frontend/consumer-app/src/vendor/services/vendor.service.ts",
+    "line": 30,
+    "method": "GET",
+    "raw_endpoint": "/customers",
+    "code": "const res = await api.get('/customers')"
+  },
+  {
+    "file": "frontend/consumer-app/src/vendor/services/vendor.service.ts",
+    "line": 35,
+    "method": "GET",
+    "raw_endpoint": "/vendor/alerts",
+    "code": "const res = await api.get('/vendor/alerts')"
+  }
+]

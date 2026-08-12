@@ -45,9 +45,6 @@ export default function UpcomingAssessments({ assessments }) {
                   <span>{a.duration}</span>
                   <span>Pass: {a.passingScore}%</span>
                 </div>
-                <button className="calc-btn" style={{ width: 'auto', fontSize: 9, padding: '2px 12px', height: 'auto', minHeight: 0 }} disabled>
-                  Start Assessment
-                </button>
               </div>
             )
           })}

@@ -2,6 +2,7 @@ import React, { useState, useRef, useEffect } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { useAuth } from '../../contexts/AuthContext'
 import { ROUTES } from '../../config/routes'
+import { ROLES } from '../../config/roles'
 import { getDisplayRole } from '../../utils/role'
 
 interface AuthUser {
@@ -15,6 +16,8 @@ export default function UserMenu() {
   const navigate = useNavigate()
   const [isOpen, setIsOpen] = useState(false)
   const ref = useRef<HTMLDivElement>(null)
+
+  const isTechnician = user?.role === ROLES.TECHNICIAN
 
   useEffect(() => {
     function handleClickOutside(e: MouseEvent) {
@@ -76,7 +79,18 @@ export default function UserMenu() {
             </div>
           </div>
           <div className="profile-dropdown-divider" />
-          <button className="profile-dropdown-item" role="menuitem" tabIndex={0} onClick={() => { navigate(ROUTES.ACCOUNT_PROFILE); setIsOpen(false); }}>
+          <button
+            className="profile-dropdown-item"
+            role="menuitem"
+            tabIndex={0}
+            onClick={() => {
+              const target = isTechnician
+                ? ROUTES.TECHNICIAN_PROFILE
+                : (user?.role === ROLES.VENDOR ? ROUTES.VENDOR_PROFILE : ROUTES.ACCOUNT_PROFILE)
+              navigate(target)
+              setIsOpen(false)
+            }}
+          >
             <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round">
               <circle cx="12" cy="8" r="4" /><path d="M4 20c0-4 3.6-7 8-7s8 3 8 7" />
             </svg>

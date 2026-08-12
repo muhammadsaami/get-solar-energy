@@ -10,8 +10,12 @@ import PayoutDrawerContent from '../components/PayoutDrawerContent'
 import EarningsSkeleton from '../components/EarningsSkeleton'
 import EarningsEmptyState from '../components/EarningsEmptyState'
 import '../styles/earnings.css'
+import { useNotificationStore } from '../../../stores/notificationStore'
+import { exportCSV } from '../../../reports/utils/reportExport'
+import type { CanonicalEarning } from '../types/earnings.types'
 
 export default function EarningsPage() {
+  const addToast = useNotificationStore((s) => s.addToast)
   const {
     data,
     loading,
@@ -42,7 +46,43 @@ export default function EarningsPage() {
 
   return (
     <div className="earnings-container">
-      <EarningsHero onExportClick={() => alert('Downloading full earnings statement CSV/PDF')} />
+      <EarningsHero
+        onExportClick={() => {
+          const rows: CanonicalEarning[] = filteredEarnings
+          if (rows.length === 0) {
+            addToast({ type: 'warning', message: 'No earnings rows to export.' })
+            return
+          }
+          exportCSV(
+            rows.map((e) => ({
+              id: e.id,
+              workOrderId: e.workOrderId,
+              workOrderTitle: e.workOrderTitle,
+              jobType: e.jobType,
+              amount: e.amount,
+              payoutStatus: e.payoutStatus,
+              paymentMethod: e.paymentMethod,
+              transactionRef: e.transactionRef,
+              createdAt: e.createdAt,
+              paidAt: e.paidAt ?? '',
+            })),
+            [
+              { key: 'id', label: 'Earning ID' },
+              { key: 'workOrderId', label: 'Work Order ID' },
+              { key: 'workOrderTitle', label: 'Work Order' },
+              { key: 'jobType', label: 'Job Type' },
+              { key: 'amount', label: 'Amount (INR)' },
+              { key: 'payoutStatus', label: 'Payout Status' },
+              { key: 'paymentMethod', label: 'Payment Method' },
+              { key: 'transactionRef', label: 'Transaction Ref' },
+              { key: 'createdAt', label: 'Created At' },
+              { key: 'paidAt', label: 'Paid At' },
+            ],
+            'earnings-statement',
+          )
+          addToast({ type: 'success', message: `Exported ${rows.length} earnings to earnings-statement.csv` })
+        }}
+      />
 
       <EarningsKPIs summary={data.summary} />
 

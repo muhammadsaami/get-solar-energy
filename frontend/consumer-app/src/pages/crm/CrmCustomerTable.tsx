@@ -23,10 +23,10 @@ const STAGE_LABELS: Record<string, string> = {
 
 const STAGE_COLORS: Record<string, string> = {
   'New Lead': 'var(--color-blue)',
-  Qualified: 'var(--color-purple)',
+  Qualified: 'var(--color-blue)',
   'Site Survey Scheduled': 'var(--color-amber)',
   'Survey Completed': 'var(--color-green)',
-  'Proposal Generated': 'var(--color-cyan)',
+  'Proposal Generated': 'var(--color-orange)',
   'Proposal Sent': 'var(--color-blue)',
   Negotiation: 'var(--color-orange)',
   Won: 'var(--color-green)',

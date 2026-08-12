@@ -21,7 +21,6 @@ import { AMCPrintReport } from '../components/AMCPrintReport'
 import { saveAMCToLocalStorage, loadAMCFromLocalStorage, clearAMCFromLocalStorage } from '../utils/amcLocalStorage'
 import { buildAutofillRequest } from '../utils/amcAutofill'
 import { useNotificationStore } from '../../stores/notificationStore'
-import DashboardSprites from '../../components/dashboard/DashboardSprites'
 import type { AMCRecommendationResult as AMCRecommendationDataType } from '../types/amc.types'
 
 function computeKpiData(recommendation: AMCRecommendationDataType): AMCRecommendationKpiData {
@@ -98,7 +97,6 @@ export default function AMC() {
       saveAMCToLocalStorage(recommendation)
       setRestoredRecommendation(null)
       setTimelineStep(computeTimelineStep(recommendation))
-
       addToast({ type: 'success', message: 'AMC O&M evaluation completed successfully!' })
     }
   }, [recommendation, addToast])
@@ -151,133 +149,134 @@ export default function AMC() {
 
   const moduleInitFailed = !!(error?.hasError && !contract && !serviceHistory.length && !activeRecommendation && !loading)
   const hasContract = !!contract
-
   const health = activeRecommendation ? mapAMCHealth(activeRecommendation) : null
 
   return (
-    <>
-      <DashboardSprites />
-      <div className="tab-content" role="tabpanel" aria-label="amc" style={{ display: 'block' }}>
-        <div className="tab-header-block">
-          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start' }}>
-            <div>
-              <h2 className="tab-heading">Annual Maintenance Contract</h2>
-              <p className="tab-subheading">
-                Keep your solar system operating at peak efficiency with predictive maintenance and annual service plans.
-              </p>
-            </div>
-            <button
-              className="btn btn-secondary"
-              onClick={refresh}
-              disabled={loading}
-              style={{ padding: '8px 16px', fontSize: '11px', width: 'auto', height: 'auto', flexShrink: 0 }}
-            >
-              {'\uD83D\uDD04'} {loading ? 'Refreshing...' : 'Refresh'}
-            </button>
-          </div>
+    <div className="ew-page" role="tabpanel" aria-label="amc">
+      <header className="ew-mission-bar" role="banner" aria-label="AMC Command Bar">
+        <div className="ew-mission-scope">
+          <span className="ew-live-dot" />
+          <span className="ew-scope-badge">O&amp;M / AMC-MAINTENANCE</span>
+          <span style={{ color: 'var(--text-muted)' }}>|</span>
+          <span style={{ fontWeight: 700, color: 'var(--text-primary)' }}>Annual Maintenance &amp; Predictive Servicing</span>
         </div>
 
-        <AMCHeroSection
-          onGenerateClick={handleHeroGenerate}
-          downloadDisabled={!activeRecommendation}
-          onDownload={handleHeroDownload}
-        />
-        <AMCRecommendationKpiCards data={kpiData} loading={recommending && !activeRecommendation} />
-        <AMCMaintenanceTimeline currentStep={timelineStep} />
+        <div className="ew-mission-stats">
+          <div className="ew-mission-stat-item">
+            <span>Contract:</span>
+            <strong style={{ color: hasContract ? 'var(--color-green)' : 'var(--color-orange)' }}>
+              {hasContract ? 'ACTIVE' : 'EVALUATION'}
+            </strong>
+          </div>
+          {kpiData && (
+            <div className="ew-mission-stat-item">
+              <span>Health Score:</span>
+              <strong style={{ color: 'var(--color-cyan)' }}>{kpiData.systemHealth}</strong>
+            </div>
+          )}
+        </div>
 
-        <div className="tab-nav-row" style={{ display: 'flex', gap: '4px', marginBottom: '20px', borderBottom: '1px solid var(--border-color)', paddingBottom: '0' }}>
+        <div className="ew-mission-actions">
+          <button
+            className="btn btn-primary btn-sm"
+            onClick={refresh}
+            disabled={loading}
+            style={{ fontSize: 11, padding: '4px 10px' }}
+          >
+            {loading ? 'Refreshing...' : 'Refresh Status'}
+          </button>
+        </div>
+      </header>
+
+      <AMCHeroSection
+        onGenerateClick={handleHeroGenerate}
+        downloadDisabled={!activeRecommendation}
+        onDownload={handleHeroDownload}
+      />
+      <AMCRecommendationKpiCards data={kpiData} loading={recommending && !activeRecommendation} />
+      <AMCMaintenanceTimeline currentStep={timelineStep} />
+
+      <div className="card-glass" style={{ padding: '4px 6px' }}>
+        <div className="ew-nav-pill-bar">
           {AMC_TABS.map((t) => (
             <button
               key={t.id}
-              className={`tab-nav-btn ${tab === t.id ? 'active' : ''}`}
+              className={`ew-nav-pill ${tab === t.id ? 'active' : ''}`}
               onClick={() => setTab(t.id)}
-              style={{
-                padding: '8px 16px', fontSize: '11px', fontWeight: 600, cursor: 'pointer',
-                border: 'none', background: tab === t.id ? 'var(--bg-active, rgba(255,255,255,0.06))' : 'transparent',
-                color: tab === t.id ? 'var(--text-navy)' : 'var(--text-muted)',
-                borderBottom: tab === t.id ? '2px solid var(--accent-blue)' : '2px solid transparent',
-                transition: 'all 0.2s', display: 'flex', alignItems: 'center', gap: '6px',
-              }}
             >
               <span>{t.icon}</span> {t.label}
             </button>
           ))}
         </div>
+      </div>
 
-        {moduleInitFailed && error && (
-          <AMCErrorBanner message={error.message} onRetry={refresh} />
-        )}
+      {moduleInitFailed && error && (
+        <AMCErrorBanner message={error.message} onRetry={refresh} />
+      )}
 
-        {loading && <AMCLoadingSkeleton />}
+      {loading && <AMCLoadingSkeleton />}
 
-        {!loading && tab === 'overview' && (
-          <div>
-            {hasContract ? (
-              <>
-                <AMCKpiCards kpis={kpis} loading={false} />
-                <div className="tab-grid-layout" style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '20px', marginTop: '20px' }}>
-                  <AMCContractCard contract={contract} loading={false} />
-                  <AMCCoverageDetails contract={contract} loading={false} />
-                </div>
-                <div style={{ marginTop: '20px' }}>
-                  <AMCVisitTimeline visits={visits} loading={false} />
-                </div>
-              </>
-            ) : (
-              <AMCEmptyState description="You do not have an active AMC contract. Switch to the AI Recommendation tab to get a professional maintenance report for your solar system." />
+      {!loading && tab === 'overview' && (
+        <div style={{ display: 'flex', flexDirection: 'column', gap: 'var(--space-4)' }}>
+          {hasContract ? (
+            <>
+              <AMCKpiCards kpis={kpis} loading={false} />
+              <div className="ew-asym-65-35" style={{ gridTemplateColumns: '1fr 1fr' }}>
+                <AMCContractCard contract={contract} loading={false} />
+                <AMCCoverageDetails contract={contract} loading={false} />
+              </div>
+              <div>
+                <AMCVisitTimeline visits={visits} loading={false} />
+              </div>
+            </>
+          ) : (
+            <AMCEmptyState description="You do not have an active AMC contract. Switch to the AI Recommendation tab to get a professional maintenance report for your solar system." />
+          )}
+        </div>
+      )}
+
+      {!loading && tab === 'history' && (
+        <div style={{ display: 'flex', flexDirection: 'column', gap: 'var(--space-4)' }}>
+          <AMCServiceHistoryTable records={serviceHistory} loading={false} />
+          <AMCVisitTimeline visits={visits} loading={false} />
+        </div>
+      )}
+
+      {!loading && tab === 'recommendation' && (
+        <div className="ew-asym-65-35" style={{ gridTemplateColumns: '1fr 1fr' }}>
+          <div ref={formContainerRef}>
+            <AMCAIPromptForm
+              ref={formRef}
+              onRecommend={handleGenerate}
+              recommending={recommending}
+              onAutofill={handleAutofill}
+              onReset={handleReset}
+            />
+          </div>
+          <div style={{ position: 'relative' }}>
+            {!recommending && !activeRecommendation && !error && (
+              <AMCResultPlaceholder />
+            )}
+            {recommending && (
+              <AMCLoadingSkeleton />
+            )}
+            {!recommending && activeRecommendation && (
+              <div style={{ display: 'flex', flexDirection: 'column', gap: 'var(--space-3)' }}>
+                <AMCRecommendationResult result={activeRecommendation} loading={false} onDownload={handleResultDownload} />
+                {health && (
+                  <AMCHealthCard health={health} loading={false} />
+                )}
+              </div>
             )}
           </div>
-        )}
+        </div>
+      )}
 
-        {!loading && tab === 'history' && (
-          <div>
-            <AMCServiceHistoryTable records={serviceHistory} loading={false} />
-            <div style={{ marginTop: '20px' }}>
-              <AMCVisitTimeline visits={visits} loading={false} />
-            </div>
-          </div>
-        )}
+      {!loading && !contract && tab === 'overview' && !moduleInitFailed && (
+        <AMCEmptyState />
+      )}
 
-        {!loading && tab === 'recommendation' && (
-          <div className="amc-split-grid" style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '20px', alignItems: 'start' }}>
-            <div ref={formContainerRef}>
-              <AMCAIPromptForm
-                ref={formRef}
-                onRecommend={handleGenerate}
-                recommending={recommending}
-                onAutofill={handleAutofill}
-                onReset={handleReset}
-              />
-            </div>
-            <div style={{ position: 'relative' }}>
-              {!recommending && !activeRecommendation && !error && (
-                <AMCResultPlaceholder />
-              )}
-              {recommending && (
-                <AMCLoadingSkeleton />
-              )}
-              {!recommending && activeRecommendation && (
-                <div>
-                  <AMCRecommendationResult result={activeRecommendation} loading={false} onDownload={handleResultDownload} />
-                  {health && (
-                    <div style={{ marginTop: '16px' }}>
-                      <AMCHealthCard health={health} loading={false} />
-                    </div>
-                  )}
-                </div>
-              )}
-            </div>
-          </div>
-        )}
-
-        {!loading && !contract && tab === 'overview' && !moduleInitFailed && (
-          <div style={{ marginTop: '16px' }}>
-            <AMCEmptyState />
-          </div>
-        )}
-
-        <AMCPrintReport ref={printReportRef} data={activeRecommendation} />
-      </div>
-    </>
+      <AMCPrintReport ref={printReportRef} data={activeRecommendation} />
+    </div>
   )
 }

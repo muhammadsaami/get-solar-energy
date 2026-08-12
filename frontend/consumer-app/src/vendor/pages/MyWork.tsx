@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react'
 import { getVendorTasks } from '../services/vendor.service'
 import WorkOrderCard from '../components/WorkOrderCard'
 import VendorEmptyState from '../components/VendorEmptyState'
+import DashboardHeader from '../components/DashboardHeader'
 import type { VendorTask } from '../types/vendor.types'
 
 type Tab = 'tasks' | 'visits' | 'installations' | 'orders'
@@ -33,27 +34,20 @@ export default function MyWork() {
   })
 
   return (
-    <div style={{ paddingBottom: 'var(--space-12)' }}>
-      <div className="card-header" style={{ marginBottom: 'var(--space-6)' }}>
-        <h1 className="card-title" style={{ fontSize: 'var(--font-size-xl)' }}>
-          My Work
-        </h1>
-      </div>
+    <div className="animate-fade-in">
+      <DashboardHeader
+        title="My Work & Assigned Operations"
+        subtitle="Manage assigned field tasks, site visit schedules, and installation work orders."
+        badgeText="Operational Dispatch"
+      />
 
-      <div className="card-glass" style={{ padding: 'var(--space-2)', marginBottom: 'var(--space-6)', display: 'flex', gap: 'var(--space-1)' }}>
+      <div className="vendor-glass-card" style={{ padding: '8px', marginBottom: '24px', display: 'flex', gap: '8px' }}>
         {TABS.map((tab) => (
           <button
             key={tab.id}
             onClick={() => setActiveTab(tab.id)}
-            style={{
-              flex: 1, padding: 'var(--space-3) var(--space-4)', cursor: 'pointer',
-              border: 'none', borderRadius: 'var(--radius-md)',
-              background: activeTab === tab.id ? 'var(--color-orange-surface)' : 'transparent',
-              fontWeight: activeTab === tab.id ? 600 : 400,
-              color: activeTab === tab.id ? 'var(--color-orange)' : 'var(--text-muted)',
-              fontSize: 'var(--font-size-sm)', transition: 'all var(--transition-fast)',
-            }}
-            aria-label={tab.label}
+            className={activeTab === tab.id ? 'vendor-btn-primary' : 'vendor-btn-ghost'}
+            style={{ flex: 1, justifyContent: 'center', padding: '10px 14px' }}
           >
             {tab.label}
           </button>
@@ -61,39 +55,33 @@ export default function MyWork() {
       </div>
 
       {activeTab === 'visits' && (
-        <div className="card-glass" style={{ padding: 'var(--space-6)' }}>
-          <VendorEmptyState
-            icon="icon-mappin"
-            title="No Site Visits"
-            description="You're all caught up. Site visits will appear here once scheduled by the admin or via the CRM."
-          />
-        </div>
+        <VendorEmptyState
+          icon="icon-mappin"
+          title="No Scheduled Site Visits"
+          description="You're all caught up. Site visits will appear here once scheduled by the admin or CRM dispatch system."
+        />
       )}
 
       {activeTab === 'installations' && (
-        <div className="card-glass" style={{ padding: 'var(--space-6)' }}>
-          <VendorEmptyState
-            icon="icon-wrench"
-            title="No Installations"
-            description="Active installation projects managed by your team will appear here."
-          />
-        </div>
+        <VendorEmptyState
+          icon="icon-wrench"
+          title="No Active Installation Projects"
+          description="Active installation projects managed by your field crew will appear here."
+        />
       )}
 
       {(activeTab === 'tasks' || activeTab === 'orders') && (
-        <div style={{ display: 'flex', flexDirection: 'column', gap: 'var(--space-3)' }}>
+        <div style={{ display: 'flex', flexDirection: 'column', gap: '14px' }}>
           {loading ? (
             [1, 2, 3].map((i) => (
-              <div key={i} className="skeleton" style={{ height: 76, borderRadius: 'var(--radius-lg)' }} />
+              <div key={i} className="vendor-glass-card vendor-skeleton" style={{ height: '76px' }} />
             ))
           ) : filteredTasks.length === 0 ? (
-            <div className="card-glass">
-              <VendorEmptyState
-                icon={activeTab === 'orders' ? 'icon-clipboard-check' : 'icon-clipboard'}
-                title={activeTab === 'orders' ? 'No Work Orders' : 'No Tasks'}
-                description={activeTab === 'orders' ? 'Great job. Installation work orders will appear here when assigned.' : 'You\'re all caught up. Assigned tasks will appear here.'}
-              />
-            </div>
+            <VendorEmptyState
+              icon={activeTab === 'orders' ? 'icon-clipboard-check' : 'icon-clipboard'}
+              title={activeTab === 'orders' ? 'No Work Orders Assigned' : 'No Tasks Pending'}
+              description={activeTab === 'orders' ? 'Great job! Installation work orders will appear here when assigned.' : "You're all caught up. Assigned tasks will appear here."}
+            />
           ) : (
             filteredTasks.map((t) => (
               <WorkOrderCard key={t.id} task={t} />

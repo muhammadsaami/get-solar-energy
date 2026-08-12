@@ -49,16 +49,16 @@ function QuickActionsBarComponent({
         <span style={{ textTransform: 'uppercase', fontSize: '10px', fontWeight: 600, color: 'var(--text-muted)' }}>
           Export CSV:
         </span>
-        <button className="table-action-btn" disabled onClick={() => onCsvExport('bill')} style={{ padding: '5px 10px', fontSize: '10px' }}>
+        <button className="table-action-btn" onClick={() => onCsvExport('bill')} style={{ padding: '5px 10px', fontSize: '10px' }}>
           Bill CSV
         </button>
-        <button className="table-action-btn" disabled onClick={() => onCsvExport('roof')} style={{ padding: '5px 10px', fontSize: '10px' }}>
+        <button className="table-action-btn" onClick={() => onCsvExport('roof')} style={{ padding: '5px 10px', fontSize: '10px' }}>
           Roof CSV
         </button>
-        <button className="table-action-btn" disabled onClick={() => onCsvExport('roi')} style={{ padding: '5px 10px', fontSize: '10px' }}>
+        <button className="table-action-btn" onClick={() => onCsvExport('roi')} style={{ padding: '5px 10px', fontSize: '10px' }}>
           ROI CSV
         </button>
-        <button className="table-action-btn" disabled onClick={() => onCsvExport('combined')} style={{ padding: '5px 10px', fontSize: '10px', background: 'rgba(245, 158, 11, 0.1)', color: 'var(--accent-orange)', border: '1px solid rgba(245, 158, 11, 0.2)' }}>
+        <button className="table-action-btn" onClick={() => onCsvExport('combined')} style={{ padding: '5px 10px', fontSize: '10px', background: 'rgba(245, 158, 11, 0.1)', color: 'var(--accent-orange)', border: '1px solid rgba(245, 158, 11, 0.2)' }}>
           Combined CSV
         </button>
       </div>

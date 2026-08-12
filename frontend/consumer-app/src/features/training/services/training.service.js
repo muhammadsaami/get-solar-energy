@@ -1,12 +1,3 @@
-const MOCK_COURSES = [
-  { id: 'c1', title: 'Solar PV Installation Fundamentals', category: 'Installation', description: 'Learn the fundamentals of solar PV installation including site assessment, mounting, wiring, and commissioning.', instructor: 'Rajesh Kumar', duration: '12 hours', progress: 65, thumbnail: 'solar', lastAccessed: '2 hours ago', modules: 8, modulesCompleted: 5 },
-  { id: 'c2', title: 'Advanced Inverter Configuration', category: 'Technical', description: 'Master advanced inverter configuration, troubleshooting, and optimization techniques for modern solar systems.', instructor: 'Priya Sharma', duration: '8 hours', progress: 30, thumbnail: 'inverter', lastAccessed: '1 day ago', modules: 6, modulesCompleted: 2 },
-  { id: 'c3', title: 'Electrical Safety for Solar Technicians', category: 'Safety', description: 'Comprehensive electrical safety training covering arc flash, lockout/tagout, PPE, and emergency response.', instructor: 'Ankit Patel', duration: '6 hours', progress: 100, thumbnail: 'safety', lastAccessed: '1 week ago', modules: 4, modulesCompleted: 4 },
-  { id: 'c4', title: 'Rooftop Solar Mounting Systems', category: 'Installation', description: 'Detailed training on various rooftop mounting systems, structural considerations, and waterproofing techniques.', instructor: 'Vikram Singh', duration: '10 hours', progress: 0, thumbnail: 'roof', lastAccessed: null, modules: 7, modulesCompleted: 0 },
-  { id: 'c5', title: 'Battery Energy Storage Systems', category: 'Technical', description: 'Learn BESS design, installation, commissioning, and maintenance for residential and commercial applications.', instructor: 'Neha Gupta', duration: '14 hours', progress: 45, thumbnail: 'battery', lastAccessed: '3 days ago', modules: 9, modulesCompleted: 4 },
-  { id: 'c6', title: 'Net Metering & Grid Compliance', category: 'Compliance', description: 'Understanding net metering policies, grid interconnection requirements, and documentation processes.', instructor: 'Suresh Reddy', duration: '5 hours', progress: 80, thumbnail: 'grid', lastAccessed: '5 days ago', modules: 3, modulesCompleted: 2 },
-]
-
 const MOCK_LEARNING_PATHS = [
   { id: 'lp1', title: 'Residential Solar', description: 'Complete residential solar installation from roof assessment to final commissioning.', progress: 60, difficulty: 'Intermediate', duration: '40 hours', modules: 24, completed: false, icon: 'icon-home' },
   { id: 'lp2', title: 'Commercial Solar', description: 'Large-scale commercial solar systems, design, and project management.', progress: 25, difficulty: 'Advanced', duration: '60 hours', modules: 32, completed: false, icon: 'icon-briefcase' },
@@ -15,15 +6,6 @@ const MOCK_LEARNING_PATHS = [
   { id: 'lp5', title: 'Electrical Safety', description: 'Comprehensive safety protocols, hazard identification, and emergency procedures.', progress: 100, difficulty: 'Beginner', duration: '15 hours', modules: 8, completed: true, icon: 'icon-shield' },
   { id: 'lp6', title: 'Customer Service', description: 'Professional communication, customer handling, and service excellence.', progress: 0, difficulty: 'Beginner', duration: '10 hours', modules: 6, completed: false, icon: 'icon-chat' },
   { id: 'lp7', title: 'Government Compliance', description: 'Understanding subsidies, MNRE guidelines, and regulatory documentation.', progress: 35, difficulty: 'Intermediate', duration: '18 hours', modules: 10, completed: false, icon: 'icon-route' },
-]
-
-const MOCK_CERTIFICATIONS = [
-  { id: 'cert1', title: 'Solar PV Installation Professional', issuer: 'GET Solar Academy', issueDate: '2026-03-15', expiryDate: '2028-03-15', status: 'Active', credentialId: 'GSA-SPV-2026-0421' },
-  { id: 'cert2', title: 'Rooftop Safety Certified', issuer: 'GET Solar Academy', issueDate: '2026-05-01', expiryDate: '2027-05-01', status: 'Active', credentialId: 'GSA-RSC-2026-0817' },
-  { id: 'cert3', title: 'Electrical Compliance Inspector', issuer: 'National Solar Institute', issueDate: '2025-11-20', expiryDate: '2026-11-20', status: 'Active', credentialId: 'NSI-ECI-2025-3301' },
-  { id: 'cert4', title: 'Advanced Inverter Systems', issuer: 'GET Solar Academy', issueDate: '2026-07-10', expiryDate: null, status: 'In Progress', credentialId: '' },
-  { id: 'cert5', title: 'Battery Storage Specialist', issuer: 'Energy Storage Council', issueDate: '2024-09-05', expiryDate: '2026-09-05', status: 'Expired', credentialId: 'ESC-BSS-2024-1129' },
-  { id: 'cert6', title: 'MNRE Government Standards', issuer: 'Ministry of New & Renewable Energy', issueDate: '2026-01-10', expiryDate: '2029-01-10', status: 'Active', credentialId: 'MNRE-GS-2026-0056' },
 ]
 
 const MOCK_ASSESSMENTS = [
@@ -52,6 +34,29 @@ const MOCK_LEADERBOARD = [
   { rank: 7, name: 'Karan Joshi', role: 'Apprentice', points: 1100, coursesCompleted: 3, streak: 7, isCurrentUser: false },
   { rank: 8, name: 'Ananya Reddy', role: 'Apprentice', points: 850, coursesCompleted: 2, streak: 5, isCurrentUser: false },
 ]
+
+import api from '../../../services/api/client'
+
+let liveModules = null
+let liveCertifications = null
+
+export async function syncFromBackend() {
+  const [modulesRes, certsRes] = await Promise.all([
+    api.get('/technician/training/modules'),
+    api.get('/technician/training/certifications'),
+  ])
+  if (modulesRes?.data?.success && Array.isArray(modulesRes.data.modules)) {
+    liveModules = modulesRes.data.modules
+  } else {
+    throw new Error('Training modules could not be loaded from the server.')
+  }
+  if (certsRes?.data?.success && Array.isArray(certsRes.data.certifications)) {
+    liveCertifications = certsRes.data.certifications
+  } else {
+    throw new Error('Certifications could not be loaded from the server.')
+  }
+  return true
+}
 
 const MOCK_ANALYTICS = {
   monthlyHours: [
@@ -89,31 +94,56 @@ const MOCK_ANALYTICS = {
 }
 
 export function getTrainingKpis() {
+  const modules = liveModules ?? []
+  const coursesEnrolled = modules.length
+  const coursesCompleted = modules.filter((m) => m.status === 'Passed').length
+  const certificationsEarned = liveCertifications ? liveCertifications.length : 0
   return {
-    coursesEnrolled: 6,
-    coursesCompleted: 3,
-    certificationsEarned: 4,
+    coursesEnrolled,
+    coursesCompleted,
+    certificationsEarned,
     learningHours: 142,
     currentStreak: 30,
-    overallProgress: 65,
+    overallProgress: coursesEnrolled ? Math.round((coursesCompleted / coursesEnrolled) * 100) : 0,
   }
 }
 
 export function getContinueLearningCourse() {
-  const c = MOCK_COURSES[0]
-  return {
-    id: c.id,
-    title: c.title,
-    description: c.description,
-    progress: c.progress,
-    remainingTime: `${Math.round(parseInt(c.duration) * (1 - c.progress / 100))} hours`,
-    instructor: c.instructor,
-    category: c.category,
+  const next = liveModules ? liveModules.find((m) => m.status === 'In Progress' || m.status === 'Not Started') : null
+  if (next) {
+    return {
+      id: String(next.id),
+      title: next.title,
+      description: next.description,
+      progress: 0,
+      remainingTime: 'In progress',
+      instructor: 'GET Solar Academy',
+      category: next.level || 'Technical',
+      backendId: next.id,
+      status: next.status,
+      score: next.score,
+    }
   }
+  return null
 }
 
 export function getActiveCourses() {
-  return MOCK_COURSES
+  const modules = liveModules ?? []
+  return modules.map((m, idx) => ({
+    id: String(m.id),
+    title: m.title,
+    description: m.description,
+    category: m.level || 'Technical',
+    instructor: 'GET Solar Academy',
+    duration: 'Live module',
+    progress: m.status === 'Passed' ? 100 : m.status === 'In Progress' ? 50 : 0,
+    thumbnail: idx % 2 === 0 ? 'solar' : 'inverter',
+    lastAccessed: m.status === 'Not Started' ? null : 'Recently',
+    modules: 1,
+    modulesCompleted: m.status === 'Passed' ? 1 : 0,
+    status: m.status,
+    score: m.score,
+  }))
 }
 
 export function getLearningPaths() {
@@ -121,7 +151,17 @@ export function getLearningPaths() {
 }
 
 export function getCertifications() {
-  return MOCK_CERTIFICATIONS
+  const certs = liveCertifications ?? []
+  return certs.map((c, idx) => ({
+    id: `cert-live-${idx + 1}`,
+    title: c.badge_name || `GET Solar Certified Technician - ${c.level}`,
+    issuer: 'GET Solar Academy',
+    issueDate: c.issued_at ? c.issued_at.split('T')[0] : new Date().toISOString().split('T')[0],
+    expiryDate: null,
+    status: 'Active',
+    credentialId: c.certificate_number || '',
+    level: c.level,
+  }))
 }
 
 export function getUpcomingAssessments() {
@@ -141,6 +181,9 @@ export function getTrainingAnalytics() {
 }
 
 export function getTrainingDashboard() {
+  if (liveModules === null || liveCertifications === null) {
+    throw new Error('Training data is not available. Please retry.')
+  }
   return {
     kpis: getTrainingKpis(),
     continueLearning: getContinueLearningCourse(),

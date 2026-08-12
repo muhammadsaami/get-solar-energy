@@ -17,71 +17,96 @@ export default function RewardsReferrals() {
     <>
       <DashboardSprites />
 
-      <div className="tab-content" role="tabpanel" aria-label="rewards" style={{ display: 'block' }}>
-        <div className="tab-header-block">
-          <h2 className="tab-heading">Rewards & Referrals</h2>
-          <p className="tab-subheading">
-            Refer friends to solar energy and earn points redeemable for vouchers, services, and cashback.
-          </p>
-        </div>
+      <div className="ew-page tab-content active" role="tabpanel" aria-label="rewards" style={{ display: 'block' }}>
+        <header className="ew-mission-bar" role="banner" aria-label="Rewards &amp; Referrals Header">
+          <div className="ew-mission-scope">
+            <span className="ew-live-dot" />
+            <span className="ew-scope-badge">REWARDS / ADVOCACY</span>
+            <span style={{ color: 'var(--text-muted)' }}>|</span>
+            <span style={{ fontWeight: 700, color: 'var(--text-primary)' }}>Customer Referrals, Community Milestones &amp; Rewards Store</span>
+          </div>
+
+          <div className="ew-mission-stats">
+            <div className="ew-mission-stat-item">
+              <span>Tier Status:</span>
+              <strong style={{ color: 'var(--color-orange)' }}>
+                {state.userRank ? `RANK #${state.userRank}` : 'SOLAR ADVOCATE'}
+              </strong>
+            </div>
+            <div className="ew-mission-stat-item">
+              <span>Balance:</span>
+              <strong style={{ color: 'var(--color-green)' }}>
+                ₹{state.summary?.wallet_balance_rs ? Number(state.summary.wallet_balance_rs).toLocaleString('en-IN') : '0'}
+              </strong>
+            </div>
+          </div>
+        </header>
 
         {state.error && (
           <div
             id="rewardsErrorBox"
-            style={{ marginBottom: '16px', padding: '14px', borderRadius: '8px', background: 'rgba(231, 76, 60, 0.06)', border: '1px dashed rgba(231, 76, 60, 0.3)', textAlign: 'center' }}
+            style={{
+              marginBottom: 'var(--space-4)',
+              padding: '12px 14px',
+              borderRadius: '6px',
+              background: 'rgba(239, 68, 68, 0.08)',
+              border: '1px solid rgba(239, 68, 68, 0.25)',
+              textAlign: 'center',
+            }}
             role="alert"
             aria-live="polite"
           >
-            <span style={{ fontSize: '12px', color: '#ef4444', display: 'block', marginBottom: '8px', fontWeight: 600 }}>
+            <span style={{ fontSize: '11px', color: 'var(--color-red)', display: 'block', marginBottom: '8px', fontWeight: 600 }}>
               {state.error}
             </span>
             <button
               type="button"
-              className="calc-btn"
+              className="btn btn-outline btn-sm"
               onClick={loadData}
-              style={{ margin: '0 auto', width: 'auto', padding: '6px 16px', fontSize: '11px', height: 'auto' }}
             >
-              Retry
+              Retry Sync
             </button>
           </div>
         )}
 
-        <RewardSummaryCards
-          summary={state.summary}
-          userRank={state.userRank}
-          loading={state.loading}
-        />
-
-        <div style={{ display: 'grid', gridTemplateColumns: '1fr 1.6fr', gap: '20px', marginBottom: '20px' }}>
-          <ReferralSharingCard
-            referralCode={state.referralCode}
-            onApplyCode={applyCode}
+        <div style={{ display: 'flex', flexDirection: 'column', gap: 'var(--space-4)' }}>
+          <RewardSummaryCards
+            summary={state.summary}
+            userRank={state.userRank}
+            loading={state.loading}
           />
-          <ReferralHistoryTable
-            history={state.referralHistory}
+
+          <div className="ew-asym-65-35" style={{ gridTemplateColumns: '1fr 1.6fr' }}>
+            <ReferralSharingCard
+              referralCode={state.referralCode}
+              onApplyCode={applyCode}
+            />
+            <ReferralHistoryTable
+              history={state.referralHistory}
+              loading={state.loading}
+            />
+          </div>
+
+          <RewardsWallet
+            totalPoints={state.summary?.total_points ?? 0}
+            walletValue={state.summary?.wallet_balance_rs ?? 0}
+            transactions={state.transactions}
+            loading={state.loading}
+          />
+
+          <RewardsStore
+            rewards={state.rewardsCatalog}
+            userPoints={state.summary?.total_points ?? 0}
+            loading={state.loading}
+            onRedeem={redeem}
+          />
+
+          <Leaderboard
+            leaderboard={state.leaderboard}
+            userEmail={user?.email}
             loading={state.loading}
           />
         </div>
-
-        <RewardsWallet
-          totalPoints={state.summary?.total_points ?? 0}
-          walletValue={state.summary?.wallet_balance_rs ?? 0}
-          transactions={state.transactions}
-          loading={state.loading}
-        />
-
-        <RewardsStore
-          rewards={state.rewardsCatalog}
-          userPoints={state.summary?.total_points ?? 0}
-          loading={state.loading}
-          onRedeem={redeem}
-        />
-
-        <Leaderboard
-          leaderboard={state.leaderboard}
-          userEmail={user?.email}
-          loading={state.loading}
-        />
       </div>
     </>
   )

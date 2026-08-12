@@ -15,13 +15,6 @@ export const FEATURE_METADATA: Record<string, FeatureMetadata> = {
   // Ownership
   [ROUTES.OWNERSHIP_SYSTEM]: { title: 'System Monitoring', stageId: 'ST-12', icon: 'activity' },
   [ROUTES.OWNERSHIP_SAVINGS]: { title: 'Savings Dashboard', stageId: 'ST-12', icon: 'trending' },
-  [ROUTES.OWNERSHIP_DOCS]: { title: 'Docs & Warranty', stageId: 'ST-12', icon: 'file' },
-
-  // Support
-  [ROUTES.SUPPORT_HELP]: { title: 'Help & Support', stageId: 'ST-02', icon: 'help' },
-
-  // Account
-  [ROUTES.ACCOUNT_PROFILE]: { title: 'Profile', stageId: 'ST-02', icon: 'user' },
 
   // Sidebar parity — visible locked features
   [ROUTES.SITE_SURVEY]: { title: 'Site Survey', stageId: 'ST-07', icon: 'clipboard' },

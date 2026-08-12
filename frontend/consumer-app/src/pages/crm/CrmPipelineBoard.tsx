@@ -8,10 +8,10 @@ interface Props {
 
 const STAGE_COLORS: Record<string, string> = {
   'New Lead': '#3b82f6',
-  Qualified: '#8b5cf6',
+  Qualified: '#17a8e5',
   'Site Survey Scheduled': '#f59e0b',
   'Survey Completed': '#10b981',
-  'Proposal Generated': '#06b6d4',
+  'Proposal Generated': '#ff8a1d',
   'Proposal Sent': '#3b82f6',
   Negotiation: '#f97316',
   Won: '#22c55e',

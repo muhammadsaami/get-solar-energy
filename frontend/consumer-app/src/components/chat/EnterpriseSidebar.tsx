@@ -7,17 +7,17 @@ interface EnterpriseSidebarProps {
   context: { intent: string; confidence: number } | null
 }
 
-const cardTheme = { '--card-theme': '124, 93, 250' } as React.CSSProperties
+const cardTheme = { '--card-theme': '23, 168, 229' } as React.CSSProperties
 const cardStyle: React.CSSProperties = { padding: '14px' }
-const headingStyle: React.CSSProperties = { margin: '0 0 8px 0', fontSize: '12px', fontWeight: 700, color: 'var(--text-navy)' }
+const headingStyle: React.CSSProperties = { margin: '0 0 8px 0', fontSize: '12px', fontWeight: 700, color: 'var(--text-primary)' }
 const contentStyle: React.CSSProperties = { fontSize: '11px', color: 'var(--text-secondary)' }
 const emptyStyle: React.CSSProperties = { opacity: 0.5, fontStyle: 'italic' }
 
 const dotColor: Record<string, string> = {
-  done: '#36d399',
-  running: '#7c5dfa',
+  done: 'var(--color-green)',
+  running: 'var(--color-cyan)',
   pending: 'var(--text-muted)',
-  error: '#f43f5e',
+  error: 'var(--color-red)',
 }
 
 export default function EnterpriseSidebar({ toolResults, timeline, context }: EnterpriseSidebarProps) {

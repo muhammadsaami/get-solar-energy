@@ -15,7 +15,16 @@ export interface AuthenticatedUser {
 
 export function normalizeAuthenticatedUser(raw: Record<string, unknown>): AuthenticatedUser {
   const source = (raw.user as Record<string, unknown> | undefined) || (raw.technician as Record<string, unknown> | undefined) || raw
-  const canonicalRole = normalizeRole((source.role as string) || (raw.role as string))
+
+  // Explicit top-level role (set by AuthContext as a deliberate override) takes
+  // precedence over the nested user/technician object's role field.
+  // This is the correct priority because:
+  //   1. The backend now validates the role and returns it at the top level.
+  //   2. AuthContext.persistSession may set role: roleHint at the top level
+  //      when the nested user object carries a legacy/mismatched value.
+  const explicitRole = raw.role as string | undefined
+  const sourceRole   = source.role as string | undefined
+  const canonicalRole = normalizeRole(explicitRole || sourceRole)
 
   return {
     id: (source.id as number | string) ?? '',
@@ -29,3 +38,4 @@ export function normalizeAuthenticatedUser(raw: Record<string, unknown>): Authen
     subscriptionTier: (source.subscriptionTier as string) || (source.subscription_tier as string) || getDisplayRole(canonicalRole),
   }
 }
+

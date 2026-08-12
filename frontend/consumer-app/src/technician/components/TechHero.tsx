@@ -10,6 +10,10 @@ interface TechHeroProps {
 export default function TechHero({ profile, onRefresh }: TechHeroProps) {
   const greeting = `${getGreeting()}, ${profile?.name?.split(' ')[0] || 'Technician'}`
 
+  const fields = profile ? ['city', 'serviceArea', 'skillLevel', 'certificationLevel', 'verificationStatus', 'phone', 'email'] : []
+  const filled = fields.filter((f) => profile![f as keyof TechnicianProfile]).length
+  const profileCompletion = fields.length ? Math.round((filled / fields.length) * 100) : 0
+
   return (
     <section className="hero-card" style={{ minHeight: 240, marginBottom: 20 }}>
       <div className="hero-bg-overlay" />
@@ -41,6 +45,11 @@ export default function TechHero({ profile, onRefresh }: TechHeroProps) {
           Track your work orders, monitor earnings, and advance your skills — all from your technician dashboard.
         </p>
 
+        <div className="hero-insight-strip" style={{ background: 'rgba(255,255,255,0.06)', borderColor: 'rgba(255,255,255,0.12)' }}>
+          <svg className="hero-insight-icon" viewBox="0 0 24 24" fill="none" stroke="#36d399" strokeWidth="2"><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2" /><line x1="12" y1="6" x2="12" y2="11" /><line x1="12" y1="14" x2="12.01" y2="14" /></svg>
+          <span className="hero-insight-text">You're {profile?.availability?.toLowerCase() === 'available' ? 'available' : 'on duty'} for today — review your scheduled work orders and confirm availability to optimize field efficiency.</span>
+        </div>
+
         <div className="hero-actions">
           <button className="hero-btn-primary" onClick={onRefresh}>
             <span>Refresh Dashboard</span>
@@ -52,9 +61,22 @@ export default function TechHero({ profile, onRefresh }: TechHeroProps) {
       <div className="hero-right">
         <div className="live-summary-panel" style={{ padding: 20, maxWidth: 300 }}>
           <div className="summary-header" style={{ marginBottom: 16 }}>
-            <span className="summary-title">Quick Status</span>
-            <span className="summary-badge" style={{ animation: 'none' }}>Live</span>
+            <span className="summary-title">Shift Status</span>
+            <span className="summary-live-pill"><span className="live-pulse-dot" /> Live</span>
           </div>
+
+          <div className="readiness-lead-block" style={{ marginBottom: 14 }}>
+            <div className="readiness-lead-meta">
+              <span className="readiness-lbl">Profile Completion</span>
+              <span className="readiness-badge">{profileCompletion}%</span>
+            </div>
+            <div className="readiness-primary-row">
+              <div className="readiness-progress-track">
+                <div className="readiness-progress-fill" style={{ width: `${profileCompletion}%` }}></div>
+              </div>
+            </div>
+          </div>
+
           <div className="summary-grid" style={{ gridTemplateColumns: '1fr 1fr' }}>
             <div className="summary-item">
               <span className="summary-label">Status</span>

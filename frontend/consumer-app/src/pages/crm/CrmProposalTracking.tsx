@@ -19,8 +19,8 @@ interface ProposalCard {
 const STATUS_COLORS: Record<string, string> = {
   Draft: 'var(--text-muted)',
   Generated: 'var(--color-blue)',
-  Sent: 'var(--color-purple)',
-  Viewed: 'var(--color-cyan)',
+  Sent: 'var(--color-blue)',
+  Viewed: 'var(--color-blue)',
   Accepted: 'var(--color-green)',
   Rejected: 'var(--color-red)',
   Expired: 'var(--color-orange)',

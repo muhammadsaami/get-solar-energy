@@ -16,7 +16,7 @@ interface UnifiedEvent {
 
 const EVENT_CONFIG: Record<string, { color: string; icon: string }> = {
   task: { color: 'var(--color-blue)', icon: 'icon-check-square' },
-  meeting: { color: 'var(--color-purple)', icon: 'icon-calendar' },
+  meeting: { color: 'var(--color-blue)', icon: 'icon-calendar' },
   followup: { color: 'var(--color-amber)', icon: 'icon-clock' },
   communication: { color: 'var(--color-green)', icon: 'icon-message-square' },
 }

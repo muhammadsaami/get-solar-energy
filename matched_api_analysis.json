@@ -1,0 +1,1246 @@
+{
+  "matched": [
+    {
+      "file": "frontend/consumer-app/src/activities/services/activity.service.ts",
+      "line": 183,
+      "method": "GET",
+      "frontend_endpoint": "/dashboard/stats",
+      "backend_match": "/api/dashboard/stats",
+      "backend_name": "get_dashboard_stats_api_dashboard_stats_get",
+      "status": "CONNECTED",
+      "code": "const { data } = await api.get<DashboardStats>('/dashboard/stats', { signal })"
+    },
+    {
+      "file": "frontend/consumer-app/src/activities/services/activity.service.ts",
+      "line": 197,
+      "method": "GET",
+      "frontend_endpoint": "/dashboard/recent-bills",
+      "backend_match": "/api/dashboard/recent-bills",
+      "backend_name": "get_recent_bills_api_dashboard_recent_bills_get",
+      "status": "CONNECTED",
+      "code": "const { data } = await api.get<BillRecord[]>('/dashboard/recent-bills', {"
+    },
+    {
+      "file": "frontend/consumer-app/src/features/certifications/services/certifications.service.ts",
+      "line": 12,
+      "method": "GET",
+      "frontend_endpoint": "/technician/training/certifications",
+      "backend_match": "/api/technician/training/certifications",
+      "backend_name": "get_certifications_api_technician_training_certifications_get",
+      "status": "CONNECTED",
+      "code": "const res = await api.get('/technician/training/certifications')"
+    },
+    {
+      "file": "frontend/consumer-app/src/features/earnings/services/earnings.service.ts",
+      "line": 22,
+      "method": "GET",
+      "frontend_endpoint": "/technician/earnings/",
+      "backend_match": "/api/technician/earnings/",
+      "backend_name": "list_earnings_api_technician_earnings__get",
+      "status": "CONNECTED",
+      "code": "const res = await api.get('/technician/earnings/')"
+    },
+    {
+      "file": "frontend/consumer-app/src/features/jobMarketplace/services/jobMarketplace.service.ts",
+      "line": 27,
+      "method": "GET",
+      "frontend_endpoint": "/jobs/open",
+      "backend_match": "/api/jobs/open",
+      "backend_name": "list_open_jobs_api_jobs_open_get",
+      "status": "CONNECTED",
+      "code": "const res = await api.get('/jobs/open', { params })"
+    },
+    {
+      "file": "frontend/consumer-app/src/features/jobMarketplace/services/jobMarketplace.service.ts",
+      "line": 79,
+      "method": "POST",
+      "frontend_endpoint": "/jobs/${jobId}/apply",
+      "backend_match": "/api/jobs/{job_id}/apply",
+      "backend_name": "apply_to_job_api_jobs__job_id__apply_post",
+      "status": "CONNECTED",
+      "code": "const res = await api.post(`/jobs/${jobId}/apply`)"
+    },
+    {
+      "file": "frontend/consumer-app/src/features/knowledgeBase/services/knowledgeBase.service.js",
+      "line": 331,
+      "method": "GET",
+      "frontend_endpoint": "/knowledge-base",
+      "backend_match": "/api/knowledge-base/",
+      "backend_name": "list_articles_api_knowledge_base__get",
+      "status": "CONNECTED",
+      "code": "const res = await api.get('/knowledge-base')"
+    },
+    {
+      "file": "frontend/consumer-app/src/features/profile/services/profile.service.ts",
+      "line": 7,
+      "method": "GET",
+      "frontend_endpoint": "/technician/performance",
+      "backend_match": "/api/technician/performance",
+      "backend_name": "get_performance_api_technician_performance_get",
+      "status": "CONNECTED",
+      "code": "const res = await api.get('/technician/performance')"
+    },
+    {
+      "file": "frontend/consumer-app/src/features/profile/services/profile.service.ts",
+      "line": 12,
+      "method": "GET",
+      "frontend_endpoint": "/technician/profile",
+      "backend_match": "/api/technician/profile",
+      "backend_name": "get_profile_api_technician_profile_get",
+      "status": "CONNECTED",
+      "code": "const profileRes = await api.get('/technician/profile')"
+    },
+    {
+      "file": "frontend/consumer-app/src/features/profile/services/profile.service.ts",
+      "line": 20,
+      "method": "GET",
+      "frontend_endpoint": "/technician/performance",
+      "backend_match": "/api/technician/performance",
+      "backend_name": "get_performance_api_technician_performance_get",
+      "status": "CONNECTED",
+      "code": "const perfRes = await api.get('/technician/performance')"
+    },
+    {
+      "file": "frontend/consumer-app/src/features/profile/services/profile.service.ts",
+      "line": 67,
+      "method": "PUT",
+      "frontend_endpoint": "/technician/profile",
+      "backend_match": "/api/technician/profile",
+      "backend_name": "update_profile_api_technician_profile_put",
+      "status": "CONNECTED",
+      "code": "const res = await api.put('/technician/profile', data)"
+    },
+    {
+      "file": "frontend/consumer-app/src/features/technicianAi/services/technicianAi.service.ts",
+      "line": 18,
+      "method": "POST",
+      "frontend_endpoint": "/technician/ai/troubleshoot",
+      "backend_match": "/api/technician/ai/troubleshoot",
+      "backend_name": "troubleshoot_issue_api_technician_ai_troubleshoot_post",
+      "status": "CONNECTED",
+      "code": "const res = await api.post('/technician/ai/troubleshoot', {"
+    },
+    {
+      "file": "frontend/consumer-app/src/features/technicianAi/services/technicianAi.service.ts",
+      "line": 46,
+      "method": "GET",
+      "frontend_endpoint": "/technician/ai/history",
+      "backend_match": "/api/technician/ai/history",
+      "backend_name": "ai_history_api_technician_ai_history_get",
+      "status": "CONNECTED",
+      "code": "const res = await api.get('/technician/ai/history')"
+    },
+    {
+      "file": "frontend/consumer-app/src/features/training/services/training.service.js",
+      "line": 45,
+      "method": "GET",
+      "frontend_endpoint": "/technician/training/modules",
+      "backend_match": "/api/technician/training/modules",
+      "backend_name": "list_modules_api_technician_training_modules_get",
+      "status": "CONNECTED",
+      "code": "api.get('/technician/training/modules'),"
+    },
+    {
+      "file": "frontend/consumer-app/src/features/training/services/training.service.js",
+      "line": 46,
+      "method": "GET",
+      "frontend_endpoint": "/technician/training/certifications",
+      "backend_match": "/api/technician/training/certifications",
+      "backend_name": "get_certifications_api_technician_training_certifications_get",
+      "status": "CONNECTED",
+      "code": "api.get('/technician/training/certifications'),"
+    },
+    {
+      "file": "frontend/consumer-app/src/features/workOrders/services/workOrders.service.ts",
+      "line": 21,
+      "method": "GET",
+      "frontend_endpoint": "/technician/work-orders/",
+      "backend_match": "/api/technician/work-orders/",
+      "backend_name": "list_my_work_orders_api_technician_work_orders__get",
+      "status": "CONNECTED",
+      "code": "const res = await api.get('/technician/work-orders/')"
+    },
+    {
+      "file": "frontend/consumer-app/src/features/workOrders/services/workOrders.service.ts",
+      "line": 56,
+      "method": "PATCH",
+      "frontend_endpoint": "/technician/work-orders/${workOrderId}/status",
+      "backend_match": "/api/technician/work-orders/{work_order_id}/status",
+      "backend_name": "update_work_order_status_api_technician_work_orders__work_order_id__status_patch",
+      "status": "CONNECTED",
+      "code": "const res = await api.patch(`/technician/work-orders/${workOrderId}/status`, payload)"
+    },
+    {
+      "file": "frontend/consumer-app/src/hooks/useBillAnalyzer.ts",
+      "line": 503,
+      "method": "POST",
+      "frontend_endpoint": "/analyze-bill",
+      "backend_match": "/api/analyze-bill",
+      "backend_name": "analyze_bill_api_analyze_bill_post",
+      "status": "CONNECTED",
+      "code": "api.post('/analyze-bill', fd)"
+    },
+    {
+      "file": "frontend/consumer-app/src/hooks/useBillAnalyzer.ts",
+      "line": 572,
+      "method": "POST",
+      "frontend_endpoint": "/analyze-bill",
+      "backend_match": "/api/analyze-bill",
+      "backend_name": "analyze_bill_api_analyze_bill_post",
+      "status": "CONNECTED",
+      "code": "api.post('/analyze-bill', fd)"
+    },
+    {
+      "file": "frontend/consumer-app/src/hooks/useRoofAnalyzer.ts",
+      "line": 467,
+      "method": "POST",
+      "frontend_endpoint": "/analyze-roof",
+      "backend_match": "/api/analyze-roof",
+      "backend_name": "analyze_roof_api_analyze_roof_post",
+      "status": "CONNECTED",
+      "code": "api.post('/analyze-roof', formData)"
+    },
+    {
+      "file": "frontend/consumer-app/src/performance/services/performance.service.ts",
+      "line": 120,
+      "method": "GET",
+      "frontend_endpoint": "/dashboard/recent-bills",
+      "backend_match": "/api/dashboard/recent-bills",
+      "backend_name": "get_recent_bills_api_dashboard_recent_bills_get",
+      "status": "CONNECTED",
+      "code": "const { data } = await api.get<unknown[]>('/dashboard/recent-bills', {"
+    },
+    {
+      "file": "frontend/consumer-app/src/performance/services/performance.service.ts",
+      "line": 179,
+      "method": "GET",
+      "frontend_endpoint": "/crm/alerts",
+      "backend_match": "/api/crm/alerts",
+      "backend_name": "get_crm_alerts_api_crm_alerts_get",
+      "status": "CONNECTED",
+      "code": "const { data } = await api.get<{ data?: unknown[] }>('/crm/alerts', { signal })"
+    },
+    {
+      "file": "frontend/consumer-app/src/reports/services/report.service.ts",
+      "line": 86,
+      "method": "GET",
+      "frontend_endpoint": "/dashboard/stats",
+      "backend_match": "/api/dashboard/stats",
+      "backend_name": "get_dashboard_stats_api_dashboard_stats_get",
+      "status": "CONNECTED",
+      "code": "const { data } = await api.get<DashboardStats>('/dashboard/stats', { signal })"
+    },
+    {
+      "file": "frontend/consumer-app/src/reports/services/report.service.ts",
+      "line": 100,
+      "method": "GET",
+      "frontend_endpoint": "/dashboard/recent-bills",
+      "backend_match": "/api/dashboard/recent-bills",
+      "backend_name": "get_recent_bills_api_dashboard_recent_bills_get",
+      "status": "CONNECTED",
+      "code": "const { data } = await api.get<BillRecord[]>('/dashboard/recent-bills', {"
+    },
+    {
+      "file": "frontend/consumer-app/src/services/admin.service.ts",
+      "line": 20,
+      "method": "GET",
+      "frontend_endpoint": "/admin/dashboard",
+      "backend_match": "/api/admin/dashboard",
+      "backend_name": "admin_dashboard_api_admin_dashboard_get",
+      "status": "CONNECTED",
+      "code": "const res = await api.get('/admin/dashboard')"
+    },
+    {
+      "file": "frontend/consumer-app/src/services/admin.service.ts",
+      "line": 26,
+      "method": "GET",
+      "frontend_endpoint": "/admin/activity",
+      "backend_match": "/api/admin/activity",
+      "backend_name": "get_admin_activity_api_admin_activity_get",
+      "status": "CONNECTED",
+      "code": "const res = await api.get('/admin/activity', { params: { limit } })"
+    },
+    {
+      "file": "frontend/consumer-app/src/services/admin.service.ts",
+      "line": 32,
+      "method": "GET",
+      "frontend_endpoint": "/admin/health",
+      "backend_match": "/api/admin/health",
+      "backend_name": "admin_health_api_admin_health_get",
+      "status": "CONNECTED",
+      "code": "const res = await api.get('/admin/health')"
+    },
+    {
+      "file": "frontend/consumer-app/src/services/admin.service.ts",
+      "line": 38,
+      "method": "GET",
+      "frontend_endpoint": "/crm/audit-log",
+      "backend_match": "/api/crm/audit-log",
+      "backend_name": "get_audit_log_api_crm_audit_log_get",
+      "status": "CONNECTED",
+      "code": "const res = await api.get('/crm/audit-log', { params: { limit } })"
+    },
+    {
+      "file": "frontend/consumer-app/src/services/admin.service.ts",
+      "line": 44,
+      "method": "GET",
+      "frontend_endpoint": "/ml/status",
+      "backend_match": "/api/ml/status",
+      "backend_name": "ml_status_api_ml_status_get",
+      "status": "CONNECTED",
+      "code": "const res = await api.get('/ml/status')"
+    },
+    {
+      "file": "frontend/consumer-app/src/services/admin.service.ts",
+      "line": 50,
+      "method": "GET",
+      "frontend_endpoint": "/ml/metrics",
+      "backend_match": "/api/ml/metrics",
+      "backend_name": "ml_metrics_api_ml_metrics_get",
+      "status": "CONNECTED",
+      "code": "const res = await api.get('/ml/metrics')"
+    },
+    {
+      "file": "frontend/consumer-app/src/services/bill.service.js",
+      "line": 31,
+      "method": "POST",
+      "frontend_endpoint": "/analyze-bill",
+      "backend_match": "/api/analyze-bill",
+      "backend_name": "analyze_bill_api_analyze_bill_post",
+      "status": "CONNECTED",
+      "code": "const res = await api.post('/analyze-bill', formData, {"
+    },
+    {
+      "file": "frontend/consumer-app/src/services/crm.service.ts",
+      "line": 26,
+      "method": "GET",
+      "frontend_endpoint": "/crm/pipeline-metrics",
+      "backend_match": "/api/crm/pipeline-metrics",
+      "backend_name": "get_pipeline_metrics_api_crm_pipeline_metrics_get",
+      "status": "CONNECTED",
+      "code": "const res = await api.get('/crm/pipeline-metrics')"
+    },
+    {
+      "file": "frontend/consumer-app/src/services/crm.service.ts",
+      "line": 32,
+      "method": "GET",
+      "frontend_endpoint": "/customers",
+      "backend_match": "/api/customers",
+      "backend_name": "get_customers_api_customers_get",
+      "status": "CONNECTED",
+      "code": "const res = await api.get('/customers', { params: { skip, limit } })"
+    },
+    {
+      "file": "frontend/consumer-app/src/services/crm.service.ts",
+      "line": 38,
+      "method": "GET",
+      "frontend_endpoint": "/customers/search",
+      "backend_match": "/api/customers/search",
+      "backend_name": "search_customers_api_customers_search_get",
+      "status": "CONNECTED",
+      "code": "const res = await api.get('/customers/search', { params: { q } })"
+    },
+    {
+      "file": "frontend/consumer-app/src/services/crm.service.ts",
+      "line": 44,
+      "method": "GET",
+      "frontend_endpoint": "/customers/${id}",
+      "backend_match": "/api/customers/{id}",
+      "backend_name": "get_customer_profile_api_customers__id__get",
+      "status": "CONNECTED",
+      "code": "const res = await api.get(`/customers/${id}`)"
+    },
+    {
+      "file": "frontend/consumer-app/src/services/crm.service.ts",
+      "line": 51,
+      "method": "PUT",
+      "frontend_endpoint": "/crm/customers/${id}",
+      "backend_match": "/api/crm/customers/{id}",
+      "backend_name": "update_customer_crm_api_crm_customers__id__put",
+      "status": "CONNECTED",
+      "code": "const res = await api.put(`/crm/customers/${id}`, body)"
+    },
+    {
+      "file": "frontend/consumer-app/src/services/crm.service.ts",
+      "line": 56,
+      "method": "GET",
+      "frontend_endpoint": "/crm/alerts",
+      "backend_match": "/api/crm/alerts",
+      "backend_name": "get_crm_alerts_api_crm_alerts_get",
+      "status": "CONNECTED",
+      "code": "const res = await api.get('/crm/alerts')"
+    },
+    {
+      "file": "frontend/consumer-app/src/services/crm.service.ts",
+      "line": 62,
+      "method": "GET",
+      "frontend_endpoint": "/crm/customers/${id}/360",
+      "backend_match": "/api/crm/customers/{id}/360",
+      "backend_name": "get_customer_360_api_crm_customers__id__360_get",
+      "status": "CONNECTED",
+      "code": "const res = await api.get(`/crm/customers/${id}/360`)"
+    },
+    {
+      "file": "frontend/consumer-app/src/services/crm.service.ts",
+      "line": 68,
+      "method": "GET",
+      "frontend_endpoint": "/crm/customers/${id}/documents",
+      "backend_match": "/api/crm/customers/{id}/documents",
+      "backend_name": "get_customer_documents_api_crm_customers__id__documents_get",
+      "status": "CONNECTED",
+      "code": "const res = await api.get(`/crm/customers/${id}/documents`, { params: { skip, limit } })"
+    },
+    {
+      "file": "frontend/consumer-app/src/services/crm.service.ts",
+      "line": 74,
+      "method": "GET",
+      "frontend_endpoint": "/crm/customers/${id}/communications",
+      "backend_match": "/api/crm/customers/{id}/communications",
+      "backend_name": "get_customer_communications_api_crm_customers__id__communications_get",
+      "status": "CONNECTED",
+      "code": "const res = await api.get(`/crm/customers/${id}/communications`, { params: { skip, limit } })"
+    },
+    {
+      "file": "frontend/consumer-app/src/services/crm.service.ts",
+      "line": 80,
+      "method": "GET",
+      "frontend_endpoint": "/crm/customers/${id}/timeline-paginated",
+      "backend_match": "/api/crm/customers/{id}/timeline-paginated",
+      "backend_name": "get_customer_timeline_paginated_api_crm_customers__id__timeline_paginated_get",
+      "status": "CONNECTED",
+      "code": "const res = await api.get(`/crm/customers/${id}/timeline-paginated`, { params: { page, limit } })"
+    },
+    {
+      "file": "frontend/consumer-app/src/services/crm.service.ts",
+      "line": 89,
+      "method": "GET",
+      "frontend_endpoint": "/crm/tasks",
+      "backend_match": "/api/crm/tasks",
+      "backend_name": "get_tasks_api_crm_tasks_get",
+      "status": "CONNECTED",
+      "code": "const res = await api.get('/crm/tasks', { params })"
+    },
+    {
+      "file": "frontend/consumer-app/src/services/crm.service.ts",
+      "line": 95,
+      "method": "POST",
+      "frontend_endpoint": "/crm/tasks",
+      "backend_match": "/api/crm/tasks",
+      "backend_name": "create_task_api_crm_tasks_post",
+      "status": "CONNECTED",
+      "code": "const res = await api.post('/crm/tasks', data)"
+    },
+    {
+      "file": "frontend/consumer-app/src/services/crm.service.ts",
+      "line": 101,
+      "method": "PUT",
+      "frontend_endpoint": "/crm/tasks/${id}",
+      "backend_match": "/api/crm/tasks/{id}",
+      "backend_name": "update_task_api_crm_tasks__id__put",
+      "status": "CONNECTED",
+      "code": "const res = await api.put(`/crm/tasks/${id}`, data)"
+    },
+    {
+      "file": "frontend/consumer-app/src/services/crm.service.ts",
+      "line": 107,
+      "method": "DELETE",
+      "frontend_endpoint": "/crm/tasks/${id}",
+      "backend_match": "/api/crm/tasks/{id}",
+      "backend_name": "delete_task_api_crm_tasks__id__delete",
+      "status": "CONNECTED",
+      "code": "const res = await api.delete(`/crm/tasks/${id}`)"
+    },
+    {
+      "file": "frontend/consumer-app/src/services/crm.service.ts",
+      "line": 115,
+      "method": "GET",
+      "frontend_endpoint": "/crm/meetings",
+      "backend_match": "/api/crm/meetings",
+      "backend_name": "get_meetings_api_crm_meetings_get",
+      "status": "CONNECTED",
+      "code": "const res = await api.get('/crm/meetings', { params })"
+    },
+    {
+      "file": "frontend/consumer-app/src/services/crm.service.ts",
+      "line": 121,
+      "method": "POST",
+      "frontend_endpoint": "/crm/meetings",
+      "backend_match": "/api/crm/meetings",
+      "backend_name": "create_meeting_api_crm_meetings_post",
+      "status": "CONNECTED",
+      "code": "const res = await api.post('/crm/meetings', data)"
+    },
+    {
+      "file": "frontend/consumer-app/src/services/crm.service.ts",
+      "line": 127,
+      "method": "PUT",
+      "frontend_endpoint": "/crm/meetings/${id}",
+      "backend_match": "/api/crm/meetings/{id}",
+      "backend_name": "update_meeting_api_crm_meetings__id__put",
+      "status": "CONNECTED",
+      "code": "const res = await api.put(`/crm/meetings/${id}`, data)"
+    },
+    {
+      "file": "frontend/consumer-app/src/services/crm.service.ts",
+      "line": 133,
+      "method": "DELETE",
+      "frontend_endpoint": "/crm/meetings/${id}",
+      "backend_match": "/api/crm/meetings/{id}",
+      "backend_name": "delete_meeting_api_crm_meetings__id__delete",
+      "status": "CONNECTED",
+      "code": "const res = await api.delete(`/crm/meetings/${id}`)"
+    },
+    {
+      "file": "frontend/consumer-app/src/services/crm.service.ts",
+      "line": 141,
+      "method": "GET",
+      "frontend_endpoint": "/crm/followups",
+      "backend_match": "/api/crm/followups",
+      "backend_name": "get_followups_api_crm_followups_get",
+      "status": "CONNECTED",
+      "code": "const res = await api.get('/crm/followups', { params })"
+    },
+    {
+      "file": "frontend/consumer-app/src/services/crm.service.ts",
+      "line": 147,
+      "method": "POST",
+      "frontend_endpoint": "/crm/followups",
+      "backend_match": "/api/crm/followups",
+      "backend_name": "create_followup_api_crm_followups_post",
+      "status": "CONNECTED",
+      "code": "const res = await api.post('/crm/followups', data)"
+    },
+    {
+      "file": "frontend/consumer-app/src/services/crm.service.ts",
+      "line": 153,
+      "method": "PUT",
+      "frontend_endpoint": "/crm/followups/${id}",
+      "backend_match": "/api/crm/followups/{id}",
+      "backend_name": "update_followup_api_crm_followups__id__put",
+      "status": "CONNECTED",
+      "code": "const res = await api.put(`/crm/followups/${id}`, data)"
+    },
+    {
+      "file": "frontend/consumer-app/src/services/crm.service.ts",
+      "line": 159,
+      "method": "DELETE",
+      "frontend_endpoint": "/crm/followups/${id}",
+      "backend_match": "/api/crm/followups/{id}",
+      "backend_name": "delete_followup_api_crm_followups__id__delete",
+      "status": "CONNECTED",
+      "code": "const res = await api.delete(`/crm/followups/${id}`)"
+    },
+    {
+      "file": "frontend/consumer-app/src/services/crm.service.ts",
+      "line": 165,
+      "method": "POST",
+      "frontend_endpoint": "/crm/communications",
+      "backend_match": "/api/crm/communications",
+      "backend_name": "create_communication_api_crm_communications_post",
+      "status": "CONNECTED",
+      "code": "const res = await api.post('/crm/communications', data)"
+    },
+    {
+      "file": "frontend/consumer-app/src/services/customerDashboard.service.ts",
+      "line": 31,
+      "method": "GET",
+      "frontend_endpoint": "/dashboard/stats",
+      "backend_match": "/api/dashboard/stats",
+      "backend_name": "get_dashboard_stats_api_dashboard_stats_get",
+      "status": "CONNECTED",
+      "code": "api.get('/dashboard/stats').catch(() => null),"
+    },
+    {
+      "file": "frontend/consumer-app/src/services/customerDashboard.service.ts",
+      "line": 32,
+      "method": "GET",
+      "frontend_endpoint": "/dashboard/recent-bills",
+      "backend_match": "/api/dashboard/recent-bills",
+      "backend_name": "get_recent_bills_api_dashboard_recent_bills_get",
+      "status": "CONNECTED",
+      "code": "api.get('/dashboard/recent-bills').catch(() => null),"
+    },
+    {
+      "file": "frontend/consumer-app/src/services/customerDashboard.service.ts",
+      "line": 33,
+      "method": "GET",
+      "frontend_endpoint": "/dashboard/analytics",
+      "backend_match": "/api/dashboard/analytics",
+      "backend_name": "get_dashboard_analytics_api_dashboard_analytics_get",
+      "status": "CONNECTED",
+      "code": "api.get('/dashboard/analytics').catch(() => null),"
+    },
+    {
+      "file": "frontend/consumer-app/src/services/mlops.service.ts",
+      "line": 7,
+      "method": "GET",
+      "frontend_endpoint": "/mlops/status",
+      "backend_match": "/api/mlops/status",
+      "backend_name": "get_status_api_mlops_status_get",
+      "status": "CONNECTED",
+      "code": "const res = await api.get('/mlops/status')"
+    },
+    {
+      "file": "frontend/consumer-app/src/services/mlops.service.ts",
+      "line": 13,
+      "method": "GET",
+      "frontend_endpoint": "/mlops/models",
+      "backend_match": "/api/mlops/models",
+      "backend_name": "list_models_api_mlops_models_get",
+      "status": "CONNECTED",
+      "code": "const res = await api.get('/mlops/models')"
+    },
+    {
+      "file": "frontend/consumer-app/src/services/mlops.service.ts",
+      "line": 19,
+      "method": "GET",
+      "frontend_endpoint": "/mlops/models/${encodeURIComponent(name)}",
+      "backend_match": "/api/mlops/models/{name}",
+      "backend_name": "get_model_api_mlops_models__name__get",
+      "status": "CONNECTED",
+      "code": "const res = await api.get(`/mlops/models/${encodeURIComponent(name)}`)"
+    },
+    {
+      "file": "frontend/consumer-app/src/services/mlops.service.ts",
+      "line": 27,
+      "method": "GET",
+      "frontend_endpoint": "/mlops/versions",
+      "backend_match": "/api/mlops/versions",
+      "backend_name": "list_versions_api_mlops_versions_get",
+      "status": "CONNECTED",
+      "code": "const res = await api.get('/mlops/versions', { params })"
+    },
+    {
+      "file": "frontend/consumer-app/src/services/mlops.service.ts",
+      "line": 35,
+      "method": "GET",
+      "frontend_endpoint": "/mlops/health",
+      "backend_match": "/api/mlops/health",
+      "backend_name": "get_health_api_mlops_health_get",
+      "status": "CONNECTED",
+      "code": "const res = await api.get('/mlops/health', { params })"
+    },
+    {
+      "file": "frontend/consumer-app/src/services/mlops.service.ts",
+      "line": 41,
+      "method": "GET",
+      "frontend_endpoint": "/mlops/metrics",
+      "backend_match": "/api/mlops/metrics",
+      "backend_name": "get_metrics_api_mlops_metrics_get",
+      "status": "CONNECTED",
+      "code": "const res = await api.get('/mlops/metrics')"
+    },
+    {
+      "file": "frontend/consumer-app/src/services/mlops.service.ts",
+      "line": 49,
+      "method": "GET",
+      "frontend_endpoint": "/mlops/drift",
+      "backend_match": "/api/mlops/drift",
+      "backend_name": "get_drift_api_mlops_drift_get",
+      "status": "CONNECTED",
+      "code": "const res = await api.get('/mlops/drift', { params })"
+    },
+    {
+      "file": "frontend/consumer-app/src/services/mlops.service.ts",
+      "line": 57,
+      "method": "GET",
+      "frontend_endpoint": "/mlops/events",
+      "backend_match": "/api/mlops/events",
+      "backend_name": "get_events_api_mlops_events_get",
+      "status": "CONNECTED",
+      "code": "const res = await api.get('/mlops/events', { params })"
+    },
+    {
+      "file": "frontend/consumer-app/src/services/mlops.service.ts",
+      "line": 63,
+      "method": "GET",
+      "frontend_endpoint": "/ml/models",
+      "backend_match": "/api/ml/models",
+      "backend_name": "list_models_api_ml_models_get",
+      "status": "CONNECTED",
+      "code": "const res = await api.get('/ml/models')"
+    },
+    {
+      "file": "frontend/consumer-app/src/services/projectTracking.service.js",
+      "line": 398,
+      "method": "GET",
+      "frontend_endpoint": "/projects",
+      "backend_match": "/api/projects",
+      "backend_name": "list_projects_api_projects_get",
+      "status": "CONNECTED",
+      "code": "const res = await api.get('/projects');"
+    },
+    {
+      "file": "frontend/consumer-app/src/services/projectTracking.service.js",
+      "line": 405,
+      "method": "GET",
+      "frontend_endpoint": "/projects/${encodeURIComponent(projectId)}",
+      "backend_match": "/api/projects/{project_id}",
+      "backend_name": "get_project_by_id_api_projects__project_id__get",
+      "status": "CONNECTED",
+      "code": "const res = await api.get(`/projects/${encodeURIComponent(projectId)}`);"
+    },
+    {
+      "file": "frontend/consumer-app/src/services/projectTracking.service.js",
+      "line": 412,
+      "method": "GET",
+      "frontend_endpoint": "/projects/metrics",
+      "backend_match": "/api/projects/metrics",
+      "backend_name": "project_metrics_api_projects_metrics_get",
+      "status": "CONNECTED",
+      "code": "const res = await api.get('/projects/metrics');"
+    },
+    {
+      "file": "frontend/consumer-app/src/services/projectTracking.service.js",
+      "line": 440,
+      "method": "PATCH",
+      "frontend_endpoint": "/projects/${encodeURIComponent(projectId)}/stage",
+      "backend_match": "/api/projects/{project_id}/stage",
+      "backend_name": "update_project_stage_endpoint_api_projects__project_id__stage_patch",
+      "status": "CONNECTED",
+      "code": "const res = await api.patch(`/projects/${encodeURIComponent(projectId)}/stage`, { stage: newStage });"
+    },
+    {
+      "file": "frontend/consumer-app/src/services/projectTracking.service.js",
+      "line": 447,
+      "method": "GET",
+      "frontend_endpoint": "/projects",
+      "backend_match": "/api/projects",
+      "backend_name": "list_projects_api_projects_get",
+      "status": "CONNECTED",
+      "code": "const res = await api.get('/projects', { params: { search: query.trim() } });"
+    },
+    {
+      "file": "frontend/consumer-app/src/services/projectTracking.service.js",
+      "line": 458,
+      "method": "GET",
+      "frontend_endpoint": "/projects",
+      "backend_match": "/api/projects",
+      "backend_name": "list_projects_api_projects_get",
+      "status": "CONNECTED",
+      "code": "const res = await api.get('/projects', { params });"
+    },
+    {
+      "file": "frontend/consumer-app/src/services/proposal.service.js",
+      "line": 28,
+      "method": "POST",
+      "frontend_endpoint": "/generate-proposal",
+      "backend_match": "/api/generate-proposal",
+      "backend_name": "generate_proposal_api_generate_proposal_post",
+      "status": "CONNECTED",
+      "code": "const res = await api.post('/generate-proposal', {"
+    },
+    {
+      "file": "frontend/consumer-app/src/services/reward.service.ts",
+      "line": 18,
+      "method": "POST",
+      "frontend_endpoint": "/referral/apply",
+      "backend_match": "/api/referral/apply",
+      "backend_name": "apply_referral_api_referral_apply_post",
+      "status": "CONNECTED",
+      "code": "const { data } = await api.post<ApplyCodeResponse>('/referral/apply', {"
+    },
+    {
+      "file": "frontend/consumer-app/src/services/reward.service.ts",
+      "line": 26,
+      "method": "POST",
+      "frontend_endpoint": "/referral/redeem",
+      "backend_match": "/api/referral/redeem",
+      "backend_name": "redeem_reward_api_referral_redeem_post",
+      "status": "CONNECTED",
+      "code": "const { data } = await api.post<RedeemResponse>('/referral/redeem', payload)"
+    },
+    {
+      "file": "frontend/consumer-app/src/services/roi.service.ts",
+      "line": 29,
+      "method": "POST",
+      "frontend_endpoint": "/calculate-roi",
+      "backend_match": "/api/calculate-roi",
+      "backend_name": "calculate_roi_api_calculate_roi_post",
+      "status": "CONNECTED",
+      "code": "const { data } = await api.post<ROIApiResponse>('/calculate-roi', request)"
+    },
+    {
+      "file": "frontend/consumer-app/src/services/roof.service.js",
+      "line": 18,
+      "method": "POST",
+      "frontend_endpoint": "/analyze-roof",
+      "backend_match": "/api/analyze-roof",
+      "backend_name": "analyze_roof_api_analyze_roof_post",
+      "status": "CONNECTED",
+      "code": "const res = await api.post('/analyze-roof', formData, {"
+    },
+    {
+      "file": "frontend/consumer-app/src/services/siteSurvey.service.js",
+      "line": 5,
+      "method": "GET",
+      "frontend_endpoint": "/site-surveys/dashboard",
+      "backend_match": "/api/site-surveys/dashboard",
+      "backend_name": "dashboard_stats_api_site_surveys_dashboard_get",
+      "status": "CONNECTED",
+      "code": "const res = await api.get('/site-surveys/dashboard');"
+    },
+    {
+      "file": "frontend/consumer-app/src/services/siteSurvey.service.js",
+      "line": 10,
+      "method": "GET",
+      "frontend_endpoint": "/site-surveys",
+      "backend_match": "/api/site-surveys",
+      "backend_name": "list_surveys_api_site_surveys_get",
+      "status": "CONNECTED",
+      "code": "const res = await api.get('/site-surveys', { params });"
+    },
+    {
+      "file": "frontend/consumer-app/src/services/siteSurvey.service.js",
+      "line": 15,
+      "method": "GET",
+      "frontend_endpoint": "/site-surveys/${id}",
+      "backend_match": "/api/site-surveys/{survey_id}",
+      "backend_name": "get_survey_endpoint_api_site_surveys__survey_id__get",
+      "status": "CONNECTED",
+      "code": "const res = await api.get(`/site-surveys/${id}`);"
+    },
+    {
+      "file": "frontend/consumer-app/src/services/siteSurvey.service.js",
+      "line": 20,
+      "method": "POST",
+      "frontend_endpoint": "/site-surveys",
+      "backend_match": "/api/site-surveys",
+      "backend_name": "create_survey_endpoint_api_site_surveys_post",
+      "status": "CONNECTED",
+      "code": "const res = await api.post('/site-surveys', data);"
+    },
+    {
+      "file": "frontend/consumer-app/src/services/siteSurvey.service.js",
+      "line": 25,
+      "method": "PUT",
+      "frontend_endpoint": "/site-surveys/${id}",
+      "backend_match": "/api/site-surveys/{survey_id}",
+      "backend_name": "update_survey_endpoint_api_site_surveys__survey_id__put",
+      "status": "CONNECTED",
+      "code": "const res = await api.put(`/site-surveys/${id}`, data);"
+    },
+    {
+      "file": "frontend/consumer-app/src/services/siteSurvey.service.js",
+      "line": 30,
+      "method": "PATCH",
+      "frontend_endpoint": "/site-surveys/${id}/status",
+      "backend_match": "/api/site-surveys/{survey_id}/status",
+      "backend_name": "update_status_endpoint_api_site_surveys__survey_id__status_patch",
+      "status": "CONNECTED",
+      "code": "const res = await api.patch(`/site-surveys/${id}/status`, { status });"
+    },
+    {
+      "file": "frontend/consumer-app/src/services/siteSurvey.service.js",
+      "line": 35,
+      "method": "PATCH",
+      "frontend_endpoint": "/site-surveys/${id}/assign",
+      "backend_match": "/api/site-surveys/{survey_id}/assign",
+      "backend_name": "assign_surveyor_endpoint_api_site_surveys__survey_id__assign_patch",
+      "status": "CONNECTED",
+      "code": "const res = await api.patch(`/site-surveys/${id}/assign`, { assigned_to: assignedTo, assigned_name: assignedName });"
+    },
+    {
+      "file": "frontend/consumer-app/src/services/siteSurvey.service.js",
+      "line": 40,
+      "method": "DELETE",
+      "frontend_endpoint": "/site-surveys/${id}",
+      "backend_match": "/api/site-surveys/{survey_id}",
+      "backend_name": "delete_survey_endpoint_api_site_surveys__survey_id__delete",
+      "status": "CONNECTED",
+      "code": "const res = await api.delete(`/site-surveys/${id}`);"
+    },
+    {
+      "file": "frontend/consumer-app/src/services/siteSurvey.service.js",
+      "line": 45,
+      "method": "POST",
+      "frontend_endpoint": "/site-survey",
+      "backend_match": "/api/site-survey",
+      "backend_name": "ai_site_survey_api_site_survey_post",
+      "status": "CONNECTED",
+      "code": "const res = await api.post('/site-survey', data);"
+    },
+    {
+      "file": "frontend/consumer-app/src/services/siteSurvey.service.js",
+      "line": 50,
+      "method": "GET",
+      "frontend_endpoint": "/site-surveys/${surveyId}/photos",
+      "backend_match": "/api/site-surveys/{survey_id}/photos",
+      "backend_name": "list_photos_endpoint_api_site_surveys__survey_id__photos_get",
+      "status": "CONNECTED",
+      "code": "const res = await api.get(`/site-surveys/${surveyId}/photos`);"
+    },
+    {
+      "file": "frontend/consumer-app/src/services/siteSurvey.service.js",
+      "line": 55,
+      "method": "POST",
+      "frontend_endpoint": "/site-surveys/${surveyId}/photos",
+      "backend_match": "/api/site-surveys/{survey_id}/photos",
+      "backend_name": "add_photo_endpoint_api_site_surveys__survey_id__photos_post",
+      "status": "CONNECTED",
+      "code": "const res = await api.post(`/site-surveys/${surveyId}/photos`, data);"
+    },
+    {
+      "file": "frontend/consumer-app/src/services/siteSurvey.service.js",
+      "line": 60,
+      "method": "DELETE",
+      "frontend_endpoint": "/site-surveys/photos/${photoId}",
+      "backend_match": "/api/site-surveys/photos/{photo_id}",
+      "backend_name": "delete_photo_endpoint_api_site_surveys_photos__photo_id__delete",
+      "status": "CONNECTED",
+      "code": "const res = await api.delete(`/site-surveys/photos/${photoId}`);"
+    },
+    {
+      "file": "frontend/consumer-app/src/services/siteSurvey.service.js",
+      "line": 65,
+      "method": "PUT",
+      "frontend_endpoint": "/site-surveys/${surveyId}/checklist",
+      "backend_match": "/api/site-surveys/{survey_id}/checklist",
+      "backend_name": "update_checklist_endpoint_api_site_surveys__survey_id__checklist_put",
+      "status": "CONNECTED",
+      "code": "const res = await api.put(`/site-surveys/${surveyId}/checklist`, { checklist });"
+    },
+    {
+      "file": "frontend/consumer-app/src/services/siteSurvey.service.js",
+      "line": 70,
+      "method": "GET",
+      "frontend_endpoint": "/site-surveys/${surveyId}/proposal-prefill",
+      "backend_match": "/api/site-surveys/{survey_id}/proposal-prefill",
+      "backend_name": "proposal_prefill_api_site_surveys__survey_id__proposal_prefill_get",
+      "status": "CONNECTED",
+      "code": "const res = await api.get(`/site-surveys/${surveyId}/proposal-prefill`);"
+    },
+    {
+      "file": "frontend/consumer-app/src/services/siteSurvey.service.js",
+      "line": 75,
+      "method": "POST",
+      "frontend_endpoint": "/site-surveys/${surveyId}/handoff-installation",
+      "backend_match": "/api/site-surveys/{survey_id}/handoff-installation",
+      "backend_name": "handoff_installation_api_site_surveys__survey_id__handoff_installation_post",
+      "status": "CONNECTED",
+      "code": "const res = await api.post(`/site-surveys/${surveyId}/handoff-installation`);"
+    },
+    {
+      "file": "frontend/consumer-app/src/services/technicianDashboard.service.ts",
+      "line": 39,
+      "method": "GET",
+      "frontend_endpoint": "/technician/dashboard",
+      "backend_match": "/api/technician/dashboard",
+      "backend_name": "get_dashboard_api_technician_dashboard_get",
+      "status": "CONNECTED",
+      "code": "api.get('/technician/dashboard'),"
+    },
+    {
+      "file": "frontend/consumer-app/src/services/technicianDashboard.service.ts",
+      "line": 40,
+      "method": "GET",
+      "frontend_endpoint": "/technician/notifications",
+      "backend_match": "/api/technician/notifications/",
+      "backend_name": "list_notifications_api_technician_notifications__get",
+      "status": "CONNECTED",
+      "code": "api.get('/technician/notifications').catch(() => null),"
+    },
+    {
+      "file": "frontend/consumer-app/src/services/technicianDashboard.service.ts",
+      "line": 112,
+      "method": "GET",
+      "frontend_endpoint": "/technician/notifications",
+      "backend_match": "/api/technician/notifications/",
+      "backend_name": "list_notifications_api_technician_notifications__get",
+      "status": "CONNECTED",
+      "code": "const res = await api.get('/technician/notifications')"
+    },
+    {
+      "file": "frontend/consumer-app/src/services/technicianDashboard.service.ts",
+      "line": 124,
+      "method": "PATCH",
+      "frontend_endpoint": "/technician/notifications/${id}/read",
+      "backend_match": "/api/technician/notifications/{notification_id}/read",
+      "backend_name": "mark_read_api_technician_notifications__notification_id__read_patch",
+      "status": "CONNECTED",
+      "code": "await api.patch(`/technician/notifications/${id}/read`)"
+    },
+    {
+      "file": "frontend/consumer-app/src/services/technicianDashboard.service.ts",
+      "line": 128,
+      "method": "PATCH",
+      "frontend_endpoint": "/technician/notifications/read-all",
+      "backend_match": "/api/technician/notifications/read-all",
+      "backend_name": "mark_all_read_api_technician_notifications_read_all_patch",
+      "status": "CONNECTED",
+      "code": "await api.patch('/technician/notifications/read-all')"
+    },
+    {
+      "file": "frontend/consumer-app/src/services/auth/auth.service.ts",
+      "line": 40,
+      "method": "POST",
+      "frontend_endpoint": "/login",
+      "backend_match": "/api/login",
+      "backend_name": "login_api_login_post",
+      "status": "CONNECTED",
+      "code": "const fallbackRes = await api.post<LoginResponse>('/login', payload)"
+    },
+    {
+      "file": "frontend/consumer-app/src/services/auth/auth.service.ts",
+      "line": 116,
+      "method": "POST",
+      "frontend_endpoint": "/signup",
+      "backend_match": "/api/signup",
+      "backend_name": "signup_api_signup_post",
+      "status": "CONNECTED",
+      "code": "const res = await api.post('/signup', userData)"
+    },
+    {
+      "file": "frontend/consumer-app/src/services/auth/auth.service.ts",
+      "line": 121,
+      "method": "POST",
+      "frontend_endpoint": "/forgot-password",
+      "backend_match": "/api/forgot-password",
+      "backend_name": "forgot_password_api_forgot_password_post",
+      "status": "CONNECTED",
+      "code": "const res = await api.post('/forgot-password', { email })"
+    },
+    {
+      "file": "frontend/consumer-app/src/services/auth/auth.service.ts",
+      "line": 126,
+      "method": "POST",
+      "frontend_endpoint": "/reset-password",
+      "backend_match": "/api/reset-password",
+      "backend_name": "reset_password_api_reset_password_post",
+      "status": "CONNECTED",
+      "code": "const res = await api.post('/reset-password', { token, new_password: newPassword })"
+    },
+    {
+      "file": "frontend/consumer-app/src/services/auth/auth.service.ts",
+      "line": 131,
+      "method": "POST",
+      "frontend_endpoint": "/technician/login",
+      "backend_match": "/api/technician/login",
+      "backend_name": "login_technician_api_technician_login_post",
+      "status": "CONNECTED",
+      "code": "const res = await api.post('/technician/login', {"
+    },
+    {
+      "file": "frontend/consumer-app/src/services/auth/auth.service.ts",
+      "line": 140,
+      "method": "POST",
+      "frontend_endpoint": "/technician/signup",
+      "backend_match": "/api/technician/signup",
+      "backend_name": "signup_technician_api_technician_signup_post",
+      "status": "CONNECTED",
+      "code": "const res = await api.post('/technician/signup', userData)"
+    },
+    {
+      "file": "frontend/consumer-app/src/services/auth/auth.service.ts",
+      "line": 145,
+      "method": "GET",
+      "frontend_endpoint": "/technician/profile",
+      "backend_match": "/api/technician/profile",
+      "backend_name": "get_profile_api_technician_profile_get",
+      "status": "CONNECTED",
+      "code": "const res = await api.get('/technician/profile')"
+    },
+    {
+      "file": "frontend/consumer-app/src/vendor/services/vendor.service.ts",
+      "line": 5,
+      "method": "GET",
+      "frontend_endpoint": "/vendor/dashboard",
+      "backend_match": "/api/vendor/dashboard",
+      "backend_name": "vendor_dashboard_api_vendor_dashboard_get",
+      "status": "CONNECTED",
+      "code": "const res = await api.get('/vendor/dashboard')"
+    },
+    {
+      "file": "frontend/consumer-app/src/vendor/services/vendor.service.ts",
+      "line": 10,
+      "method": "GET",
+      "frontend_endpoint": "/vendor/projects",
+      "backend_match": "/api/vendor/projects",
+      "backend_name": "vendor_projects_api_vendor_projects_get",
+      "status": "CONNECTED",
+      "code": "const res = await api.get('/vendor/projects', { params })"
+    },
+    {
+      "file": "frontend/consumer-app/src/vendor/services/vendor.service.ts",
+      "line": 15,
+      "method": "GET",
+      "frontend_endpoint": "/projects/${encodeURIComponent(projectId)}",
+      "backend_match": "/api/projects/{project_id}",
+      "backend_name": "get_project_by_id_api_projects__project_id__get",
+      "status": "CONNECTED",
+      "code": "const res = await api.get(`/projects/${encodeURIComponent(projectId)}`)"
+    },
+    {
+      "file": "frontend/consumer-app/src/vendor/services/vendor.service.ts",
+      "line": 20,
+      "method": "PATCH",
+      "frontend_endpoint": "/projects/${encodeURIComponent(projectId)}/stage",
+      "backend_match": "/api/projects/{project_id}/stage",
+      "backend_name": "update_project_stage_endpoint_api_projects__project_id__stage_patch",
+      "status": "CONNECTED",
+      "code": "const res = await api.patch(`/projects/${encodeURIComponent(projectId)}/stage`, { stage })"
+    },
+    {
+      "file": "frontend/consumer-app/src/vendor/services/vendor.service.ts",
+      "line": 25,
+      "method": "GET",
+      "frontend_endpoint": "/vendor/tasks",
+      "backend_match": "/api/vendor/tasks",
+      "backend_name": "vendor_tasks_api_vendor_tasks_get",
+      "status": "CONNECTED",
+      "code": "const res = await api.get('/vendor/tasks', { params })"
+    },
+    {
+      "file": "frontend/consumer-app/src/vendor/services/vendor.service.ts",
+      "line": 30,
+      "method": "GET",
+      "frontend_endpoint": "/customers",
+      "backend_match": "/api/customers",
+      "backend_name": "get_customers_api_customers_get",
+      "status": "CONNECTED",
+      "code": "const res = await api.get('/customers')"
+    },
+    {
+      "file": "frontend/consumer-app/src/vendor/services/vendor.service.ts",
+      "line": 35,
+      "method": "GET",
+      "frontend_endpoint": "/vendor/alerts",
+      "backend_match": "/api/vendor/alerts",
+      "backend_name": "vendor_alerts_api_vendor_alerts_get",
+      "status": "CONNECTED",
+      "code": "const res = await api.get('/vendor/alerts')"
+    }
+  ],
+  "unmatched": [
+    {
+      "file": "frontend/consumer-app/src/hooks/useRoofAnalyzer.ts",
+      "line": 263,
+      "method": "FETCH",
+      "frontend_endpoint": "https://nominatim.openstreetmap.org/search?format=json&q=${encodeURIComponent(query.trim())}&limit=5",
+      "backend_match": null,
+      "backend_name": null,
+      "status": "UNMATCHED",
+      "code": "const res = await fetch(`https://nominatim.openstreetmap.org/search?format=json&q=${encodeURIComponent(query.trim())}&limit=5`, {"
+    },
+    {
+      "file": "frontend/consumer-app/src/services/auth/auth.service.ts",
+      "line": 35,
+      "method": "POST",
+      "frontend_endpoint": "/auth/login",
+      "backend_match": null,
+      "backend_name": null,
+      "status": "UNMATCHED",
+      "code": "const res = await api.post<LoginResponse>('/auth/login', payload)"
+    },
+    {
+      "file": "frontend/consumer-app/src/services/auth/auth.service.ts",
+      "line": 54,
+      "method": "POST",
+      "frontend_endpoint": "/auth/refresh",
+      "backend_match": null,
+      "backend_name": null,
+      "status": "UNMATCHED",
+      "code": "const res = await api.post<RefreshResponse>('/auth/refresh')"
+    },
+    {
+      "file": "frontend/consumer-app/src/services/auth/auth.service.ts",
+      "line": 58,
+      "method": "POST",
+      "frontend_endpoint": "/refresh",
+      "backend_match": null,
+      "backend_name": null,
+      "status": "UNMATCHED",
+      "code": "const fallbackRes = await api.post<RefreshResponse>('/refresh')"
+    },
+    {
+      "file": "frontend/consumer-app/src/services/auth/auth.service.ts",
+      "line": 70,
+      "method": "GET",
+      "frontend_endpoint": "/auth/me",
+      "backend_match": null,
+      "backend_name": null,
+      "status": "UNMATCHED",
+      "code": "const res = await api.get('/auth/me')"
+    },
+    {
+      "file": "frontend/consumer-app/src/services/auth/auth.service.ts",
+      "line": 74,
+      "method": "GET",
+      "frontend_endpoint": "/me",
+      "backend_match": null,
+      "backend_name": null,
+      "status": "UNMATCHED",
+      "code": "const fallbackRes = await api.get('/me')"
+    },
+    {
+      "file": "frontend/consumer-app/src/services/auth/auth.service.ts",
+      "line": 86,
+      "method": "POST",
+      "frontend_endpoint": "/auth/logout",
+      "backend_match": null,
+      "backend_name": null,
+      "status": "UNMATCHED",
+      "code": "await api.post('/auth/logout')"
+    },
+    {
+      "file": "frontend/consumer-app/src/services/auth/auth.service.ts",
+      "line": 90,
+      "method": "POST",
+      "frontend_endpoint": "/logout",
+      "backend_match": null,
+      "backend_name": null,
+      "status": "UNMATCHED",
+      "code": "await api.post('/logout')"
+    },
+    {
+      "file": "frontend/consumer-app/src/services/auth/auth.service.ts",
+      "line": 103,
+      "method": "POST",
+      "frontend_endpoint": "/auth/logout-all",
+      "backend_match": null,
+      "backend_name": null,
+      "status": "UNMATCHED",
+      "code": "await api.post('/auth/logout-all')"
+    },
+    {
+      "file": "frontend/consumer-app/src/services/auth/auth.service.ts",
+      "line": 107,
+      "method": "POST",
+      "frontend_endpoint": "/logout-all",
+      "backend_match": null,
+      "backend_name": null,
+      "status": "UNMATCHED",
+      "code": "await api.post('/logout-all')"
+    },
+    {
+      "file": "frontend/consumer-app/src/services/auth/session.service.ts",
+      "line": 55,
+      "method": "GET",
+      "frontend_endpoint": "/auth/sessions",
+      "backend_match": null,
+      "backend_name": null,
+      "status": "UNMATCHED",
+      "code": "const response = await api.get('/auth/sessions')"
+    },
+    {
+      "file": "frontend/consumer-app/src/services/auth/session.service.ts",
+      "line": 124,
+      "method": "DELETE",
+      "frontend_endpoint": "/auth/sessions/${sessionId}",
+      "backend_match": null,
+      "backend_name": null,
+      "status": "UNMATCHED",
+      "code": "const response = await api.delete<SessionRevokeResponse>(`/auth/sessions/${sessionId}`)"
+    },
+    {
+      "file": "frontend/consumer-app/src/services/auth/session.service.ts",
+      "line": 142,
+      "method": "POST",
+      "frontend_endpoint": "/auth/logout-all",
+      "backend_match": null,
+      "backend_name": null,
+      "status": "UNMATCHED",
+      "code": "const response = await api.post<LogoutAllResponse>('/auth/logout-all')"
+    }
+  ]
+}

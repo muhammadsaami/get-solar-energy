@@ -34,10 +34,10 @@ function getScoreStyle(score: number) {
 
 const STAGE_COLORS: Record<string, string> = {
   'New Lead': 'var(--color-blue)',
-  Qualified: 'var(--color-purple)',
+  Qualified: 'var(--color-blue)',
   'Site Survey Scheduled': 'var(--color-amber)',
   'Survey Completed': 'var(--color-green)',
-  'Proposal Generated': 'var(--color-cyan)',
+  'Proposal Generated': 'var(--color-orange)',
   'Proposal Sent': 'var(--color-blue)',
   Negotiation: 'var(--color-orange)',
   Won: 'var(--color-green)',
@@ -499,7 +499,7 @@ function TimelineTab({ items, loading }: { items: TimelineEvent[]; loading: bool
       {items.map((ev, i) => (
         <div key={ev.id} style={{ display: 'flex', gap: 'var(--space-3)', paddingBottom: 'var(--space-4)', position: 'relative' }}>
           <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center' }}>
-            <div style={{ width: 10, height: 10, borderRadius: '50%', background: ev.eventType === 'system' ? 'var(--color-purple)' : 'var(--color-blue)', flexShrink: 0 }} />
+                    <div style={{ width: 10, height: 10, borderRadius: '50%', background: ev.eventType === 'system' ? 'var(--color-orange)' : 'var(--color-blue)', flexShrink: 0 }} />
             {i < items.length - 1 && <div style={{ width: 1, flex: 1, background: 'var(--border-subtle)' }} />}
           </div>
           <div style={{ flex: 1, minWidth: 0 }}>

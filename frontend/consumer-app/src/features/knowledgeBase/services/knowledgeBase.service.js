@@ -329,41 +329,69 @@ export const knowledgeBaseService = {
   async getDashboard() {
     try {
       const res = await api.get('/knowledge-base')
-      if (res.data?.success && Array.isArray(res.data.articles) && res.data.articles.length > 0) {
-        const liveArticles = res.data.articles.map((a, idx) => ({
-          id: `kb-${a.id}`,
-          title: a.title,
-          category: a.category || 'General',
-          equipment: 'PV Array',
-          difficulty: 'Intermediate',
-          author: 'GET Solar Engineering',
-          readingTime: 10,
-          updatedAt: a.created_at ? a.created_at.split('T')[0] : '2026-08-01',
-          summary: `Technical guide for ${a.title} under ${a.category || 'General'} protocols.`,
-          tags: [a.category ? a.category.toLowerCase() : 'general', 'solar'],
-          featured: idx === 0,
-          bookmarked: false,
-          recentlyViewed: true,
-          downloads: 100 + a.id * 10,
-          views: 500 + a.id * 50,
-          rating: 4.8,
-          offline: true,
-          relatedDocumentIds: [],
-        }))
+      if (res.data?.success && Array.isArray(res.data.articles)) {
+        if (res.data.articles.length > 0) {
+          const liveArticles = res.data.articles.map((a, idx) => ({
+            id: `kb-${a.id}`,
+            title: a.title,
+            category: a.category || 'General',
+            equipment: 'PV Array',
+            difficulty: 'Intermediate',
+            author: 'GET Solar Engineering',
+            readingTime: 10,
+            updatedAt: a.created_at ? a.created_at.split('T')[0] : '2026-08-01',
+            summary: `Technical guide for ${a.title} under ${a.category || 'General'} protocols.`,
+            tags: [a.category ? a.category.toLowerCase() : 'general', 'solar'],
+            featured: idx === 0,
+            bookmarked: false,
+            recentlyViewed: true,
+            downloads: 100 + a.id * 10,
+            views: 500 + a.id * 50,
+            rating: 4.8,
+            offline: true,
+            relatedDocumentIds: [],
+          }))
 
-        return {
-          allDocuments: liveArticles,
-          featuredDocuments: liveArticles.filter((d) => d.featured),
-          bookmarkedDocuments: [],
-          recentlyViewedDocuments: liveArticles.slice(0, 5),
-          popularDocuments: liveArticles.slice(0, 6),
-          latestDocuments: liveArticles.slice(0, 6),
-          categories: [...new Set(liveArticles.map((d) => d.category))],
-          score: 85,
+          return {
+            allDocuments: liveArticles,
+            featuredDocuments: liveArticles.filter((d) => d.featured),
+            bookmarkedDocuments: [],
+            recentlyViewedDocuments: liveArticles.slice(0, 5),
+            popularDocuments: liveArticles.slice(0, 6),
+            latestDocuments: liveArticles.slice(0, 6),
+            categories: [...new Set(liveArticles.map((d) => d.category))],
+            score: 85,
+          }
+        } else {
+          // Legitimate empty result from backend
+          return {
+            allDocuments: [],
+            featuredDocuments: [],
+            bookmarkedDocuments: [],
+            recentlyViewedDocuments: [],
+            popularDocuments: [],
+            latestDocuments: [],
+            categories: [],
+            score: 0,
+          }
         }
       }
-    } catch {
-      // Return null or fallback
+    } catch (err) {
+      const status = err?.response?.status
+      if (status === 401 || status === 403) {
+        // Explicitly return empty structure with unauthorized flag rather than pretending live data exists
+        return {
+          allDocuments: [],
+          featuredDocuments: [],
+          bookmarkedDocuments: [],
+          recentlyViewedDocuments: [],
+          popularDocuments: [],
+          latestDocuments: [],
+          categories: [],
+          score: 0,
+          unauthorized: true,
+        }
+      }
     }
 
     const docs = this.getDocuments()

@@ -1,0 +1,66 @@
+[
+  {
+    "methods": [
+      "GET"
+    ],
+    "path": "/api/admin/overview",
+    "endpoint": "get_admin_overview",
+    "tags": []
+  },
+  {
+    "methods": [
+      "GET"
+    ],
+    "path": "/api/admin/users",
+    "endpoint": "get_admin_users",
+    "tags": []
+  },
+  {
+    "methods": [
+      "GET"
+    ],
+    "path": "/api/admin/rewards",
+    "endpoint": "get_admin_rewards",
+    "tags": []
+  },
+  {
+    "methods": [
+      "GET"
+    ],
+    "path": "/api/admin/assistant",
+    "endpoint": "get_admin_assistant",
+    "tags": []
+  },
+  {
+    "methods": [
+      "GET"
+    ],
+    "path": "/api/admin/activity",
+    "endpoint": "get_admin_activity",
+    "tags": []
+  },
+  {
+    "methods": [
+      "GET"
+    ],
+    "path": "/",
+    "endpoint": "home",
+    "tags": []
+  },
+  {
+    "methods": [
+      "POST"
+    ],
+    "path": "/api/solar-assistant",
+    "endpoint": "solar_assistant",
+    "tags": []
+  },
+  {
+    "methods": [
+      "POST"
+    ],
+    "path": "/api/analyze-bill",
+    "endpoint": "analyze_bill",
+    "tags": []
+  }
+]

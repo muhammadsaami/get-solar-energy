@@ -43,7 +43,7 @@ export const technicianAiService = {
 
   async getHistory(): Promise<AIHistoryItem[]> {
     try {
-      const res = await api.get('/technician/ai/history')
+      const res = await api.get('/troubleshoot/history')
       if (res.data && res.data.success && Array.isArray(res.data.history)) {
         return res.data.history
       }

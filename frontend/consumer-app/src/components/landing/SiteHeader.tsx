@@ -3,7 +3,7 @@ import { Link } from 'react-router-dom'
 import { useScrollPosition } from '../../hooks/useScrollPosition'
 import { useActiveSection } from '../../hooks/useActiveSection'
 import { useAuthStatus } from '../../hooks/useAuthStatus'
-import { useAuthStore } from '../../stores/authStore'
+import { useAuth } from '../../contexts/AuthContext'
 import { trackCTA } from '../../utils/analytics'
 import MobileDrawer from './MobileDrawer'
 
@@ -111,6 +111,7 @@ export default function SiteHeader() {
   const activeSection = useActiveSection(NAV_SECTIONS)
   const [drawerOpen, setDrawerOpen] = useState(false)
   const { isAuthenticated } = useAuthStatus()
+  const { logout } = useAuth() as unknown as { logout: () => void }
 
   return (
     <>
@@ -168,7 +169,7 @@ export default function SiteHeader() {
                   className="btn-logout"
                   onClick={(e) => {
                     e.preventDefault()
-                    useAuthStore.getState().logout()
+                    logout()
                   }}
                 >
                   Logout

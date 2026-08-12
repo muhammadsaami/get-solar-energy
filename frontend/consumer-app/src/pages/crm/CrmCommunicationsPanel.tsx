@@ -4,7 +4,7 @@ import type { CrmCommunicationItem } from './crm.types'
 
 const CHANNEL_STYLE: Record<string, React.CSSProperties> = {
   Email: { background: 'rgba(59,130,246,0.15)', color: 'var(--color-blue)' },
-  SMS: { background: 'rgba(139,92,246,0.15)', color: 'var(--color-purple)' },
+  SMS: { background: 'rgba(23,168,229,0.15)', color: 'var(--color-blue)' },
   WhatsApp: { background: 'rgba(34,197,94,0.15)', color: 'var(--color-green)' },
   'Phone Call': { background: 'rgba(245,158,11,0.15)', color: 'var(--color-amber)' },
   'Internal Note': { background: 'var(--bg-tertiary)', color: 'var(--text-muted)' },

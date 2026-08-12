@@ -26,7 +26,7 @@ export default function ProfileHero({ profile, onUpdateProfile, isUpdating }: Pr
           <div className="profile-avatar-circle">{profile.initials || 'ST'}</div>
           <div className="profile-hero-title-group">
             <h1>
-              {profile.name} <MdVerified style={{ color: '#00aeef', fontSize: '22px' }} />
+              {profile.name} <MdVerified style={{ color: 'var(--color-cyan)', fontSize: '22px' }} />
             </h1>
             <p>
               {profile.skillLevel} Field Technician • Member since {profile.joinedDateFormatted}
@@ -86,13 +86,13 @@ export default function ProfileHero({ profile, onUpdateProfile, isUpdating }: Pr
       ) : (
         <div className="profile-meta-bar">
           <div className="profile-meta-item">
-            <MdLocationOn style={{ color: '#00aeef' }} /> Primary City: <strong style={{ color: '#ffffff' }}>{profile.city}</strong>
+            <MdLocationOn style={{ color: 'var(--color-cyan)' }} /> Primary City: <strong style={{ color: 'var(--text-primary)' }}>{profile.city}</strong>
           </div>
           <div className="profile-meta-item">
-            <MdVerified style={{ color: '#10b981' }} /> Identity KYC: <strong style={{ color: '#ffffff' }}>{profile.kycStatus}</strong>
+            <MdVerified style={{ color: 'var(--color-green)' }} /> Identity KYC: <strong style={{ color: 'var(--text-primary)' }}>{profile.kycStatus}</strong>
           </div>
           <div className="profile-meta-item">
-            Profile Completeness: <strong style={{ color: '#10b981' }}>{profile.completenessPercent}%</strong>
+            Profile Completeness: <strong style={{ color: 'var(--color-green)' }}>{profile.completenessPercent}%</strong>
           </div>
         </div>
       )}

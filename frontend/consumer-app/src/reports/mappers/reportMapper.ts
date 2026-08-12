@@ -40,10 +40,10 @@ function mapStatsToSummary(stats: DashboardStats | null): ReportSummary {
     return { totalReportsGenerated: 0, totalReportsDownloaded: 0, assessmentsCompleted: 0, reportsGeneratedThisMonth: 0 }
   }
   return {
-    totalReportsGenerated: Math.round((stats.bills_analyzed || 0) * 0.4),
-    totalReportsDownloaded: Math.round((stats.bills_analyzed || 0) * 0.25),
+    totalReportsGenerated: stats.bills_analyzed || 0,
+    totalReportsDownloaded: 0,
     assessmentsCompleted: stats.bills_analyzed || 0,
-    reportsGeneratedThisMonth: Math.round((stats.bills_analyzed || 0) * 0.08),
+    reportsGeneratedThisMonth: 0,
   }
 }
 

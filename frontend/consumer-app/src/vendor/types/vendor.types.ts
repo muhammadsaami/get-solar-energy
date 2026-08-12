@@ -12,6 +12,12 @@ export interface VendorKpis {
   delayedProjects: number
   avgHealthScore: number
   avgProgress: number
+  surveysToday?: number
+  surveysPending?: number
+  surveysApproved?: number
+  surveysOnSite?: number
+  surveysReview?: number
+  totalSurveys?: number
 }
 
 export interface VendorVisit {

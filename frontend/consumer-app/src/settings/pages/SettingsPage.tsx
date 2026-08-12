@@ -5,8 +5,8 @@ import { SettingsPreferencesCard } from '../components/SettingsPreferencesCard'
 import { SettingsForm } from '../components/SettingsForm'
 import { SettingsLoadingSkeleton } from '../components/SettingsLoadingSkeleton'
 import { SettingsErrorBanner } from '../components/SettingsErrorBanner'
+import { SecuritySessionManager } from '../components/SecuritySessionManager'
 import PermissionGate from '../../components/auth/PermissionGate'
-import DashboardSprites from '../../components/dashboard/DashboardSprites'
 
 export default function SettingsPage() {
   const {
@@ -22,48 +22,63 @@ export default function SettingsPage() {
   } = useSettings()
 
   return (
-    <>
-      <DashboardSprites />
-      <div className="tab-content" role="tabpanel" aria-label="settings" style={{ display: 'block' }}>
-        <SettingsPageHeader />
+    <div className="ew-page" role="tabpanel" aria-label="settings">
+      <header className="ew-mission-bar" role="banner" aria-label="Settings Command Bar">
+        <div className="ew-mission-scope">
+          <span className="ew-live-dot" />
+          <span className="ew-scope-badge">SYSTEM / PREFERENCES</span>
+          <span style={{ color: 'var(--text-muted)' }}>|</span>
+          <span style={{ fontWeight: 700, color: 'var(--text-primary)' }}>Account Preferences &amp; Platform Controls</span>
+        </div>
 
-        {loading && <SettingsLoadingSkeleton />}
+        <div className="ew-mission-stats">
+          <div className="ew-mission-stat-item">
+            <span>Status:</span>
+            <strong style={{ color: isDirty ? 'var(--color-orange)' : 'var(--color-green)' }}>
+              {isDirty ? 'UNSAVED CHANGES' : 'SYNCHRONIZED'}
+            </strong>
+          </div>
+        </div>
+      </header>
 
-        {error && (
-          <SettingsErrorBanner
-            message={error.message}
-            onDismiss={clearError}
-          />
-        )}
+      <SettingsPageHeader />
 
-        {!loading && !error && (
-          <>
-            <SettingsPreferencesCard readonlyProfile={readonlyProfile}>
-              <SettingsForm
-                preferences={preferences}
-                saving={saving}
-                isDirty={isDirty}
-                onPreferenceChange={updatePreference}
-                onSave={save}
-              />
-            </SettingsPreferencesCard>
+      {loading && <SettingsLoadingSkeleton />}
 
-            <PermissionGate feature="settings-admin">
-              <div
-                className="card-base"
-                style={{ maxWidth: '600px', marginTop: '20px', '--card-theme': '255, 138, 29' } as React.CSSProperties}
-              >
-                <div className="kpi-header-row" style={{ borderBottom: '1px solid var(--border-color-light)', paddingBottom: '12px', marginBottom: '15px' }}>
-                  <span className="kpi-title">Platform Configuration</span>
-                </div>
-                <p style={{ fontSize: '12px', color: 'var(--text-muted)', lineHeight: 1.5, margin: 0 }}>
-                  Admin-level platform settings will appear here.
-                </p>
+      {error && (
+        <SettingsErrorBanner
+          message={error.message}
+          onDismiss={clearError}
+        />
+      )}
+
+      {!loading && !error && (
+        <div style={{ display: 'flex', flexDirection: 'column', gap: 'var(--space-4)' }}>
+          <SettingsPreferencesCard readonlyProfile={readonlyProfile}>
+            <SettingsForm
+              preferences={preferences}
+              saving={saving}
+              isDirty={isDirty}
+              onPreferenceChange={updatePreference}
+              onSave={save}
+            />
+          </SettingsPreferencesCard>
+
+          {/* Security & Active Session Management */}
+          <SecuritySessionManager />
+
+          <PermissionGate feature="settings-admin">
+            <div className="card-base" style={{ maxWidth: '640px', '--card-theme': '255, 138, 29' } as React.CSSProperties}>
+              <div className="kpi-header-row" style={{ borderBottom: '1px solid var(--border-color)', paddingBottom: '10px', marginBottom: '12px' }}>
+                <span className="kpi-title">Platform Administrative Configuration</span>
               </div>
-            </PermissionGate>
-          </>
-        )}
-      </div>
-    </>
+              <p style={{ fontSize: '12px', color: 'var(--text-secondary)', lineHeight: 1.5, margin: 0 }}>
+                Enterprise security controls, API key lifecycle management, and team permissions are active.
+              </p>
+            </div>
+          </PermissionGate>
+        </div>
+      )}
+    </div>
   )
 }

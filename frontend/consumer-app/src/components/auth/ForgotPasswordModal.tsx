@@ -1,6 +1,6 @@
 import { useState, useEffect, useRef, useCallback, type FormEvent } from 'react'
 import AuthLogo from './AuthLogo'
-import { authService } from '../../services/auth.service'
+import { authService } from '../../services/auth/auth.service'
 
 interface ForgotPasswordModalProps {
   open: boolean

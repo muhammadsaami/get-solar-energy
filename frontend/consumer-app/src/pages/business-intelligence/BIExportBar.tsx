@@ -76,7 +76,7 @@ export default function BIExportBar({ data }: { data: BIDashboardData }) {
   return (
     <div className="card-glass" style={{ padding: 'var(--space-4)' }}>
       <div style={{ display: 'flex', flexWrap: 'wrap', gap: 'var(--space-3)', alignItems: 'center', justifyContent: 'space-between' }}>
-        <span style={{ fontSize: '12px', fontWeight: 600, color: 'var(--text-secondary)' }}>Export Center</span>
+        <span style={{ fontSize: '12px', fontWeight: 600, color: 'var(--text-secondary)' }}>Export</span>
         <div style={{ display: 'flex', gap: 'var(--space-2)', flexWrap: 'wrap' }}>
           <button className="btn btn-outline btn-sm" onClick={handleExportKPIs}
             style={{ fontSize: '11px', padding: '6px 12px', background: 'var(--glass-bg)', border: '1px solid var(--glass-border)', borderRadius: '6px', cursor: 'pointer', color: 'var(--text-primary)' }}>

@@ -42,18 +42,30 @@ export const ROUTES = {
   KNOWLEDGE_BASE: '/app/knowledge-base',
   REWARDS: '/app/support/referrals',
 
-  // Vendor Portal
-  VENDOR_DASHBOARD: '/app/vendor',
+  // Independent Vendor Portal (Phase 19.0)
+  VENDOR_DASHBOARD: '/app/vendor/dashboard',
+  VENDOR_PROJECTS: '/app/vendor/projects',
+  VENDOR_CUSTOMERS: '/app/vendor/customers',
+  VENDOR_LEADS: '/app/vendor/leads',
+  VENDOR_INSTALLATIONS: '/app/vendor/installations',
+  VENDOR_TEAMS: '/app/vendor/teams',
+  VENDOR_INVENTORY: '/app/vendor/inventory',
+  VENDOR_AMC: '/app/vendor/amc',
+  VENDOR_PAYMENTS: '/app/vendor/payments',
+  VENDOR_REPORTS: '/app/vendor/reports',
+  VENDOR_ANALYTICS: '/app/vendor/analytics',
+  VENDOR_DOCUMENTS: '/app/vendor/documents',
+  VENDOR_SETTINGS: '/app/vendor/settings',
+  VENDOR_PROFILE: '/app/vendor/profile',
+
+  // Legacy vendor aliases for backwards compatibility
+  VENDOR_ROOT: '/app/vendor',
   VENDOR_MY_WORK: '/app/vendor/my-work',
-  VENDOR_TASKS: '/app/vendor/my-work/tasks',
-  VENDOR_VISITS: '/app/vendor/my-work/visits',
-  VENDOR_INSTALLATIONS: '/app/vendor/my-work/installations',
-  VENDOR_WORK_ORDERS: '/app/vendor/my-work/orders',
   VENDOR_PROJECTS_ACTIVE: '/app/vendor/projects/active',
   VENDOR_PROJECTS_COMPLETED: '/app/vendor/projects/completed',
-  VENDOR_CUSTOMERS: '/app/vendor/customers',
-  VENDOR_AMC: '/app/vendor/amc',
-  VENDOR_REPORTS: '/app/vendor/reports',
+  VENDOR_TASKS: '/app/vendor/my-work/tasks',
+  VENDOR_VISITS: '/app/vendor/my-work/visits',
+  VENDOR_WORK_ORDERS: '/app/vendor/my-work/orders',
   VENDOR_PROJECT_TRACKING: '/app/vendor/project-tracking',
 
   // Locked placeholders (full sidebar parity)
@@ -84,8 +96,8 @@ import { ROLES, type Role } from './roles'
 
 export const DEFAULT_ROUTE_BY_ROLE: Record<Role, string> = {
   [ROLES.CUSTOMER]: '/app/home',
-  [ROLES.VENDOR]: '/app/vendor',
-  [ROLES.ENGINEER]: '/app/vendor',
+  [ROLES.VENDOR]: '/app/vendor/dashboard',
+  [ROLES.ENGINEER]: '/app/vendor/dashboard',
   [ROLES.ADMIN]: '/app/admin/dashboard',
   [ROLES.TECHNICIAN]: '/app/technician/dashboard',
 }

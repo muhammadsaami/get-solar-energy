@@ -96,6 +96,8 @@ export interface MlopsEvent {
   eventType: string
   timestamp: string
   modelName: string
+  stage?: string
+  deploymentId?: string
   fromState?: string
   toState?: string
   success?: boolean

@@ -1,7 +1,10 @@
-import { useAuthStore } from '../stores/authStore'
+import { useAuth } from '../contexts/AuthContext'
 
 export function useAuthStatus() {
-  const isAuthenticated = useAuthStore((s) => s.isAuthenticated)
-  const user = useAuthStore((s) => s.user)
-  return { isAuthenticated, user }
+  const { isAuthenticated, user, loading } = useAuth() as unknown as {
+    isAuthenticated: boolean
+    user: { id: number | string; email: string; name: string; role: string } | null
+    loading: boolean
+  }
+  return { isAuthenticated, user, loading }
 }

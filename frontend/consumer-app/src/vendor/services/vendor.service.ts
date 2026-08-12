@@ -26,6 +26,11 @@ export async function getVendorTasks(params?: Record<string, string>): Promise<V
   return res.data?.data || []
 }
 
+export async function getCustomerDirectory() {
+  const res = await api.get('/customers')
+  return Array.isArray(res.data) ? res.data : []
+}
+
 export async function getVendorAlerts(): Promise<VendorAlertsData> {
   const res = await api.get('/vendor/alerts')
   return res.data?.data || { alerts: [], total: 0, critical: 0 }

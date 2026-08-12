@@ -8,7 +8,6 @@ import { PerformanceLoadingSkeleton } from '../components/PerformanceLoadingSkel
 import { PerformanceEmptyState } from '../components/PerformanceEmptyState'
 import { PerformanceErrorBanner } from '../components/PerformanceErrorBanner'
 import PerformanceChartsRenderer from '../components/PerformanceChartsRenderer'
-import DashboardSprites from '../../components/dashboard/DashboardSprites'
 
 export default function SystemPerformance() {
   const { summary, charts, loading, error, refresh } = useSystemPerformance()
@@ -16,51 +15,71 @@ export default function SystemPerformance() {
   const hasCriticalError = !!(error?.hasError && !summary)
 
   return (
-    <>
-      <DashboardSprites />
-      <div className="tab-content" role="tabpanel" aria-label="system performance" style={{ display: 'block' }}>
-        <div className="tab-header-block">
-          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start' }}>
-            <div>
-              <h2 className="tab-heading">Real-Time System Analytics</h2>
-              <p className="tab-subheading">
-                Track live photovoltaic energy output, consumption ratios, grid balance imports/exports, and performance ratio (PR) health scores.
-              </p>
-            </div>
-            <button
-              className="btn btn-secondary"
-              onClick={refresh}
-              disabled={loading}
-              style={{ padding: '8px 16px', fontSize: '11px', width: 'auto', height: 'auto', flexShrink: 0 }}
-            >
-              {loading ? '\u23F3' : '\uD83D\uDD04'} {loading ? 'Refreshing...' : 'Refresh'}
-            </button>
+    <div className="ew-page" role="tabpanel" aria-label="system performance">
+      <header className="ew-mission-bar" role="banner" aria-label="System Performance Header">
+        <div className="ew-mission-scope">
+          <span className="ew-live-dot" />
+          <span className="ew-scope-badge">SYSTEM / SOLAR-TELEMETRY</span>
+          <span style={{ color: 'var(--text-muted)' }}>|</span>
+          <span style={{ fontWeight: 700, color: 'var(--text-primary)' }}>Photovoltaic Output &amp; Inverter Health</span>
+        </div>
+
+        <div className="ew-mission-stats">
+          <div className="ew-mission-stat-item">
+            <span>System Health:</span>
+            <strong style={{ color: 'var(--color-green)' }}>
+              {summary?.health?.healthLabel ? summary.health.healthLabel.toUpperCase() : 'OPTIMAL'}
+            </strong>
+          </div>
+          <div className="ew-mission-stat-item">
+            <span>Daily Output:</span>
+            <strong style={{ color: 'var(--color-cyan)' }}>
+              {summary?.generation?.dailyGeneration ? `${summary.generation.dailyGeneration} kWh` : '—'}
+            </strong>
           </div>
         </div>
 
-        {hasCriticalError && error && (
-          <PerformanceErrorBanner
-            severity="critical"
-            message={error.message}
-            onRetry={refresh}
-          />
-        )}
+        <div className="ew-mission-actions">
+          <button
+            className="btn btn-primary btn-sm"
+            onClick={refresh}
+            disabled={loading}
+            style={{ fontSize: 11, padding: '4px 10px' }}
+          >
+            {loading ? 'Refreshing...' : 'Sync Telemetry'}
+          </button>
+        </div>
+      </header>
 
-        {loading && <PerformanceLoadingSkeleton />}
+      {hasCriticalError && error && (
+        <PerformanceErrorBanner
+          severity="critical"
+          message={error.message}
+          onRetry={refresh}
+        />
+      )}
 
-        {!loading && summary && (
-          <div id="perfContentContainer" style={{ display: 'block' }}>
-            <div className="tab-grid-layout" style={{ display: 'grid', gridTemplateColumns: '1.2fr 1.8fr', gap: '20px', marginBottom: '20px' }}>
-              <ComponentHealthCard
-                metrics={summary?.health ?? null}
-                error={error && !summary?.health.overallHealth ? 'Health data unavailable' : null}
-              />
-              <PerformanceMetricsGrid
-                summary={summary}
-              />
+      {loading && <PerformanceLoadingSkeleton />}
+
+      {!loading && summary && (
+        <div id="perfContentContainer" style={{ display: 'flex', flexDirection: 'column', gap: 'var(--space-4)' }}>
+          <div className="ew-asym-65-35" style={{ gridTemplateColumns: '1.2fr 1.8fr' }}>
+            <ComponentHealthCard
+              metrics={summary?.health ?? null}
+              error={error && !summary?.health.overallHealth ? 'Health data unavailable' : null}
+            />
+            <PerformanceMetricsGrid
+              summary={summary}
+            />
+          </div>
+
+          <div>
+            <div className="ew-divider-head">
+              <h3 className="ew-divider-title">Photovoltaic Output Analytics</h3>
+              <span className="ew-divider-sub">Daily, monthly &amp; lifetime energy generation profiles</span>
             </div>
 
-            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '20px', marginTop: '20px' }}>
+            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(380px, 1fr))', gap: 'var(--space-3)' }}>
               {PERFORMANCE_CHARTS.map((chart) => {
                 const chartData = charts
                   ? charts[chart.dataKey as keyof typeof charts]
@@ -87,10 +106,10 @@ export default function SystemPerformance() {
               })}
             </div>
           </div>
-        )}
+        </div>
+      )}
 
-        {!loading && !summary && !hasCriticalError && <PerformanceEmptyState />}
-      </div>
-    </>
+      {!loading && !summary && !hasCriticalError && <PerformanceEmptyState />}
+    </div>
   )
 }

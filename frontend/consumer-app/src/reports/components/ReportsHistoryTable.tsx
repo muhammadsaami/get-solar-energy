@@ -5,6 +5,7 @@ interface ReportsHistoryTableProps {
   history: ReportHistoryItem[]
   search: string
   onSearchChange: (search: string) => void
+  onDownload: (item: ReportHistoryItem) => void
 }
 
 const STATUS_LABEL: Record<string, { text: string; className: string }> = {
@@ -21,6 +22,7 @@ function ReportsHistoryTableComponent({
   history,
   search,
   onSearchChange,
+  onDownload,
 }: ReportsHistoryTableProps) {
   const filtered = search
     ? history.filter((h) => h.reportName.toLowerCase().includes(search.toLowerCase()))
@@ -84,7 +86,7 @@ function ReportsHistoryTableComponent({
                       </span>
                     </td>
                     <td style={{ padding: '10px 8px' }}>
-                      <button className="table-action-btn" disabled style={{ fontSize: '9px' }}>
+                      <button className="table-action-btn" onClick={() => onDownload(item)} style={{ fontSize: '9px' }}>
                         {'\uD83D\uECE5'}
                       </button>
                     </td>

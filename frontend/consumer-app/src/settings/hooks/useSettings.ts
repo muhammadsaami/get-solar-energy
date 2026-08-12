@@ -103,11 +103,11 @@ export function useSettings() {
         'Settings Saved',
         'Utility configurations and custom tariff rates successfully updated.',
       )
-      addActivityLog('settings', 'Profile Updated', 'Profile details updated and synced.')
+      addActivityLog('settings', 'Profile Updated', 'Profile details updated and saved locally.')
       createNotification(
         'system',
         'Profile Updated',
-        'User profile configurations synced with platform registry.',
+        'User profile preferences saved on this device.',
       )
     } catch (err) {
       setError({

@@ -60,6 +60,7 @@ function writeLS(key: string, data: unknown): void {
   try {
     localStorage.setItem(key, JSON.stringify(data))
   } catch {
+    // localStorage quota/availability errors are non-fatal; analysis continues normally
   }
 }
 

@@ -64,7 +64,7 @@ export default function CrmJourneyHealth({ data }: Props) {
         <ProgressRow label="Lead Score" value={data.leadScore} color={getScoreStyle(data.leadScore).color} />
         <ProgressRow label="Health Score" value={data.healthScore} color={getScoreStyle(data.healthScore).color} />
         <ProgressRow label="Project Progress" value={data.projectProgress} color="var(--color-blue)" />
-        <ProgressRow label="Payment Progress" value={data.paymentProgress} color="var(--color-purple)" />
+        <ProgressRow label="Payment Progress" value={data.paymentProgress} color="var(--color-blue)" />
       </div>
 
       <div style={{

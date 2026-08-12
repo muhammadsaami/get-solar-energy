@@ -44,6 +44,7 @@ export default function AuditFilters({ filters, onChange }: AuditFiltersProps) {
             { value: '', label: 'All Severities' },
             { value: 'critical', label: 'Critical' },
             { value: 'warning', label: 'Warning' },
+            { value: 'success', label: 'Success' },
             { value: 'info', label: 'Info' },
           ]}
           onChange={v => onChange({ ...filters, severity: v })} />

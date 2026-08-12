@@ -5,6 +5,7 @@ import { requestInterceptors, responseInterceptors } from './interceptors';
 const api = axios.create({
   baseURL: import.meta.env.VITE_API_URL || '/api',
   timeout: 45000, // Extend timeout for long-running Gemini API requests
+  withCredentials: true,
   headers: {
     'Content-Type': 'application/json',
   }

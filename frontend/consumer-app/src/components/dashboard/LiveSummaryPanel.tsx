@@ -1,71 +1,79 @@
 import React from 'react';
+import { fmtINR } from '../../utils/dashboard';
+import type { DashboardDerived } from '../../utils/dashboard';
 
-export default function LiveSummaryPanel() {
+interface Props {
+  loading?: boolean;
+  derived: DashboardDerived;
+  journey: { bill: boolean; roof: boolean; roi: boolean; proposal: boolean; installation: boolean };
+}
+
+export default function LiveSummaryPanel({ loading, derived, journey }: Props) {
+  const steps = [
+    { key: 'bill', label: 'Bill Analysis', done: journey.bill },
+    { key: 'roof', label: 'Roof Analysis', done: journey.roof },
+    { key: 'roi', label: 'ROI Calculation', done: journey.roi },
+    { key: 'proposal', label: 'Proposal Generated', done: journey.proposal },
+    { key: 'installation', label: 'System Installation', done: journey.installation },
+  ];
+  const doneCount = steps.filter(s => s.done).length;
+
   return (
     <div className="live-summary-panel">
       <div className="summary-header">
         <span className="summary-title">Live Summary</span>
-        <span className="summary-badge">Dynamic Sync</span>
+        <span className="summary-live-pill"><span className="live-pulse-dot"></span> Live</span>
       </div>
-      
-      {/* Top: Animated Solar Readiness Indicator */}
-      <div className="readiness-panel-top">
-        <div className="readiness-header-row">
-          <span className="readiness-lbl">Solar Readiness</span>
-          <span className="readiness-badge pending" id="summaryReadinessBadge">Pending Assessment</span>
+
+      <div className="readiness-lead-block">
+        <div className="readiness-lead-meta">
+          <span className="readiness-lbl">Solar Readiness Score</span>
+          <span className="readiness-badge">{loading ? '…' : `${derived.readinessPercent}%`}</span>
         </div>
-        <div className="readiness-bar-row">
-          <span className="readiness-percentage" id="summaryReadinessVal">Pending</span>
+        <div className="readiness-primary-row">
           <div className="readiness-progress-track">
-            <div className="readiness-progress-fill" id="summaryReadinessProgress" style={{ width: '0%' }}></div>
+            <div className="readiness-progress-fill" style={{ width: loading ? '0%' : `${derived.readinessPercent}%` }}></div>
           </div>
+          <span className="readiness-stage-label">
+            {loading ? 'Assessing…' : derived.readinessPercent >= 60 ? 'High yield ready' : 'Optimization possible'}
+          </span>
         </div>
       </div>
 
-      {/* Middle: Responsive KPI Grid */}
       <div className="summary-grid">
         <div className="summary-item">
           <span className="summary-label">Monthly Bill</span>
-          <span className="summary-value" id="summaryMonthlyBill">Upload your first bill</span>
+          <span className="summary-value">{fmtINR(derived.monthlyBill)}</span>
         </div>
         <div className="summary-item">
           <span className="summary-label">Estimated Savings</span>
-          <span className="summary-value" id="summarySolarSavings">Available after analysis</span>
+          <span className="summary-value">{loading ? '—' : `${fmtINR(derived.annualSavings)}/yr`}</span>
         </div>
         <div className="summary-item">
           <span className="summary-label">Recommended Size</span>
-          <span className="summary-value" id="summarySystemSize">Analyze your roof</span>
+          <span className="summary-value">{derived.recommendedKw ? `${derived.recommendedKw} kW` : 'Analyze your roof'}</span>
         </div>
         <div className="summary-item">
           <span className="summary-label">Payback Period</span>
-          <span className="summary-value" id="summaryPayback">Calculate ROI</span>
+          <span className="summary-value">{derived.paybackYears ? `${derived.paybackYears} yrs` : 'Calculate ROI'}</span>
         </div>
       </div>
 
-      {/* Bottom: Customer Journey Compact Checklist */}
-      <div className="journey-checklist-panel">
-        <span className="journey-title">Your Solar Journey</span>
+      <div className="journey-card">
+        <div className="journey-card-head">
+          <span className="journey-title">Your Solar Journey</span>
+          <span className="journey-progress-label">{doneCount}/{steps.length} completed</span>
+        </div>
+        <div className="journey-track-bar">
+          <div className="journey-track-fill" style={{ width: `${(doneCount / steps.length) * 100}%` }}></div>
+        </div>
         <div className="journey-checklist">
-          <div className="checklist-item" id="check-bill">
-            <div className="check-box"></div>
-            <span className="check-label">Bill Analysis</span>
-          </div>
-          <div className="checklist-item" id="check-roof">
-            <div className="check-box"></div>
-            <span className="check-label">Roof Analysis</span>
-          </div>
-          <div className="checklist-item" id="check-roi">
-            <div className="check-box"></div>
-            <span className="check-label">ROI Calculation</span>
-          </div>
-          <div className="checklist-item" id="check-proposal">
-            <div className="check-box"></div>
-            <span className="check-label">Proposal Generated</span>
-          </div>
-          <div className="checklist-item" id="check-installation">
-            <div className="check-box"></div>
-            <span className="check-label">System Installation</span>
-          </div>
+          {steps.map((step) => (
+            <div className={`checklist-item ${step.done ? 'completed' : ''}`} key={step.key}>
+              <div className="check-box">{step.done ? '✓' : ''}</div>
+              <span className="check-label">{step.label}</span>
+            </div>
+          ))}
         </div>
       </div>
     </div>

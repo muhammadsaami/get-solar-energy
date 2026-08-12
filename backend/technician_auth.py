@@ -95,11 +95,9 @@ def signup_technician(req: TechnicianSignupRequest, db: Session = Depends(get_db
         if db.query(Technician).filter(Technician.phone == req.phone).first():
             raise HTTPException(status_code=400, detail="Phone number already registered.")
 
-        is_valid, msg = validate_password_strength(req.password)
-        if not is_valid:
-            raise HTTPException(status_code=400, detail=msg)
+        validated_password = validate_password_strength(req.password)
 
-        hashed = hash_password(req.password)
+        hashed = hash_password(validated_password)
         tech = Technician(
             uuid=str(uuid.uuid4()),
             name=req.name,

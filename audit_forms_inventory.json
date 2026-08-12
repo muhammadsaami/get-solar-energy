@@ -1,0 +1,177 @@
+[
+  {
+    "form_name": "Customer Profile Editor",
+    "file": "src/features/customerProfile/pages/CustomerProfilePage.tsx",
+    "initial_data_get": "customerProfileService.getProfile(user) -> loads auth user + client extras",
+    "editable_fields": [
+      "name",
+      "phone",
+      "city",
+      "address",
+      "discom",
+      "sanctionedLoadKw",
+      "consumerNumber"
+    ],
+    "validation": "10-digit mobile regex, required name, city, address",
+    "submit_api": "PUT /api/customers/{id} (via customerProfileService.updateProfile)",
+    "success_handling": "Toast notification + local profile state update + session state update",
+    "failure_handling": "Fallback to client extras save",
+    "persistence_type": "Hybrid: Backend DB for name/phone/city/address/discom; localStorage for consumerNumber/sanctionedLoadKw",
+    "status": "PARTIAL / HYBRID PERSISTENCE"
+  },
+  {
+    "form_name": "Vendor Profile Editor",
+    "file": "src/vendor/pages/VendorProfile.tsx",
+    "initial_data_get": "auth user + localStorage['gse_vendor_profile_extras']",
+    "editable_fields": [
+      "companyName",
+      "contactPerson",
+      "phone",
+      "email",
+      "city",
+      "serviceArea",
+      "gstin",
+      "mnreCategory",
+      "experienceYears",
+      "installationCapacityKw"
+    ],
+    "validation": "Phone, email, and required string validations",
+    "submit_api": "None (No backend vendor profile endpoint exists)",
+    "success_handling": "Toast notification + local state update",
+    "failure_handling": "None (Always succeeds in localStorage)",
+    "persistence_type": "LocalStorage Only (Backend Dependency)",
+    "status": "LOCAL ONLY"
+  },
+  {
+    "form_name": "Technician Profile Editor",
+    "file": "src/technician/pages/ProfilePage.tsx",
+    "initial_data_get": "GET /api/technician/profile",
+    "editable_fields": [
+      "name",
+      "phone",
+      "city"
+    ],
+    "validation": "Required fields",
+    "submit_api": "PUT /api/technician/profile",
+    "success_handling": "Toast notification + refreshed profile state",
+    "failure_handling": "Error toast notification",
+    "persistence_type": "Full Backend SQLite DB",
+    "status": "LIVE PERSISTED"
+  },
+  {
+    "form_name": "Bill Upload & OCR Form",
+    "file": "src/pages/BillAnalyzer.jsx",
+    "initial_data_get": "GET /api/dashboard/recent-bills",
+    "editable_fields": [
+      "image (file upload)"
+    ],
+    "validation": "PDF/JPEG/PNG format validation, file size limit",
+    "submit_api": "POST /api/analyze-bill (multipart/form-data)",
+    "success_handling": "Populates bill analysis cards and recent bills list",
+    "failure_handling": "Inline error banner",
+    "persistence_type": "Backend DB",
+    "status": "LIVE PERSISTED"
+  },
+  {
+    "form_name": "Roof Satellite & Dimension Input",
+    "file": "src/pages/RoofAnalysis.jsx",
+    "initial_data_get": "None",
+    "editable_fields": [
+      "image",
+      "length_ft",
+      "width_ft",
+      "city"
+    ],
+    "validation": "Positive dimensions, file upload",
+    "submit_api": "POST /api/analyze-roof",
+    "success_handling": "Renders 3D HUD solar panel overlay and layout metrics",
+    "failure_handling": "Inline error alert",
+    "persistence_type": "Live AI Inference (In-session)",
+    "status": "LIVE INFERENCE"
+  },
+  {
+    "form_name": "ROI Calculator Parameters",
+    "file": "src/pages/ROICalculatorPage.tsx",
+    "initial_data_get": "Default preset values",
+    "editable_fields": [
+      "monthly_bill_rs",
+      "sanctioned_load_kw",
+      "city",
+      "is_residential",
+      "include_battery"
+    ],
+    "validation": "Positive numeric values",
+    "submit_api": "POST /api/calculate-roi",
+    "success_handling": "Calculates PM Surya Ghar subsidy, payback period, and 25-yr cashflow",
+    "failure_handling": "Inline error banner",
+    "persistence_type": "Live Computation (In-session)",
+    "status": "LIVE COMPUTED"
+  },
+  {
+    "form_name": "Proposal Generator",
+    "file": "src/pages/Proposal.jsx",
+    "initial_data_get": "In-session roof / bill data",
+    "editable_fields": [
+      "consumer_name",
+      "sanctioned_load_kw",
+      "roof_area_sqft",
+      "city"
+    ],
+    "validation": "Required fields",
+    "submit_api": "POST /api/generate-proposal",
+    "success_handling": "Renders multi-tab proposal with technical BOM and financial schedule",
+    "failure_handling": "Inline error state",
+    "persistence_type": "AI Generation + In-Memory Approval (Approval Backend Dependency)",
+    "status": "PARTIAL"
+  },
+  {
+    "form_name": "CRM Lead Creation & Update",
+    "file": "src/pages/crm/CrmCustomer360.tsx",
+    "initial_data_get": "GET /api/crm/customers/{id}/360",
+    "editable_fields": [
+      "status",
+      "pipeline_value",
+      "task_type",
+      "meeting_notes"
+    ],
+    "validation": "Required status and note bodies",
+    "submit_api": "PUT /api/crm/customers/{id}, POST /api/crm/tasks, POST /api/crm/meetings",
+    "success_handling": "Drawer refetch and pipeline metric update",
+    "failure_handling": "Toast error alert",
+    "persistence_type": "Full Backend SQLite DB",
+    "status": "LIVE PERSISTED"
+  },
+  {
+    "form_name": "Technician Work Order Status Update",
+    "file": "src/technician/pages/WorkOrdersPage.tsx",
+    "initial_data_get": "GET /api/technician/work-orders",
+    "editable_fields": [
+      "status",
+      "notes",
+      "proof_photo_url"
+    ],
+    "validation": "Status transition state machine",
+    "submit_api": "PATCH /api/technician/work-orders/{id}/status",
+    "success_handling": "Updates order status and triggers auto-earning record in backend",
+    "failure_handling": "Error toast alert",
+    "persistence_type": "Full Backend SQLite DB",
+    "status": "LIVE PERSISTED"
+  },
+  {
+    "form_name": "Site Survey Handoff & Checklist",
+    "file": "src/pages/SiteSurveyPage.tsx",
+    "initial_data_get": "GET /api/site-surveys/{id}",
+    "editable_fields": [
+      "checklist items",
+      "notes",
+      "assigned_to",
+      "status"
+    ],
+    "validation": "Checklist completion requirements",
+    "submit_api": "PUT /api/site-surveys/{id}/checklist, PATCH /api/site-surveys/{id}/status",
+    "success_handling": "Refreshes survey state and updates dashboard counters",
+    "failure_handling": "Inline error banner",
+    "persistence_type": "Full Backend SQLite DB",
+    "status": "LIVE PERSISTED"
+  }
+]

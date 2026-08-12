@@ -85,8 +85,8 @@ export default function TechnicianDashboard() {
       <DashboardSprites />
       <div className="tab-content active" role="tabpanel" aria-label="technician-dashboard">
         <div className="tab-header-block">
-          <h2 className="tab-heading">Technician Dashboard</h2>
-          <p className="tab-subheading">Manage your work orders, track earnings, and advance your skills.</p>
+          <h2 className="tab-heading">Technician Command Center</h2>
+          <p className="tab-subheading">Manage today's work orders, track earnings, and advance your skills.</p>
         </div>
 
         <TechHero profile={profile} onRefresh={refresh} />
@@ -95,12 +95,12 @@ export default function TechnicianDashboard() {
           <TechKPIs kpis={kpis} />
         </div>
 
-        <div className="tab-grid-layout" style={{ gridTemplateColumns: '1.2fr 1.8fr', gap: 20, marginBottom: 20 }}>
-          <QuickActions />
+        <div className="tech-command-grid" style={{ display: 'grid', gridTemplateColumns: '1.45fr 1fr', gap: 20, marginBottom: 20 }}>
           <ScheduleWidget schedule={schedule} />
+          <QuickActions />
         </div>
 
-        <div className="tab-grid-layout" style={{ gridTemplateColumns: '1fr 1fr', gap: 20, marginBottom: 20 }}>
+        <div className="tech-support-grid" style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 20, marginBottom: 20 }}>
           <NotificationWidget notifications={notifications} />
           <TrainingProgressCard training={training} />
         </div>

@@ -2,100 +2,99 @@ import React from 'react';
 import { useNavigate } from 'react-router-dom';
 import { ROUTES } from '../../config/routes';
 
+const ACTION_DEFS = [
+  {
+    id: 'bill-analyzer',
+    title: 'Bill Analyzer',
+    desc: 'Upload your electricity bill and discover your savings potential.',
+    cta: 'Analyze Bill',
+    status: 'Ready',
+    meta: 'Upload → Analysis',
+    route: ROUTES.BILL_ANALYZER,
+    symbol: 'bill',
+  },
+  {
+    id: 'roof-analysis',
+    title: 'Roof Analysis',
+    desc: 'AI + Satellite analysis of your roof for accurate solar estimate.',
+    cta: 'Analyze Roof',
+    status: 'AI Ready',
+    meta: 'Satellite + AI',
+    route: ROUTES.ROOF_ANALYSIS,
+    symbol: 'roof',
+  },
+  {
+    id: 'roi-calc',
+    title: 'ROI Calculator',
+    desc: 'Calculate returns, savings and payback period instantly.',
+    cta: 'Calculate ROI',
+    status: 'Live',
+    meta: 'Estimates in seconds',
+    route: ROUTES.ROI_CALCULATOR,
+    symbol: 'calculator',
+  },
+  {
+    id: 'ai-assistant',
+    title: 'AI Solar Assistant',
+    desc: 'Ask anything about solar energy. Your AI energy expert.',
+    cta: 'Ask AI',
+    status: 'Online',
+    meta: '24×7 support',
+    route: ROUTES.AI_ADVISOR,
+    symbol: 'chat',
+  },
+  {
+    id: 'referrals',
+    title: 'Rewards & Referrals',
+    desc: 'Earn rewards and help your friends switch to solar.',
+    cta: 'Invite & Earn',
+    status: 'Active',
+    meta: 'Earn up to ₹4,000',
+    route: ROUTES.REWARDS,
+    symbol: 'gift',
+  },
+];
+
 export default function QuickActionsGrid() {
   const navigate = useNavigate();
   return (
     <section aria-labelledby="quickActionsTitle">
-              <div className="quick-actions-title-row">
-                <h3 className="quick-actions-title" id="quickActionsTitle">Quick Actions</h3>
+      <div className="quick-actions-title-row">
+        <h3 className="quick-actions-title" id="quickActionsTitle">Quick Actions</h3>
+      </div>
+
+      <div className="quick-actions-grid">
+        {ACTION_DEFS.map((def) => (
+          <div
+            className="action-card"
+            key={def.id}
+            tabIndex={0}
+            role="button"
+            data-tab={def.id}
+            id={`act${def.title.replace(/[^A-Za-z]/g, '')}`}
+            onClick={() => navigate(def.route)}
+            onKeyDown={(e) => { if (e.key === 'Enter' || e.key === ' ') navigate(def.route); }}
+          >
+            <div className="action-card-head">
+              <div className="action-icon-box">
+                <svg><use href={`#icon-${def.symbol}`}></use></svg>
               </div>
-              
-              <div className="quick-actions-grid">
-                {/* Card 1 */}
-                <div className="action-card" tabIndex={0} role="button" data-tab="bill-analyzer" id="actBill" onClick={() => navigate(ROUTES.BILL_ANALYZER)}>
-                  <div className="action-header-row">
-                    <div className="action-icon-box">
-                      <svg><use href="#icon-bill"></use></svg>
-                    </div>
-                  </div>
-                  <div>
-                    <h4 className="action-title">Bill Analyzer</h4>
-                    <p className="action-desc">Upload your electricity bill and discover your savings potential.</p>
-                  </div>
-                  <button className="action-btn">
-                    <span>Analyze Bill</span>
-                    <svg><use href="#icon-arrow-right"></use></svg>
-                  </button>
-                </div>
-    
-                {/* Card 2 */}
-                <div className="action-card" tabIndex={0} role="button" data-tab="roof-analysis" id="actRoof" onClick={() => navigate(ROUTES.ROOF_ANALYSIS)}>
-                  <div className="action-header-row">
-                    <div className="action-icon-box">
-                      <svg><use href="#icon-roof"></use></svg>
-                    </div>
-                  </div>
-                  <div>
-                    <h4 className="action-title">Roof Analysis</h4>
-                    <p className="action-desc">AI + Satellite analysis of your roof for accurate solar estimate.</p>
-                  </div>
-                  <button className="action-btn">
-                    <span>Analyze Roof</span>
-                    <svg><use href="#icon-arrow-right"></use></svg>
-                  </button>
-                </div>
-    
-                {/* Card 3 */}
-                <div className="action-card" tabIndex={0} role="button" data-tab="roi-calc" id="actCalc" onClick={() => navigate(ROUTES.ROI_CALCULATOR)}>
-                  <div className="action-header-row">
-                    <div className="action-icon-box">
-                      <svg><use href="#icon-calculator"></use></svg>
-                    </div>
-                  </div>
-                  <div>
-                    <h4 className="action-title">ROI Calculator</h4>
-                    <p className="action-desc">Calculate returns, savings and payback period instantly.</p>
-                  </div>
-                  <button className="action-btn">
-                    <span>Calculate ROI</span>
-                    <svg><use href="#icon-arrow-right"></use></svg>
-                  </button>
-                </div>
-    
-                {/* Card 4 */}
-                <div className="action-card" tabIndex={0} role="button" data-tab="ai-assistant" id="actAI" onClick={() => navigate(ROUTES.AI_ADVISOR)}>
-                  <div className="action-header-row">
-                    <div className="action-icon-box">
-                      <svg><use href="#icon-chat"></use></svg>
-                    </div>
-                  </div>
-                  <div>
-                    <h4 className="action-title">AI Solar Assistant</h4>
-                    <p className="action-desc">Ask anything about solar energy. Your AI energy expert.</p>
-                  </div>
-                  <button className="action-btn">
-                    <span>Ask AI</span>
-                    <svg><use href="#icon-arrow-right"></use></svg>
-                  </button>
-                </div>
-    
-                {/* Card 5 */}
-                <div className="action-card" tabIndex={0} role="button" data-tab="referrals" id="actReferral" onClick={() => navigate(ROUTES.REWARDS)}>
-                  <div className="action-header-row">
-                    <div className="action-icon-box">
-                      <svg><use href="#icon-gift"></use></svg>
-                    </div>
-                  </div>
-                  <div>
-                    <h4 className="action-title">Rewards & Referrals</h4>
-                    <p className="action-desc">Earn rewards and help your friends switch to solar.</p>
-                  </div>
-                  <button className="action-btn">
-                    <span>Invite & Earn</span>
-                    <svg><use href="#icon-arrow-right"></use></svg>
-                  </button>
-                </div>
-              </div>
-            </section>
+              <span className="action-status-pill"><span className="action-status-dot"></span>{def.status}</span>
+            </div>
+            <div className="action-card-body">
+              <h4 className="action-title">{def.title}</h4>
+              <p className="action-desc">{def.desc}</p>
+            </div>
+            <div className="action-card-foot">
+              <button className="action-btn">
+                <span>{def.cta}</span>
+                <svg><use href="#icon-arrow-right"></use></svg>
+              </button>
+              <span className="action-meta-chip">{def.meta}</span>
+            </div>
+          </div>
+        ))}
+      </div>
+    </section>
   );
 }

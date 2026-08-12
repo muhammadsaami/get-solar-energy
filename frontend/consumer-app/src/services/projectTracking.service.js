@@ -415,25 +415,91 @@ async function getProjectKpis() {
 }
 
 async function getProjectAnalytics() {
-  await delay(200);
-  return { ...analytics };
+  try {
+    const res = await api.get('/projects/metrics');
+    const data = res.data?.data;
+    if (data) {
+      return {
+        totalProjects: data.totalProjects || 0,
+        activeProjects: data.activeProjects || 0,
+        completedProjects: data.completedProjects || 0,
+        delayedProjects: data.delayedProjects || 0,
+        totalCapacityKw: data.totalCapacityKw || 0,
+        totalRevenue: data.totalRevenue || 0,
+        averageHealthScore: data.averageHealthScore || 85,
+        stageDistribution: data.stageDistribution || {},
+        priorityDistribution: data.priorityDistribution || {}
+      };
+    }
+  } catch {
+    // Return empty metrics if unavailable
+  }
+  return {
+    totalProjects: 0,
+    activeProjects: 0,
+    completedProjects: 0,
+    delayedProjects: 0,
+    totalCapacityKw: 0,
+    totalRevenue: 0,
+    averageHealthScore: 0,
+    stageDistribution: {},
+    priorityDistribution: {}
+  };
 }
 
 async function getProjectTimeline(projectId) {
-  await delay(200);
-  const p = projects.find(prj => prj.id === projectId);
-  if (!p) return [];
-  return [...p.milestones].sort((a, b) => a.order - b.order);
+  try {
+    const res = await api.get(`/projects/${encodeURIComponent(projectId)}`);
+    const milestones = res.data?.data?.milestones;
+    if (Array.isArray(milestones) && milestones.length > 0) {
+      return [...milestones].sort((a, b) => (a.order || 0) - (b.order || 0));
+    }
+  } catch {
+    // Return empty list if unavailable
+  }
+  return [];
 }
 
 async function getProjectTasks() {
-  await delay(200);
-  return [...TASKS];
+  try {
+    const res = await api.get('/crm/tasks');
+    const tasks = res.data?.data;
+    if (Array.isArray(tasks)) {
+      return tasks.map((t) => ({
+        id: String(t.id),
+        title: t.task_type || t.description || 'Project Task',
+        description: t.description || '',
+        status: t.status || 'Pending',
+        priority: t.priority || 'Medium',
+        dueDate: t.due_date || new Date().toISOString(),
+        assignedTo: t.assigned_to || '',
+        customerName: t.customer_name || ''
+      }));
+    }
+  } catch {
+    // Return empty list if unavailable
+  }
+  return [];
 }
 
 async function getProjectActivities() {
-  await delay(200);
-  return [...ACTIVITIES];
+  try {
+    const res = await api.get('/admin/activity', { params: { limit: 20 } });
+    const items = res.data?.data;
+    if (Array.isArray(items)) {
+      return items.map((act) => ({
+        id: String(act.id),
+        type: act.activity_type || 'system',
+        title: act.title || 'Platform Activity',
+        description: act.description || '',
+        timestamp: act.timestamp || new Date().toISOString(),
+        actor: act.actor || 'System'
+      }));
+    }
+  } catch {
+    // Return empty list if unavailable
+  }
+  return [];
 }
 
 async function updateProjectStage(projectId, newStage) {

@@ -4,7 +4,7 @@ import type { CrmMeetingItem } from './crm.types'
 
 const TYPE_STYLE: Record<string, React.CSSProperties> = {
   'Phone': { background: 'rgba(59,130,246,0.15)', color: 'var(--color-blue)' },
-  'Video': { background: 'rgba(139,92,246,0.15)', color: 'var(--color-purple)' },
+  'Video': { background: 'rgba(23,168,229,0.15)', color: 'var(--color-blue)' },
   'Office': { background: 'rgba(245,158,11,0.15)', color: 'var(--color-amber)' },
   'Site Visit': { background: 'rgba(34,197,94,0.15)', color: 'var(--color-green)' },
 }
@@ -173,7 +173,7 @@ export default function CrmMeetingsPanel() {
             <div key={m.id} style={{
               display: 'flex', alignItems: 'flex-start', gap: 'var(--space-3)',
               padding: 'var(--space-3)', background: 'var(--bg-tertiary)', borderRadius: 'var(--radius-md)',
-              borderLeft: `3px solid ${m.outcome?.toLowerCase() === 'completed' ? 'var(--color-green)' : m.outcome?.toLowerCase() === 'cancelled' ? 'var(--color-red)' : 'var(--color-purple)'}`,
+              borderLeft: `3px solid ${m.outcome?.toLowerCase() === 'completed' ? 'var(--color-green)' : m.outcome?.toLowerCase() === 'cancelled' ? 'var(--color-red)' : 'var(--color-blue)'}`,
             }}>
               <div style={{ flex: 1, minWidth: 0 }}>
                 <div style={{ display: 'flex', alignItems: 'center', gap: 'var(--space-2)', marginBottom: 2, flexWrap: 'wrap' }}>
