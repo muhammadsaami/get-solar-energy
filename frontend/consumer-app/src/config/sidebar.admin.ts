@@ -13,4 +13,12 @@ export const ADMIN_SIDEBAR_GROUPS: SidebarGroupConfig[] = [
       { id: 'admin-settings', label: 'Settings', route: ROUTES.ACCOUNT_SETTINGS, color: 'gray', symbolId: 'settings', visible: true, requiredFeature: 'settings-admin' },
     ],
   },
+  {
+    groupName: 'Operational Portals',
+    items: [
+      { id: 'admin-customer-portal', label: 'Customer Portal', route: ROUTES.HOME, color: 'blue', symbolId: 'home', visible: true, requiredFeature: 'dashboard' },
+      { id: 'admin-vendor-portal', label: 'Vendor Portal', route: ROUTES.VENDOR_DASHBOARD, color: 'purple', symbolId: 'briefcase', visible: true, requiredFeature: 'vendor-dashboard' },
+      { id: 'admin-tech-portal', label: 'Technician Portal', route: ROUTES.TECHNICIAN_DASHBOARD, color: 'green', symbolId: 'badge', visible: true, requiredFeature: 'technician-dashboard' },
+    ],
+  },
 ]
