@@ -5,6 +5,7 @@ For now, registration is a simple open endpoint the vendor/admin calls after
 install — swap to a proper get_current_vendor() dependency once Phase 2 vendor
 auth exists, same as the note left in job_marketplace.py.
 """
+from typing import Optional
 from fastapi import APIRouter, HTTPException, Depends
 from pydantic import BaseModel
 from sqlalchemy.orm import Session
@@ -21,10 +22,10 @@ class PlantRegisterRequest(BaseModel):
     customer_email: str
     capacity_kw: float
     city: str
-    vendor_email: str = None
-    technician_id: int = None
-    inverter_brand: str = None
-    inverter_serial: str = None
+    vendor_email: Optional[str] = None
+    technician_id: Optional[int] = None
+    inverter_brand: Optional[str] = None
+    inverter_serial: Optional[str] = None
 
 
 @router.post("/register")
