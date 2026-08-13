@@ -39,27 +39,6 @@ export default function EnterpriseAI() {
 
   return (
     <div className="ew-page" role="tabpanel" aria-label="enterprise ai">
-      {/* ── Mission Control Header ── */}
-      <header className="ew-mission-bar" role="banner" aria-label="Enterprise AI Command Bar">
-        <div className="ew-mission-scope">
-          <span className="ew-live-dot" />
-          <span className="ew-scope-badge">AI / COPILOT-ENGINE</span>
-          <span style={{ color: 'var(--text-muted)' }}>|</span>
-          <span style={{ fontWeight: 700, color: 'var(--text-primary)' }}>Enterprise Solar Copilot &amp; Tool Orchestration</span>
-        </div>
-
-        <div className="ew-mission-stats">
-          <div className="ew-mission-stat-item">
-            <span>Model Status:</span>
-            <strong style={{ color: 'var(--color-green)' }}>ONLINE (18 tools)</strong>
-          </div>
-          <div className="ew-mission-stat-item">
-            <span>Messages:</span>
-            <strong style={{ color: 'var(--color-cyan)' }}>{messages.length}</strong>
-          </div>
-        </div>
-      </header>
-
       {/* ── Status Capability Strip ── */}
       <div
         style={{

@@ -117,25 +117,6 @@ export default function ReportsCenter() {
 
   return (
     <div className="ew-page" role="tabpanel" aria-label="reports center">
-      <header className="ew-mission-bar" role="banner" aria-label="Reports Center Header">
-        <div className="ew-mission-scope">
-          <span className="ew-live-dot" />
-          <span className="ew-scope-badge">DOCS / REPORTS-CENTER</span>
-          <span style={{ color: 'var(--text-muted)' }}>|</span>
-          <span style={{ fontWeight: 700, color: 'var(--text-primary)' }}>Executive PDF, CSV &amp; Audit Exports</span>
-        </div>
-
-        <div className="ew-mission-stats">
-          <div className="ew-mission-stat-item">
-            <span>Generated:</span>
-            <strong style={{ color: 'var(--color-green)' }}>{history.length}</strong>
-          </div>
-          <div className="ew-mission-stat-item">
-            <span>Templates:</span>
-            <strong style={{ color: 'var(--color-cyan)' }}>{REPORT_TEMPLATES.length}</strong>
-          </div>
-        </div>
-      </header>
 
       {error?.hasError && (
         <div

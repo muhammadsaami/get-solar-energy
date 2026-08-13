@@ -48,22 +48,6 @@ export default function SupportHelp() {
 
   return (
     <div className="ew-page" role="tabpanel" aria-label="support help">
-      <header className="ew-mission-bar" role="banner" aria-label="Support Help Header">
-        <div className="ew-mission-scope">
-          <span className="ew-live-dot" />
-          <span className="ew-scope-badge">SUPPORT / DESK</span>
-          <span style={{ color: 'var(--text-muted)' }}>|</span>
-          <span style={{ fontWeight: 700, color: 'var(--text-primary)' }}>Customer Support Desk &amp; Technical Knowledge Base</span>
-        </div>
-
-        <div className="ew-mission-stats">
-          <div className="ew-mission-stat-item">
-            <span>SLA Response:</span>
-            <strong style={{ color: 'var(--color-green)' }}>&lt; 2 HOURS</strong>
-          </div>
-        </div>
-      </header>
-
       <div className="card-glass" style={{ padding: 'var(--space-5)', marginBottom: 'var(--space-4)' }}>
         <h2 style={{ fontSize: '18px', fontWeight: 800, color: 'var(--text-primary)', margin: '0 0 6px' }}>
           Customer Support &amp; Solar Knowledge Base

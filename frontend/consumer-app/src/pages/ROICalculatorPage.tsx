@@ -69,33 +69,6 @@ export default function ROICalculatorPage() {
 
   return (
     <div className="ew-page">
-      {/* ── Mission Control Header ── */}
-      <header className="ew-mission-bar" role="banner" aria-label="ROI Simulator Header">
-        <div className="ew-mission-scope">
-          <span className="ew-live-dot" />
-          <span className="ew-scope-badge">ROI / FINANCIAL-SIMULATOR</span>
-          <span style={{ color: 'var(--text-muted)' }}>|</span>
-          <span style={{ fontWeight: 700, color: 'var(--text-primary)' }}>Payback Period &amp; Government Subsidy Engine</span>
-        </div>
-
-        <div className="ew-mission-stats">
-          <div className="ew-mission-stat-item">
-            <span>System:</span>
-            <strong style={{ color: 'var(--color-cyan)' }}>{formData.monthlyBill ? (formData.monthlyBill * 0.08).toFixed(1) : '—'} kW</strong>
-          </div>
-          <div className="ew-mission-stat-item">
-            <span>Sun Hours:</span>
-            <strong style={{ color: 'var(--color-orange)' }}>{formData.sunHours} h/d</strong>
-          </div>
-          {hasCalculated && result && (
-            <div className="ew-mission-stat-item">
-              <span>Payback:</span>
-              <strong style={{ color: 'var(--color-green)' }}>{result.paybackPeriod} yr</strong>
-            </div>
-          )}
-        </div>
-      </header>
-
       {/* ── 2-Column Asymmetric Workbench ── */}
       <div className="ew-asym-65-35" style={{ gridTemplateColumns: '1fr 1.5fr' }}>
         {/* LEFT COLUMN: Input Form Card */}

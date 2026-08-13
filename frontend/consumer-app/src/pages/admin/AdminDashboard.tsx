@@ -159,62 +159,12 @@ export default function AdminDashboardPage() {
             Platform-wide operations: pipeline health, service status, incidents, and audit activity.
           </p>
         </div>
-        <button
-          className="btn btn-primary"
-          onClick={loadData}
-          disabled={loading}
-          style={{ whiteSpace: 'nowrap' }}
-        >
-          <span style={{ display: 'inline-flex', marginRight: 6 }}><IcoRefresh /></span>
-          {loading ? 'Syncing...' : 'Sync Dashboard'}
-        </button>
-      </header>
-
-      {/* ════════════════════════════════════════════════════════════
-          2. HEADLINE KPIs ABOVE THE FOLD (max 4, shared classes)
-          ════════════════════════════════════════════════════════════ */}
-      <section aria-label="Key Metrics" className="card-grid-4">
-        {headKpis.map(kpi => (
-          <div key={kpi.id} className={`card-metric ${ACCENT_CLASS[kpi.accent] ?? 'accent-blue'}`}>
-            <div className="card-metric-label">{kpi.label}</div>
-            <div className="card-metric-value">{formatKpiValue(kpi)}</div>
-          </div>
-        ))}
-      </section>
-
-      {/* ════════════════════════════════════════════════════════════
-          3. OPERATIONAL STATUS BAR (info + controls only)
-          ════════════════════════════════════════════════════════════ */}
-      <header className="ew-mission-bar" role="banner" aria-label="Operational Status">
-        <div className="ew-mission-stats">
-          <div className="ew-mission-stat-item">
-            <span className={`ew-live-dot ${overallHealth !== 'green' ? 'amber' : ''}`} />
-            <span>Platform:</span>
-            <strong style={{ color: overallHealth === 'red' ? 'var(--color-red)' : overallHealth === 'amber' ? 'var(--color-yellow)' : 'var(--color-green)' }}>
-              {overallHealth === 'red' ? 'Degraded' : overallHealth === 'amber' ? 'Advisory' : 'Operational'}
-            </strong>
-          </div>
-          <div className="ew-mission-stat-item">
-            <span>Active Leads:</span>
-            <strong style={{ color: 'var(--color-orange)' }}>{(cc?.totalLeads30d ?? 0).toLocaleString('en-IN')}</strong>
-          </div>
-          <div className="ew-mission-stat-item">
-            <span>Critical Incidents:</span>
-            <strong style={{ color: criticalAlerts.length > 0 ? 'var(--color-red)' : 'var(--color-green)' }}>
-              {criticalAlerts.length}
-            </strong>
-          </div>
-          <div className="ew-mission-stat-item">
-            <span>Last Synced:</span>
-            <strong>{lastSync}</strong>
-          </div>
-        </div>
-
-        <div className="ew-mission-actions">
+        <div style={{ display: 'flex', alignItems: 'center', gap: '8px', flexWrap: 'wrap' }}>
           <button
             className="btn btn-ghost btn-sm"
             onClick={() => setDensity(d => (d === 'compact' ? 'standard' : 'compact'))}
             title="Toggle compact/standard density"
+            style={{ fontSize: 11 }}
           >
             {density === 'compact' ? 'Dense' : 'Standard'}
           </button>
@@ -229,8 +179,29 @@ export default function AdminDashboardPage() {
             <option value={30}>Auto: 30s</option>
             <option value={60}>Auto: 60s</option>
           </select>
+          <button
+            className="btn btn-primary"
+            onClick={loadData}
+            disabled={loading}
+            style={{ whiteSpace: 'nowrap' }}
+          >
+            <span style={{ display: 'inline-flex', marginRight: 6 }}><IcoRefresh /></span>
+            {loading ? 'Syncing...' : 'Sync Dashboard'}
+          </button>
         </div>
       </header>
+
+      {/* ════════════════════════════════════════════════════════════
+          2. HEADLINE KPIs ABOVE THE FOLD (max 4, shared classes)
+          ════════════════════════════════════════════════════════════ */}
+      <section aria-label="Key Metrics" className="card-grid-4">
+        {headKpis.map(kpi => (
+          <div key={kpi.id} className={`card-metric ${ACCENT_CLASS[kpi.accent] ?? 'accent-blue'}`}>
+            <div className="card-metric-label">{kpi.label}</div>
+            <div className="card-metric-value">{formatKpiValue(kpi)}</div>
+          </div>
+        ))}
+      </section>
 
       {/* ════════════════════════════════════════════════════════════
           4. MAIN WORKBENCH (65 / 35)

@@ -139,41 +139,16 @@ export default function Proposal() {
 
   return (
     <div className="ew-page tab-content active" role="tabpanel" aria-label="solar proposal">
-      {/* Header Banner */}
-      <header className="ew-mission-bar" role="banner" aria-label="Proposal Generator Header">
-        <div className="ew-mission-scope">
-          <span className="ew-live-dot" />
-          <span className="ew-scope-badge">PROPOSAL / STUDIO</span>
-          <span style={{ color: 'var(--text-muted)' }}>|</span>
-          <span style={{ fontWeight: 700, color: 'var(--text-primary)' }}>Enterprise Solar Proposal Builder &amp; Subsidy Calculator</span>
-        </div>
-
-        <div className="ew-mission-stats">
-          <div className="ew-mission-stat-item">
-            <span>Status:</span>
-            <strong style={{ color: status === 'Approved' ? 'var(--color-green)' : 'var(--color-cyan)' }}>{status}</strong>
-          </div>
-          <div className="ew-mission-stat-item">
-            <span>Version:</span>
-            <strong style={{ color: 'var(--color-orange)' }}>{version}</strong>
-          </div>
-        </div>
-
-        <div className="ew-mission-actions">
-          <button className="btn btn-ghost btn-sm" onClick={() => setShowOutput(!showOutput)} style={{ fontSize: 11 }}>
-            {showOutput ? 'Configure Parameters' : 'View Full Proposal'}
-          </button>
-        </div>
-      </header>
-
       {/* AI Insight & Live KPI Strip */}
-      <div className="card-glass" style={{ padding: '10px 16px', marginBottom: 'var(--space-4)', display: 'flex', alignItems: 'center', flexWrap: 'wrap', gap: '10px' }}>
-        <span className="badge badge-warning" style={{ fontSize: '10px', fontWeight: 800, textTransform: 'uppercase', letterSpacing: '0.05em' }}>
-          <span className="ew-live-dot" style={{ marginRight: 6, display: 'inline-block' }} /> AI OPTIMIZATION
-        </span>
-        <span style={{ flex: '1 1 240px', fontSize: '12px', color: 'var(--text-secondary)' }}>
-          Recommended {insights.kw} kWp system for ₹{form.monthlyBill ? parseFloat(form.monthlyBill).toLocaleString('en-IN') : '0'} monthly bill &middot; {insights.panels} panels &middot; {Math.round(insights.annualGen).toLocaleString()} kWh/yr
-        </span>
+      <div className="card-glass" style={{ padding: '10px 16px', marginBottom: 'var(--space-4)', display: 'flex', alignItems: 'center', flexWrap: 'wrap', gap: '10px', justifyContent: 'space-between' }}>
+        <div style={{ display: 'flex', alignItems: 'center', gap: '10px', flexWrap: 'wrap' }}>
+          <span className="badge badge-warning" style={{ fontSize: '10px', fontWeight: 800, textTransform: 'uppercase', letterSpacing: '0.05em' }}>
+            <span className="ew-live-dot" style={{ marginRight: 6, display: 'inline-block' }} /> AI OPTIMIZATION
+          </span>
+          <span style={{ fontSize: '12px', color: 'var(--text-secondary)' }}>
+            Recommended {insights.kw} kWp system for ₹{form.monthlyBill ? parseFloat(form.monthlyBill).toLocaleString('en-IN') : '0'} monthly bill &middot; {insights.panels} panels &middot; {Math.round(insights.annualGen).toLocaleString()} kWh/yr
+          </span>
+        </div>
         <div style={{ display: 'flex', alignItems: 'center', gap: '16px', flexShrink: 0 }}>
           {[
             { label: 'Subsidy', value: `-₹${insights.subsidy.toLocaleString('en-IN')}`, color: 'var(--color-green)' },
@@ -186,6 +161,9 @@ export default function Proposal() {
               <span style={{ fontSize: '9px', color: 'var(--text-muted)', textTransform: 'uppercase', fontWeight: 700 }}>{m.label}</span>
             </div>
           ))}
+          <button className="btn btn-ghost btn-sm" onClick={() => setShowOutput(!showOutput)} style={{ fontSize: 11, marginLeft: 8 }}>
+            {showOutput ? 'Configure Parameters' : 'View Full Proposal'}
+          </button>
         </div>
       </div>
 

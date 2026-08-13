@@ -23,24 +23,6 @@ export default function SettingsPage() {
 
   return (
     <div className="ew-page" role="tabpanel" aria-label="settings">
-      <header className="ew-mission-bar" role="banner" aria-label="Settings Command Bar">
-        <div className="ew-mission-scope">
-          <span className="ew-live-dot" />
-          <span className="ew-scope-badge">SYSTEM / PREFERENCES</span>
-          <span style={{ color: 'var(--text-muted)' }}>|</span>
-          <span style={{ fontWeight: 700, color: 'var(--text-primary)' }}>Account Preferences &amp; Platform Controls</span>
-        </div>
-
-        <div className="ew-mission-stats">
-          <div className="ew-mission-stat-item">
-            <span>Status:</span>
-            <strong style={{ color: isDirty ? 'var(--color-orange)' : 'var(--color-green)' }}>
-              {isDirty ? 'UNSAVED CHANGES' : 'SYNCHRONIZED'}
-            </strong>
-          </div>
-        </div>
-      </header>
-
       <SettingsPageHeader />
 
       {loading && <SettingsLoadingSkeleton />}

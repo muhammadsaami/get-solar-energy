@@ -63,26 +63,6 @@ export default function RoofAnalyzer() {
     <>
       <DashboardSprites />
       <div className="ew-page tab-content active" role="tabpanel" aria-label="roof analysis" id="tab-roof-analysis">
-        <header className="ew-mission-bar" role="banner" aria-label="Roof Analysis Header">
-          <div className="ew-mission-scope">
-            <span className="ew-live-dot" />
-            <span className="ew-scope-badge">ROOF / COMPUTER-VISION</span>
-            <span style={{ color: 'var(--text-muted)' }}>|</span>
-            <span style={{ fontWeight: 700, color: 'var(--text-primary)' }}>Rooftop Azimuth &amp; Satellite Photogrammetry</span>
-          </div>
-
-          <div className="ew-mission-stats">
-            <div className="ew-mission-stat-item">
-              <span>Readiness:</span>
-              <strong style={{ color: 'var(--color-green)' }}>{d ? `${d.suitabilityScore}%` : `${defaultReadiness}%`}</strong>
-            </div>
-            <div className="ew-mission-stat-item">
-              <span>Usable Area:</span>
-              <strong style={{ color: 'var(--color-cyan)' }}>{d ? `${d.roof_area_sqft} sqft` : defaultArea}</strong>
-            </div>
-          </div>
-        </header>
-
         <div className="tab-grid-layout" style={{ display: 'grid', gridTemplateColumns: '1.8fr 1.2fr', gap: 'var(--space-4)', marginBottom: 'var(--space-4)' }}>
           {/* LEFT COLUMN: Dual Mode Form + Map + Results */}
           <div className="card-glass" style={{ padding: 'var(--space-5)' }}>

@@ -23,32 +23,6 @@ export default function ActivityCenter() {
 
   return (
     <div className="ew-page" role="tabpanel" aria-label="activity center">
-      <header className="ew-mission-bar" role="banner" aria-label="Activity Center Header">
-        <div className="ew-mission-scope">
-          <span className="ew-live-dot" />
-          <span className="ew-scope-badge">LOGS / AUDIT-FEED</span>
-          <span style={{ color: 'var(--text-muted)' }}>|</span>
-          <span style={{ fontWeight: 700, color: 'var(--text-primary)' }}>Chronological Solar Journey &amp; Milestones</span>
-        </div>
-
-        <div className="ew-mission-stats">
-          <div className="ew-mission-stat-item">
-            <span>Events Tracked:</span>
-            <strong style={{ color: 'var(--color-cyan)' }}>{activities.length}</strong>
-          </div>
-        </div>
-
-        <div className="ew-mission-actions">
-          <button
-            className="btn btn-primary btn-sm"
-            onClick={refresh}
-            disabled={loading}
-            style={{ fontSize: 11, padding: '4px 10px' }}
-          >
-            {loading ? 'Refreshing...' : 'Refresh Activity'}
-          </button>
-        </div>
-      </header>
 
       {error?.hasError && (
         <div

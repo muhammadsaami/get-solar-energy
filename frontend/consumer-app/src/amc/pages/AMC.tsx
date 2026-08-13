@@ -153,41 +153,6 @@ export default function AMC() {
 
   return (
     <div className="ew-page" role="tabpanel" aria-label="amc">
-      <header className="ew-mission-bar" role="banner" aria-label="AMC Command Bar">
-        <div className="ew-mission-scope">
-          <span className="ew-live-dot" />
-          <span className="ew-scope-badge">O&amp;M / AMC-MAINTENANCE</span>
-          <span style={{ color: 'var(--text-muted)' }}>|</span>
-          <span style={{ fontWeight: 700, color: 'var(--text-primary)' }}>Annual Maintenance &amp; Predictive Servicing</span>
-        </div>
-
-        <div className="ew-mission-stats">
-          <div className="ew-mission-stat-item">
-            <span>Contract:</span>
-            <strong style={{ color: hasContract ? 'var(--color-green)' : 'var(--color-orange)' }}>
-              {hasContract ? 'ACTIVE' : 'EVALUATION'}
-            </strong>
-          </div>
-          {kpiData && (
-            <div className="ew-mission-stat-item">
-              <span>Health Score:</span>
-              <strong style={{ color: 'var(--color-cyan)' }}>{kpiData.systemHealth}</strong>
-            </div>
-          )}
-        </div>
-
-        <div className="ew-mission-actions">
-          <button
-            className="btn btn-primary btn-sm"
-            onClick={refresh}
-            disabled={loading}
-            style={{ fontSize: 11, padding: '4px 10px' }}
-          >
-            {loading ? 'Refreshing...' : 'Refresh Status'}
-          </button>
-        </div>
-      </header>
-
       <AMCHeroSection
         onGenerateClick={handleHeroGenerate}
         downloadDisabled={!activeRecommendation}

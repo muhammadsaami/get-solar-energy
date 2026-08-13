@@ -18,29 +18,6 @@ export default function RewardsReferrals() {
       <DashboardSprites />
 
       <div className="ew-page tab-content active" role="tabpanel" aria-label="rewards" style={{ display: 'block' }}>
-        <header className="ew-mission-bar" role="banner" aria-label="Rewards &amp; Referrals Header">
-          <div className="ew-mission-scope">
-            <span className="ew-live-dot" />
-            <span className="ew-scope-badge">REWARDS / ADVOCACY</span>
-            <span style={{ color: 'var(--text-muted)' }}>|</span>
-            <span style={{ fontWeight: 700, color: 'var(--text-primary)' }}>Customer Referrals, Community Milestones &amp; Rewards Store</span>
-          </div>
-
-          <div className="ew-mission-stats">
-            <div className="ew-mission-stat-item">
-              <span>Tier Status:</span>
-              <strong style={{ color: 'var(--color-orange)' }}>
-                {state.userRank ? `RANK #${state.userRank}` : 'SOLAR ADVOCATE'}
-              </strong>
-            </div>
-            <div className="ew-mission-stat-item">
-              <span>Balance:</span>
-              <strong style={{ color: 'var(--color-green)' }}>
-                ₹{state.summary?.wallet_balance_rs ? Number(state.summary.wallet_balance_rs).toLocaleString('en-IN') : '0'}
-              </strong>
-            </div>
-          </div>
-        </header>
 
         {state.error && (
           <div
