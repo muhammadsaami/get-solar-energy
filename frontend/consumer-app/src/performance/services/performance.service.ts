@@ -1,21 +1,44 @@
 import api from '../../services/api/client'
 
-interface HealthApiResponse {
+export interface PlantSummaryItem {
+  id: number
+  capacity_kw: number
+  inverter_brand?: string | null
+  city: string
+  status: string
+  installed_at?: string | null
+}
+
+export interface PlantDashboardResponse {
   success: boolean
-  data?: {
-    health_score?: number
-    inverter_health?: number
-    panel_health?: number
-    battery_health?: number
-    wiring_health?: number
-    generation_drop_pct?: number
-    issues?: string[]
-    [key: string]: unknown
-  }
+  plant_id: number
+  capacity_kw: number
+  status: string
+  today_generation_kwh: number | null
+  today_expected_kwh: number
+  monthly_total_kwh: number
+  monthly_expected_kwh: number
+  unread_alerts: number
+}
+
+export interface PlantHealthResponse {
+  success: boolean
+  health_score: number | null
+  status_label: string
+  based_on_days: number
   message?: string
 }
 
-const CACHE_TTL_MS = 5 * 60 * 1000
+export interface PlantAlertItem {
+  id: number
+  alert_type: string
+  severity: string
+  message: string
+  is_read: boolean
+  created_at: string
+}
+
+const CACHE_TTL_MS = 2 * 60 * 1000
 
 interface CacheEntry<T> {
   data: T
@@ -38,186 +61,109 @@ function setCache<T>(key: string, data: T): void {
   cache.set(key, { data, expiry: Date.now() + CACHE_TTL_MS })
 }
 
-function clearCache(): void {
+export function clearPerformanceCache(): void {
   cache.clear()
 }
 
-async function fetchWithCache<T>(
-  key: string,
-  fetcher: () => Promise<T>,
-  signal?: AbortSignal,
-): Promise<T> {
-  const cached = getCached<T>(key)
+// ── Phase 4 Plant Monitoring APIs ──────────────────────────────────────────
+
+export async function fetchMyPlants(signal?: AbortSignal): Promise<PlantSummaryItem[]> {
+  const cached = getCached<PlantSummaryItem[]>('my-plants')
   if (cached) return cached
-  const data = await fetcher()
-  setCache(key, data)
-  return data
+
+  try {
+    const res = await api.get<{ success: boolean; plants: PlantSummaryItem[] }>('/plants/my', { signal })
+    const plants = res.data?.plants || []
+    setCache('my-plants', plants)
+    return plants
+  } catch {
+    return []
+  }
 }
 
-async function retryFetch<T>(
-  fn: () => Promise<T>,
-  retries = 2,
-  signal?: AbortSignal,
-): Promise<T> {
-  let lastError: unknown
-  for (let attempt = 0; attempt <= retries; attempt++) {
-    try {
-      return await fn()
-    } catch (err: unknown) {
-      lastError = err
-      if (signal?.aborted) throw err
-      const status = (err as { response?: { status?: number } })?.response?.status
-      const isTransient = !status || status >= 500 || status === 429
-      if (!isTransient || attempt === retries) throw err
-      await new Promise((r) => setTimeout(r, Math.pow(2, attempt) * 1000))
+export async function fetchPlantDashboard(plantId: number, signal?: AbortSignal): Promise<PlantDashboardResponse | null> {
+  const cacheKey = `plant-dash-${plantId}`
+  const cached = getCached<PlantDashboardResponse>(cacheKey)
+  if (cached) return cached
+
+  try {
+    const res = await api.get<PlantDashboardResponse>(`/plants/${plantId}/dashboard`, { signal })
+    if (res.data?.success) {
+      setCache(cacheKey, res.data)
+      return res.data
     }
-  }
-  throw lastError
-}
-
-async function safeFetch<T>(
-  key: string,
-  fetcher: () => Promise<T>,
-  signal?: AbortSignal,
-): Promise<T | null> {
-  try {
-    return await fetchWithCache(key, () => retryFetch(fetcher, 2, signal), signal)
+    return null
   } catch {
     return null
   }
 }
 
-function readLocalStorageAnalysis<T>(key: string): T | null {
+export async function fetchPlantHealth(plantId: number, signal?: AbortSignal): Promise<PlantHealthResponse | null> {
+  const cacheKey = `plant-health-${plantId}`
+  const cached = getCached<PlantHealthResponse>(cacheKey)
+  if (cached) return cached
+
   try {
-    const raw = localStorage.getItem(key)
-    if (!raw) return null
-    return JSON.parse(raw) as T
+    const res = await api.get<PlantHealthResponse>(`/plants/${plantId}/health-score`, { signal })
+    if (res.data?.success) {
+      setCache(cacheKey, res.data)
+      return res.data
+    }
+    return null
   } catch {
     return null
   }
 }
 
-export async function fetchDashboardStats(
-  signal?: AbortSignal,
-): Promise<Record<string, unknown> | null> {
-  return safeFetch(
-    'perf-dashboard-stats',
-    async () => {
-      const { data } = await api.get<Record<string, unknown>>('/dashboard/stats', { signal })
-      return data
-    },
-    signal,
-  )
-}
-
-export async function fetchRecentBills(
-  limit = 20,
-  signal?: AbortSignal,
-): Promise<unknown[] | null> {
-  return safeFetch(
-    `perf-recent-bills-${limit}`,
-    async () => {
-      const { data } = await api.get<unknown[]>('/dashboard/recent-bills', {
-        params: { limit },
-        signal,
-      })
-      return data
-    },
-    signal,
-  )
-}
-
-export async function fetchHealthData(
-  signal?: AbortSignal,
-): Promise<HealthApiResponse | null> {
-  const cachedAnalysis = readLocalStorageAnalysis<{
-    health_score?: number
-    system_size_kw?: number
-    [key: string]: unknown
-  }>('lastBillAnalysis')
-
-  if (!cachedAnalysis) return null
-
-  return safeFetch(
-    'perf-amc-health',
-    async () => {
-      const { data } = await api.post<HealthApiResponse>(
-        '/amc-recommendation',
-        {
-          system_size: cachedAnalysis.system_size_kw || 5.0,
-          monthly_generation: cachedAnalysis.monthly_generation_units || 0,
-          city: cachedAnalysis.city || 'Lucknow',
-        },
-        { signal },
-      )
-      return data
-    },
-    signal,
-  )
-}
-
-export async function fetchGenerationFromCache(): Promise<Record<string, unknown> | null> {
-  const billAnalysis = readLocalStorageAnalysis<Record<string, unknown>>('lastBillAnalysis')
-  const roofAnalysis = readLocalStorageAnalysis<Record<string, unknown>>('lastRoofAnalysis')
-  const roiAnalysis = readLocalStorageAnalysis<Record<string, unknown>>('roiAnalysisState')
-
-  if (!billAnalysis && !roofAnalysis && !roiAnalysis) return null
-
-  return {
-    bill: billAnalysis,
-    roof: roofAnalysis,
-    roi: roiAnalysis,
+export async function fetchPlantAlerts(plantId: number, signal?: AbortSignal): Promise<PlantAlertItem[]> {
+  try {
+    const res = await api.get<{ success: boolean; alerts: PlantAlertItem[] }>(`/plants/${plantId}/alerts`, { signal })
+    return res.data?.alerts || []
+  } catch {
+    return []
   }
 }
 
-export async function fetchAlerts(
-  signal?: AbortSignal,
-): Promise<unknown[] | null> {
-  return safeFetch(
-    'perf-alerts',
-    async () => {
-      const { data } = await api.get<{ data?: unknown[] }>('/crm/alerts', { signal })
-      return data?.data ?? null
-    },
-    signal,
-  )
+export async function simulatePlantReading(plantId: number): Promise<{ success: boolean; message?: string }> {
+  try {
+    const res = await api.post<{ success: boolean; message?: string }>(`/plants/${plantId}/simulate-reading`)
+    clearPerformanceCache()
+    return res.data
+  } catch (err: any) {
+    const msg = err.response?.data?.detail || err.message || 'Simulation error'
+    return { success: false, message: msg }
+  }
 }
 
-export async function fetchAllPerformanceSources(
-  signal?: AbortSignal,
-): Promise<{
-  stats: Record<string, unknown> | null
-  bills: unknown[] | null
-  health: HealthApiResponse | null
-  cachedAnalysis: Record<string, unknown> | null
-  alerts: unknown[] | null
-  errors: Record<string, string | null>
-}> {
-  const errors: Record<string, string | null> = {}
-
-  const recordError = (source: string, result: unknown) => {
-    errors[source] = result === null ? 'Failed to load' : null
+export async function markAlertAsRead(alertId: number): Promise<boolean> {
+  try {
+    const res = await api.patch<{ success: boolean }>(`/plants/alerts/${alertId}/read`)
+    return !!res.data?.success
+  } catch {
+    return false
   }
+}
 
-  const results = await Promise.allSettled([
-    fetchDashboardStats(signal).then((r) => { recordError('stats', r); return r }),
-    fetchRecentBills(20, signal).then((r) => { recordError('bills', r); return r }),
-    fetchHealthData(signal).then((r) => { recordError('health', r); return r }),
-    fetchAlerts(signal).then((r) => { recordError('alerts', r); return r }),
-  ])
+// ── Legacy / Fallback Stats API ────────────────────────────────────────────
 
-  const cachedAnalysis = await fetchGenerationFromCache()
+export async function fetchDashboardStats(signal?: AbortSignal): Promise<Record<string, unknown> | null> {
+  try {
+    const { data } = await api.get<Record<string, unknown>>('/dashboard/stats', { signal })
+    return data
+  } catch {
+    return null
+  }
+}
 
-  return {
-    stats: results[0].status === 'fulfilled' ? results[0].value : null,
-    bills: results[1].status === 'fulfilled' ? results[1].value : null,
-    health: results[2].status === 'fulfilled' ? results[2].value : null,
-    alerts: results[3].status === 'fulfilled' ? results[3].value : null,
-    cachedAnalysis,
-    errors,
+export async function fetchRecentBills(limit = 20, signal?: AbortSignal): Promise<unknown[] | null> {
+  try {
+    const { data } = await api.get<unknown[]>('/dashboard/recent-bills', { params: { limit }, signal })
+    return data
+  } catch {
+    return null
   }
 }
 
 export function invalidatePerformanceCache(): void {
-  clearCache()
+  clearPerformanceCache()
 }

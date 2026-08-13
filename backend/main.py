@@ -10,6 +10,7 @@ from google.genai import types
 from dotenv import load_dotenv
 from database import engine, Base
 import technician_models  # noqa: F401 — must import before create_all() so Phase 3 tables are registered
+import monitoring_models  # noqa: F401 — must import before create_all() so Phase 4 tables are registered
 import performance_models  # noqa: F401 — must import before create_all() so ratings/skills/badges/profile-photo tables are registered
 import knowledge_base_models  # noqa: F401 — must import before create_all() so knowledge base tables are registered
 import ai_troubleshoot_models  # noqa: F401 — must import before create_all() so AI conversation log table is registered
@@ -75,6 +76,11 @@ from project_routes import router as project_router
 from vendor_routes import router as vendor_router
 from admin_routes import router as admin_router
 
+# ── Phase 4: Plant Monitoring & Alerts ────────────────────────────────────
+from plants import router as plants_router
+from plant_monitoring import router as plant_monitoring_router
+from alerts import router as alerts_router
+
 # ── Phase 3: Technician Network ──────────────────────────────────────────
 from technician_models import *  # registers Technician / Training / Job / WorkOrder / Earning tables with Base
 from technician_auth import router as technician_auth_router
@@ -109,6 +115,11 @@ app.include_router(mlops_router)
 app.include_router(project_router)
 app.include_router(vendor_router)
 app.include_router(admin_router)
+
+# ── Phase 4: Plant Monitoring & Alerts routers ────────────────────────────
+app.include_router(plants_router)
+app.include_router(plant_monitoring_router)
+app.include_router(alerts_router)
 
 # ── Phase 3: Technician Network routers ──────────────────────────────────
 app.include_router(technician_auth_router)
