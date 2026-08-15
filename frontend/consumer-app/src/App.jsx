@@ -173,6 +173,7 @@ function AppRoutes() {
 
         {/* Support */}
         <Route path={ROUTES.REWARDS} element={<AppRoute><PermissionGuard feature="rewards"><PageSuspense><RewardsReferrals /></PageSuspense></PermissionGuard></AppRoute>} />
+        <Route path="/app/rewards" element={<Navigate to={ROUTES.REWARDS} replace />} />
 
         {/* Independent Vendor Portal Routes */}
         {vendorRouteElements}

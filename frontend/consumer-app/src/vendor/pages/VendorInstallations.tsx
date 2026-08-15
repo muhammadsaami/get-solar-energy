@@ -1,18 +1,51 @@
-import React, { useState } from 'react'
+import React, { useState, useEffect } from 'react'
 import DashboardHeader from '../components/DashboardHeader'
 import StatusBadge from '../components/StatusBadge'
 import VendorEmptyState from '../components/VendorEmptyState'
 import { useVendorNotify } from '../hooks/useVendorNotify'
+import { getVendorProjects } from '../services/vendor.service'
 
 export function VendorInstallations() {
   const notify = useVendorNotify()
   const [search, setSearch] = useState('')
+  const [loading, setLoading] = useState(true)
+  const [error, setError] = useState<string | null>(null)
+  const [installations, setInstallations] = useState<Array<{
+    id: string
+    site: string
+    location: string
+    team: string
+    date: string
+    status: string
+  }>>([])
 
-  const installations = [
-    { id: 'INS-301', site: 'Sharma Residence 10kW', location: 'Jaipur Sector 4', team: 'Alpha Crew (3 Engineers)', date: 'Today, 09:00 AM', status: 'In Progress' },
-    { id: 'INS-302', site: 'Gupta Commercial 25kW', location: 'Okhla Phase 3, Delhi', team: 'Beta Crew (4 Engineers)', date: 'Tomorrow, 10:00 AM', status: 'Assigned' },
-    { id: 'INS-303', site: 'Verma Farmhouse 15kW', location: 'Fatehsagar, Udaipur', team: 'Gamma Crew (2 Engineers)', date: 'Yesterday', status: 'Completed' },
-  ]
+  useEffect(() => {
+    let active = true
+    async function fetchInstallations() {
+      try {
+        setLoading(true)
+        setError(null)
+        const projects = await getVendorProjects({ stage: 'installation' })
+        if (!active) return
+        const mapped = (projects || []).map((p: any) => ({
+          id: p.displayId || `INS-${p.id}`,
+          site: p.title || p.projectName || 'Residential Solar Installation',
+          location: p.address ? `${p.address}, ${p.city || ''}` : (p.city || 'Site Location'),
+          team: p.assignedInstaller || p.assignedTeam || 'Field Installation Crew',
+          date: p.startDate ? new Date(p.startDate).toLocaleDateString('en-IN', { day: 'numeric', month: 'short', year: 'numeric' }) : 'Scheduled',
+          status: p.status === 'installation' ? 'In Progress' : (p.status || 'Scheduled')
+        }))
+        setInstallations(mapped)
+      } catch (err: any) {
+        if (!active) return
+        setError(err?.message || 'Failed to load installation schedules.')
+      } finally {
+        if (active) setLoading(false)
+      }
+    }
+    fetchInstallations()
+    return () => { active = false }
+  }, [])
 
   const filtered = installations.filter(i =>
     i.site.toLowerCase().includes(search.toLowerCase()) ||
@@ -47,7 +80,15 @@ export function VendorInstallations() {
       </div>
 
       <div className="vendor-glass-card" style={{ padding: 0, overflow: 'hidden' }}>
-        {filtered.length > 0 ? (
+        {loading ? (
+          <div style={{ padding: '40px', textAlign: 'center', color: 'var(--vendor-text-secondary)' }}>
+            Loading field installations...
+          </div>
+        ) : error ? (
+          <div style={{ padding: '32px', textAlign: 'center', color: 'var(--vendor-danger)' }}>
+            {error}
+          </div>
+        ) : filtered.length > 0 ? (
           <table className="vendor-table-container">
             <thead>
               <tr>

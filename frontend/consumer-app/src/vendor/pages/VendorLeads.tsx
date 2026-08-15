@@ -1,18 +1,53 @@
-import React, { useState } from 'react'
+import React, { useState, useEffect } from 'react'
 import DashboardHeader from '../components/DashboardHeader'
 import StatusBadge from '../components/StatusBadge'
 import VendorEmptyState from '../components/VendorEmptyState'
 import { useVendorNotify } from '../hooks/useVendorNotify'
+import { getVendorProjects } from '../services/vendor.service'
 
 export function VendorLeads() {
   const notify = useVendorNotify()
   const [search, setSearch] = useState('')
+  const [loading, setLoading] = useState(true)
+  const [error, setError] = useState<string | null>(null)
+  const [leads, setLeads] = useState<Array<{
+    id: string
+    name: string
+    size: string
+    contact: string
+    value: string
+    status: string
+    probability: string
+  }>>([])
 
-  const leads = [
-    { id: 'LEAD-901', name: 'Jaipur Textile Mill', size: '100 kW Commercial', contact: 'Manish Mehta', status: 'Proposal Sent', probability: '80%', value: '₹42,00,000' },
-    { id: 'LEAD-902', name: 'Singhal Villa', size: '8 kW Residential', contact: 'Ritu Singhal', status: 'Site Surveyed', probability: '60%', value: '₹4,80,000' },
-    { id: 'LEAD-903', name: 'Apex Hospital Array', size: '40 kW Commercial', contact: 'Dr. K. Sharma', status: 'Applied', probability: '40%', value: '₹18,50,000' },
-  ]
+  useEffect(() => {
+    let active = true
+    async function fetchLeads() {
+      try {
+        setLoading(true)
+        setError(null)
+        const projects = await getVendorProjects({ stage: 'lead' })
+        if (!active) return
+        const mapped = (projects || []).map((p: any) => ({
+          id: p.displayId ? `LEAD-${p.displayId.replace('PRJ-', '')}` : `LEAD-${p.id}`,
+          name: p.customerName || p.title || 'Prospective Customer',
+          size: `${p.capacityKw || 10} kW ${p.systemType || 'Residential'}`,
+          contact: p.customerPhone || p.customerEmail || p.assignedEngineer || 'Inbound Lead',
+          value: p.budget ? `₹${Number(p.budget).toLocaleString('en-IN')}` : '₹4,50,000',
+          status: p.status === 'lead' ? 'Proposal Sent' : (p.status || 'Applied'),
+          probability: p.healthScore ? `${Math.min(95, Math.max(40, p.healthScore))}%` : '75%'
+        }))
+        setLeads(mapped)
+      } catch (err: any) {
+        if (!active) return
+        setError(err?.message || 'Failed to load sales leads.')
+      } finally {
+        if (active) setLoading(false)
+      }
+    }
+    fetchLeads()
+    return () => { active = false }
+  }, [])
 
   const filtered = leads.filter(l =>
     l.name.toLowerCase().includes(search.toLowerCase()) ||
@@ -47,7 +82,15 @@ export function VendorLeads() {
       </div>
 
       <div className="vendor-glass-card" style={{ padding: 0, overflow: 'hidden' }}>
-        {filtered.length > 0 ? (
+        {loading ? (
+          <div style={{ padding: '40px', textAlign: 'center', color: 'var(--vendor-text-secondary)' }}>
+            Loading sales leads...
+          </div>
+        ) : error ? (
+          <div style={{ padding: '32px', textAlign: 'center', color: 'var(--vendor-danger)' }}>
+            {error}
+          </div>
+        ) : filtered.length > 0 ? (
           <table className="vendor-table-container">
             <thead>
               <tr>

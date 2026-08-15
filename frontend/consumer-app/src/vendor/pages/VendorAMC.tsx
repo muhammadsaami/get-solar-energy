@@ -1,18 +1,51 @@
-import React, { useState } from 'react'
+import React, { useState, useEffect } from 'react'
 import DashboardHeader from '../components/DashboardHeader'
 import StatusBadge from '../components/StatusBadge'
 import VendorEmptyState from '../components/VendorEmptyState'
 import { useVendorNotify } from '../hooks/useVendorNotify'
+import { getVendorProjects } from '../services/vendor.service'
 
 export function VendorAMC() {
   const notify = useVendorNotify()
   const [search, setSearch] = useState('')
+  const [loading, setLoading] = useState(true)
+  const [error, setError] = useState<string | null>(null)
+  const [amcContracts, setAmcContracts] = useState<Array<{
+    id: string
+    client: string
+    plan: string
+    nextService: string
+    health: string
+    status: string
+  }>>([])
 
-  const amcContracts = [
-    { id: 'AMC-801', client: 'Sharma Residence', plan: 'Gold 5-Year AMC', nextService: '15 Aug 2026', health: '98.5%', status: 'Active' },
-    { id: 'AMC-802', client: 'Gupta Commercial', plan: 'Platinum 10-Year AMC', nextService: '22 Aug 2026', health: '96.2%', status: 'Active' },
-    { id: 'AMC-803', client: 'Verma Farmhouse', plan: 'Silver 3-Year AMC', nextService: '01 Sep 2026', health: '99.1%', status: 'Active' },
-  ]
+  useEffect(() => {
+    let active = true
+    async function fetchAMC() {
+      try {
+        setLoading(true)
+        setError(null)
+        const projects = await getVendorProjects({ stage: 'amc' })
+        if (!active) return
+        const mapped = (projects || []).map((p: any) => ({
+          id: p.displayId ? `AMC-${p.displayId.replace('PRJ-', '')}` : `AMC-${p.id}`,
+          client: p.customerName || p.title || 'Client',
+          plan: `${p.capacityKw || 5}kW Comprehensive AMC SLA`,
+          nextService: p.targetDate ? new Date(p.targetDate).toLocaleDateString('en-IN', { day: 'numeric', month: 'short', year: 'numeric' }) : 'Next Service Pending',
+          health: p.healthScore ? `${p.healthScore}%` : '98.0%',
+          status: p.status === 'amc' ? 'Active' : (p.status || 'Active')
+        }))
+        setAmcContracts(mapped)
+      } catch (err: any) {
+        if (!active) return
+        setError(err?.message || 'Failed to load AMC contracts.')
+      } finally {
+        if (active) setLoading(false)
+      }
+    }
+    fetchAMC()
+    return () => { active = false }
+  }, [])
 
   const filtered = amcContracts.filter(a =>
     a.client.toLowerCase().includes(search.toLowerCase()) ||
@@ -47,7 +80,15 @@ export function VendorAMC() {
       </div>
 
       <div className="vendor-glass-card" style={{ padding: 0, overflow: 'hidden' }}>
-        {filtered.length > 0 ? (
+        {loading ? (
+          <div style={{ padding: '40px', textAlign: 'center', color: 'var(--vendor-text-secondary)' }}>
+            Loading AMC contracts...
+          </div>
+        ) : error ? (
+          <div style={{ padding: '32px', textAlign: 'center', color: 'var(--vendor-danger)' }}>
+            {error}
+          </div>
+        ) : filtered.length > 0 ? (
           <table className="vendor-table-container">
             <thead>
               <tr>
