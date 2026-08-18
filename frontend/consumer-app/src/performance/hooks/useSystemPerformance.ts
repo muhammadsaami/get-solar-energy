@@ -227,12 +227,17 @@ export function useSystemPerformance() {
   }, [selectedPlantId, loadPlantData, loadPlants])
 
   const syncTelemetry = useCallback(async () => {
-    if (!selectedPlantId) return
+    if (!selectedPlantId || syncing) return
     setSyncing(true)
-    await simulatePlantReading(selectedPlantId)
+    const res = await simulatePlantReading(selectedPlantId)
+    if (!res.success && res.message) {
+      setError({ hasError: true, message: res.message })
+    } else {
+      setError(null)
+    }
     await loadPlantData(selectedPlantId)
     setSyncing(false)
-  }, [selectedPlantId, loadPlantData])
+  }, [selectedPlantId, syncing, loadPlantData])
 
   const acknowledgeAlert = useCallback(async (alertId: number) => {
     await markAlertAsRead(alertId)

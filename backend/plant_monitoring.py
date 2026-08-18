@@ -64,26 +64,31 @@ def simulate_reading(plant_id: int, db: Session = Depends(get_db), current_custo
     plant = _get_owned_plant(plant_id, db, current_customer)
 
     today = datetime.utcnow().replace(hour=0, minute=0, second=0, microsecond=0)
+    expected_kwh = round(plant.capacity_kw * AVG_SUN_HOURS, 2)
+    generation_kwh = _simulate_generation(plant)
+
     existing = db.query(GenerationReading).filter(
         GenerationReading.plant_id == plant.id,
         GenerationReading.reading_date == today
     ).first()
     if existing:
-        raise HTTPException(status_code=400, detail="A reading for today already exists for this plant.")
-
-    expected_kwh = round(plant.capacity_kw * AVG_SUN_HOURS, 2)
-    generation_kwh = _simulate_generation(plant)
-
-    reading = GenerationReading(
-        plant_id=plant.id,
-        reading_date=today,
-        generation_kwh=generation_kwh,
-        expected_kwh=expected_kwh,
-        source="simulated"
-    )
-    db.add(reading)
-    db.commit()
-    db.refresh(reading)
+        existing.generation_kwh = generation_kwh
+        existing.expected_kwh = expected_kwh
+        existing.source = "simulated"
+        db.commit()
+        db.refresh(existing)
+        reading = existing
+    else:
+        reading = GenerationReading(
+            plant_id=plant.id,
+            reading_date=today,
+            generation_kwh=generation_kwh,
+            expected_kwh=expected_kwh,
+            source="simulated"
+        )
+        db.add(reading)
+        db.commit()
+        db.refresh(reading)
 
     _check_and_raise_alerts(db, plant, reading)
 
