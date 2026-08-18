@@ -281,6 +281,8 @@ export function useRoofAnalyzer(): RoofAnalyzerReturn {
     setSearchResults([])
     setSearchQuery(result.display_name)
     setSelectedLocation({ lat, lng, label: result.display_name })
+    const extractedCity = result.display_name.split(',')[0]?.trim() || ''
+    if (extractedCity) setCity((prev) => prev || extractedCity)
 
     if (mapInstanceRef.current) {
       mapInstanceRef.current.setView([lat, lng], 18, { animate: true })
@@ -460,9 +462,10 @@ export function useRoofAnalyzer(): RoofAnalyzerReturn {
 
     const formData = new FormData()
     formData.append('image', file, filename)
-    if (lengthFt) formData.append('length_ft', lengthFt)
-    if (widthFt) formData.append('width_ft', widthFt)
-    if (city) formData.append('city', city)
+    formData.append('length_ft', lengthFt && Number(lengthFt) > 0 ? String(lengthFt) : '40')
+    formData.append('width_ft', widthFt && Number(widthFt) > 0 ? String(widthFt) : '30')
+    formData.append('city', city && city.trim() ? city.trim() : (selectedLocation?.label?.split(',')[0]?.trim() || 'Jaipur'))
+    formData.append('source', isSatellite ? 'satellite' : 'camera')
 
     api.post('/analyze-roof', formData)
       .then((res) => {

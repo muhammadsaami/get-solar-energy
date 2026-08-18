@@ -24,16 +24,16 @@ export const proposalService = {
     return Promise.resolve(localProposal);
   },
 
-  async generateProposal(formData) {
+  async generateProposal(formData = {}) {
     const res = await api.post('/generate-proposal', {
-      customer_name: formData.customerName,
-      customer_address: formData.address,
-      city: formData.city,
-      monthly_units: parseFloat(formData.monthlyUnits) || 0,
-      monthly_bill_rs: parseFloat(formData.monthlyBill) || 0,
-      per_unit_rate: parseFloat(formData.electricityRate) || 0,
-      recommended_kw: parseFloat(formData.recommendedKw) || 0,
-      roof_area_sqft: parseFloat(formData.roofArea) || 0,
+      customer_name: formData.customerName || 'Solar Customer',
+      customer_address: formData.address || 'Residential Site',
+      city: formData.city || 'Jaipur',
+      monthly_units: parseFloat(formData.monthlyUnits) || 300,
+      monthly_bill_rs: parseFloat(formData.monthlyBill) || 2400,
+      per_unit_rate: parseFloat(formData.electricityRate) || 8,
+      recommended_kw: parseFloat(formData.recommendedKw) || 3.0,
+      roof_area_sqft: parseFloat(formData.roofArea) || 300,
       vendor_name: formData.vendorName || 'Get Solar Energy',
     });
     if (!res.data?.success) throw new Error(res.data?.error || 'Proposal generation failed');

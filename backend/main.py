@@ -1064,24 +1064,41 @@ async def analyze_bill(image: UploadFile = File(...), req: Request = None, user_
         }
         """
 
-        max_attempts = 4
+        mime_type = image.content_type
+        if not mime_type or mime_type == "application/octet-stream":
+            ext = (image.filename or "").split(".")[-1].lower()
+            if ext == "pdf":
+                mime_type = "application/pdf"
+            elif ext in ["jpg", "jpeg"]:
+                mime_type = "image/jpeg"
+            elif ext == "webp":
+                mime_type = "image/webp"
+            else:
+                mime_type = "image/png"
+
+        max_attempts = 2
         last_error = None
         for attempt in range(max_attempts):
             try:
+                config = types.GenerateContentConfig(
+                    temperature=0.1,
+                    response_mime_type="application/json"
+                )
                 response = client.models.generate_content(
-                    model="gemini-2.5-flash-lite",
+                    model="gemini-2.5-flash",
                     contents=[
                         types.Content(
                             role="user",
                             parts=[
                                 types.Part.from_bytes(
                                     data=image_data,
-                                    mime_type=image.content_type
+                                    mime_type=mime_type
                                 ),
                                 types.Part.from_text(text=prompt)
                             ]
                         )
-                    ]
+                    ],
+                    config=config
                 )
                 text = response.text.strip()
                 if "```json" in text:
@@ -1102,9 +1119,9 @@ async def analyze_bill(image: UploadFile = File(...), req: Request = None, user_
                 last_error = e
                 err_str = str(e).lower()
                 if "503" in err_str or "429" in err_str or "unavailable" in err_str or "exhausted" in err_str or "demand" in err_str:
-                    wait_time = 2 ** (attempt + 1)
-                    print(f"Transient error on attempt {attempt+1}/{max_attempts}: {e}. Retrying in {wait_time}s...")
-                    time.sleep(wait_time)
+                    logger.warning(f"Transient AI error on attempt {attempt+1}/{max_attempts}: {e}")
+                    if attempt < max_attempts - 1:
+                        time.sleep(1.5)
                 else:
                     raise e
         raise last_error
