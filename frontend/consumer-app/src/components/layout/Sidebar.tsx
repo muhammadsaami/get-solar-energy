@@ -25,6 +25,9 @@ const groupIcon: Record<string, string> = {
   'Solar AI Intelligence': 'icon-sparkles',
   'Ownership & Value': 'icon-shield',
   Account: 'icon-settings',
+  'Technician Network': 'icon-wrench',
+  Administration: 'icon-crown',
+  'Operational Portals': 'icon-briefcase',
 }
 
 export default function Sidebar() {

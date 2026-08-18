@@ -1,6 +1,5 @@
 import React, { useState } from 'react'
 import { useLocation, useNavigate } from 'react-router-dom'
-import VendorSearch from './VendorSearch'
 import { useAuth } from '../../contexts/AuthContext'
 import { ROUTES } from '../../config/routes'
 
@@ -55,11 +54,6 @@ export function VendorTopbar() {
         }}>
           {formattedTitle}
         </span>
-      </div>
-
-      {/* Center: Search Input */}
-      <div style={{ flex: 1, maxWidth: '420px', margin: '0 20px' }}>
-        <VendorSearch />
       </div>
 
       {/* Right: Actions */}

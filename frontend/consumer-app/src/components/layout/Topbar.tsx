@@ -1,6 +1,7 @@
 import React from 'react'
 import { useAuth } from '../../contexts/AuthContext'
 import { useUI } from '../../contexts/UIContext'
+import LocationSelector from './LocationSelector'
 import NotificationMenu from './NotificationMenu'
 import UserMenu from './UserMenu'
 
@@ -39,26 +40,7 @@ export default function Topbar() {
       </div>
 
       <div className="header-right headerbar-toolbar">
-        <div className="topbar-search" role="search">
-          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round">
-            <circle cx="11" cy="11" r="8" /><line x1="21" y1="21" x2="16.65" y2="16.65" />
-          </svg>
-          <input type="search" placeholder="Search projects, clients, reports…" aria-label="Search" />
-          <kbd className="topbar-search-kbd">⌘K</kbd>
-        </div>
-
-        <div className="location-selector topbar-workspace-chip" id="locationSelector">
-          <button className="location-btn" aria-haspopup="listbox" aria-expanded="false">
-            <svg className="pin" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round">
-              <path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z" />
-              <circle cx="12" cy="10" r="3" />
-            </svg>
-            <span id="currentLocation">Location Not Set</span>
-            <svg className="chevron" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round">
-              <polyline points="6 9 12 15 18 9" />
-            </svg>
-          </button>
-        </div>
+        <LocationSelector />
 
         <NotificationMenu />
 

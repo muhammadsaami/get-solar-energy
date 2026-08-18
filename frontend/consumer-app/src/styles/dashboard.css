@@ -906,6 +906,23 @@ body.sidebar-collapsed .main-panel {
   transition: transform var(--transition-fast);
 }
 
+.location-btn-text {
+  max-width: 140px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+@media (max-width: 480px) {
+  .location-btn {
+    padding: 6px 10px;
+    font-size: 11.5px;
+  }
+  .location-btn-text {
+    max-width: 80px;
+  }
+}
+
 .location-selector.active svg.chevron {
   transform: rotate(180deg);
 }
