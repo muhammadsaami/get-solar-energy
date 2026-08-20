@@ -49,7 +49,6 @@ def _base_query(db: Session, technician_id: int):
 # Summary
 # ---------------------------------------------------------------------------
 @router.get("")
-@router.get("/")
 def list_earnings(
     db: Session = Depends(get_db),
     current_technician: Technician = Depends(get_current_technician),

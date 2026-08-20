@@ -16,6 +16,10 @@ import knowledge_base_models  # noqa: F401 — must import before create_all() s
 import ai_troubleshoot_models  # noqa: F401 — must import before create_all() so AI conversation log table is registered
 import notifications_models  # noqa: F401 — must import before create_all() so notifications table is registered
 import session_auth  # noqa: F401 — must import before create_all() so the user_sessions table is registered
+import vendor_models  # noqa: F401 — must import before create_all() so Phase 5 vendor inventory table is registered
+import vendor_payments_models  # noqa: F401 — must import before create_all() so Phase 5 vendor payouts table is registered
+import vendor_teams_models  # noqa: F401 — must import before create_all() so Phase 5 vendor team table is registered
+import vendor_documents_models  # noqa: F401 — must import before create_all() so Phase 5 vendor documents table is registered
 import os
 import json
 import time
@@ -88,6 +92,24 @@ from training import router as training_router
 from job_marketplace import router as job_marketplace_router
 from work_orders import router as work_orders_router
 from earnings import router as earnings_router
+from technician_ai import router as technician_ai_router
+
+# ── Phase 5: Vendor Inventory ────────────────────────────────────────────
+from vendor_inventory import router as vendor_inventory_router
+
+# ── Phase 5: Vendor Payments/Payouts ─────────────────────────────────────
+from vendor_payments import router as vendor_payments_router
+
+# ── Phase 5: Vendor Teams ─────────────────────────────────────────────────
+from vendor_teams import router as vendor_teams_router
+
+# ── Phase 5: Vendor Documents ─────────────────────────────────────────────
+from vendor_documents import router as vendor_documents_router
+
+# ── Phase 3 extension: Shared Upload API ─────────────────────────────────
+from uploads import router as uploads_router
+
+# ── Phase 3 extension: Technician Dashboard ──────────────────────────────
 from technician_dashboard import router as technician_dashboard_router
 from performance import router as performance_router
 from knowledge_base import router as knowledge_base_router
@@ -127,8 +149,24 @@ app.include_router(training_router)
 app.include_router(job_marketplace_router)
 app.include_router(work_orders_router)
 app.include_router(earnings_router)
-from technician_ai import router as technician_ai_router
 app.include_router(technician_ai_router)
+
+# ── Phase 5: Vendor Inventory routers ──────────────────────────────────
+app.include_router(vendor_inventory_router)
+
+# ── Phase 5: Vendor Payments/Payouts routers ─────────────────────────────
+app.include_router(vendor_payments_router)
+
+# ── Phase 5: Vendor Teams routers ────────────────────────────────────────
+app.include_router(vendor_teams_router)
+
+# ── Phase 5: Vendor Documents routers ────────────────────────────────────
+app.include_router(vendor_documents_router)
+
+# ── Phase 3 extension: Shared Upload API ─────────────────────────────────
+app.include_router(uploads_router)
+
+# ── Phase 3 extension: Technician Dashboard ──────────────────────────────
 app.include_router(technician_dashboard_router)
 app.include_router(performance_router)
 app.include_router(knowledge_base_router)

@@ -248,7 +248,7 @@ def list_my_job_history(db: Session = Depends(get_db), current_technician: Techn
     return {"success": True, "history": result}
 
 
-@router.patch("/application/{application_id}")
+@router.patch("/applications/{application_id}")
 def update_application_status(
     application_id: int,
     data: ApplicationStatusUpdate,
@@ -269,7 +269,7 @@ def update_application_status(
     return {"success": True, "message": f"Application status updated to '{data.status}'."}
 
 
-@router.delete("/application/{application_id}")
+@router.delete("/applications/{application_id}")
 def delete_application(application_id: int, db: Session = Depends(get_db), current_technician: Technician = Depends(get_current_technician)):
     application = db.query(JobApplication).filter(
         JobApplication.id == application_id,
