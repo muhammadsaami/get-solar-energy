@@ -1,87 +1,137 @@
 import React from 'react';
 import { useNavigate } from 'react-router-dom';
 import { ROUTES } from '../../config/routes';
-import { getUser } from '../../utils/referral';
+import { getUser, copyReferralCode, copyReferralLink } from '../../utils/referral';
 import { useNotificationStore } from '../../stores/notificationStore';
 import type { CustomerDashboardData } from '../../hooks/useCustomerDashboard';
 
 interface Props {
-  data: CustomerDashboardData;
+  data?: CustomerDashboardData;
 }
 
 export default function FooterGrid({ data }: Props) {
   const navigate = useNavigate();
   const addToast = useNotificationStore((s) => s.addToast);
-  const stats = data.stats || {};
-  const code = getUser()?.referral_code || 'SOLAR2024';
-  const customers = stats.customers ? Number(stats.customers) : null;
-  const bills = stats.bills_analyzed ? Number(stats.bills_analyzed) : null;
+  const user = getUser();
+  const code = user?.referral_code || '';
 
-  const copyCode = () => {
-    try {
-      navigator.clipboard.writeText(code);
-      addToast({ type: 'success', message: 'Referral code copied.' });
-    } catch {
+  const handleCopyCode = async () => {
+    if (!code) {
+      addToast({ type: 'error', message: 'Referral code unavailable.' });
+      return;
+    }
+    const ok = await copyReferralCode(code);
+    if (ok) {
+      addToast({ type: 'success', message: 'Referral code copied to clipboard.' });
+    } else {
       addToast({ type: 'error', message: 'Could not copy referral code.' });
     }
   };
 
+  const handleCopyLink = async () => {
+    if (!code) {
+      addToast({ type: 'error', message: 'Referral link unavailable.' });
+      return;
+    }
+    const ok = await copyReferralLink(code);
+    if (ok) {
+      addToast({ type: 'success', message: 'Referral link copied to clipboard.' });
+    } else {
+      addToast({ type: 'error', message: 'Could not copy referral link.' });
+    }
+  };
+
   return (
-    <footer className="footer-grid">
-      <section className="footer-card">
-        <div className="test-header-row">
-          <h4 className="analytics-title">Trusted on the Grid</h4>
-          <div className="test-stars">
-            <svg><use href="#icon-star"></use></svg>
-            <svg><use href="#icon-star"></use></svg>
-            <svg><use href="#icon-star"></use></svg>
-            <svg><use href="#icon-star"></use></svg>
-            <svg><use href="#icon-star"></use></svg>
+    <section aria-label="Engagement and Community Offers" style={{ marginTop: 'var(--space-4)' }}>
+      {/* Section Header */}
+      <div style={{ marginBottom: '14px' }}>
+        <h4 style={{ fontSize: '13px', fontWeight: 800, color: 'var(--text-secondary, #cbd5e1)', margin: 0, textTransform: 'uppercase', letterSpacing: '0.04em' }}>
+          Engagement &amp; Community
+        </h4>
+        <span style={{ fontSize: '11.5px', color: 'var(--text-muted, #94a3b8)', marginTop: '2px', display: 'block' }}>
+          Expand your solar network and earn rewards on verified customer installations
+        </span>
+      </div>
+
+      <footer
+        className="footer-grid"
+        style={{
+          display: 'grid',
+          gridTemplateColumns: 'repeat(auto-fit, minmax(320px, 1fr))',
+          gap: '16px',
+        }}
+      >
+        {/* Card 1: Solar Expansion / Roof Plan */}
+        <section className="footer-card footer-banner-card" style={{ minHeight: '220px', display: 'flex', flexDirection: 'column', justifyContent: 'space-between' }}>
+          <div>
+            <h4 className="footer-banner-text" style={{ fontSize: '18px', lineHeight: 1.3 }}>
+              Your roof has potential.<br />Your future has more.
+            </h4>
+            <p className="footer-banner-sub" style={{ marginTop: '6px' }}>
+              Take the next step towards energy independence and zero electricity bills.
+            </p>
           </div>
-        </div>
-        <p className="test-quote" id="testQuoteText">
-          {customers != null && bills != null
-            ? `Join ${customers.toLocaleString()} customers and ${bills.toLocaleString()} bills analyzed toward smarter energy & lower costs.`
-            : 'Take the next step towards affordable, clean solar energy.'}
-        </p>
-        <div className="test-profile-row">
-          <div className="test-user-box">
-            <img className="test-avatar" id="testQuoteAvatar" src="/assets/customer_avatar.png" alt="GET Solar Energy customer" />
-            <div className="test-info">
-              <span className="test-name" id="testQuoteName">GET Solar Energy</span>
-              <span className="test-loc" id="testQuoteLoc">India</span>
+          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-end', marginTop: '16px' }}>
+            <button
+              className="footer-banner-btn"
+              id="getPlanBtn"
+              onClick={() => navigate(ROUTES.ROI_CALCULATOR)}
+              style={{ padding: '8px 16px', borderRadius: '8px', fontSize: '12px', fontWeight: 700 }}
+            >
+              <span>Get My Solar Plan</span>
+              <svg><use href="#icon-arrow-right"></use></svg>
+            </button>
+            <img className="footer-banner-img" src="/assets/solar_roof_banner.png" alt="Solar roof installation banner details" style={{ maxHeight: '80px', objectFit: 'contain' }} />
+          </div>
+        </section>
+
+        {/* Card 2: Customer-Specific Refer & Earn */}
+        <section className="footer-card refer-card" style={{ minHeight: '220px', display: 'flex', flexDirection: 'column', justifyContent: 'space-between' }}>
+          <div>
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '6px' }}>
+              <h4 className="refer-title" style={{ fontSize: '16px', margin: 0 }}>Refer &amp; Earn</h4>
+              <span style={{ fontSize: '9px', fontWeight: 800, color: '#ff8a1d', background: 'rgba(255, 138, 29, 0.1)', padding: '2px 7px', borderRadius: '999px', border: '1px solid rgba(255, 138, 29, 0.25)' }}>
+                BONUS REWARDS
+              </span>
+            </div>
+            <p className="refer-desc" style={{ fontSize: '11.5px', color: 'var(--text-muted, #94a3b8)', margin: '4px 0 14px' }}>
+              Invite friends to switch to solar. Earn rewards when their verified rooftop installation goes live.
+            </p>
+
+            <span style={{ fontSize: '10px', textTransform: 'uppercase', letterSpacing: '0.05em', color: 'var(--text-muted, #94a3b8)', fontWeight: 700, display: 'block', marginBottom: '6px' }}>
+              Your Unique Referral Code
+            </span>
+
+            <div style={{ display: 'flex', alignItems: 'center', gap: '8px', flexWrap: 'wrap' }}>
+              <div className="promo-display" id="referralCodeText" style={{ fontSize: '13px', fontWeight: 800, padding: '7px 14px', borderRadius: '8px', background: 'rgba(255, 255, 255, 0.05)', border: '1px solid rgba(255, 255, 255, 0.12)', letterSpacing: '0.06em', color: '#36D399' }}>
+                {code || 'Awaiting Profile Sync'}
+              </div>
+              <button
+                className="btn btn-sm btn-primary"
+                id="copyCodeBtn"
+                aria-label="Copy referral promo code to clipboard"
+                onClick={handleCopyCode}
+                style={{ fontSize: '11px', padding: '7px 12px', borderRadius: '8px', display: 'flex', alignItems: 'center', gap: '5px' }}
+              >
+                <span>📋</span> Copy Code
+              </button>
+              <button
+                className="btn btn-sm btn-secondary"
+                id="copyLinkBtn"
+                aria-label="Copy referral link to clipboard"
+                onClick={handleCopyLink}
+                style={{ fontSize: '11px', padding: '7px 12px', borderRadius: '8px', background: 'rgba(255, 255, 255, 0.06)', color: '#ffffff', border: '1px solid rgba(255, 255, 255, 0.15)', display: 'flex', alignItems: 'center', gap: '5px' }}
+              >
+                <span>🔗</span> Copy Link
+              </button>
             </div>
           </div>
-        </div>
-      </section>
 
-      <section className="footer-card footer-banner-card">
-        <div>
-          <h4 className="footer-banner-text">Your roof has potential.<br />Your future has more.</h4>
-          <p className="footer-banner-sub">Take the next step towards energy independence.</p>
-        </div>
-        <img className="footer-banner-img" src="/assets/solar_roof_banner.png" alt="Solar roof installation banner details" />
-        <button className="footer-banner-btn" id="getPlanBtn" onClick={() => navigate(ROUTES.ROI_CALCULATOR)}>
-          <span>Get My Solar Plan</span>
-          <svg><use href="#icon-arrow-right"></use></svg>
-        </button>
-      </section>
-
-      <section className="footer-card refer-card">
-        <div>
-          <h4 className="refer-title">Refer & Earn</h4>
-          <p className="refer-desc">Invite your friends and earn exciting rewards when they switch to solar.</p>
-        </div>
-        <div className="refer-row-action">
-          <div className="promo-display" id="referralCodeText">{code}</div>
-          <button className="copy-btn" id="copyCodeBtn" aria-label="Copy referral promo code to clipboard" onClick={copyCode}>
-            <svg><use href="#icon-copy"></use></svg>
-          </button>
-        </div>
-        <div className="refer-footer-row">
-          <img className="refer-gift-img" src="/assets/gift_box.png" alt="Clean minimalist white gift box with green ribbon" />
-        </div>
-      </section>
-    </footer>
+          <div style={{ display: 'flex', justifyContent: 'flex-end', marginTop: '12px' }}>
+            <img className="refer-gift-img" src="/assets/gift_box.png" alt="Clean minimalist gift box with ribbon" style={{ maxHeight: '54px', objectFit: 'contain' }} />
+          </div>
+        </section>
+      </footer>
+    </section>
   );
 }

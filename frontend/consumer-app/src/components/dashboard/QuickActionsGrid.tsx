@@ -15,7 +15,7 @@ const ACTION_DEFS = [
   },
   {
     id: 'roof-analysis',
-    title: 'Roof Analysis',
+    title: 'Roof Vision AI',
     desc: 'AI + Satellite analysis of your roof for accurate solar estimate.',
     cta: 'Analyze Roof',
     status: 'AI Ready',

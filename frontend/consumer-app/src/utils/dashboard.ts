@@ -1,4 +1,5 @@
 import { formatCurrency, formatUnits } from './formatters'
+import { calculateSubsidy } from './solar'
 import type { CustomerDashboardData } from '../hooks/useCustomerDashboard'
 
 function num(v: unknown): number {
@@ -29,25 +30,41 @@ export function deriveDashboard(data: CustomerDashboardData): DashboardDerived {
 
   const monthlyBill = num(bill?.bill_amount) || num(stats.avg_bill)
   const monthlyUnits = num(bill?.monthly_units) || num(stats.avg_units)
-  const recommendedKw = num(bill?.recommended_kw) || num(stats.avg_system_size)
-  const monthlySavings = num(bill?.monthly_savings_rs)
+  const recommendedKw = num(bill?.recommended_kw) || num(roof?.recommendedKw) || num(roof?.system_size_kw) || num(stats.avg_system_size)
+  const roofSystemKw = num(roof?.recommendedKw) || num(roof?.system_size_kw) || num(roof?.recommended_kw)
+
+  const monthlySavings = num(bill?.monthly_savings_rs) || (monthlyBill > 0 ? Math.round(monthlyBill * 0.9) : 0)
   const annualSavings =
-    monthlySavings * 12 ||
-    num(bill?.annual_savings) ||
     num(roi?.annualSavings) ||
-    num(roi?.annual_savings_rs)
-  const systemCost = num(bill?.system_cost_rs) || num(roi?.systemCost)
+    num(roi?.annual_savings) ||
+    num(roi?.annual_savings_rs) ||
+    (monthlySavings > 0 ? monthlySavings * 12 : 0) ||
+    num(bill?.annual_savings)
+
+  const capacityKw = recommendedKw || roofSystemKw || (monthlyUnits > 0 ? Math.max(1, Math.round((monthlyUnits / 135) * 2) / 2) : 0)
+  const systemCost = num(bill?.system_cost_rs) || num(roi?.systemCost) || num(roi?.system_cost) || (capacityKw > 0 ? capacityKw * 55000 : 0)
+  const subsidy = calculateSubsidy(capacityKw)
+  const netInvestment = Math.max(0, systemCost - subsidy)
+
+  // Canonical Payback Calculation
+  let paybackYears: number | null = null
+  const roiPayback = num(roi?.paybackPeriod) || num(roi?.paybackYears) || num(roi?.payback_period)
+  if (roiPayback > 0 && roiPayback <= 15) {
+    paybackYears = roiPayback
+  } else if (netInvestment > 0 && annualSavings > 0) {
+    paybackYears = parseFloat((netInvestment / annualSavings).toFixed(1))
+  } else if (num(bill?.payback_years) > 0 && num(bill?.payback_years) <= 15) {
+    paybackYears = num(bill?.payback_years)
+  }
+
   const lifetimeSavings =
     num(bill?.savings_25yr) ||
     num(roi?.lifetimeSavings) ||
     num(roi?.lifetime_savings_rs) ||
-    annualSavings * 25
-  const paybackYears =
-    num(bill?.payback_years) || num(roi?.paybackYears) || num(roi?.payback_years) || null
+    (annualSavings > 0 ? Math.max(0, (annualSavings * 25) - netInvestment) : 0)
 
-  const productionKwh = solar?.productionKwh ? num(solar.productionKwh) : null
-  const roofSystemKw = num(roof?.recommendedKw) || num(roof?.system_size_kw) || num(roof?.recommended_kw)
-  const roiPercent = num(roi?.roi) || num(roi?.roiPercent) || null
+  const productionKwh = solar?.productionKwh ? num(solar.productionKwh) : (capacityKw > 0 ? capacityKw * 120 : null)
+  const roiPercent = num(roi?.roi) || num(roi?.roiPercent) || (netInvestment > 0 && lifetimeSavings > 0 ? parseFloat((((lifetimeSavings - netInvestment) / netInvestment) * 100).toFixed(1)) : null)
 
   const completion = Object.values(data.journey).filter(Boolean).length
   const readinessPercent = Math.min(100, Math.round((completion / 4) * 100))
@@ -64,13 +81,13 @@ export function deriveDashboard(data: CustomerDashboardData): DashboardDerived {
   return {
     monthlyBill,
     monthlyUnits,
-    recommendedKw,
+    recommendedKw: capacityKw,
     annualSavings,
     lifetimeSavings,
     systemCost,
     paybackYears,
     productionKwh,
-    roofSystemKw,
+    roofSystemKw: capacityKw,
     roiPercent,
     readinessPercent,
     completedSteps: completion,

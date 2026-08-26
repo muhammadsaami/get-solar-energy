@@ -2,7 +2,6 @@ import React from 'react';
 import DashboardHeroCard from './DashboardHeroCard';
 import LiveSummaryPanel from './LiveSummaryPanel';
 import KPIGrid from './KPIGrid';
-import SubKPIGrid from './SubKPIGrid';
 import QuickActionsGrid from './QuickActionsGrid';
 import AnalyticsCharts from './AnalyticsCharts';
 import AIIntelligencePanel from './AIIntelligencePanel';
@@ -18,7 +17,8 @@ export default function DashboardOverview() {
   return (
     <>
       <DashboardSprites />
-      <div className="tab-content active" role="tabpanel" aria-label="dashboard" id="tab-dashboard">
+      <div className="tab-content active" role="tabpanel" aria-label="dashboard" id="tab-dashboard" style={{ display: 'flex', flexDirection: 'column', gap: 'var(--space-4)' }}>
+        {/* Top Hero & Solar Assessment Journey Overview */}
         <div className="dashboard-grid">
           <DashboardHeroCard>
             <LiveSummaryPanel
@@ -31,10 +31,16 @@ export default function DashboardOverview() {
           <KPIGrid derived={derived} loading={data.loading} />
         </div>
 
-        <SubKPIGrid derived={derived} loading={data.loading} />
+        {/* Quick Actions / Tool Shortcuts */}
         <QuickActionsGrid />
-        <AnalyticsCharts data={data} derived={derived} />
+
+        {/* Layer 1: Core Operational Cards & Layer 2: Post-Installation Performance Analytics */}
+        <AnalyticsCharts data={data} derived={derived} loading={data.loading} />
+
+        {/* Layer 3: AI Intelligence Engine (Pre-installation & Planning Intelligence) */}
         <AIIntelligencePanel derived={derived} loading={data.loading} />
+
+        {/* Layer 4: Marketing / Community Engagement */}
         <FooterGrid data={data} />
       </div>
     </>
