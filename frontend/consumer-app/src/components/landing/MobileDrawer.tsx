@@ -1,6 +1,7 @@
 import { useEffect, useRef } from 'react'
 import { useAuth } from '../../contexts/AuthContext'
 import { useAuthStatus } from '../../hooks/useAuthStatus'
+import OfficialLogo from '../brand/OfficialLogo'
 
 interface MobileDrawerProps {
   isOpen: boolean
@@ -90,9 +91,7 @@ export default function MobileDrawer({ isOpen, onClose }: MobileDrawerProps) {
     >
       <div className="drawer-header">
         <div className="logo-container">
-          <div className="logo-text-block">
-            <span className="logo-title-text">GET SOLAR ENERGY</span>
-          </div>
+          <OfficialLogo height={32} />
         </div>
         <button
           className="drawer-close-btn"
@@ -104,19 +103,19 @@ export default function MobileDrawer({ isOpen, onClose }: MobileDrawerProps) {
       </div>
       <div className="drawer-links">
         <a
-          href="#why-choose-solar"
+          href="#sceneRoof"
           className="drawer-link-item"
           onClick={onClose}
         >
           Why Solar
         </a>
-        <a href="#features" className="drawer-link-item" onClick={onClose}>
+        <a href="#sceneEstimate" className="drawer-link-item" onClick={onClose}>
           Services
         </a>
-        <a href="#how-it-works" className="drawer-link-item" onClick={onClose}>
+        <a href="#sceneInstallation" className="drawer-link-item" onClick={onClose}>
           How It Works
         </a>
-        <a href="#testimonials" className="drawer-link-item" onClick={onClose}>
+        <a href="#sceneLifestyle" className="drawer-link-item" onClick={onClose}>
           Success Stories
         </a>
         <hr className="drawer-divider" />

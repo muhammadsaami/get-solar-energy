@@ -1,4 +1,5 @@
-import { useEffect, useState } from 'react'
+import React, { useEffect, useState } from 'react'
+import { motion, useReducedMotion } from 'motion/react'
 import { useAnimatedCounter } from '../../hooks/useAnimatedCounter'
 import type { EstimateResult } from '../../utils/solar'
 import { calculateSubsidy, calculateLifetimeReturn } from '../../utils/solar'
@@ -32,6 +33,7 @@ export default function EstimateResults({
   city,
   billValue,
 }: EstimateResultsProps) {
+  const shouldReduceMotion = useReducedMotion()
   const [revealed, setRevealed] = useState(false)
 
   useEffect(() => {
@@ -46,7 +48,7 @@ export default function EstimateResults({
   const monthlySavingsDisplay = useAnimatedCounter(result.monthlySavings, {
     prefix: '\u20B9',
     decimals: 0,
-    duration: 1000,
+    duration: shouldReduceMotion ? 0 : 1000,
     isPrefix: true,
     enabled: revealed,
   })
@@ -54,14 +56,14 @@ export default function EstimateResults({
   const systemSizeDisplay = useAnimatedCounter(result.recommendedSize, {
     suffix: ' kW',
     decimals: 1,
-    duration: 800,
+    duration: shouldReduceMotion ? 0 : 800,
     enabled: revealed,
   })
 
   const annualSavingsDisplay = useAnimatedCounter(result.annualSavings, {
     prefix: '\u20B9',
     decimals: 0,
-    duration: 1100,
+    duration: shouldReduceMotion ? 0 : 1100,
     isPrefix: true,
     enabled: revealed,
   })
@@ -69,24 +71,34 @@ export default function EstimateResults({
   const paybackDisplay = useAnimatedCounter(result.paybackYears, {
     suffix: ' Yrs',
     decimals: 1,
-    duration: 900,
+    duration: shouldReduceMotion ? 0 : 900,
     enabled: revealed,
   })
 
   const lifetimeDisplay = useAnimatedCounter(lifetimeReturn, {
     prefix: '\u20B9',
     decimals: 0,
-    duration: 1200,
+    duration: shouldReduceMotion ? 0 : 1200,
     isPrefix: true,
     enabled: revealed,
   })
 
+  const systemPrice = result.systemCost || Math.round(result.recommendedSize * 55000)
+  const netOutlay = result.netCost || Math.max(0, systemPrice - subsidy)
+
   const insightText =
     `A ${result.recommendedSize.toFixed(1)} kW system in ${label} can offset ~90% of your bill. ` +
-    `After the \u20B9${subsidy.toLocaleString('en-IN')} government subsidy, your net payback is under ${result.paybackYears.toFixed(1)} years.`
+    `Estimated turnkey pricing is \u20B9${systemPrice.toLocaleString('en-IN')}. After the \u20B9${subsidy.toLocaleString('en-IN')} government subsidy, your net outlay is \u20B9${netOutlay.toLocaleString('en-IN')} with payback in ${result.paybackYears.toFixed(1)} years.`
 
   return (
-    <div aria-live="polite" role="region" aria-label="Solar savings estimate results">
+    <motion.div
+      aria-live="polite"
+      role="region"
+      aria-label="Solar savings estimate results"
+      initial={shouldReduceMotion ? { opacity: 1 } : { opacity: 0, y: 12 }}
+      animate={{ opacity: 1, y: 0 }}
+      transition={{ duration: shouldReduceMotion ? 0 : 0.4 }}
+    >
       <div className="output-divider" />
 
       <div
@@ -149,20 +161,38 @@ export default function EstimateResults({
       </div>
 
       <div
+        className={`card-glass result-reveal${revealed ? ' is-visible' : ''}`}
+        style={{ padding: '12px 14px', transitionDelay: '0.30s', margin: 'var(--space-3) 0' }}
+      >
+        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', fontSize: '11px', color: 'var(--text-muted)', marginBottom: 4 }}>
+          <span>Turnkey System Price:</span>
+          <span style={{ color: 'var(--text-primary)', fontWeight: 600 }}>₹{systemPrice.toLocaleString('en-IN')}</span>
+        </div>
+        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', fontSize: '11px', color: 'var(--color-green)', marginBottom: 4 }}>
+          <span>PM Surya Ghar Direct Subsidy:</span>
+          <span style={{ fontWeight: 700 }}>- ₹{subsidy.toLocaleString('en-IN')}</span>
+        </div>
+        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', fontSize: '12px', color: 'var(--color-orange)', paddingTop: 4, borderTop: '1px solid var(--border-color, rgba(255,255,255,0.08))' }}>
+          <span style={{ fontWeight: 700 }}>Net Capital Outlay:</span>
+          <span style={{ fontWeight: 800 }}>₹{netOutlay.toLocaleString('en-IN')}</span>
+        </div>
+      </div>
+
+      <div
         className={`result-reveal${revealed ? ' is-visible' : ''}`}
-        style={{ transitionDelay: '0.32s' }}
+        style={{ transitionDelay: '0.34s' }}
       >
         <SubsidyCard amount={subsidy} />
       </div>
 
       <div
         className={`result-reveal${revealed ? ' is-visible' : ''}`}
-        style={{ transitionDelay: '0.36s' }}
+        style={{ transitionDelay: '0.38s' }}
       >
         <InsightCard text={insightText} />
       </div>
 
-      <a
+      <motion.a
         href="/signup"
         className="btn-post-estimate-cta result-reveal"
         style={{ transitionDelay: '0.42s' }}
@@ -173,6 +203,9 @@ export default function EstimateResults({
             timestamp: Date.now(),
           })
         }
+        whileHover={shouldReduceMotion ? {} : { y: -2 }}
+        whileTap={shouldReduceMotion ? {} : { scale: 0.98 }}
+        transition={{ duration: 0.15 }}
       >
         Get Your Full Assessment
         <svg
@@ -187,12 +220,12 @@ export default function EstimateResults({
             clipRule="evenodd"
           />
         </svg>
-      </a>
+      </motion.a>
 
       <p className="results-source-text">
         Estimate based on standard solar irradiance &amp; regional DISCOM tariffs.
         Subject to on-site assessment.
       </p>
-    </div>
+    </motion.div>
   )
 }

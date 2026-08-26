@@ -1,10 +1,12 @@
+import React from 'react'
+import { motion, useReducedMotion } from 'motion/react'
 import { useSceneVisibility } from '../../hooks/useSceneVisibility'
 import CTAContent from './CTAContent'
 import CTAButtons from './CTAButtons'
 
 export default function FinalCtaScene() {
+  const shouldReduceMotion = useReducedMotion()
   const sceneRef = useSceneVisibility<HTMLElement>({ camera: 'conversion' })
-
 
   return (
     <article
@@ -18,7 +20,7 @@ export default function FinalCtaScene() {
       <div className="scene-transition-mask bottom" />
       <div className="layer-bg">
         <img
-          src="/frontend/assets/Cinematic/Asset 15.webp"
+          src="/assets/Cinematic/Asset 15.webp"
           alt="Your Solar Journey"
           loading="lazy"
         />
@@ -31,7 +33,7 @@ export default function FinalCtaScene() {
         }}
       />
 
-      <div
+      <motion.div
         className="hero-container layer-fg scene-element"
         style={{
           width: '100%',
@@ -41,10 +43,14 @@ export default function FinalCtaScene() {
           zIndex: 2,
           textAlign: 'center',
         }}
+        initial={shouldReduceMotion ? { opacity: 1, y: 0 } : { opacity: 0, y: 24 }}
+        whileInView={{ opacity: 1, y: 0 }}
+        viewport={{ once: true, margin: '-60px' }}
+        transition={{ duration: shouldReduceMotion ? 0 : 0.55, ease: [0.16, 1, 0.3, 1] }}
       >
         <CTAContent />
         <CTAButtons />
-      </div>
+      </motion.div>
     </article>
   )
 }

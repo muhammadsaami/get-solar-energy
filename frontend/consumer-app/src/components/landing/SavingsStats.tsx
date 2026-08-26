@@ -16,7 +16,7 @@ function SavingsStat({ value, label, valueColor }: SavingsStatProps) {
       >
         {value}
       </div>
-      <div style={{ fontSize: 14, color: 'var(--text-secondary)' }}>
+      <div style={{ fontSize: 14, color: '#cbd5e1', fontWeight: 600, marginTop: 2 }}>
         {label}
       </div>
     </div>
@@ -33,12 +33,12 @@ export default function SavingsStats() {
       }}
     >
       <SavingsStat
-        value={'\u20B94.2 Cr+'}
-        label="Total Customer Savings"
+        value="~90%"
+        label="Typical Bill Reduction"
       />
       <SavingsStat
-        value="120 MW"
-        label="Clean Energy Deployed"
+        value="25 Yrs"
+        label="Guaranteed Power Generation"
         valueColor="var(--accent-green)"
       />
     </div>

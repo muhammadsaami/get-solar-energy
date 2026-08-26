@@ -1,10 +1,12 @@
+import React from 'react'
+import { motion, useReducedMotion } from 'motion/react'
 import { useSceneVisibility } from '../../hooks/useSceneVisibility'
 import TechnologyContent from './TechnologyContent'
 import DiagnosticsGrid from './DiagnosticsGrid'
 
 export default function TechnologyScene() {
+  const shouldReduceMotion = useReducedMotion()
   const sceneRef = useSceneVisibility<HTMLElement>({ camera: 'technology' })
-
 
   return (
     <article
@@ -18,17 +20,23 @@ export default function TechnologyScene() {
       <div className="scene-transition-mask bottom" />
       <div className="layer-bg">
         <img
-          src="/frontend/assets/Cinematic/Asset 5.webp"
+          src="/assets/Cinematic/Asset 5.webp"
           alt="Technology and QA Inspection"
           loading="lazy"
         />
       </div>
       <div className="lighting-overlay lighting-cool" />
 
-      <div className="qa-container layer-fg scene-element">
+      <motion.div
+        className="qa-container layer-fg scene-element"
+        initial={shouldReduceMotion ? { opacity: 1, y: 0 } : { opacity: 0, y: 24 }}
+        whileInView={{ opacity: 1, y: 0 }}
+        viewport={{ once: true, margin: '-60px' }}
+        transition={{ duration: shouldReduceMotion ? 0 : 0.55, ease: [0.16, 1, 0.3, 1] }}
+      >
         <TechnologyContent />
         <DiagnosticsGrid />
-      </div>
+      </motion.div>
     </article>
   )
 }

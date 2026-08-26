@@ -1,11 +1,13 @@
+import React from 'react'
+import { motion, useReducedMotion } from 'motion/react'
 import { useSceneVisibility } from '../../hooks/useSceneVisibility'
 import RoofVisualization from './RoofVisualization'
 import SuitabilityGrid from './SuitabilityGrid'
 import RecommendationBadge from './RecommendationBadge'
 
 export default function RoofSuitabilityScene() {
+  const shouldReduceMotion = useReducedMotion()
   const sectionRef = useSceneVisibility<HTMLElement>({ camera: 'roof' })
-
 
   return (
     <article
@@ -19,7 +21,7 @@ export default function RoofSuitabilityScene() {
       <div className="scene-transition-mask bottom" />
       <div className="layer-bg">
         <img
-          src="/frontend/assets/Cinematic/Asset 3.webp"
+          src="/assets/Cinematic/Asset 3.webp"
           alt="Roof suitability analysis"
           loading="lazy"
         />
@@ -41,28 +43,40 @@ export default function RoofSuitabilityScene() {
       >
         <RoofVisualization />
 
-        <div className="suitability-story-column" style={{ flex: 1 }}>
+        <motion.div
+          className="suitability-story-column"
+          style={{ flex: 1 }}
+          initial={shouldReduceMotion ? { opacity: 1, y: 0 } : { opacity: 0, y: 24 }}
+          whileInView={{ opacity: 1, y: 0 }}
+          viewport={{ once: true, margin: '-60px' }}
+          transition={{ duration: shouldReduceMotion ? 0 : 0.55, ease: [0.16, 1, 0.3, 1] }}
+        >
           <div className="story-header scene-element step-6">
             <h2 className="section-title" style={{ textAlign: 'left' }}>
-              Your Roof Has Great Solar Potential
+              Roof Vision AI
             </h2>
             <p className="section-subtitle" style={{ textAlign: 'left' }}>
-              We analyzed your location for sunlight exposure and roof space.
+              We evaluate satellite imagery, roof tilt, and irradiance to engineer optimal solar placement for your home.
             </p>
           </div>
 
           <SuitabilityGrid />
 
           <div className="suitability-recommendation scene-element step-7">
-            <RecommendationBadge text="Highly Suitable" />
+            <RecommendationBadge text="Engineering Assessment" />
             <p className="recommendation-text">
-              Based on your estimate, <strong>12-14 panels</strong> will fit
-              comfortably on your roof, offseting 90% of your energy needs.
+              Every system layout is custom-engineered during the technical site survey to maximize annual energy yield and architectural aesthetics.
             </p>
           </div>
 
           <div className="suitability-action scene-element step-8">
-            <a href="#sceneInstallation" className="btn-hero-primary btn-icon">
+            <motion.a
+              href="#sceneInstallation"
+              className="btn-hero-primary btn-icon"
+              whileHover={shouldReduceMotion ? {} : { y: -2 }}
+              whileTap={shouldReduceMotion ? {} : { scale: 0.98 }}
+              transition={{ duration: 0.15 }}
+            >
               Explore Installation
               <svg
                 viewBox="0 0 20 20"
@@ -75,9 +89,9 @@ export default function RoofSuitabilityScene() {
                   clipRule="evenodd"
                 />
               </svg>
-            </a>
+            </motion.a>
           </div>
-        </div>
+        </motion.div>
       </div>
     </article>
   )

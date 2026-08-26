@@ -94,9 +94,9 @@
      ╚═══════════════════════════════════════════════╝ */
 
   --text-primary:   #f0f8ff;   /* Main readable text */
-  --text-secondary: #9fb3c8;   /* Supporting text, labels */
-  --text-muted:     #5a7a96;   /* Placeholder, disabled text */
-  --text-disabled:  #3d5a72;   /* Truly disabled state */
+  --text-secondary: #cbd5e1;   /* Supporting text, labels — WCAG AA compliant (10.8:1 on dark base) */
+  --text-muted:     #94a3b8;   /* Subtle labels, disabled text — WCAG AA compliant (6.2:1 on dark base) */
+  --text-disabled:  #64748b;   /* Truly disabled state */
   --text-inverse:   #060F1F;   /* Text on light/orange buttons */
   --text-link:      var(--color-blue);
   --text-link-hover: var(--color-blue-hover);
@@ -150,10 +150,10 @@
      ╚═══════════════════════════════════════════════╝ */
 
   /* Glass layer backgrounds */
-  --glass-bg:          rgba(8, 24, 42, 0.72);
-  --glass-bg-light:    rgba(14, 34, 53, 0.60);
-  --glass-bg-heavy:    rgba(6, 17, 31, 0.88);
-  --glass-bg-ultra:    rgba(4, 12, 24, 0.94);
+  --glass-bg:          rgba(8, 24, 42, 0.82);
+  --glass-bg-light:    rgba(14, 34, 53, 0.68);
+  --glass-bg-heavy:    rgba(6, 17, 31, 0.90);
+  --glass-bg-ultra:    rgba(4, 12, 24, 0.95);
 
   /* Glass borders */
   --glass-border:        rgba(255, 255, 255, 0.08);
@@ -404,4 +404,21 @@
     --transition-slow:    0ms linear;
     --transition-sidebar: 0ms linear;
   }
+}
+
+/* ── CANONICAL OFFICIAL LOGO STYLES ─────────────────────── */
+.official-logo-img {
+  display: block;
+  object-fit: contain;
+  width: auto;
+  user-select: none;
+}
+
+.official-logo-collapsed {
+  display: inline-flex;
+  align-items: center;
+  justify-content: flex-start;
+  overflow: hidden;
+  user-select: none;
+  flex-shrink: 0;
 }

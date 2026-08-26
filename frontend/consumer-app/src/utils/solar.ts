@@ -3,6 +3,9 @@ export interface EstimateResult {
   monthlySavings: number
   annualSavings: number
   paybackYears: number
+  systemCost: number
+  subsidy: number
+  netCost: number
 }
 
 export function calculateEstimate(
@@ -15,8 +18,13 @@ export function calculateEstimate(
   )
   const monthlySavings = Math.round(monthlyBill * 0.9)
   const annualSavings = monthlySavings * 12
-  const paybackYears = parseFloat((4 + recommendedSize * 0.15).toFixed(1))
-  return { recommendedSize, monthlySavings, annualSavings, paybackYears }
+  const systemCost = Math.round(recommendedSize * 55000)
+  const subsidy = calculateSubsidy(recommendedSize)
+  const netCost = Math.max(0, systemCost - subsidy)
+  const paybackYears = annualSavings > 0
+    ? parseFloat((netCost / annualSavings).toFixed(1))
+    : parseFloat((4 + recommendedSize * 0.15).toFixed(1))
+  return { recommendedSize, monthlySavings, annualSavings, paybackYears, systemCost, subsidy, netCost }
 }
 
 export function calculateSubsidy(kW: number): number {

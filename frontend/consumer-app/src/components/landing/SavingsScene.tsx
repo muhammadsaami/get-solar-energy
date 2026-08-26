@@ -1,10 +1,12 @@
+import React from 'react'
+import { motion, useReducedMotion } from 'motion/react'
 import { useSceneVisibility } from '../../hooks/useSceneVisibility'
 import SavingsStats from './SavingsStats'
 import { trackCTA } from '../../utils/analytics'
 
 export default function SavingsScene() {
+  const shouldReduceMotion = useReducedMotion()
   const sceneRef = useSceneVisibility<HTMLElement>({ camera: 'savings' })
-
 
   return (
     <article
@@ -18,7 +20,7 @@ export default function SavingsScene() {
       <div className="scene-transition-mask bottom" />
       <div className="layer-bg">
         <img
-          src="/frontend/assets/Cinematic/Asset 6.webp"
+          src="/assets/Cinematic/Asset 6.webp"
           alt="Neighborhood Solar Scale"
           id="savingsParallaxImg"
           loading="lazy"
@@ -36,15 +38,21 @@ export default function SavingsScene() {
           zIndex: 2,
         }}
       >
-        <div
+        <motion.div
           style={{
-            background: 'rgba(13,33,54,0.6)',
-            backdropFilter: 'blur(16px)',
+            background: 'rgba(8, 24, 42, 0.85)',
+            backdropFilter: 'blur(20px)',
+            WebkitBackdropFilter: 'blur(20px)',
             padding: 50,
             borderRadius: 'var(--radius-lg)',
             maxWidth: 550,
-            border: '1px solid rgba(255,255,255,0.05)',
+            border: '1px solid rgba(255, 255, 255, 0.12)',
+            boxShadow: '0 20px 50px rgba(0, 0, 0, 0.5)',
           }}
+          initial={shouldReduceMotion ? { opacity: 1, y: 0 } : { opacity: 0, y: 24 }}
+          whileInView={{ opacity: 1, y: 0 }}
+          viewport={{ once: true, margin: '-60px' }}
+          transition={{ duration: shouldReduceMotion ? 0 : 0.55, ease: [0.16, 1, 0.3, 1] }}
         >
           <h2
             className="section-title"
@@ -62,14 +70,17 @@ export default function SavingsScene() {
 
           <SavingsStats />
 
-          <a
+          <motion.a
             href="#sceneFinal"
             className="btn-hero-primary"
             onClick={() => trackCTA('savings_scene_cta')}
+            whileHover={shouldReduceMotion ? {} : { y: -2 }}
+            whileTap={shouldReduceMotion ? {} : { scale: 0.98 }}
+            transition={{ duration: 0.15 }}
           >
             Calculate Your Share
-          </a>
-        </div>
+          </motion.a>
+        </motion.div>
       </div>
     </article>
   )

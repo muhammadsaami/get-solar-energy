@@ -1,7 +1,7 @@
 const METRICS = [
-  '25,000+ Bills Processed',
-  '8,000+ Homes Assessed',
-  '120 MW Potential Identified',
+  'PM Surya Ghar Standardized',
+  'DISCOM Net-Metering Compliant',
+  '25-Year Linear Output Warranty',
 ]
 
 export default function PlatformMetrics() {

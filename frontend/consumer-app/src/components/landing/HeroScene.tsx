@@ -1,131 +1,66 @@
+import React from 'react'
+import { motion, useReducedMotion } from 'motion/react'
 import { type MetricConfig, useIntersectionCounter } from '../../hooks/useIntersectionCounter'
 import { useSceneVisibility } from '../../hooks/useSceneVisibility'
 import { trackCTA } from '../../utils/analytics'
 
 const METRICS: MetricConfig[] = [
   {
-    key: 'billsAnalyzed',
-    endValue: 25000,
-    label: 'Bills Analyzed',
+    key: 'warrantyYears',
+    endValue: 25,
+    label: 'Years Performance Life',
     suffix: '+',
     delay: 0,
   },
   {
-    key: 'customerSavings',
-    endValue: 12.4,
-    label: 'Customer Savings',
-    prefix: '₹',
-    suffix: ' Cr+',
+    key: 'billReduction',
+    endValue: 90,
+    label: 'Typical Bill Reduction',
+    prefix: '~',
+    suffix: '%',
     delay: 150,
-    decimals: 1,
   },
   {
-    key: 'citiesServed',
-    endValue: 12,
-    label: 'Cities Served',
-    suffix: '+',
+    key: 'discomCoverage',
+    endValue: 100,
+    label: 'MNRE / PM Surya Ghar',
+    suffix: '% Ready',
     delay: 300,
   },
 ]
 
-function HeroBadge() {
-  return (
-    <div className="hero-badge-container">
-      <div className="hero-accent-badge">
-        <span className="badge-check-icon">{'\u2713'}</span>
-        Trusted Solar Solutions Across India
-      </div>
-    </div>
-  )
-}
-
-function HeroTitle() {
-  return (
-    <h1 className="hero-main-title">
-      Analyze. Plan. <br />
-      <span className="highlight-orange">Save</span> with Solar.
-    </h1>
-  )
-}
-
-function HeroDescription() {
-  return (
-    <p className="hero-description-paragraph">
-      Design your custom solar layout, calculate your exact savings, and verify
-      government subsidies.
-    </p>
-  )
-}
-
-function HeroCTA() {
-  return (
-    <div className="hero-action-ctas">
-      <a
-        href="#sceneEstimate"
-        className="btn-hero-primary"
-        onClick={() => trackCTA('hero_primary')}
-      >
-        Start Free Assessment
-      </a>
-      <a
-        href="#how-it-works"
-        className="btn-hero-secondary"
-        onClick={() => trackCTA('hero_secondary')}
-      >
-        See How It Works
-      </a>
-    </div>
-  )
-}
-
-function TrustPills() {
-  return (
-    <div className="hero-trust-pills">
-      <span className="trust-pill">{'\u{1F1EE}\u{1F1F3}'} PM Surya Ghar Ready</span>
-      <span className="trust-pill">Government Subsidy Support</span>
-      <span className="trust-pill">PAN India Coverage</span>
-    </div>
-  )
-}
-
-function PlatformMetricsStrip() {
-  const { values, containerRef } = useIntersectionCounter(METRICS)
-
-  return (
-    <div
-      className="hero-stats-grid"
-      id="metricsStrip"
-      ref={containerRef}
-      style={{ marginTop: 40 }}
-    >
-      <div className="hero-stat-item" id="metricCard1">
-        <span className="stat-num" id="metricBillsCount">
-          {values.billsAnalyzed}
-        </span>
-        <span className="stat-lbl">Bills Analyzed</span>
-      </div>
-      <div className="hero-stat-item" id="metricCard2">
-        <span className="stat-num" id="metricSavingsCount">
-          {values.customerSavings}
-        </span>
-        <span className="stat-lbl">Customer Savings</span>
-      </div>
-      <div className="hero-stat-item" id="metricCard3">
-        <span className="stat-num" id="metricCitiesCount">
-          {values.citiesServed}
-        </span>
-        <span className="stat-lbl">Cities Served</span>
-      </div>
-    </div>
-  )
-}
-
 export default function HeroScene() {
+  const shouldReduceMotion = useReducedMotion()
   const sceneRef = useSceneVisibility<HTMLElement>({
     camera: 'arrival',
     staggerSelector: '.hero-stat-item',
     staggerDelay: 150,
   })
+
+  const containerVariants = {
+    hidden: { opacity: shouldReduceMotion ? 1 : 0 },
+    visible: {
+      opacity: 1,
+      transition: {
+        staggerChildren: shouldReduceMotion ? 0 : 0.09,
+        delayChildren: shouldReduceMotion ? 0 : 0.1,
+      },
+    },
+  }
+
+  const itemVariants = {
+    hidden: { opacity: shouldReduceMotion ? 1 : 0, y: shouldReduceMotion ? 0 : 18 },
+    visible: {
+      opacity: 1,
+      y: 0,
+      transition: {
+        duration: shouldReduceMotion ? 0 : 0.55,
+        ease: [0.16, 1, 0.3, 1],
+      },
+    },
+  }
+
+  const { values, containerRef } = useIntersectionCounter(METRICS)
 
   return (
     <article
@@ -133,14 +68,13 @@ export default function HeroScene() {
       id="sceneHero"
       data-camera="arrival"
       ref={sceneRef}
-
     >
       <div className="cinematic-color-grade" />
       <div className="scene-transition-mask top" />
       <div className="scene-transition-mask bottom" />
       <div className="layer-bg">
         <img
-          src="/frontend/assets/Cinematic/Asset 1.webp"
+          src="/assets/Cinematic/Asset 1.webp"
           alt="Premium solar home"
           fetchPriority="high"
         />
@@ -157,7 +91,7 @@ export default function HeroScene() {
           zIndex: 2,
         }}
       >
-        <div
+        <motion.div
           className="hero-left-col"
           style={{
             maxWidth: 600,
@@ -165,17 +99,86 @@ export default function HeroScene() {
             padding: 40,
             borderRadius: 'var(--radius-lg)',
           }}
+          variants={containerVariants}
+          initial="hidden"
+          animate="visible"
         >
           <div className="text-scrim-overlay" />
-          <HeroBadge />
-          <HeroTitle />
-          <HeroDescription />
-          <HeroCTA />
-          <TrustPills />
-          <PlatformMetricsStrip />
-        </div>
+
+          <motion.div variants={itemVariants} className="hero-badge-container">
+            <div className="hero-accent-badge">
+              <span className="badge-check-icon">{'\u2713'}</span>
+              Trusted Solar Solutions Across India
+            </div>
+          </motion.div>
+
+          <motion.h1 variants={itemVariants} className="hero-main-title">
+            Analyze. Plan. <br />
+            <span className="highlight-orange">Save</span> with Solar.
+          </motion.h1>
+
+          <motion.p variants={itemVariants} className="hero-description-paragraph">
+            Design your custom solar layout, calculate your exact savings, and verify
+            government subsidies.
+          </motion.p>
+
+          <motion.div variants={itemVariants} className="hero-action-ctas">
+            <motion.a
+              href="#sceneEstimate"
+              className="btn-hero-primary"
+              onClick={() => trackCTA('hero_primary')}
+              whileHover={shouldReduceMotion ? {} : { y: -2 }}
+              whileTap={shouldReduceMotion ? {} : { scale: 0.98 }}
+              transition={{ duration: 0.15 }}
+            >
+              Start Free Assessment
+            </motion.a>
+            <motion.a
+              href="#sceneInstallation"
+              className="btn-hero-secondary"
+              onClick={() => trackCTA('hero_secondary')}
+              whileHover={shouldReduceMotion ? {} : { y: -2 }}
+              whileTap={shouldReduceMotion ? {} : { scale: 0.98 }}
+              transition={{ duration: 0.15 }}
+            >
+              See How It Works
+            </motion.a>
+          </motion.div>
+
+          <motion.div variants={itemVariants} className="hero-trust-pills">
+            <span className="trust-pill">{'\u{1F1EE}\u{1F1F3}'} PM Surya Ghar Ready</span>
+            <span className="trust-pill">Government Subsidy Support</span>
+            <span className="trust-pill">PAN India Coverage</span>
+          </motion.div>
+
+          <motion.div
+            variants={itemVariants}
+            className="hero-stats-grid"
+            id="metricsStrip"
+            ref={containerRef}
+            style={{ marginTop: 40 }}
+          >
+            <div className="hero-stat-item" id="metricCard1">
+              <span className="stat-num" id="metricWarranty">
+                {values.warrantyYears}
+              </span>
+              <span className="stat-lbl">Years Performance Life</span>
+            </div>
+            <div className="hero-stat-item" id="metricCard2">
+              <span className="stat-num" id="metricBillReduction">
+                {values.billReduction}
+              </span>
+              <span className="stat-lbl">Typical Bill Reduction</span>
+            </div>
+            <div className="hero-stat-item" id="metricCard3">
+              <span className="stat-num" id="metricDiscomCoverage">
+                {values.discomCoverage}
+              </span>
+              <span className="stat-lbl">PM Surya Ghar Ready</span>
+            </div>
+          </motion.div>
+        </motion.div>
       </div>
     </article>
   )
 }
-

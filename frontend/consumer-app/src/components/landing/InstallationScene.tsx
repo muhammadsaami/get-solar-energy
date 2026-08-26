@@ -1,3 +1,5 @@
+import React from 'react'
+import { motion, useReducedMotion } from 'motion/react'
 import { useSceneVisibility } from '../../hooks/useSceneVisibility'
 import WhyCard from './WhyCard'
 
@@ -15,8 +17,8 @@ const CARDS = [
 ]
 
 export default function InstallationScene() {
+  const shouldReduceMotion = useReducedMotion()
   const sectionRef = useSceneVisibility<HTMLElement>({ camera: 'installation' })
-
 
   return (
     <article
@@ -30,7 +32,7 @@ export default function InstallationScene() {
       <div className="scene-transition-mask bottom" />
       <div className="layer-bg">
         <img
-          src="/frontend/assets/Cinematic/Asset 4.webp"
+          src="/assets/Cinematic/Asset 4.webp"
           alt="Professional solar installation"
           loading="lazy"
           style={{ transformOrigin: 'center right' }}
@@ -50,7 +52,14 @@ export default function InstallationScene() {
           justifyContent: 'flex-end',
         }}
       >
-        <div className="hero-left-col" style={{ maxWidth: 500 }}>
+        <motion.div
+          className="hero-left-col"
+          style={{ maxWidth: 500 }}
+          initial={shouldReduceMotion ? { opacity: 1, y: 0 } : { opacity: 0, y: 24 }}
+          whileInView={{ opacity: 1, y: 0 }}
+          viewport={{ once: true, margin: '-60px' }}
+          transition={{ duration: shouldReduceMotion ? 0 : 0.55, ease: [0.16, 1, 0.3, 1] }}
+        >
           <h2 className="section-title" style={{ textAlign: 'left' }}>
             Precision Engineering. <br />
             Flawless Execution.
@@ -76,7 +85,7 @@ export default function InstallationScene() {
               />
             ))}
           </div>
-        </div>
+        </motion.div>
       </div>
     </article>
   )

@@ -1,4 +1,5 @@
-import { useState, useEffect, useCallback, useRef, useMemo } from 'react'
+import React, { useState, useEffect, useCallback, useRef, useMemo } from 'react'
+import { motion, AnimatePresence, useReducedMotion } from 'motion/react'
 import { useDebounce } from '../../hooks/useDebounce'
 import { useSceneVisibility } from '../../hooks/useSceneVisibility'
 import {
@@ -29,6 +30,7 @@ function getCityLabel(city: string): string {
 }
 
 export default function EstimateCalculator() {
+  const shouldReduceMotion = useReducedMotion()
   const sceneRef = useSceneVisibility<HTMLElement>({ camera: 'estimate' })
   const [city, setCity] = useState('')
   const [bill, setBill] = useState('')
@@ -89,35 +91,30 @@ export default function EstimateCalculator() {
   }, [])
 
   useEffect(() => {
-    if (city && debouncedBill) {
-      const num = parseFloat(debouncedBill)
-      if (!isNaN(num) && num >= 500) {
-        runCalculation(false)
-      }
+    if (debouncedBill && city && parseFloat(debouncedBill) >= 500) {
+      runCalculation(false)
     }
   }, [debouncedBill, city, runCalculation])
 
   const handleCalculate = useCallback(() => {
-    let hasError = false
+    const cityVal = document.getElementById('estCity') as HTMLSelectElement | null
+    const billVal = document.getElementById('estBill') as HTMLInputElement | null
+    const currentCity = cityVal?.value || ''
+    const currentBill = parseFloat(billVal?.value || '')
 
-    if (!city) {
+    let valid = true
+    if (!currentCity) {
       setValidationCity(true)
-      hasError = true
-    } else {
-      setValidationCity(false)
+      valid = false
     }
-
-    if (!hasError && (isNaN(billNum) || billNum < 500)) {
+    if (isNaN(currentBill) || currentBill < 500) {
       setValidationBill(true)
-      hasError = true
-    } else {
-      setValidationBill(false)
+      valid = false
     }
 
-    if (!hasError) {
-      runCalculation(true)
-    }
-  }, [city, billNum, runCalculation])
+    if (!valid) return
+    runCalculation(true)
+  }, [runCalculation])
 
   return (
     <article
@@ -128,14 +125,15 @@ export default function EstimateCalculator() {
     >
       <div className="cinematic-color-grade" />
       <div className="scene-transition-mask top" />
+      <div className="scene-transition-mask bottom" />
       <div className="layer-bg">
         <img
-          src="/frontend/assets/Cinematic/Asset 2.webp"
+          src="/assets/Cinematic/Asset 2.webp"
           alt="Home solar potential"
           loading="lazy"
         />
       </div>
-      <div className="lighting-overlay lighting-warm" />
+      <div className="lighting-overlay lighting-cool" />
 
       <div
         className="hero-container layer-fg scene-element"
@@ -146,10 +144,17 @@ export default function EstimateCalculator() {
           position: 'relative',
           zIndex: 2,
           display: 'flex',
-          justifyContent: 'flex-end',
+          justifyContent: 'center',
         }}
       >
-        <div className="hero-right-col" style={{ maxWidth: 500, width: '100%' }}>
+        <motion.div
+          className="hero-right-col"
+          style={{ maxWidth: 500, width: '100%' }}
+          initial={shouldReduceMotion ? { opacity: 1, y: 0 } : { opacity: 0, y: 24 }}
+          whileInView={{ opacity: 1, y: 0 }}
+          viewport={{ once: true, margin: '-60px' }}
+          transition={{ duration: shouldReduceMotion ? 0 : 0.55, ease: [0.16, 1, 0.3, 1] }}
+        >
           <div
             className="quick-estimate-card"
             style={{
@@ -179,20 +184,40 @@ export default function EstimateCalculator() {
               onCalculate={handleCalculate}
             />
 
-            {status === 'loading' && <LoadingSkeleton />}
+            <AnimatePresence mode="wait">
+              {status === 'loading' && (
+                <motion.div
+                  key="loading"
+                  initial={{ opacity: 0 }}
+                  animate={{ opacity: 1 }}
+                  exit={{ opacity: 0 }}
+                  transition={{ duration: 0.2 }}
+                >
+                  <LoadingSkeleton />
+                </motion.div>
+              )}
 
-            {status === 'results' && estimate && (
-              <div className="estimate-output-container" style={{ display: 'block' }}>
-                <EstimateResults
-                  result={estimate}
-                  cityLabel={getCityLabel(city)}
-                  city={city}
-                  billValue={billNum}
-                />
-              </div>
-            )}
+              {status === 'results' && estimate && (
+                <motion.div
+                  key="results"
+                  className="estimate-output-container"
+                  style={{ display: 'block' }}
+                  initial={{ opacity: 0 }}
+                  animate={{ opacity: 1 }}
+                  exit={{ opacity: 0 }}
+                  transition={{ duration: 0.25 }}
+                >
+                  <EstimateResults
+                    result={estimate}
+                    cityLabel={getCityLabel(city)}
+                    city={city}
+                    billValue={billNum}
+                  />
+                </motion.div>
+              )}
+            </AnimatePresence>
           </div>
-        </div>
+        </motion.div>
       </div>
     </article>
   )
