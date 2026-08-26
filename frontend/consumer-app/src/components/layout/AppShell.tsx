@@ -32,7 +32,9 @@ export default function AppShell({ children }: AppShellProps) {
       <Sidebar />
       <main className="main-panel" id="main-content">
         <Topbar />
-        {children}
+        <div className="page-transition-wrapper">
+          {children}
+        </div>
       </main>
       <ToastHost />
     </div>

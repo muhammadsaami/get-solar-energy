@@ -256,6 +256,43 @@
 .stagger-children > *:nth-child(5) { animation-delay: 320ms; }
 .stagger-children > *:nth-child(6) { animation-delay: 400ms; }
 
+/* ── PAGE & CONTAINER TRANSITIONS ───────────────────────── */
+@keyframes gs-page-enter {
+  from {
+    opacity: 0;
+    transform: translateY(8px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.page-transition-wrapper {
+  animation: gs-page-enter var(--duration-normal, 280ms) var(--ease-decelerate, cubic-bezier(0, 0, 0.2, 1)) both;
+  width: 100%;
+}
+
+/* Modal and Drawer entrance keyframes */
+@keyframes gs-modal-in {
+  from {
+    opacity: 0;
+    transform: scale(0.98);
+  }
+  to {
+    opacity: 1;
+    transform: scale(1);
+  }
+}
+
+.modal-animate-in {
+  animation: gs-modal-in var(--duration-normal, 280ms) var(--ease-decelerate, cubic-bezier(0, 0, 0.2, 1)) both;
+}
+
+.backdrop-animate-in {
+  animation: gs-fade-in var(--duration-normal, 280ms) var(--ease-standard, cubic-bezier(0.4, 0, 0.2, 1)) both;
+}
+
 /* ── REDUCED MOTION OVERRIDE ────────────────────────────── */
 @media (prefers-reduced-motion: reduce) {
   .animate-fade-in,
@@ -269,6 +306,9 @@
   .animate-spin,
   .animate-bounce,
   .animate-shake,
+  .modal-animate-in,
+  .backdrop-animate-in,
+  .page-transition-wrapper,
   .stagger-children > * {
     animation: none !important;
     transition: none !important;

@@ -1838,10 +1838,10 @@ canvas {
 }
 
 .card-base:hover {
-  transform: translateY(-5px);
+  transform: translateY(-3px);
   border-color: rgba(var(--card-theme, var(--accent-blue-rgb)), 0.45);
   background-color: rgba(16, 42, 66, 0.82);
-  box-shadow: 0 20px 40px rgba(0, 0, 0, 0.45), 0 0 24px rgba(var(--card-theme, var(--accent-blue-rgb)), 0.18);
+  box-shadow: 0 16px 32px rgba(0, 0, 0, 0.35), 0 0 20px rgba(var(--card-theme, var(--accent-blue-rgb)), 0.15);
 }
 
 .kpi-title-row,
@@ -2695,7 +2695,7 @@ canvas {
 /* --- FOOTER GRID --- */
 .footer-grid {
   display: grid;
-  grid-template-columns: 1.1fr 0.95fr 0.95fr;
+  grid-template-columns: repeat(auto-fit, minmax(320px, 1fr));
   gap: 20px;
 }
 
@@ -6938,4 +6938,17 @@ div[style*="display: grid"] {
   margin-right: 6px;
   background: var(--accent-orange, #f7931e);
   box-shadow: 0 0 6px rgba(247, 147, 30, 0.5);
+}
+
+/* --- Performance Command Cards & Analytics --- */
+.perf-command-card {
+  transition: transform var(--duration-normal, 250ms) cubic-bezier(0.16, 1, 0.3, 1),
+              box-shadow var(--duration-normal, 250ms) cubic-bezier(0.16, 1, 0.3, 1),
+              border-color var(--duration-normal, 250ms) ease;
+}
+
+.perf-command-card:hover {
+  transform: translateY(-3px);
+  border-color: rgba(var(--card-theme, 54, 211, 153), 0.35) !important;
+  box-shadow: 0 16px 40px rgba(0, 0, 0, 0.45), 0 0 20px rgba(var(--card-theme, 54, 211, 153), 0.12) !important;
 }
