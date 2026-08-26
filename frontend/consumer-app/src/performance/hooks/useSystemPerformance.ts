@@ -67,11 +67,11 @@ export function useSystemPerformance() {
 
       setAlerts(plantAlerts)
 
-      const capKw = dash.capacity_kw || 5.0
-      const dailyGen = dash.today_generation_kwh ?? dash.today_expected_kwh
-      const monthlyGen = dash.monthly_total_kwh || (dailyGen * 30)
-      const healthScore = health?.health_score ?? 92
-      const healthLabel = health?.status_label || (healthScore >= 85 ? 'OPTIMAL' : 'GOOD')
+      const capKw = dash.capacity_kw || 0
+      const dailyGen = typeof dash.today_generation_kwh === 'number' ? dash.today_generation_kwh : (dash.today_expected_kwh || 0)
+      const monthlyGen = dash.monthly_total_kwh || (dailyGen ? dailyGen * 30 : 0)
+      const healthScore = typeof health?.health_score === 'number' && !isNaN(health.health_score) ? health.health_score : null
+      const healthLabel = health?.status_label || (healthScore !== null ? (healthScore >= 85 ? 'OPTIMAL' : healthScore >= 70 ? 'GOOD' : 'FAIR') : 'Awaiting Telemetry')
 
       const computedSummary: PerformanceSummary = {
         generation: {
@@ -79,37 +79,37 @@ export function useSystemPerformance() {
           dailyGeneration: Number(dailyGen.toFixed(1)),
           monthlyGeneration: Number(monthlyGen.toFixed(1)),
           systemSizeKw: capKw,
-          monthlyGenerationTrend: [
+          monthlyGenerationTrend: capKw > 0 ? [
             Math.round(capKw * 110),
             Math.round(capKw * 125),
             Math.round(capKw * 140),
             Math.round(capKw * 135),
             Math.round(capKw * 150),
             Math.round(monthlyGen),
-          ],
+          ] : null,
         },
         consumption: {
           solarConsumed: Number((monthlyGen * 0.75).toFixed(1)),
           monthlyConsumption: Number((monthlyGen * 0.95).toFixed(1)),
-          selfConsumptionPct: 78,
+          selfConsumptionPct: monthlyGen > 0 ? 78 : 0,
         },
         grid: {
           importUnits: Number((monthlyGen * 0.25).toFixed(1)),
           exportUnits: Number((monthlyGen * 0.15).toFixed(1)),
           netExport: Number((monthlyGen * -0.10).toFixed(1)),
-          gridDependencyPct: 22,
+          gridDependencyPct: monthlyGen > 0 ? 22 : 0,
         },
         efficiency: {
-          prRatio: Number(Math.min(98, Math.max(70, healthScore)).toFixed(1)),
-          systemEfficiency: 94,
-          performanceRating: healthScore >= 85 ? 'Excellent' : healthScore >= 70 ? 'Good' : 'Needs Attention',
+          prRatio: healthScore !== null ? Number(healthScore.toFixed(1)) : 0,
+          systemEfficiency: null,
+          performanceRating: healthScore !== null ? (healthScore >= 85 ? 'Excellent' : healthScore >= 70 ? 'Good' : 'Needs Attention') : 'Average',
         },
         health: {
-          inverterHealth: Math.min(100, healthScore + 2),
-          panelHealth: healthScore,
-          batteryHealth: 95,
-          wiringHealth: 98,
-          overallHealth: healthScore,
+          inverterHealth: healthScore !== null ? healthScore : null,
+          panelHealth: healthScore !== null ? healthScore : null,
+          batteryHealth: null,
+          wiringHealth: null,
+          overallHealth: healthScore !== null ? healthScore : 0,
           healthLabel,
         },
       }

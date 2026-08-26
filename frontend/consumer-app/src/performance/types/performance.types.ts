@@ -27,15 +27,15 @@ export interface GridMetrics {
 
 export interface EfficiencyMetrics {
   prRatio: number
-  systemEfficiency: number
+  systemEfficiency: number | null
   performanceRating: PerformanceRating
 }
 
 export interface HealthMetrics {
-  inverterHealth: number
-  panelHealth: number
-  batteryHealth: number
-  wiringHealth: number
+  inverterHealth: number | null
+  panelHealth: number | null
+  batteryHealth: number | null
+  wiringHealth: number | null
   overallHealth: number
   healthLabel: string
 }
