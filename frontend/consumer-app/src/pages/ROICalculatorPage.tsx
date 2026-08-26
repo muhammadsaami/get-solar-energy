@@ -199,7 +199,20 @@ export default function ROICalculatorPage() {
         <div style={{ display: 'flex', flexDirection: 'column', gap: 'var(--space-3)' }}>
           {isLoading && <LoadingSpinner />}
 
-          {!isLoading && <ROIResultsGrid result={result} />}
+          {!isLoading && result && <ROIResultsGrid result={result} />}
+
+          {!isLoading && !result && (
+            <div className="card-base" style={{ padding: 'var(--space-6)', textAlign: 'center', display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', minHeight: '260px' }}>
+              <svg style={{ width: '36px', height: '36px', stroke: 'var(--color-orange)', fill: 'none', strokeWidth: '1.5', marginBottom: '12px' }} viewBox="0 0 24 24">
+                <circle cx="12" cy="12" r="10" />
+                <path d="M12 6v6l4 2" />
+              </svg>
+              <h4 style={{ fontSize: '15px', fontWeight: 700, margin: '0 0 6px', color: 'var(--text-primary)' }}>Personalized ROI Projection</h4>
+              <p style={{ fontSize: '12px', color: 'var(--text-muted)', margin: 0, maxWidth: '340px', lineHeight: 1.5 }}>
+                Enter your current electricity bill and solar project parameters on the left, then click <strong>Calculate Financial ROI</strong> to model your 25-year financial returns.
+              </p>
+            </div>
+          )}
 
           {error && (
             <div
@@ -228,19 +241,21 @@ export default function ROICalculatorPage() {
       </div>
 
       {/* ── Detailed Financial Specs (Post-Calculation) ── */}
-      {hasCalculated && (
+      {hasCalculated && result && (
         <div id="roiAnalysisResults" style={{ marginTop: 'var(--space-2)' }}>
           <ROIDetailedSpecs result={result} />
         </div>
       )}
 
       {/* ── 25-Year Cumulative Returns Chart ── */}
-      <ROIChart
-        chartData={chartData}
-        paybackPeriod={result.paybackPeriod}
-        netCost={result.netCost}
-        annualSavings={result.annualSavings}
-      />
+      {hasCalculated && result && (
+        <ROIChart
+          chartData={chartData}
+          paybackPeriod={result.paybackPeriod}
+          netCost={result.netCost}
+          annualSavings={result.annualSavings}
+        />
+      )}
     </div>
   )
 }

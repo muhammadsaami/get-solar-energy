@@ -32,4 +32,15 @@ export const AUTH_PROVIDERS: Record<string, AuthProviderConfig> = {
     signupEndpoint: '/technician/signup',
     defaultRoute: '/app/technician/dashboard',
   },
+  admin: {
+    id: 'admin',
+    label: 'Admin',
+    description: 'Access the Executive Administration Console to monitor enterprise operations, system health, business intelligence, CRM leads, and MLOps.',
+    loginEndpoint: '/login',
+    signupEndpoint: '/signup',
+    defaultRoute: '/app/admin/dashboard',
+  },
 }
+
+export const PUBLIC_AUTH_ROLES = ['customer', 'vendor', 'technician'] as const
+export type PublicAuthRole = typeof PUBLIC_AUTH_ROLES[number]

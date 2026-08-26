@@ -580,10 +580,6 @@ export default function BillAnalyzer() {
   } = useBillAnalyzer()
 
   const d = analysis
-  const defaultBill = 6500
-  const defaultUnits = 450
-  const defaultSavings = 4850
-  const defaultConsumptionPerDay = 15
 
   return (
     <>
@@ -632,9 +628,11 @@ export default function BillAnalyzer() {
               <svg className="kpi-title-icon orange"><use href="#icon-electricity-consumption" xlinkHref="#icon-electricity-consumption" /></svg>
             </div>
             <div className="kpi-value-block">
-              <span className="kpi-value-text" id="billTabCurrentBill">{d ? formatCurrency(d.bill_amount) : `₹${defaultBill.toLocaleString('en-IN')}`}</span>
+              <span className="kpi-value-text" id="billTabCurrentBill">{d && d.bill_amount > 0 ? formatCurrency(d.bill_amount) : '—'}</span>
             </div>
-            <p className="kpi-card-subdesc" style={{ fontSize: '10px', color: 'var(--text-muted)', marginTop: '4px' }}>Extracted from latest billing cycle</p>
+            <p className="kpi-card-subdesc" style={{ fontSize: '10px', color: 'var(--text-muted)', marginTop: '4px' }}>
+              {d && d.bill_amount > 0 ? 'Extracted from latest billing cycle' : 'No bill data available'}
+            </p>
           </div>
           <div className="card-base shadow-lift" style={{ '--card-theme': '23, 168, 229' } as React.CSSProperties}>
             <div className="kpi-header-row">
@@ -642,9 +640,11 @@ export default function BillAnalyzer() {
               <svg className="kpi-title-icon blue"><use href="#icon-bill" xlinkHref="#icon-bill" /></svg>
             </div>
             <div className="kpi-value-block">
-              <span className="kpi-value-text" id="billTabUnits">{d ? `${Math.round(d.monthly_units)} kWh` : `${defaultUnits} kWh`}</span>
+              <span className="kpi-value-text" id="billTabUnits">{d && d.monthly_units > 0 ? `${Math.round(d.monthly_units)} kWh` : '—'}</span>
             </div>
-            <p className="kpi-card-subdesc" style={{ fontSize: '10px', color: 'var(--text-muted)', marginTop: '4px' }}>{d ? `Average consumption: ${Math.round((d.monthly_units / 30) * 10) / 10} kWh/day` : `Average consumption: ${defaultConsumptionPerDay} kWh/day`}</p>
+            <p className="kpi-card-subdesc" style={{ fontSize: '10px', color: 'var(--text-muted)', marginTop: '4px' }}>
+              {d && d.monthly_units > 0 ? `Average consumption: ${Math.round((d.monthly_units / 30) * 10) / 10} kWh/day` : 'No consumption data'}
+            </p>
           </div>
           <div className="card-base shadow-lift" style={{ '--card-theme': '54, 211, 153' } as React.CSSProperties}>
             <div className="kpi-header-row">
@@ -652,22 +652,26 @@ export default function BillAnalyzer() {
               <svg className="kpi-title-icon green"><use href="#icon-annual-savings" xlinkHref="#icon-annual-savings" /></svg>
             </div>
             <div className="kpi-value-block">
-              <span className="kpi-value-text" id="billTabSavings">{d ? formatCurrencyPerMonth(d.monthly_savings_rs) : `₹${defaultSavings.toLocaleString('en-IN')}/mo`}</span>
+              <span className="kpi-value-text" id="billTabSavings">{d && d.monthly_savings_rs > 0 ? formatCurrencyPerMonth(d.monthly_savings_rs) : '—'}</span>
             </div>
-            <p className="kpi-card-subdesc" style={{ fontSize: '10px', color: 'var(--text-muted)', marginTop: '4px' }}>{d ? `Equivalent to ~${d.bill_amount > 0 ? Math.round((d.monthly_savings_rs / d.bill_amount) * 100) : 75}% reduction` : 'Equivalent to ~75% reduction'}</p>
+            <p className="kpi-card-subdesc" style={{ fontSize: '10px', color: 'var(--text-muted)', marginTop: '4px' }}>
+              {d && d.monthly_savings_rs > 0 ? `Equivalent to ~${d.bill_amount > 0 ? Math.round((d.monthly_savings_rs / d.bill_amount) * 100) : 75}% reduction` : 'Savings calculated upon bill extraction'}
+            </p>
           </div>
         </div>
       </div>
 
       {/* Full-width chart */}
-      <div className="card-base chart-fullwidth-card" style={{ marginTop: '20px', '--card-theme': '23, 168, 229' } as React.CSSProperties}>
-        <div className="kpi-header-row">
-          <span className="kpi-title">Historical Consumption & Potential Savings Trend</span>
+      {analysis && analysis.bill_amount > 0 ? (
+        <div className="card-base chart-fullwidth-card" style={{ marginTop: '20px', '--card-theme': '23, 168, 229' } as React.CSSProperties}>
+          <div className="kpi-header-row">
+            <span className="kpi-title">Historical Consumption & Potential Savings Trend</span>
+          </div>
+          <div style={{ height: '250px', position: 'relative' }}>
+            <canvas id="billHistoryChart"></canvas>
+          </div>
         </div>
-        <div style={{ height: '250px', position: 'relative' }}>
-          <canvas id="billHistoryChart"></canvas>
-        </div>
-      </div>
+      ) : null}
       </div>
     </>
   )

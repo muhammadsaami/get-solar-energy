@@ -23,7 +23,7 @@ export const SIDEBAR_ITEMS: SidebarGroupConfig[] = [
     items: [
       { id: 'dashboard', label: 'Dashboard', route: ROUTES.HOME, color: 'blue', symbolId: 'home', visible: true, requiredFeature: 'dashboard' },
       { id: 'bill-analyzer', label: 'Bill Analyzer', route: ROUTES.BILL_ANALYZER, color: 'cyan', symbolId: 'bill', visible: true, requiredFeature: 'bill-analyzer' },
-      { id: 'roof-analysis', label: 'Roof Analysis', route: ROUTES.ROOF_ANALYSIS, color: 'orange', symbolId: 'roof', visible: true, requiredFeature: 'roof-analysis' },
+      { id: 'roof-analysis', label: 'Roof Vision AI', route: ROUTES.ROOF_ANALYSIS, color: 'orange', symbolId: 'roof', visible: true, requiredFeature: 'roof-analysis' },
       { id: 'roi-calculator', label: 'ROI Calculator', route: ROUTES.ROI_CALCULATOR, color: 'green', symbolId: 'calculator', visible: true, requiredFeature: 'roi-calculator' },
       { id: 'proposal', label: 'AI Proposal', route: ROUTES.PLANNING_PROPOSAL, color: 'orange', symbolId: 'reports', visible: true, requiredFeature: 'proposal-generator' },
     ],
@@ -32,7 +32,6 @@ export const SIDEBAR_ITEMS: SidebarGroupConfig[] = [
     groupName: 'Solar AI Intelligence',
     items: [
       { id: 'ai-assistant', label: 'AI Assistant', route: ROUTES.AI_ADVISOR, color: 'purple', symbolId: 'sparkles', visible: true, requiredFeature: 'ai-assistant' },
-      { id: 'enterprise-ai', label: 'Enterprise AI', route: ROUTES.ENTERPRISE_AI, color: 'indigo', symbolId: 'bot', visible: true, requiredFeature: 'enterprise-ai' },
     ],
   },
   {

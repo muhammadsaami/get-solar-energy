@@ -228,7 +228,7 @@ export function AuthProvider({ children }) {
         const userObj = data.user ? { ...data.user, role: backendRole } : { ...data, role: backendRole };
         persistSession(accessToken, userObj, data.expires_in || null);
         logAuthEvent(AUTH_EVENTS.LOGIN_SUCCESS, { email, role: backendRole });
-        return { success: true };
+        return { success: true, role: backendRole };
       }
 
       if (data?.success) {
@@ -236,7 +236,7 @@ export function AuthProvider({ children }) {
         const userObj = { ...data, role: backendRole };
         persistSession(data.token, userObj, data.expires_in || null);
         logAuthEvent(AUTH_EVENTS.LOGIN_SUCCESS, { email, role: backendRole });
-        return { success: true };
+        return { success: true, role: backendRole };
       }
 
       return { success: false, error: data?.message || 'Login failed' };
@@ -253,19 +253,22 @@ export function AuthProvider({ children }) {
 
       const accessToken = data.access_token || data.token;
       if (accessToken) {
-        const techUser = data.user || data.technician || { name: 'Technician', role: 'technician' };
-        persistSession(accessToken, { ...techUser, role: 'technician' }, data.expires_in || null);
-        logAuthEvent(AUTH_EVENTS.LOGIN_SUCCESS, { email, role: 'technician' });
-        return { success: true };
+        const userRole = data.user?.role || data.role || 'technician';
+        const techUser = data.user || data.technician || { name: 'Technician', role: userRole };
+        persistSession(accessToken, { ...techUser, role: userRole }, data.expires_in || null);
+        logAuthEvent(AUTH_EVENTS.LOGIN_SUCCESS, { email, role: userRole });
+        return { success: true, role: userRole };
       }
 
       if (data?.success) {
-        persistSession(data.token, { ...data.technician, role: 'technician' }, data.expires_in || null);
-        logAuthEvent(AUTH_EVENTS.LOGIN_SUCCESS, { email, role: 'technician' });
-        return { success: true };
+        const userRole = data.user?.role || data.role || 'technician';
+        const techUser = data.user || data.technician || { name: 'Technician', role: userRole };
+        persistSession(data.token, { ...techUser, role: userRole }, data.expires_in || null);
+        logAuthEvent(AUTH_EVENTS.LOGIN_SUCCESS, { email, role: userRole });
+        return { success: true, role: userRole };
       }
 
-      return { success: false, error: 'Login failed' };
+      return { success: false, error: data?.message || 'Login failed' };
     } catch (err) {
       const message = err.raw?.detail || err.response?.data?.detail || err.message || 'Login failed';
       logAuthEvent(AUTH_EVENTS.LOGIN_FAILURE, { email, error: message });

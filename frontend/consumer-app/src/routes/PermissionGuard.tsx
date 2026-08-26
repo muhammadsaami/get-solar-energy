@@ -34,7 +34,8 @@ export default function PermissionGuard({ children, feature, requireAuth = true 
 
   if (requireAuth && !auth.isAuthenticated) {
     const isVendorPath = typeof window !== 'undefined' && window.location.pathname.startsWith('/app/vendor')
-    const redirectUrl = isVendorPath ? `${ROUTES.LOGIN}?role=vendor` : ROUTES.LOGIN
+    const isTechnicianPath = typeof window !== 'undefined' && window.location.pathname.startsWith('/app/technician')
+    const redirectUrl = isVendorPath ? `${ROUTES.LOGIN}?role=vendor` : isTechnicianPath ? `${ROUTES.LOGIN}?role=technician` : ROUTES.LOGIN
     return <Navigate to={redirectUrl} replace />
   }
 

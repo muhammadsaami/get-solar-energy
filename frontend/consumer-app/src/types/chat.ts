@@ -1,7 +1,18 @@
+export interface GroundingSource {
+  title: string
+  url: string
+  domain: string
+  snippet?: string
+  publication_date?: string
+}
+
 export interface ChatMessage {
   role: 'user' | 'assistant'
   content: string
   time: string
+  contextUsed?: string
+  sources?: GroundingSource[]
+  isError?: boolean
   showActionCard?: 'bill' | 'roof' | 'roi'
 }
 
@@ -18,6 +29,12 @@ export interface SolarAdvisorRequest {
 export interface SolarAdvisorResponse {
   success: boolean
   response: string
+  sources?: GroundingSource[]
+  grounding_metadata?: {
+    search_queries?: string[]
+  }
+  error?: string
+  message?: string
 }
 
 export interface EnterpriseAIRequest {

@@ -290,12 +290,12 @@ export default function Signup() {
 
   const getSubmitButtonText = () => {
     if (loading) {
-      if (signupMode === 'vendor') return 'Registering Vendor...'
-      if (signupMode === 'technician') return 'Registering Technician...'
-      return 'Creating Account...'
+      if (signupMode === 'vendor') return 'Creating Vendor Account...'
+      if (signupMode === 'technician') return 'Creating Technician Account...'
+      return 'Creating Customer Account...'
     }
-    if (signupMode === 'vendor') return 'Register Vendor'
-    if (signupMode === 'technician') return 'Register Technician'
+    if (signupMode === 'vendor') return 'Create Vendor Account'
+    if (signupMode === 'technician') return 'Create Technician Account'
     return 'Create Customer Account'
   }
 
@@ -314,25 +314,29 @@ export default function Signup() {
           </div>
 
           <div className="auth-role-toggle" role="radiogroup" aria-label="Account type">
-            {Object.entries(AUTH_PROVIDERS).map(([key, provider]) => (
-              <button
-                key={key}
-                type="button"
-                className={`auth-role-btn${signupMode === key ? ' active' : ''}`}
-                role="radio"
-                aria-checked={signupMode === key}
-                disabled={loading}
-                onClick={() => {
-                  setSignupMode(key as 'customer' | 'vendor' | 'technician')
-                  setError('')
-                  setSuccessMsg('')
-                  setFieldErrors({})
-                  setFieldSuccess({})
-                }}
-              >
-                {provider.label}
-              </button>
-            ))}
+            {(['customer', 'vendor', 'technician'] as const).map((key) => {
+              const provider = AUTH_PROVIDERS[key]
+              if (!provider) return null
+              return (
+                <button
+                  key={key}
+                  type="button"
+                  className={`auth-role-btn${signupMode === key ? ' active' : ''}`}
+                  role="radio"
+                  aria-checked={signupMode === key}
+                  disabled={loading}
+                  onClick={() => {
+                    setSignupMode(key)
+                    setError('')
+                    setSuccessMsg('')
+                    setFieldErrors({})
+                    setFieldSuccess({})
+                  }}
+                >
+                  {provider.label}
+                </button>
+              )
+            })}
           </div>
 
           {/* Role Benefits Pills */}

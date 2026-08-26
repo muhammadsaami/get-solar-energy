@@ -1,12 +1,12 @@
 import { useState, useRef, type FormEvent, type KeyboardEvent } from 'react'
 import { useNavigate, Link, useSearchParams } from 'react-router-dom'
 import { useAuth } from '../contexts/AuthContext'
-import { AUTH_PROVIDERS } from '../config/auth'
+import { AUTH_PROVIDERS, PUBLIC_AUTH_ROLES, type PublicAuthRole } from '../config/auth'
 import type { Role } from '../config/roles'
 
 type AuthContextType = {
-  login: (email: string, password: string, roleHint?: string, rememberMe?: boolean) => Promise<{ success: boolean; error?: string }>
-  technicianLogin: (email: string, password: string, rememberMe?: boolean) => Promise<{ success: boolean; error?: string }>
+  login: (email: string, password: string, roleHint?: string, rememberMe?: boolean) => Promise<{ success: boolean; error?: string; role?: string }>
+  technicianLogin: (email: string, password: string, rememberMe?: boolean) => Promise<{ success: boolean; error?: string; role?: string }>
   isAuthenticated?: boolean
   loading?: boolean
   user?: { role: Role } | null
@@ -28,7 +28,7 @@ export default function Login() {
 
   const [searchParams] = useSearchParams()
   const roleParam = searchParams.get('role')
-  const [authMode, setAuthMode] = useState<'customer' | 'vendor' | 'technician'>(
+  const [authMode, setAuthMode] = useState<PublicAuthRole>(
     roleParam === 'technician' ? 'technician' :
     roleParam === 'vendor' ? 'vendor' : 'customer'
   )
@@ -125,28 +125,38 @@ export default function Login() {
         showFieldSuccess('email')
         showFieldSuccess('password')
         
+        const effectiveRole = res.role || authMode
+        const targetRoute =
+          effectiveRole === 'admin' ? '/app/admin/dashboard' :
+          effectiveRole === 'vendor' ? '/app/vendor/dashboard' :
+          effectiveRole === 'technician' ? '/app/technician/dashboard' :
+          provider.defaultRoute
+
         const redirectLabel =
-          authMode === 'vendor' ? 'Redirecting to Vendor Workspace...' :
-          authMode === 'technician' ? 'Redirecting to Technician Portal...' :
+          effectiveRole === 'admin' ? 'Redirecting to Admin Portal...' :
+          effectiveRole === 'vendor' ? 'Redirecting to Vendor Workspace...' :
+          effectiveRole === 'technician' ? 'Redirecting to Technician Portal...' :
           'Redirecting to Dashboard...'
-        
+
         setSuccessMsg(redirectLabel)
-        
+
         setTimeout(() => {
           setLoading(false)
-          navigate(provider.defaultRoute)
+          navigate(targetRoute)
         }, 800)
       } else {
         setLoading(false)
-        showFieldError('email', 'Incorrect email or password.')
-        showFieldError('password', 'Incorrect email or password.')
-        setError('Incorrect email or password. Please check your credentials.')
+        const errMsg = res.error || 'Incorrect email or password. Please check your credentials.'
+        setError(errMsg)
+        showFieldError('email', errMsg)
+        showFieldError('password', errMsg)
       }
-    } catch {
+    } catch (err: any) {
       setLoading(false)
-      showFieldError('email', 'Incorrect email or password.')
-      showFieldError('password', 'Incorrect email or password.')
-      setError('Incorrect email or password. Please try again.')
+      const errMsg = err?.response?.data?.detail || err?.message || 'Incorrect email or password. Please try again.'
+      setError(errMsg)
+      showFieldError('email', errMsg)
+      showFieldError('password', errMsg)
     }
   }
 
@@ -209,25 +219,29 @@ export default function Login() {
           </div>
 
           <div className="auth-role-toggle" role="radiogroup" aria-label="Login type">
-            {Object.entries(AUTH_PROVIDERS).map(([key, provider]) => (
-              <button
-                key={key}
-                type="button"
-                className={`auth-role-btn${authMode === key ? ' active' : ''}`}
-                role="radio"
-                aria-checked={authMode === key}
-                disabled={loading}
-                onClick={() => {
-                  setAuthMode(key as 'customer' | 'vendor' | 'technician')
-                  setError('')
-                  setSuccessMsg('')
-                  setFieldErrors({})
-                  setFieldSuccess({})
-                }}
-              >
-                {provider.label}
-              </button>
-            ))}
+            {PUBLIC_AUTH_ROLES.map((key) => {
+              const provider = AUTH_PROVIDERS[key]
+              if (!provider) return null
+              return (
+                <button
+                  key={key}
+                  type="button"
+                  className={`auth-role-btn${authMode === key ? ' active' : ''}`}
+                  role="radio"
+                  aria-checked={authMode === key}
+                  disabled={loading}
+                  onClick={() => {
+                    setAuthMode(key)
+                    setError('')
+                    setSuccessMsg('')
+                    setFieldErrors({})
+                    setFieldSuccess({})
+                  }}
+                >
+                  {provider.label}
+                </button>
+              )
+            })}
           </div>
 
           {error && (

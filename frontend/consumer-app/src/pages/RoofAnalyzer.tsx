@@ -40,10 +40,6 @@ export default function RoofAnalyzer() {
   } = useRoofAnalyzer()
 
   const fileInputRef = useRef<HTMLInputElement | null>(null)
-  const defaultReadiness = 92
-  const defaultArea = '380 sq ft'
-  const defaultShade = '8%'
-  const defaultSystemSize = '5.2 kW'
 
   const d: RoofAnalysisData | null = analysis
 
@@ -67,7 +63,7 @@ export default function RoofAnalyzer() {
           {/* LEFT COLUMN: Dual Mode Form + Map + Results */}
           <div className="card-glass" style={{ padding: 'var(--space-5)' }}>
             <div className="card-header" style={{ marginBottom: 'var(--space-3)' }}>
-              <span className="card-title">Rooftop Structural Assessment</span>
+              <span className="card-title">Roof Vision AI — Structural Assessment</span>
             </div>
 
             {/* Mode Toggle Pill Strip */}
@@ -447,9 +443,11 @@ export default function RoofAnalyzer() {
                 <svg className="kpi-title-icon green" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><circle cx="12" cy="12" r="9" /><path d="M12 7v5l3 3" /></svg>
               </div>
               <div className="kpi-value-block">
-                <span className="kpi-value-text" id="roofTabReadiness">{d ? `${d.suitabilityScore}%` : `${defaultReadiness}%`}</span>
+                <span className="kpi-value-text" id="roofTabReadiness">{d ? `${d.suitabilityScore}%` : '—'}</span>
               </div>
-              <p className="kpi-card-subdesc" style={{ fontSize: '11px', color: 'var(--text-muted)', marginTop: '4px' }}>Azimuth: 180° South (Optimal)</p>
+              <p className="kpi-card-subdesc" style={{ fontSize: '11px', color: 'var(--text-muted)', marginTop: '4px' }}>
+                {d ? (d.facing_direction ? `Azimuth: ${d.facing_direction}` : 'Optimal orientation') : 'Run roof analysis to calculate'}
+              </p>
             </div>
 
             <div className="card-base" style={{ '--card-theme': '23, 168, 229' } as React.CSSProperties}>
@@ -458,9 +456,11 @@ export default function RoofAnalyzer() {
                 <svg className="kpi-title-icon blue" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z" /></svg>
               </div>
               <div className="kpi-value-block">
-                <span className="kpi-value-text" id="roofTabArea">{d ? `${d.roof_area_sqft} sq ft` : defaultArea}</span>
+                <span className="kpi-value-text" id="roofTabArea">{d ? `${d.roof_area_sqft} sq ft` : '—'}</span>
               </div>
-              <p className="kpi-card-subdesc" style={{ fontSize: '11px', color: 'var(--text-muted)', marginTop: '4px' }}>Out of 520 sq ft total area</p>
+              <p className="kpi-card-subdesc" style={{ fontSize: '11px', color: 'var(--text-muted)', marginTop: '4px' }}>
+                {d ? 'Usable rooftop surface area' : 'Awaiting rooftop scan'}
+              </p>
             </div>
 
             <div className="card-base" style={{ '--card-theme': '255, 138, 29' } as React.CSSProperties}>
@@ -469,9 +469,11 @@ export default function RoofAnalyzer() {
                 <svg className="kpi-title-icon orange" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><circle cx="12" cy="12" r="3" /><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1 0 2.83 2 2 0 0 1-2.83 0l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-2 2 2 2 0 0 1-2-2v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83 0 2 2 0 0 1 0-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1-2-2 2 2 0 0 1 2-2h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 0-2.83 2 2 0 0 1 2.83 0l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 2-2 2 2 0 0 1 2 2v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 0 2 2 0 0 1 0 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 2 2 2 2 0 0 1-2 2h-.09a1.65 1.65 0 0 0-1.51 1z" /></svg>
               </div>
               <div className="kpi-value-block">
-                <span className="kpi-value-text" id="roofTabShade">{d ? d.shadePercent : defaultShade}</span>
+                <span className="kpi-value-text" id="roofTabShade">{d ? d.shadePercent : '—'}</span>
               </div>
-              <p className="kpi-card-subdesc" style={{ fontSize: '11px', color: 'var(--text-muted)', marginTop: '4px' }}>Minimal shade from surrounding structures</p>
+              <p className="kpi-card-subdesc" style={{ fontSize: '11px', color: 'var(--text-muted)', marginTop: '4px' }}>
+                {d ? 'Obstruction & shading factor' : 'Awaiting rooftop scan'}
+              </p>
             </div>
 
             <div className="card-base" style={{ '--card-theme': '23, 168, 229' } as React.CSSProperties}>
@@ -480,9 +482,11 @@ export default function RoofAnalyzer() {
                 <svg className="kpi-title-icon blue" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2" /></svg>
               </div>
               <div className="kpi-value-block">
-                <span className="kpi-value-text" id="roofTabSystemSize">{d ? `${d.system_size_kw} kW` : defaultSystemSize}</span>
+                <span className="kpi-value-text" id="roofTabSystemSize">{d ? `${d.system_size_kw} kW` : '—'}</span>
               </div>
-              <p className="kpi-card-subdesc" style={{ fontSize: '11px', color: 'var(--text-muted)', marginTop: '4px' }}>Fits 16 high-efficiency panels</p>
+              <p className="kpi-card-subdesc" style={{ fontSize: '11px', color: 'var(--text-muted)', marginTop: '4px' }}>
+                {d ? (d.total_panels ? `Fits ~${d.total_panels} high-efficiency panels` : 'Recommended capacity') : 'Awaiting rooftop scan'}
+              </p>
             </div>
           </div>
         </div>

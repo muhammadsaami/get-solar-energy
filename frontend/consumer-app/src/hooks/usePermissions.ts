@@ -20,8 +20,6 @@ export function usePermissions() {
   }
 
   function canAccess(feature: FeatureId): boolean {
-    // Platform-level administrator role has unrestricted access across all portals
-    if (userRole === ROLES.ADMIN) return true
     const permission = FEATURE_PERMISSIONS[feature]
     if (!permission) return false
     return permission.roles.includes(userRole as Role)

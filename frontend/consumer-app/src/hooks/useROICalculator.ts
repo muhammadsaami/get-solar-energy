@@ -2,8 +2,6 @@ import { useState, useCallback, useRef } from 'react'
 import { calculateROI } from '../services/roi.service'
 import { calculateFallbackROI } from '../utils/solar'
 import {
-  DEFAULT_RESULT,
-  generateDefaultChartData,
   type CalcStatus,
   type ROIFormData,
   type ROIResult,
@@ -17,7 +15,7 @@ import {
 const STORAGE_KEY = 'roiAnalysisState'
 
 const DEFAULT_FORM: ROIFormData = {
-  monthlyBill: 6500,
+  monthlyBill: 0,
   sunHours: 5,
   systemSize: 3,
   panelQuality: 'mono',
@@ -95,8 +93,8 @@ export function useROICalculator(): UseROICalculatorReturn {
   const [formData, setFormData] = useState<ROIFormData>(
     persisted?.formData ?? DEFAULT_FORM,
   )
-  const [result, setResult] = useState<ROIResult>(
-    persisted?.result ?? DEFAULT_RESULT,
+  const [result, setResult] = useState<ROIResult | null>(
+    persisted?.result ?? null,
   )
   const [status, setStatus] = useState<CalcStatus>(
     persisted?.status ?? 'idle',
@@ -105,10 +103,10 @@ export function useROICalculator(): UseROICalculatorReturn {
     persisted?.error ?? null,
   )
   const [chartData, setChartData] = useState<ChartDataPoint[]>(
-    persisted?.chartData ?? generateDefaultChartData(),
+    persisted?.chartData ?? [],
   )
   const [hasCalculated, setHasCalculated] = useState<boolean>(
-    persisted?.result !== null,
+    Boolean(persisted?.result),
   )
   const calcCount = useRef(0)
 
@@ -189,11 +187,11 @@ export function useROICalculator(): UseROICalculatorReturn {
 
   const reset = useCallback(() => {
     setFormData(DEFAULT_FORM)
-    setResult(DEFAULT_RESULT)
+    setResult(null)
     setStatus('idle')
     setHasCalculated(false)
     setError(null)
-    setChartData(generateDefaultChartData())
+    setChartData([])
     try { localStorage.removeItem(STORAGE_KEY) } catch { /* noop */ }
   }, [])
 

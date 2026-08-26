@@ -30,7 +30,7 @@ export interface ChartDataPoint {
 
 export interface ROIState {
   formData: ROIFormData
-  result: ROIResult
+  result: ROIResult | null
   status: CalcStatus
   error: string | null
   chartData: ChartDataPoint[]
@@ -51,31 +51,4 @@ export interface UseROICalculatorReturn extends ROIState {
   calculate: () => Promise<void>
   reset: () => void
   hasCalculated: boolean
-}
-
-export const DEFAULT_RESULT: ROIResult = {
-  recommendedKw: 3,
-  systemCost: 180000,
-  governmentSubsidy: 78000,
-  netCost: 102000,
-  monthlySavings: 6542,
-  annualSavings: 78500,
-  annualGeneration: 0,
-  paybackPeriod: 1.3,
-  lifetimeSavings: 1960000,
-  roiPercentage: 0,
-  co2Reduction: 0,
-}
-
-export function generateDefaultChartData(): ChartDataPoint[] {
-  const defaultAnnualSavings = 58400
-  const defaultNetCost = 102000
-  const points: ChartDataPoint[] = []
-  for (let year = 1; year <= 25; year++) {
-    points.push({
-      year,
-      cumulativeCashflow: Math.round((year * defaultAnnualSavings) - defaultNetCost),
-    })
-  }
-  return points
 }

@@ -1,5 +1,6 @@
 import { useState, useRef, useCallback, useEffect } from 'react'
 import api from '../services/api/client'
+import { calculateSubsidy } from '../utils/solar'
 import type { Chart, ChartConfiguration } from 'chart.js'
 import {
   Chart as ChartJS,
@@ -71,18 +72,48 @@ function safeNum(val: unknown, fallback = 0): number {
 
 function validateBillAnalysisResponse(data: Record<string, unknown>): boolean {
   if (!data || typeof data !== 'object') return false
-  const fields: { key: string; min: number; max: number }[] = [
-    { key: 'monthly_units', min: 1, max: 1000000 },
-    { key: 'bill_amount', min: 1, max: 10000000 },
-    { key: 'per_unit_rate', min: 0.01, max: 100 },
-    { key: 'recommended_kw', min: 0.1, max: 10000 },
-  ]
-  for (const f of fields) {
-    if (data[f.key] === undefined || data[f.key] === null) return false
-    const n = Number(data[f.key])
-    if (!isFinite(n) || n < f.min || n > f.max) return false
-  }
+  const monthlyUnits = Number(data.monthly_units ?? data.units)
+  const billAmount = Number(data.bill_amount ?? data.total_amount ?? data.amount)
+
+  if (!isFinite(monthlyUnits) || monthlyUnits <= 0) return false
+  if (!isFinite(billAmount) || billAmount <= 0) return false
+
   return true
+}
+
+function extractErrorMessage(err: unknown, defaultMsg: string): string {
+  if (typeof err === 'object' && err !== null) {
+    const e = err as {
+      response?: {
+        status?: number
+        data?: { detail?: string | { msg?: string }[]; error?: string; message?: string }
+      }
+      code?: string
+      message?: string
+    }
+    if (e.response) {
+      const status = e.response.status
+      if (status === 401) return 'Session expired. Please log in to analyze your bill.'
+      if (status === 413) return 'File size exceeds server upload limit.'
+      if (status === 429) return 'Request limit reached. Please wait a moment before trying again.'
+      if (status === 503 || status === 504) return 'AI service is temporarily busy. Please try again shortly.'
+
+      const data = e.response.data
+      if (data?.error && typeof data.error === 'string') return data.error
+      if (data?.detail) {
+        if (typeof data.detail === 'string') return data.detail
+        if (Array.isArray(data.detail) && data.detail[0]?.msg) return data.detail[0].msg
+      }
+      if (data?.message && typeof data.message === 'string') return data.message
+    }
+    if (e.code === 'ECONNABORTED' || e.message?.toLowerCase().includes('timeout')) {
+      return 'The request timed out while analyzing the document. Please try again.'
+    }
+    if (e.message && typeof e.message === 'string' && !e.message.includes('Network Error') && !e.message.includes('status code')) {
+      return e.message
+    }
+  }
+  return defaultMsg
 }
 
 function calculateExtractionConfidence(data: BillAnalysisData, isFallback: boolean): ConfidenceResult {
@@ -232,10 +263,41 @@ function extractSolarProductionData(text: string, filename: string): SolarReport
 }
 
 function enrichAnalysisData(apiData: Record<string, unknown>, filename: string, isFallback: boolean, solarFieldData: ReturnType<typeof extractSolarFields>): BillAnalysisData {
-  const recommendedKw = safeNum(apiData.recommended_kw)
-  const monthlyUnits = safeNum(apiData.monthly_units)
-  const monthlySolarGen = recommendedKw * SOLAR_YIELD
+  const monthlyUnits = safeNum(apiData.monthly_units ?? apiData.units, 100)
+  const billAmount = safeNum(apiData.bill_amount ?? apiData.total_amount ?? apiData.amount, 1000)
+  const perUnitRate = safeNum(
+    apiData.per_unit_rate,
+    monthlyUnits > 0 ? Math.round((billAmount / monthlyUnits) * 100) / 100 : 7.5
+  )
+  const recommendedKw = safeNum(
+    apiData.recommended_kw,
+    Math.round((monthlyUnits / 135) * 2) / 2 || 1.0
+  )
+  const monthlySolarGen = safeNum(
+    apiData.monthly_generation_units,
+    recommendedKw * SOLAR_YIELD
+  )
   const annualSolarGen = monthlySolarGen * 12
+  const monthlySavingsRs = safeNum(
+    apiData.monthly_savings_rs,
+    monthlySolarGen * perUnitRate
+  )
+  const systemCostRs = safeNum(
+    apiData.system_cost_rs,
+    recommendedKw * 55000
+  )
+  const subsidyRs = calculateSubsidy(recommendedKw)
+  const netCostRs = Math.max(0, systemCostRs - subsidyRs)
+  const annualSavingsRs = monthlySavingsRs * 12
+  const paybackYears = safeNum(
+    apiData.payback_years && apiData.payback_years <= 15 ? apiData.payback_years : null,
+    annualSavingsRs > 0 ? Math.round((netCostRs / annualSavingsRs) * 10) / 10 : 3.5
+  )
+  const savings25YearsRs = safeNum(
+    apiData.savings_25_years_rs,
+    (annualSavingsRs * 25) - netCostRs
+  )
+
   const solarUsedDirectlyVal = monthlySolarGen * 0.75
   const exportedToGridVal = monthlySolarGen - solarUsedDirectlyVal
   const offsetPercent = monthlyUnits > 0 ? Math.min(100, (solarUsedDirectlyVal / monthlyUnits) * 100) : 0
@@ -245,20 +307,21 @@ function enrichAnalysisData(apiData: Record<string, unknown>, filename: string, 
   const netCons = solarFieldData.importUnits !== null && solarFieldData.exportUnits !== null
     ? Math.max(solarFieldData.importUnits - solarFieldData.exportUnits, 0) : 0
   const netCredit = solarFieldData.exportUnits !== null ? solarFieldData.exportUnits * NET_METERING_RATE : 0
+
   const base = {
     customer_name: String(apiData.customer_name ?? ''),
     consumer_number: String(apiData.consumer_number ?? ''),
     discom: String(apiData.discom ?? ''),
     billing_period: String(apiData.billing_period ?? ''),
     monthly_units: monthlyUnits,
-    bill_amount: safeNum(apiData.bill_amount),
-    per_unit_rate: safeNum(apiData.per_unit_rate),
+    bill_amount: billAmount,
+    per_unit_rate: perUnitRate,
     recommended_kw: recommendedKw,
-    monthly_generation_units: safeNum(apiData.monthly_generation_units),
-    monthly_savings_rs: safeNum(apiData.monthly_savings_rs),
-    system_cost_rs: safeNum(apiData.system_cost_rs),
-    payback_years: safeNum(apiData.payback_years),
-    savings_25_years_rs: safeNum(apiData.savings_25_years_rs),
+    monthly_generation_units: monthlySolarGen,
+    monthly_savings_rs: monthlySavingsRs,
+    system_cost_rs: systemCostRs,
+    payback_years: paybackYears,
+    savings_25_years_rs: savings25YearsRs,
   }
   const enriched: BillAnalysisData = {
     ...base,
@@ -339,83 +402,91 @@ export function useBillAnalyzer(): BillAnalyzerReturn {
   }, [])
 
   const destroyCharts = useCallback(() => {
-    if (billChartRef.current) { billChartRef.current.destroy(); billChartRef.current = null }
-    if (historyChartRef.current) { historyChartRef.current.destroy(); historyChartRef.current = null }
+    if (billChartRef.current) {
+      billChartRef.current.destroy()
+      billChartRef.current = null
+    }
+    if (historyChartRef.current) {
+      historyChartRef.current.destroy()
+      historyChartRef.current = null
+    }
   }, [])
 
   const initCostBreakdownChart = useCallback((billAmount: number, monthlySavings: number) => {
     const canvas = document.getElementById('billCostBreakdownChart') as HTMLCanvasElement | null
     if (!canvas) return
-    if (billChartRef.current) billChartRef.current.destroy()
     const ctx = canvas.getContext('2d')
     if (!ctx) return
-    const energyVal = Math.round(billAmount * 0.70)
-    const fixedVal = Math.round(billAmount * 0.15)
-    const taxesVal = Math.round(billAmount * 0.10)
-    const otherVal = Math.round(billAmount * 0.05)
-    const config: ChartConfiguration = {
-      type: 'pie',
+
+    if (billChartRef.current) {
+      billChartRef.current.destroy()
+      billChartRef.current = null
+    }
+
+    const energyCost = Math.round(billAmount * 0.70)
+    const fixedCharges = Math.round(billAmount * 0.15)
+    const taxes = Math.max(0, billAmount - energyCost - fixedCharges)
+
+    const config: ChartConfiguration<'doughnut'> = {
+      type: 'doughnut',
       data: {
-        labels: ['Energy Charges', 'Fixed Charges', 'Taxes & Duties', 'Other Surcharges'],
+        labels: ['Energy Charges', 'Fixed Charges', 'Taxes & Cess'],
         datasets: [{
-          data: [energyVal, fixedVal, taxesVal, otherVal],
+          data: [energyCost, fixedCharges, taxes],
           backgroundColor: COST_BREAKDOWN_CHART_COLORS.backgroundColor,
-          borderColor: COST_BREAKDOWN_CHART_COLORS.borderColor,
-          borderWidth: 1,
+          borderWidth: 2,
+          borderColor: '#060f1f',
         }],
       },
       options: {
         responsive: true,
         maintainAspectRatio: false,
+        cutout: '70%',
         plugins: {
-          legend: { display: true, position: 'right', labels: { color: '#9fb3c8', font: { family: 'Outfit', size: 9 }, boxWidth: 10 } },
-          tooltip: {
-            callbacks: {
-              label: (context) => {
-                const val = context.raw as number
-                const pct = safeNum((val / (billAmount || 1)) * 100).toFixed(0)
-                return ` ${context.label}: ₹${val.toLocaleString('en-IN')} (${pct}%)`
-              },
-            },
-            backgroundColor: CHART_TOOLTIP_THEME.backgroundColor,
-            titleColor: CHART_TOOLTIP_THEME.titleColor,
-            bodyColor: CHART_TOOLTIP_THEME.bodyColor,
-            borderColor: CHART_TOOLTIP_THEME.borderColor,
-            borderWidth: CHART_TOOLTIP_THEME.borderWidth,
+          legend: {
+            position: 'bottom',
+            labels: { color: '#94a3b8', font: { size: 10, family: 'Outfit' }, boxWidth: 10, padding: 8 },
           },
+          tooltip: CHART_TOOLTIP_THEME,
         },
       },
     }
     billChartRef.current = new ChartJS(ctx, config)
   }, [])
 
-  const initHistoryChart = useCallback((baseBill: number) => {
+  const initHistoryChart = useCallback((currentBill: number) => {
     const canvas = document.getElementById('billHistoryChart') as HTMLCanvasElement | null
     if (!canvas) return
-    if (historyChartRef.current) historyChartRef.current.destroy()
     const ctx = canvas.getContext('2d')
     if (!ctx) return
-    const bills = MONTH_MULTIPLIERS.map(mult => Math.round(baseBill * mult))
-    const savings = bills.map(val => Math.round(val * 0.74))
-    const config: ChartConfiguration = {
+
+    if (historyChartRef.current) {
+      historyChartRef.current.destroy()
+      historyChartRef.current = null
+    }
+
+    const historical = MONTH_MULTIPLIERS.map(m => Math.round(currentBill * m))
+    const withSolar = historical.map(b => Math.round(b * 0.25))
+
+    const config: ChartConfiguration<'bar'> = {
       type: 'bar',
       data: {
         labels: DEFAULT_MONTHS,
         datasets: [
           {
-            label: 'Grid Electricity Bill (₹)',
-            data: bills,
+            label: 'Grid Bill Without Solar (₹)',
+            data: historical,
             backgroundColor: HISTORY_CHART_STYLES.billBackground,
             borderColor: HISTORY_CHART_STYLES.billBorder,
-            borderWidth: 1.5,
+            borderWidth: 1,
             borderRadius: 4,
           },
           {
-            label: 'Projected Solar Savings (₹)',
-            data: savings,
+            label: 'Projected Bill With Solar (₹)',
+            data: withSolar,
             backgroundColor: HISTORY_CHART_STYLES.savingsBackground,
             borderColor: HISTORY_CHART_STYLES.savingsBorder,
-            borderWidth: 1.5,
+            borderWidth: 1,
             borderRadius: 4,
           },
         ],
@@ -423,19 +494,31 @@ export function useBillAnalyzer(): BillAnalyzerReturn {
       options: {
         responsive: true,
         maintainAspectRatio: false,
-        plugins: {
-          legend: { labels: { color: '#9fb3c8', font: { family: 'Outfit', size: 10 } } },
-          tooltip: {
-            backgroundColor: CHART_TOOLTIP_THEME.backgroundColor,
-            titleColor: CHART_TOOLTIP_THEME.titleColor,
-            bodyColor: CHART_TOOLTIP_THEME.bodyColor,
-            borderColor: CHART_TOOLTIP_THEME.borderColor,
-            borderWidth: CHART_TOOLTIP_THEME.borderWidth,
+        scales: {
+          x: {
+            grid: { color: 'rgba(255,255,255,0.05)' },
+            ticks: { color: '#94a3b8', font: { size: 10, family: 'Outfit' } },
+          },
+          y: {
+            grid: { color: 'rgba(255,255,255,0.05)' },
+            ticks: {
+              color: '#94a3b8',
+              font: { size: 10, family: 'Outfit' },
+              callback: (val) => `₹${Number(val).toLocaleString('en-IN')}`,
+            },
           },
         },
-        scales: {
-          x: { grid: { display: false }, ticks: { color: '#9fb3c8', font: { family: 'Outfit', size: 9 } } },
-          y: { grid: { color: 'rgba(255, 255, 255, 0.06)' }, ticks: { color: '#9fb3c8', font: { family: 'Outfit', size: 9 } } },
+        plugins: {
+          legend: {
+            position: 'top',
+            labels: { color: '#94a3b8', font: { size: 10, family: 'Outfit' }, boxWidth: 10, padding: 8 },
+          },
+          tooltip: {
+            ...CHART_TOOLTIP_THEME,
+            callbacks: {
+              label: (item) => ` ${item.dataset.label}: ₹${Number(item.raw).toLocaleString('en-IN')}`,
+            },
+          },
         },
       },
     }
@@ -456,21 +539,32 @@ export function useBillAnalyzer(): BillAnalyzerReturn {
     setBillProgress({ percent: 0, status: 'Starting...' })
     setAnalysis(null)
     setUnifiedEnergy(null)
+    localStorage.removeItem(LS_KEY_BILL)
+    destroyCharts()
+
     const ext = file.name.split('.').pop()?.toLowerCase() ?? ''
     const isValidType = VALID_MIME_TYPES.includes(file.type) || VALID_EXTENSIONS.includes(ext)
     if (!isValidType) {
       setBillError('Please upload a valid document or image file (PDF, PNG, JPG, JPEG, WEBP)')
       setBillUploadState('error')
+      setBillProgress({ percent: 0, status: '' })
       return
     }
     if (file.size > MAX_FILE_SIZE) {
       setBillError('File size exceeds 10MB limit.')
       setBillUploadState('error')
+      setBillProgress({ percent: 0, status: '' })
       return
     }
 
     let progress = 0
-    const statuses = ['Uploading...', 'Reading Bill...', 'Running OCR...', 'Analyzing Consumption...', 'Calculating Solar Analysis...']
+    const statuses = [
+      'Uploading bill document...',
+      'Reading electricity bill...',
+      'Running OCR extraction...',
+      'Analyzing consumption patterns...',
+      'Calculating solar recommendations...',
+    ]
     clearBillProgressInterval()
     billProgressInterval.current = setInterval(() => {
       if (progress < 90) {
@@ -479,7 +573,7 @@ export function useBillAnalyzer(): BillAnalyzerReturn {
         const idx = Math.min(Math.floor(progress / 20), statuses.length - 1)
         updateBillProgress(progress, statuses[idx])
       }
-    }, 200)
+    }, 250)
 
     const solarFields = extractSolarFields(file.name, file.name)
 
@@ -494,6 +588,11 @@ export function useBillAnalyzer(): BillAnalyzerReturn {
 
     const doError = (err: Error) => {
       clearBillProgressInterval()
+      setAnalysis(null)
+      setUnifiedEnergy(null)
+      localStorage.removeItem(LS_KEY_BILL)
+      destroyCharts()
+      setBillProgress({ percent: 0, status: '' })
       setBillError(err.message || 'Analysis failed. Check the file or try again.')
       setBillUploadState('error')
     }
@@ -503,23 +602,35 @@ export function useBillAnalyzer(): BillAnalyzerReturn {
     api.post('/analyze-bill', fd)
       .then((res) => {
         const result = res.data
-        if (!result || result.success !== true || !result.data) throw new Error(result?.error || 'Invalid API response format.')
-        if (!validateBillAnalysisResponse(result.data)) throw new Error('Analysis returned invalid data. Please upload a clearer image.')
+        if (!result) throw new Error('No response received from the bill analysis service.')
+        if (result.success !== true) {
+          throw new Error(result.error || 'Bill analysis could not be completed for this file.')
+        }
+        if (!result.data || typeof result.data !== 'object') {
+          throw new Error('Analysis completed but extracted bill data was missing.')
+        }
+        if (!validateBillAnalysisResponse(result.data)) {
+          throw new Error('Could not extract valid monthly units or bill amount from the document. Please upload a clearer electricity bill.')
+        }
         return result.data as Record<string, unknown>
       })
       .then(doComplete)
       .catch((err: unknown) => {
-        const msg = (err as { response?: { data?: { detail?: string } }, message?: string })?.response?.data?.detail || (err as Error)?.message || 'Analysis failed. Check the file or try again.'
+        const msg = extractErrorMessage(err, 'Analysis failed. Please check the file or try again.')
         doError(new Error(msg))
       })
-  }, [clearBillProgressInterval, updateBillProgress])
+  }, [clearBillProgressInterval, updateBillProgress, destroyCharts])
 
   const retryBillUpload = useCallback(() => {
+    setAnalysis(null)
+    setUnifiedEnergy(null)
+    localStorage.removeItem(LS_KEY_BILL)
+    destroyCharts()
     setBillError(null)
     setBillUploadState('idle')
     setBillProgress({ percent: 0, status: '' })
     setBillFileInputTrigger(prev => prev + 1)
-  }, [])
+  }, [destroyCharts])
 
   const resetBill = useCallback(() => {
     setAnalysis(null)
@@ -535,23 +646,35 @@ export function useBillAnalyzer(): BillAnalyzerReturn {
     setSolarError(null)
     setSolarUploadState('uploading')
     setSolarProgress({ percent: 0, status: 'Starting...' })
+    setSolarReport(null)
+    setUnifiedEnergy(null)
+    localStorage.removeItem(LS_KEY_SOLAR)
+
     const ext = file.name.split('.').pop()?.toLowerCase() ?? ''
     const isValidType = VALID_MIME_TYPES.includes(file.type) || VALID_EXTENSIONS.includes(ext)
     if (!isValidType) {
       setSolarError('Please upload a valid solar report file (PDF, PNG, JPG, JPEG, WEBP)')
       setSolarUploadState('error')
+      setSolarProgress({ percent: 0, status: '' })
       return
     }
 
     let progress = 0
+    const statuses = [
+      'Uploading solar report...',
+      'Reading generation data...',
+      'Parsing kWh yield metrics...',
+      'Computing solar intelligence...',
+    ]
     clearSolarProgressInterval()
     solarProgressInterval.current = setInterval(() => {
-      if (progress < 85) {
-        progress = Math.min(85, progress + 15)
-        const status = progress <= 50 ? 'Analyzing Solar Production...' : 'Calculating Solar Analysis...'
-        updateSolarProgress(progress, status)
+      if (progress < 90) {
+        progress += 10
+        if (progress > 90) progress = 90
+        const idx = Math.min(Math.floor(progress / 25), statuses.length - 1)
+        updateSolarProgress(progress, statuses[idx])
       }
-    }, 300)
+    }, 250)
 
     const doComplete = (prodData: SolarReportData) => {
       clearSolarProgressInterval()
@@ -563,6 +686,10 @@ export function useBillAnalyzer(): BillAnalyzerReturn {
 
     const doError = (err: Error) => {
       clearSolarProgressInterval()
+      setSolarReport(null)
+      setUnifiedEnergy(null)
+      localStorage.removeItem(LS_KEY_SOLAR)
+      setSolarProgress({ percent: 0, status: '' })
       setSolarError(err.message || 'Could not read solar report. Try another file.')
       setSolarUploadState('error')
     }
@@ -574,20 +701,31 @@ export function useBillAnalyzer(): BillAnalyzerReturn {
         const result = res.data
         let apiText = ''
         if (result?.data) {
-          apiText = [result.data._raw_text || '', result.data.customer_name || '', result.data.billing_period || ''].join(' ')
+          apiText = [
+            result.data._raw_text || '',
+            result.data.customer_name || '',
+            result.data.billing_period || '',
+            result.data.discom || '',
+            JSON.stringify(result.data),
+          ].join(' ')
         }
         const prodData = extractSolarProductionData(apiText, file.name)
-        if (prodData.productionKwh == null) throw new Error('Could not extract solar production data.')
+        if (prodData.productionKwh == null) {
+          throw new Error('Could not extract solar generation figures from this report. Please upload an inverter or app screenshot showing kWh generation.')
+        }
         return prodData
       })
       .then(doComplete)
       .catch((err: unknown) => {
-        const msg = (err as { response?: { data?: { detail?: string } }, message?: string })?.response?.data?.detail || (err as Error)?.message || 'Could not read solar report. Try another file.'
+        const msg = extractErrorMessage(err, 'Could not read solar report. Please try uploading another document.')
         doError(new Error(msg))
       })
   }, [clearSolarProgressInterval, updateSolarProgress])
 
   const retrySolarUpload = useCallback(() => {
+    setSolarReport(null)
+    setUnifiedEnergy(null)
+    localStorage.removeItem(LS_KEY_SOLAR)
     setSolarError(null)
     setSolarUploadState('idle')
     setSolarProgress({ percent: 0, status: '' })
@@ -621,16 +759,18 @@ export function useBillAnalyzer(): BillAnalyzerReturn {
   }, [analysis, solarReport])
 
   useEffect(() => {
-    const billAmount = analysis ? safeNum(analysis.bill_amount) : 6500
-    const monthlySavings = analysis ? safeNum(analysis.monthly_savings_rs) : 4850
-    const timer = setTimeout(() => {
-      if (analysis) {
+    if (analysis && safeNum(analysis.bill_amount) > 0) {
+      const billAmount = safeNum(analysis.bill_amount)
+      const monthlySavings = safeNum(analysis.monthly_savings_rs)
+      const timer = setTimeout(() => {
         initCostBreakdownChart(billAmount, monthlySavings)
-      }
-      initHistoryChart(billAmount)
-    }, 100)
-    return () => clearTimeout(timer)
-  }, [analysis, initCostBreakdownChart, initHistoryChart])
+        initHistoryChart(billAmount)
+      }, 100)
+      return () => clearTimeout(timer)
+    } else {
+      destroyCharts()
+    }
+  }, [analysis, initCostBreakdownChart, initHistoryChart, destroyCharts])
 
   useEffect(() => {
     return () => {

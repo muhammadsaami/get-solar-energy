@@ -13,14 +13,8 @@ const PHOTO_CATEGORIES = [
   { value: 'other', label: 'Other', icon: 'icon-camera' },
 ];
 
-const MOCK_PHOTOS = [
-  { id: 1, file_name: 'roof_overview.jpg', photo_category: 'roof', caption: 'South-facing roof section', timestamp: '2026-07-28 10:30', file_size: 2048 },
-  { id: 2, file_name: 'electrical_panel.jpg', photo_category: 'electrical_panel', caption: 'Main electrical panel location', timestamp: '2026-07-28 10:45', file_size: 1536 },
-  { id: 3, file_name: 'obstacle_ac.jpg', photo_category: 'obstacles', caption: 'AC unit on north-east corner', timestamp: '2026-07-28 11:00', file_size: 1800 },
-];
-
 export default function PhotoGallery({ surveyId, photos: externalPhotos, onAddPhoto, onDeletePhoto }) {
-  const [photos, setPhotos] = useState(externalPhotos || MOCK_PHOTOS);
+  const [photos, setPhotos] = useState(externalPhotos || []);
   const [dragActive, setDragActive] = useState(false);
   const [selectedCategory, setSelectedCategory] = useState('all');
   const [viewMode, setViewMode] = useState('grid');
@@ -131,7 +125,11 @@ export default function PhotoGallery({ surveyId, photos: externalPhotos, onAddPh
         </div>
       </div>
 
-      {viewMode === 'grid' ? (
+      {filteredPhotos.length === 0 ? (
+        <div className="card-glass" style={{ padding: 'var(--space-6)', textAlign: 'center', color: 'var(--text-muted)', fontSize: '13px' }}>
+          No photos uploaded for this category. Drag and drop site photos above or browse to upload.
+        </div>
+      ) : viewMode === 'grid' ? (
         <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(180px, 1fr))', gap: 'var(--space-3)' }}>
           {filteredPhotos.map((photo) => (
             <div key={photo.id} className="card-glass" style={{
@@ -145,10 +143,22 @@ export default function PhotoGallery({ surveyId, photos: externalPhotos, onAddPh
                 width: '100%', height: 120, borderRadius: 'var(--radius-md)',
                 background: 'linear-gradient(135deg, var(--bg-tertiary), var(--bg-card))',
                 display: 'flex', alignItems: 'center', justifyContent: 'center', marginBottom: 'var(--space-2)',
+                overflow: 'hidden',
               }}>
-                <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="var(--text-muted)" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round">
-                  <use href="#icon-camera" />
-                </svg>
+                {photo.file_path ? (
+                  <img
+                    src={photo.file_path}
+                    alt={photo.caption || photo.file_name}
+                    style={{ width: '100%', height: '100%', objectFit: 'cover' }}
+                    onError={(e) => {
+                      e.currentTarget.style.display = 'none'
+                    }}
+                  />
+                ) : (
+                  <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="var(--text-muted)" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round">
+                    <use href="#icon-camera" />
+                  </svg>
+                )}
               </div>
               <div style={{ fontSize: 'var(--font-size-xs)', fontWeight: 600, color: 'var(--text-primary)', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
                 {photo.caption || photo.file_name}
