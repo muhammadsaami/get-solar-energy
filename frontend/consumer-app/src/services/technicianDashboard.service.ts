@@ -60,9 +60,9 @@ export const technicianDashboardService = {
       activeWorkOrders: raw.kpi_summary?.jobs_in_progress ?? 0,
       completedJobs: raw.kpi_summary?.jobs_completed ?? 0,
       monthlyEarnings: raw.kpi_summary?.total_earned ?? 0,
-      customerRating: raw.performance_summary?.average_rating ?? 4.8,
+      customerRating: raw.performance_summary?.average_rating ?? null,
       trainingProgress: raw.kpi_summary?.training_completion_pct ?? 0,
-      certificationScore: raw.kpi_summary?.certifications_earned ? raw.kpi_summary.certifications_earned * 25 : 88,
+      certificationScore: raw.kpi_summary?.certifications_earned ? raw.kpi_summary.certifications_earned * 25 : (raw.training_progress?.certifications_earned ? raw.training_progress.certifications_earned * 25 : null),
     }
 
     const schedule: ScheduleItem[] = (raw.todays_schedule || []).map((item: Record<string, unknown>) => ({
@@ -86,7 +86,7 @@ export const technicianDashboardService = {
     const performance: PerformanceData = {
       completedJobs: [{ label: 'Total', value: raw.kpi_summary?.jobs_completed ?? 0 }],
       monthlyEarnings: [{ label: 'Earned', value: raw.earnings_summary?.total_earned ?? 0 }],
-      customerSatisfaction: [{ label: 'Rating', value: raw.performance_summary?.average_rating ?? 4.8 }],
+      customerSatisfaction: [{ label: 'Rating', value: raw.performance_summary?.average_rating ?? 0 }],
       trainingCompletion: [{ label: 'Passed', value: raw.training_progress?.modules_passed ?? 0 }],
     }
 

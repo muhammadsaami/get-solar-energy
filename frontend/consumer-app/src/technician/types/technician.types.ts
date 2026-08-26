@@ -2,9 +2,9 @@ export interface TechnicianKpis {
   activeWorkOrders: number
   completedJobs: number
   monthlyEarnings: number
-  customerRating: number
+  customerRating: number | null
   trainingProgress: number
-  certificationScore: number
+  certificationScore: number | null
 }
 
 export interface TechnicianProfile {

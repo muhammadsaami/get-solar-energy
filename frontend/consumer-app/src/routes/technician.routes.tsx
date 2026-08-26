@@ -1,5 +1,5 @@
 import React, { Suspense, lazy } from 'react'
-import { Route } from 'react-router-dom'
+import { Route, Navigate } from 'react-router-dom'
 
 import { ROUTES } from '../config/routes'
 import PermissionGuard from './PermissionGuard'
@@ -20,6 +20,11 @@ function TechnicianShell({ children }: { children: React.ReactNode }) {
 }
 
 const technicianRouteElements = [
+  <Route key="t-root" path="/app/technician" element={<Navigate to={ROUTES.TECHNICIAN_DASHBOARD} replace />} />,
+  <Route key="t-jobs-alias" path="/app/technician/jobs" element={<Navigate to={ROUTES.TECHNICIAN_MARKETPLACE} replace />} />,
+  <Route key="t-academy-alias" path="/app/technician/academy" element={<Navigate to={ROUTES.TECHNICIAN_TRAINING} replace />} />,
+  <Route key="t-orders-alias" path="/app/technician/orders" element={<Navigate to={ROUTES.TECHNICIAN_WORK_ORDERS} replace />} />,
+  <Route key="t-ai-alias" path="/app/technician/ai" element={<Navigate to={ROUTES.TECHNICIAN_AI} replace />} />,
   <Route key="t-dashboard" path={ROUTES.TECHNICIAN_DASHBOARD} element={
     <TechnicianShell>
       <PermissionGuard feature="technician-dashboard">

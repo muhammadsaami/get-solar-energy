@@ -18,12 +18,12 @@ export default function TechKPIs({ kpis }: TechKPIsProps) {
   if (!kpis) return null
 
   const kpiItems = [
-    { label: 'Active Work Orders', value: String(kpis.activeWorkOrders), desc: 'Currently assigned', theme: '255, 138, 29' },
-    { label: 'Completed Jobs', value: String(kpis.completedJobs), desc: 'All time', theme: '54, 211, 153' },
-    { label: 'Monthly Earnings', value: `₹${kpis.monthlyEarnings.toLocaleString()}`, desc: 'This month', theme: '255, 138, 29' },
-    { label: 'Customer Rating', value: `${kpis.customerRating}`, desc: 'out of 5.0', theme: '23, 168, 229' },
-    { label: 'Training Progress', value: `${kpis.trainingProgress}%`, desc: `${kpis.trainingProgress}% complete`, theme: '23, 168, 229' },
-    { label: 'Certification Score', value: `${kpis.certificationScore}%`, desc: `${kpis.certificationScore}% achieved`, theme: '54, 211, 153' },
+    { label: 'Active Work Orders', value: String(kpis.activeWorkOrders ?? 0), desc: 'Currently assigned', theme: '255, 138, 29' },
+    { label: 'Completed Jobs', value: String(kpis.completedJobs ?? 0), desc: 'All time', theme: '54, 211, 153' },
+    { label: 'Monthly Earnings', value: `₹${(kpis.monthlyEarnings ?? 0).toLocaleString()}`, desc: 'This month', theme: '255, 138, 29' },
+    { label: 'Customer Rating', value: kpis.customerRating !== null && kpis.customerRating !== undefined ? `${kpis.customerRating}` : '—', desc: kpis.customerRating !== null && kpis.customerRating !== undefined ? 'out of 5.0' : 'Awaiting feedback', theme: '23, 168, 229' },
+    { label: 'Training Progress', value: `${kpis.trainingProgress ?? 0}%`, desc: `${kpis.trainingProgress ?? 0}% complete`, theme: '23, 168, 229' },
+    { label: 'Certification Score', value: kpis.certificationScore !== null && kpis.certificationScore !== undefined ? `${kpis.certificationScore}%` : '—', desc: kpis.certificationScore !== null && kpis.certificationScore !== undefined ? `${kpis.certificationScore}% achieved` : 'Awaiting assessment', theme: '54, 211, 153' },
   ]
 
   return (

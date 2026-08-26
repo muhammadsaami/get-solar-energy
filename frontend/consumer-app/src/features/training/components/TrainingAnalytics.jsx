@@ -3,33 +3,6 @@ import { BarChart, Bar, XAxis, YAxis, Tooltip, ResponsiveContainer, LineChart, L
 
 const CHART_COLORS = ['var(--accent-blue)', 'var(--accent-orange)', 'var(--accent-green)', '#a855f7', '#f59e0b', '#06b6d4']
 
-const MOCK_MONTHLY_HOURS = [
-  { month: 'Feb', hours: 18 },
-  { month: 'Mar', hours: 24 },
-  { month: 'Apr', hours: 32 },
-  { month: 'May', hours: 28 },
-  { month: 'Jun', hours: 36 },
-  { month: 'Jul', hours: 42 },
-]
-
-const MOCK_COMPLETION_TREND = [
-  { month: 'Feb', rate: 45 },
-  { month: 'Mar', rate: 55 },
-  { month: 'Apr', rate: 60 },
-  { month: 'May', rate: 68 },
-  { month: 'Jun', rate: 75 },
-  { month: 'Jul', rate: 82 },
-]
-
-const MOCK_SKILL_DISTRIBUTION = [
-  { skill: 'Installation', percentage: 65 },
-  { skill: 'Safety', percentage: 90 },
-  { skill: 'Electrical', percentage: 70 },
-  { skill: 'Design', percentage: 45 },
-  { skill: 'Customer Service', percentage: 55 },
-  { skill: 'Compliance', percentage: 60 },
-]
-
 function CustomTooltip({ active, payload, label }) {
   if (!active || !payload?.length) return null
   return (
@@ -49,9 +22,17 @@ function CustomTooltip({ active, payload, label }) {
 export default function TrainingAnalytics({ analytics }) {
   if (!analytics) return null
 
-  const monthlyHours = analytics.monthlyHours?.length ? analytics.monthlyHours : MOCK_MONTHLY_HOURS
-  const completionTrend = analytics.completionTrend?.length ? analytics.completionTrend : MOCK_COMPLETION_TREND
-  const skillDistribution = analytics.skillDistribution?.length ? analytics.skillDistribution : MOCK_SKILL_DISTRIBUTION
+  const monthlyHours = analytics.monthlyHours || []
+  const completionTrend = analytics.completionTrend || []
+  const skillDistribution = analytics.skillDistribution || []
+
+  if (monthlyHours.length === 0 && completionTrend.length === 0 && skillDistribution.length === 0) {
+    return (
+      <div className="card-base" style={{ marginTop: 20, padding: 'var(--space-6)', textAlign: 'center', color: 'var(--text-muted)', fontSize: '13px' }}>
+        No training analytics available yet. Complete modules and training assessments to generate learning metrics.
+      </div>
+    )
+  }
 
   return (
     <>
