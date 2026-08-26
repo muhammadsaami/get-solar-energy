@@ -45,7 +45,7 @@ export default function AnimatedBackground() {
     <div className="auth-bg" aria-hidden="true">
       <div
         className="auth-bg-img"
-        style={{ backgroundImage: "url('/frontend/assets/auth_showcase_right.png')" }}
+        style={{ backgroundImage: "url('/assets/auth_showcase_right.png')" }}
       />
       <div className="auth-bg-overlay" />
       <div className="auth-bg-grid" />

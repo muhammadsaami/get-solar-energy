@@ -6,6 +6,7 @@ export default function AccessDenied() {
 
   return (
     <div
+      className="access-denied-container"
       style={{
         display: 'flex',
         flexDirection: 'column',
