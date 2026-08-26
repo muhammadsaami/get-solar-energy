@@ -1,5 +1,8 @@
 import React, { useState, useEffect, useMemo, useCallback } from 'react';
 import { usePlanning } from '../contexts/PlanningContext';
+import { useAuth } from '../contexts/AuthContext';
+import { generateProposalPdf } from '../services/pdf/proposalPdfGenerator';
+import ProposalPreview from '../components/proposal/ProposalPreview';
 
 const STEPS = [
   { id: 'analyzing', label: 'Analyzing consumption & DISCOM tariff data...', duration: 600 },
@@ -10,37 +13,106 @@ const STEPS = [
 ];
 
 const INITIAL_FORM = {
-  customerName: 'Rajesh Sharma',
-  phone: '98765 43210',
-  email: 'rajesh.sharma@example.com',
-  address: 'Plot 42, Sunshine Enclave, MG Road',
-  city: 'Jaipur',
-  monthlyBill: '7500',
-  monthlyUnits: '850',
-  electricityRate: '8.8',
-  roofArea: '480',
-  recommendedKw: '5',
-  panelType: '540W Mono PERC Tier-1',
+  customerName: '',
+  phone: '',
+  email: '',
+  address: '',
+  city: '',
+  monthlyBill: '',
+  monthlyUnits: '',
+  electricityRate: '8.0',
+  roofArea: '',
+  recommendedKw: '',
+  panelType: 'Tier-1 Mono PERC',
   inverterType: '5 kW 3-Phase MPPT String Inverter',
   batteryOption: 'None (Grid-Tied Net Metering)',
-  notes: 'Customer requested PM Surya Ghar subsidy application assistance and tier-1 mounting structures.',
+  notes: '',
 };
 
 export default function Proposal() {
-  const { proposal, generateProposal, approveProposal, loading, error } = usePlanning();
+  const { user } = useAuth() || {};
+  const { proposal, activeBillOcr, roofAnalysis, generateProposal, approveProposal, loading, error, bills } = usePlanning();
   const [form, setForm] = useState(INITIAL_FORM);
   const [generating, setGenerating] = useState(false);
   const [currentStep, setCurrentStep] = useState(-1);
-  const [showOutput, setShowOutput] = useState(true);
+  const [showOutput, setShowOutput] = useState(false);
   const [activeTab, setActiveTab] = useState('overview');
   const [status, setStatus] = useState('Draft');
   const [actionSuccess, setActionSuccess] = useState('');
-  const [version, setVersion] = useState('v1.2 (Latest)');
+  const [version, setVersion] = useState('v1.0 (Latest)');
   const [savedTime, setSavedTime] = useState('Just now');
+  const [isExportingPdf, setIsExportingPdf] = useState(false);
+  const [isPreviewOpen, setIsPreviewOpen] = useState(false);
 
   useEffect(() => {
-    if (proposal) setStatus(proposal.status || 'Draft');
+    if (proposal) {
+      setShowOutput(true);
+      setStatus(proposal.status || 'Draft');
+    }
   }, [proposal]);
+
+  // Compute 6-month average bill and highest consumption month from actual available billing records
+  const billRecords = useMemo(() => {
+    return Array.isArray(bills) && bills.length > 0 ? bills : (activeBillOcr ? [activeBillOcr] : []);
+  }, [bills, activeBillOcr]);
+
+  const { calculatedAvgBill, highestConsumptionMonth } = useMemo(() => {
+    const validBillAmounts = billRecords
+      .map(b => {
+        const val = typeof b.amount === 'number' && b.amount > 0
+          ? b.amount
+          : (typeof b.bill_amount === 'number' && b.bill_amount > 0 ? b.bill_amount : (typeof b.amount === 'string' && parseFloat(b.amount) > 0 ? parseFloat(b.amount) : null));
+        return val;
+      })
+      .filter(val => typeof val === 'number' && !isNaN(val))
+      .slice(0, 6);
+
+    const avgBill = validBillAmounts.length > 0
+      ? Math.round(validBillAmounts.reduce((sum, v) => sum + v, 0) / validBillAmounts.length)
+      : (activeBillOcr?.bill_amount || null);
+
+    const validConsumptionBills = billRecords.filter(b => {
+      const u = typeof b.kwhConsumption === 'number' ? b.kwhConsumption : (typeof b.monthly_units === 'number' ? b.monthly_units : parseFloat(b.kwhConsumption || b.monthly_units));
+      return typeof u === 'number' && !isNaN(u) && u > 0;
+    });
+
+    const peakRecord = validConsumptionBills.reduce((max, b) => {
+      const curUnits = typeof b.kwhConsumption === 'number' ? b.kwhConsumption : (typeof b.monthly_units === 'number' ? b.monthly_units : parseFloat(b.kwhConsumption || b.monthly_units) || 0);
+      const maxUnits = max ? (typeof max.kwhConsumption === 'number' ? max.kwhConsumption : (typeof max.monthly_units === 'number' ? max.monthly_units : parseFloat(max.kwhConsumption || max.monthly_units) || 0)) : 0;
+      return curUnits > maxUnits ? b : max;
+    }, null);
+
+    const peakMonth = peakRecord ? {
+      month: peakRecord.billingPeriod || peakRecord.billing_period || (peakRecord.uploadDate ? new Date(peakRecord.uploadDate).toLocaleDateString('en-IN', { month: 'short', year: 'numeric' }) : 'Peak Month'),
+      units: Math.round(typeof peakRecord.kwhConsumption === 'number' ? peakRecord.kwhConsumption : (typeof peakRecord.monthly_units === 'number' ? peakRecord.monthly_units : parseFloat(peakRecord.kwhConsumption || peakRecord.monthly_units) || 0)),
+      billCount: validConsumptionBills.length,
+    } : (activeBillOcr?.monthly_units ? {
+      month: activeBillOcr.billing_period || 'Latest Bill',
+      units: Math.round(activeBillOcr.monthly_units),
+      billCount: 1,
+    } : null);
+
+    return {
+      calculatedAvgBill: avgBill,
+      highestConsumptionMonth: peakMonth,
+    };
+  }, [billRecords, activeBillOcr]);
+
+  useEffect(() => {
+    setForm(prev => ({
+      ...prev,
+      customerName: prev.customerName || user?.name || '',
+      email: prev.email || user?.email || '',
+      phone: prev.phone || user?.phone || '',
+      address: prev.address || user?.address || '',
+      city: prev.city || user?.city || '',
+      monthlyBill: prev.monthlyBill || (calculatedAvgBill ? String(calculatedAvgBill) : (activeBillOcr?.bill_amount ? String(activeBillOcr.bill_amount) : '')),
+      monthlyUnits: prev.monthlyUnits || (highestConsumptionMonth?.units ? String(highestConsumptionMonth.units) : (activeBillOcr?.monthly_units ? String(activeBillOcr.monthly_units) : '')),
+      electricityRate: prev.electricityRate || (activeBillOcr?.per_unit_rate ? String(activeBillOcr.per_unit_rate) : '8.0'),
+      roofArea: prev.roofArea || (roofAnalysis?.roof_area_sqft ? String(roofAnalysis.roof_area_sqft) : ''),
+      recommendedKw: prev.recommendedKw || (roofAnalysis?.system_size_kw ? String(roofAnalysis.system_size_kw) : (activeBillOcr?.recommended_kw ? String(activeBillOcr.recommended_kw) : '')),
+    }));
+  }, [user, activeBillOcr, roofAnalysis, calculatedAvgBill, highestConsumptionMonth]);
 
   const handleChange = useCallback((field) => (e) => {
     setForm(prev => ({ ...prev, [field]: e.target.value }));
@@ -49,21 +121,21 @@ export default function Proposal() {
   }, []);
 
   const insights = useMemo(() => {
-    const kw = parseFloat(form.recommendedKw) || 5;
-    const rate = parseFloat(form.electricityRate) || 8.8;
-    const area = parseFloat(form.roofArea) || 480;
+    const kw = parseFloat(form.recommendedKw) || 0;
+    const rate = parseFloat(form.electricityRate) || 8.0;
+    const area = parseFloat(form.roofArea) || 0;
     const monthlyGen = kw * 4.5 * 30; // ~135 kWh/kW/month
     const annualGen = monthlyGen * 12;
     const monthlySavings = monthlyGen * rate;
     const annualSavings = monthlySavings * 12;
     const systemCost = kw * 52000;
-    const subsidy = kw <= 2 ? kw * 30000 : kw <= 3 ? 60000 + (kw - 2) * 18000 : 78000;
+    const subsidy = kw === 0 ? 0 : kw <= 2 ? kw * 30000 : kw <= 3 ? 60000 + (kw - 2) * 18000 : 78000;
     const netCost = Math.max(0, systemCost - subsidy);
-    const payback = annualSavings > 0 ? (netCost / annualSavings).toFixed(1) : '3.8';
-    const lifetimeSavings = annualSavings * 25 - netCost;
+    const payback = annualSavings > 0 ? (netCost / annualSavings).toFixed(1) : '—';
+    const lifetimeSavings = annualSavings > 0 ? annualSavings * 25 - netCost : 0;
     const co2 = (annualGen * 0.00082).toFixed(2);
     const trees = Math.round(annualGen * 0.045);
-    const panels = Math.ceil((kw * 1000) / 540);
+    const panels = kw > 0 ? Math.ceil((kw * 1000) / 540) : 0;
 
     const monthlyCurve = [
       { month: 'Jan', gen: Math.round(monthlyGen * 0.95), savings: Math.round(monthlyGen * 0.95 * rate) },
@@ -82,9 +154,11 @@ export default function Proposal() {
 
     return {
       kw, rate, area, monthlyGen, annualGen, monthlySavings, annualSavings,
-      systemCost, subsidy, netCost, payback, lifetimeSavings, co2, trees, panels, monthlyCurve
+      systemCost, subsidy, netCost, payback, lifetimeSavings, co2, trees, panels, monthlyCurve,
+      avgMonthlyBill: calculatedAvgBill || (parseFloat(form.monthlyBill) || 0),
+      highestConsumptionMonth,
     };
-  }, [form.recommendedKw, form.electricityRate, form.roofArea]);
+  }, [form.recommendedKw, form.electricityRate, form.roofArea, form.monthlyBill, calculatedAvgBill, highestConsumptionMonth]);
 
   const runGeneration = async () => {
     setGenerating(true);
@@ -118,8 +192,26 @@ export default function Proposal() {
     showFeedback('Proposal marked for technical revision.');
   };
 
-  const handlePrintPdf = () => {
-    window.print();
+  const handleExportPdf = async () => {
+    try {
+      setIsExportingPdf(true);
+      showFeedback('Generating structured solar proposal PDF document...');
+      await generateProposalPdf({ form, insights, proposal, version });
+      showFeedback('Proposal PDF generated and downloaded successfully!');
+    } catch (err) {
+      console.error('Proposal PDF Export Error:', err);
+      showFeedback('Failed to generate PDF document. Please try again.');
+    } finally {
+      setIsExportingPdf(false);
+    }
+  };
+
+  const handleOpenPreview = () => {
+    setIsPreviewOpen(true);
+  };
+
+  const handleClosePreview = () => {
+    setIsPreviewOpen(false);
   };
 
   const handleEmailProposal = () => {
@@ -225,11 +317,15 @@ export default function Proposal() {
                 </div>
                 <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '12px' }}>
                   <div>
-                    <label style={{ fontSize: '10px', color: 'var(--text-muted)', fontWeight: 700, textTransform: 'uppercase', display: 'block', marginBottom: 4 }}>Avg Monthly Bill (₹)</label>
+                    <label style={{ fontSize: '10px', color: 'var(--text-muted)', fontWeight: 700, textTransform: 'uppercase', display: 'block', marginBottom: 4 }}>
+                      6-Mo Avg Monthly Bill (₹)
+                    </label>
                     <input type="number" className="form-input" style={{ width: '100%', padding: '8px 10px', borderRadius: '6px', background: 'var(--bg-input)', border: '1px solid var(--border-color)', color: 'var(--text-primary)', fontSize: '12px' }} value={form.monthlyBill} onChange={handleChange('monthlyBill')} />
                   </div>
                   <div>
-                    <label style={{ fontSize: '10px', color: 'var(--text-muted)', fontWeight: 700, textTransform: 'uppercase', display: 'block', marginBottom: 4 }}>Monthly Consumption (kWh)</label>
+                    <label style={{ fontSize: '10px', color: 'var(--text-muted)', fontWeight: 700, textTransform: 'uppercase', display: 'block', marginBottom: 4 }}>
+                      Peak Consumption (kWh) {insights.highestConsumptionMonth?.month ? `[${insights.highestConsumptionMonth.month}]` : ''}
+                    </label>
                     <input type="number" className="form-input" style={{ width: '100%', padding: '8px 10px', borderRadius: '6px', background: 'var(--bg-input)', border: '1px solid var(--border-color)', color: 'var(--text-primary)', fontSize: '12px' }} value={form.monthlyUnits} onChange={handleChange('monthlyUnits')} />
                   </div>
                   <div>
@@ -267,23 +363,23 @@ export default function Proposal() {
                 <div style={{ display: 'flex', flexDirection: 'column', gap: '10px' }}>
                   <div style={{ display: 'flex', justifyContent: 'space-between', padding: '8px 10px', borderRadius: '6px', background: 'rgba(255,255,255,0.03)' }}>
                     <span style={{ fontSize: '12px', color: 'var(--text-muted)' }}>System Capacity:</span>
-                    <strong style={{ fontSize: '13px', color: 'var(--text-primary)' }}>{insights.kw} kWp</strong>
+                    <strong style={{ fontSize: '13px', color: 'var(--text-primary)' }}>{insights.kw ? `${insights.kw} kWp` : '—'}</strong>
                   </div>
                   <div style={{ display: 'flex', justifyContent: 'space-between', padding: '8px 10px', borderRadius: '6px', background: 'rgba(255,255,255,0.03)' }}>
                     <span style={{ fontSize: '12px', color: 'var(--text-muted)' }}>Panels Required:</span>
-                    <strong style={{ fontSize: '13px', color: 'var(--text-primary)' }}>{insights.panels} Units (540W)</strong>
+                    <strong style={{ fontSize: '13px', color: 'var(--text-primary)' }}>{insights.panels ? `${insights.panels} Units (540W)` : '—'}</strong>
                   </div>
                   <div style={{ display: 'flex', justifyContent: 'space-between', padding: '8px 10px', borderRadius: '6px', background: 'rgba(255,255,255,0.03)' }}>
                     <span style={{ fontSize: '12px', color: 'var(--text-muted)' }}>Est. Annual Generation:</span>
-                    <strong style={{ fontSize: '13px', color: 'var(--color-blue)' }}>{insights.annualGen.toLocaleString()} kWh</strong>
+                    <strong style={{ fontSize: '13px', color: 'var(--color-blue)' }}>{insights.annualGen ? `${insights.annualGen.toLocaleString()} kWh` : '—'}</strong>
                   </div>
                   <div style={{ display: 'flex', justifyContent: 'space-between', padding: '8px 10px', borderRadius: '6px', background: 'rgba(255,255,255,0.03)' }}>
                     <span style={{ fontSize: '12px', color: 'var(--text-muted)' }}>PM Surya Ghar Subsidy:</span>
-                    <strong style={{ fontSize: '13px', color: 'var(--color-green)' }}>- ₹{insights.subsidy.toLocaleString('en-IN')}</strong>
+                    <strong style={{ fontSize: '13px', color: 'var(--color-green)' }}>{insights.subsidy ? `- ₹${insights.subsidy.toLocaleString('en-IN')}` : '—'}</strong>
                   </div>
                   <div style={{ display: 'flex', justifyContent: 'space-between', padding: '8px 10px', borderRadius: '6px', background: 'rgba(255,255,255,0.03)' }}>
                     <span style={{ fontSize: '12px', color: 'var(--text-muted)' }}>Net Investment:</span>
-                    <strong style={{ fontSize: '13px', color: 'var(--color-orange)' }}>₹{insights.netCost.toLocaleString('en-IN')}</strong>
+                    <strong style={{ fontSize: '13px', color: 'var(--color-orange)' }}>{insights.netCost ? `₹${insights.netCost.toLocaleString('en-IN')}` : '—'}</strong>
                   </div>
                 </div>
 
@@ -329,7 +425,7 @@ export default function Proposal() {
                       <h3 className="ew-divider-title">Executive Summary &amp; Site Overview</h3>
                     </div>
                     <p style={{ fontSize: '13px', color: 'var(--text-secondary)', lineHeight: 1.7, margin: 0 }}>
-                      This customized solar proposal has been generated for <strong>{form.customerName}</strong> located in <strong>{form.city}</strong> ({form.address}). Based on your current monthly electricity expenditure of <strong>₹{parseFloat(form.monthlyBill || '0').toLocaleString('en-IN')}</strong> ({form.monthlyUnits} kWh), we recommend a <strong>{insights.kw} kWp On-Grid Rooftop Solar Power Plant</strong>.
+                      This customized solar proposal has been generated for <strong>{form.customerName}</strong> located in <strong>{form.city}</strong> ({form.address}). Based on your 6-month average monthly electricity expenditure of <strong>₹{parseFloat(form.monthlyBill || '0').toLocaleString('en-IN')}</strong> {insights.highestConsumptionMonth ? `(Peak consumption recorded in ${insights.highestConsumptionMonth.month}: ${insights.highestConsumptionMonth.units} kWh)` : `(${form.monthlyUnits} kWh)`}, we recommend a <strong>{insights.kw} kWp On-Grid Rooftop Solar Power Plant</strong>.
                     </p>
                     <p style={{ fontSize: '13px', color: 'var(--text-secondary)', lineHeight: 1.7, marginTop: '10px', margin: 0 }}>
                       The system will produce approximately <strong>{insights.annualGen.toLocaleString()} kWh</strong> of clean solar energy annually, eliminating up to 85% of your grid energy bills. Under the Ministry of New and Renewable Energy (MNRE) <strong>PM Surya Ghar: Muft Bijli Yojana</strong>, your system qualifies for an upfront direct subsidy of <strong>₹{insights.subsidy.toLocaleString('en-IN')}</strong>.
@@ -521,9 +617,23 @@ export default function Proposal() {
                   </button>
                 </div>
 
-                <div style={{ display: 'flex', gap: '8px' }}>
-                  <button className="btn btn-ghost btn-sm" onClick={handlePrintPdf}>
-                    🖨 Print / Export PDF
+                <div style={{ display: 'flex', gap: '8px', flexWrap: 'wrap' }}>
+                  <button
+                    className="btn btn-ghost btn-sm"
+                    onClick={handleOpenPreview}
+                    id="previewProposalBtn"
+                    style={{ fontWeight: 700 }}
+                  >
+                    👁 Preview Proposal
+                  </button>
+                  <button
+                    className="btn btn-ghost btn-sm"
+                    onClick={handleExportPdf}
+                    disabled={isExportingPdf}
+                    id="exportPdfBtn"
+                    style={{ fontWeight: 700 }}
+                  >
+                    {isExportingPdf ? '⏳ Generating PDF...' : '📄 Export Proposal PDF'}
                   </button>
                   <button className="btn btn-ghost btn-sm" onClick={handleEmailProposal}>
                     ✉ Email to Customer
@@ -536,6 +646,19 @@ export default function Proposal() {
             </div>
           )}
         </div>
+      )}
+
+      {/* Full Document Preview Modal */}
+      {isPreviewOpen && (
+        <ProposalPreview
+          form={form}
+          insights={insights}
+          proposal={proposal}
+          version={version}
+          onClose={handleClosePreview}
+          onExportPdf={handleExportPdf}
+          isExportingPdf={isExportingPdf}
+        />
       )}
     </div>
   );
