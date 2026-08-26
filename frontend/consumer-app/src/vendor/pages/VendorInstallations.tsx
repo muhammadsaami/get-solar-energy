@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react'
+import React, { useState, useEffect, useCallback, useRef } from 'react'
 import DashboardHeader from '../components/DashboardHeader'
 import StatusBadge from '../components/StatusBadge'
 import VendorEmptyState from '../components/VendorEmptyState'
@@ -19,33 +19,42 @@ export function VendorInstallations() {
     status: string
   }>>([])
 
+  const isMountedRef = useRef(true)
   useEffect(() => {
-    let active = true
-    async function fetchInstallations() {
-      try {
-        setLoading(true)
-        setError(null)
-        const projects = await getVendorProjects({ stage: 'installation' })
-        if (!active) return
-        const mapped = (projects || []).map((p: any) => ({
-          id: p.displayId || `INS-${p.id}`,
-          site: p.title || p.projectName || 'Residential Solar Installation',
-          location: p.address ? `${p.address}, ${p.city || ''}` : (p.city || 'Site Location'),
-          team: p.assignedInstaller || p.assignedTeam || 'Field Installation Crew',
-          date: p.startDate ? new Date(p.startDate).toLocaleDateString('en-IN', { day: 'numeric', month: 'short', year: 'numeric' }) : 'Scheduled',
-          status: p.status === 'installation' ? 'In Progress' : (p.status || 'Scheduled')
-        }))
-        setInstallations(mapped)
-      } catch (err: any) {
-        if (!active) return
-        setError(err?.message || 'Failed to load installation schedules.')
-      } finally {
-        if (active) setLoading(false)
-      }
+    isMountedRef.current = true
+    return () => {
+      isMountedRef.current = false
     }
-    fetchInstallations()
-    return () => { active = false }
   }, [])
+
+  const fetchInstallations = useCallback(async () => {
+    if (!isMountedRef.current) return
+    setLoading(true)
+    setError(null)
+    try {
+      const projects = await getVendorProjects({ stage: 'installation' })
+      if (!isMountedRef.current) return
+      const mapped = (projects || []).map((p: any) => ({
+        id: p.displayId || `INS-${p.id}`,
+        site: p.title || p.projectName || 'Residential Solar Installation',
+        location: p.address ? `${p.address}, ${p.city || ''}` : (p.city || 'Site Location'),
+        team: p.assignedInstaller || p.assignedTeam || 'Field Installation Crew',
+        date: p.startDate ? new Date(p.startDate).toLocaleDateString('en-IN', { day: 'numeric', month: 'short', year: 'numeric' }) : 'Scheduled',
+        status: p.status === 'installation' ? 'In Progress' : (p.status || 'Scheduled')
+      }))
+      setInstallations(mapped)
+    } catch (err: any) {
+      if (!isMountedRef.current) return
+      setError(err?.message || 'Failed to load installation schedules.')
+      setInstallations([])
+    } finally {
+      if (isMountedRef.current) setLoading(false)
+    }
+  }, [])
+
+  useEffect(() => {
+    fetchInstallations()
+  }, [fetchInstallations])
 
   const filtered = installations.filter(i =>
     i.site.toLowerCase().includes(search.toLowerCase()) ||
@@ -53,12 +62,14 @@ export function VendorInstallations() {
     i.location.toLowerCase().includes(search.toLowerCase())
   )
 
+  const badgeText = loading ? 'Loading Dispatches...' : error ? '— Schedules' : `${installations.length} Schedules`
+
   return (
     <div className="animate-fade-in">
       <DashboardHeader
         title="Field Installations"
         subtitle="Coordinate field installation crews, equipment delivery, and pre-commissioning QA."
-        badgeText={`${installations.length} Schedules`}
+        badgeText={badgeText}
         actions={
           <button className="vendor-btn-primary" onClick={() => notify('Schedule Installation')}>
             + Dispatch Installation Crew
@@ -79,14 +90,15 @@ export function VendorInstallations() {
         </div>
       </div>
 
-      <div className="vendor-glass-card" style={{ padding: 0, overflow: 'hidden' }}>
+      <div className="vendor-glass-card" style={{ padding: 0, overflow: 'hidden', minHeight: '300px' }}>
         {loading ? (
-          <div style={{ padding: '40px', textAlign: 'center', color: 'var(--vendor-text-secondary)' }}>
-            Loading field installations...
+          <div style={{ padding: '60px 20px', textAlign: 'center', color: 'var(--vendor-text-secondary)' }}>
+            Loading field installations from live database...
           </div>
         ) : error ? (
-          <div style={{ padding: '32px', textAlign: 'center', color: 'var(--vendor-danger)' }}>
-            {error}
+          <div style={{ padding: '48px 24px', textAlign: 'center' }}>
+            <p style={{ color: 'var(--vendor-danger)', margin: '0 0 16px', fontSize: '14px' }}>{error}</p>
+            <button className="vendor-btn-primary" onClick={fetchInstallations}>🔄 Retry Load</button>
           </div>
         ) : filtered.length > 0 ? (
           <table className="vendor-table-container">

@@ -51,14 +51,14 @@ export function VendorProfile() {
   const [profile, setProfile] = useState<VendorProfileState>(() => {
     const extras = loadVendorExtras()
     return {
-      businessName: String(extras.businessName || user?.name || 'Solar EPC Solutions Pvt Ltd'),
-      email: String(extras.email || user?.email || 'vendor@getsolar.in'),
-      phone: String(extras.phone || user?.phone || '9829012345'),
-      gstin: String(extras.gstin || '08AAACB1234C1Z9'),
-      mnreCategory: String(extras.mnreCategory || 'Category-A Enrolled Vendor'),
-      operatingRegions: String(extras.operatingRegions || 'Rajasthan, Delhi-NCR, Gujarat'),
-      empaneledDiscoms: String(extras.empaneledDiscoms || 'JVVNL, AVVNL, BSES Rajdhani, UGVCL'),
-      capacityLimit: String(extras.capacityLimit || 'Up to 500 kW Ongrid / Hybrid'),
+      businessName: String(extras.businessName || user?.name || 'Solar EPC Partner'),
+      email: String(extras.email || user?.email || ''),
+      phone: String(extras.phone || user?.phone || ''),
+      gstin: String(extras.gstin || ''),
+      mnreCategory: String(extras.mnreCategory || 'Empaneled EPC Vendor'),
+      operatingRegions: String(extras.operatingRegions || 'North India Region'),
+      empaneledDiscoms: String(extras.empaneledDiscoms || 'State DISCOM Interconnection'),
+      capacityLimit: String(extras.capacityLimit || 'Rooftop & Commercial Projects'),
       complianceStatus: 'Verified',
     }
   })

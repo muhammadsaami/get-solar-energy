@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react'
+import React, { useState, useEffect, useCallback, useRef } from 'react'
 import DashboardHeader from '../components/DashboardHeader'
 import StatusBadge from '../components/StatusBadge'
 import VendorEmptyState from '../components/VendorEmptyState'
@@ -20,34 +20,43 @@ export function VendorLeads() {
     probability: string
   }>>([])
 
+  const isMountedRef = useRef(true)
   useEffect(() => {
-    let active = true
-    async function fetchLeads() {
-      try {
-        setLoading(true)
-        setError(null)
-        const projects = await getVendorProjects({ stage: 'lead' })
-        if (!active) return
-        const mapped = (projects || []).map((p: any) => ({
-          id: p.displayId ? `LEAD-${p.displayId.replace('PRJ-', '')}` : `LEAD-${p.id}`,
-          name: p.customerName || p.title || 'Prospective Customer',
-          size: `${p.capacityKw || 10} kW ${p.systemType || 'Residential'}`,
-          contact: p.customerPhone || p.customerEmail || p.assignedEngineer || 'Inbound Lead',
-          value: p.budget ? `₹${Number(p.budget).toLocaleString('en-IN')}` : '₹4,50,000',
-          status: p.status === 'lead' ? 'Proposal Sent' : (p.status || 'Applied'),
-          probability: p.healthScore ? `${Math.min(95, Math.max(40, p.healthScore))}%` : '75%'
-        }))
-        setLeads(mapped)
-      } catch (err: any) {
-        if (!active) return
-        setError(err?.message || 'Failed to load sales leads.')
-      } finally {
-        if (active) setLoading(false)
-      }
+    isMountedRef.current = true
+    return () => {
+      isMountedRef.current = false
     }
-    fetchLeads()
-    return () => { active = false }
   }, [])
+
+  const fetchLeads = useCallback(async () => {
+    if (!isMountedRef.current) return
+    setLoading(true)
+    setError(null)
+    try {
+      const projects = await getVendorProjects({ stage: 'lead' })
+      if (!isMountedRef.current) return
+      const mapped = (projects || []).map((p: any) => ({
+        id: p.displayId ? `LEAD-${p.displayId.replace('PRJ-', '')}` : `LEAD-${p.id}`,
+        name: p.customerName || p.title || 'Prospective Customer',
+        size: p.capacityKw ? `${p.capacityKw} kW ${p.systemType || 'System'}` : '—',
+        contact: p.customerPhone || p.customerEmail || p.assignedEngineer || '—',
+        value: p.budget ? `₹${Number(p.budget).toLocaleString('en-IN')}` : '—',
+        status: p.status === 'lead' ? 'Proposal Sent' : (p.status || 'Applied'),
+        probability: p.healthScore ? `${Math.min(95, Math.max(40, p.healthScore))}%` : '—'
+      }))
+      setLeads(mapped)
+    } catch (err: any) {
+      if (!isMountedRef.current) return
+      setError(err?.message || 'Failed to load sales leads from server.')
+      setLeads([])
+    } finally {
+      if (isMountedRef.current) setLoading(false)
+    }
+  }, [])
+
+  useEffect(() => {
+    fetchLeads()
+  }, [fetchLeads])
 
   const filtered = leads.filter(l =>
     l.name.toLowerCase().includes(search.toLowerCase()) ||
@@ -55,12 +64,14 @@ export function VendorLeads() {
     l.contact.toLowerCase().includes(search.toLowerCase())
   )
 
+  const badgeText = loading ? 'Loading Leads...' : error ? '— Active Leads' : `${leads.length} Active Leads`
+
   return (
     <div className="animate-fade-in">
       <DashboardHeader
         title="Sales Leads & Pipeline"
         subtitle="Manage prospective solar installation leads, site surveys, and commercial proposals."
-        badgeText={`${leads.length} Active Leads`}
+        badgeText={badgeText}
         actions={
           <button className="vendor-btn-primary" onClick={() => notify('Capture Lead Modal')}>
             + Capture New Lead
@@ -81,14 +92,15 @@ export function VendorLeads() {
         </div>
       </div>
 
-      <div className="vendor-glass-card" style={{ padding: 0, overflow: 'hidden' }}>
+      <div className="vendor-glass-card" style={{ padding: 0, overflow: 'hidden', minHeight: '300px' }}>
         {loading ? (
-          <div style={{ padding: '40px', textAlign: 'center', color: 'var(--vendor-text-secondary)' }}>
-            Loading sales leads...
+          <div style={{ padding: '60px 20px', textAlign: 'center', color: 'var(--vendor-text-secondary)' }}>
+            Loading sales leads from live database...
           </div>
         ) : error ? (
-          <div style={{ padding: '32px', textAlign: 'center', color: 'var(--vendor-danger)' }}>
-            {error}
+          <div style={{ padding: '48px 24px', textAlign: 'center' }}>
+            <p style={{ color: 'var(--vendor-danger)', margin: '0 0 16px', fontSize: '14px' }}>{error}</p>
+            <button className="vendor-btn-primary" onClick={fetchLeads}>🔄 Retry Load</button>
           </div>
         ) : filtered.length > 0 ? (
           <table className="vendor-table-container">

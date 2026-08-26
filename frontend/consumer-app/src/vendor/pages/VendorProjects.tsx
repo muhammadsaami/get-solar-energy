@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from 'react'
+import React, { useEffect, useState, useCallback, useRef } from 'react'
 import DashboardHeader from '../components/DashboardHeader'
 import StatusBadge from '../components/StatusBadge'
 import VendorEmptyState from '../components/VendorEmptyState'
@@ -25,39 +25,55 @@ export function VendorProjects() {
   const [searchTerm, setSearchTerm] = useState('')
   const [projects, setProjects] = useState<VendorProjectRow[]>([])
   const [loading, setLoading] = useState(true)
+  const [error, setError] = useState<string | null>(null)
   const addToast = useNotificationStore((s) => s.addToast)
 
+  const isMountedRef = useRef(true)
   useEffect(() => {
-    let active = true
+    isMountedRef.current = true
+    return () => {
+      isMountedRef.current = false
+    }
+  }, [])
+
+  const fetchProjects = useCallback(async () => {
+    if (!isMountedRef.current) return
     setLoading(true)
+    setError(null)
     const params: Record<string, string> = {}
     if (activeTab === 'active') params.status = 'active'
     if (activeTab === 'completed') params.status = 'completed'
-    getVendorProjects(params)
-      .then((rows) => {
-        if (!active) return
-        setProjects(Array.isArray(rows) ? (rows as VendorProjectRow[]) : [])
-      })
-      .catch(() => {
-        if (active) addToast({ type: 'error', message: 'Could not load projects.' })
-      })
-      .finally(() => {
-        if (active) setLoading(false)
-      })
-    return () => { active = false }
-  }, [activeTab, addToast])
+    try {
+      const rows = await getVendorProjects(params)
+      if (!isMountedRef.current) return
+      setProjects(Array.isArray(rows) ? (rows as VendorProjectRow[]) : [])
+    } catch (err: unknown) {
+      if (!isMountedRef.current) return
+      const msg = err instanceof Error ? err.message : 'Could not load projects.'
+      setError(msg)
+      setProjects([])
+    } finally {
+      if (isMountedRef.current) setLoading(false)
+    }
+  }, [activeTab])
+
+  useEffect(() => {
+    fetchProjects()
+  }, [fetchProjects])
 
   const filtered = projects.filter((p) => {
     const q = searchTerm.toLowerCase()
     return !q || (p.title || '').toLowerCase().includes(q) || (p.customerName || '').toLowerCase().includes(q) || String(p.id || '').toLowerCase().includes(q)
   })
 
+  const badgeText = loading ? 'Loading Projects...' : error ? '— Total Projects' : `${projects.length} Total Projects`
+
   return (
     <div className="animate-fade-in">
       <DashboardHeader
         title="Project Management"
         subtitle="Track rooftop solar projects across site inspection, procurement, execution, and grid sync."
-        badgeText={`${projects.length} Total Projects`}
+        badgeText={badgeText}
         actions={
           <button className="vendor-btn-primary" onClick={() => addToast({ type: 'info', message: 'Project creation is available from the dashboard.' })}>
             + New Project
@@ -101,12 +117,15 @@ export function VendorProjects() {
         </div>
       </div>
 
-      <div className="vendor-glass-card" style={{ padding: '0', overflow: 'hidden' }}>
+      <div className="vendor-glass-card" style={{ padding: '0', overflow: 'hidden', minHeight: '300px' }}>
         {loading ? (
-          <div style={{ padding: '24px', display: 'grid', gap: '12px' }}>
-            <div className="vendor-skeleton" style={{ width: '100%', height: '40px' }} />
-            <div className="vendor-skeleton" style={{ width: '100%', height: '40px' }} />
-            <div className="vendor-skeleton" style={{ width: '100%', height: '40px' }} />
+          <div style={{ padding: '60px 20px', textAlign: 'center', color: 'var(--vendor-text-secondary)' }}>
+            Loading projects from live database...
+          </div>
+        ) : error ? (
+          <div style={{ padding: '48px 24px', textAlign: 'center' }}>
+            <p style={{ color: 'var(--vendor-danger)', margin: '0 0 16px', fontSize: '14px' }}>{error}</p>
+            <button className="vendor-btn-primary" onClick={fetchProjects}>🔄 Retry Load</button>
           </div>
         ) : filtered.length > 0 ? (
           <table className="vendor-table-container">

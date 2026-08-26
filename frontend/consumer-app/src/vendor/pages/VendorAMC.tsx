@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react'
+import React, { useState, useEffect, useCallback, useRef } from 'react'
 import DashboardHeader from '../components/DashboardHeader'
 import StatusBadge from '../components/StatusBadge'
 import VendorEmptyState from '../components/VendorEmptyState'
@@ -19,33 +19,42 @@ export function VendorAMC() {
     status: string
   }>>([])
 
+  const isMountedRef = useRef(true)
   useEffect(() => {
-    let active = true
-    async function fetchAMC() {
-      try {
-        setLoading(true)
-        setError(null)
-        const projects = await getVendorProjects({ stage: 'amc' })
-        if (!active) return
-        const mapped = (projects || []).map((p: any) => ({
-          id: p.displayId ? `AMC-${p.displayId.replace('PRJ-', '')}` : `AMC-${p.id}`,
-          client: p.customerName || p.title || 'Client',
-          plan: `${p.capacityKw || 5}kW Comprehensive AMC SLA`,
-          nextService: p.targetDate ? new Date(p.targetDate).toLocaleDateString('en-IN', { day: 'numeric', month: 'short', year: 'numeric' }) : 'Next Service Pending',
-          health: p.healthScore ? `${p.healthScore}%` : '98.0%',
-          status: p.status === 'amc' ? 'Active' : (p.status || 'Active')
-        }))
-        setAmcContracts(mapped)
-      } catch (err: any) {
-        if (!active) return
-        setError(err?.message || 'Failed to load AMC contracts.')
-      } finally {
-        if (active) setLoading(false)
-      }
+    isMountedRef.current = true
+    return () => {
+      isMountedRef.current = false
     }
-    fetchAMC()
-    return () => { active = false }
   }, [])
+
+  const fetchAMC = useCallback(async () => {
+    if (!isMountedRef.current) return
+    setLoading(true)
+    setError(null)
+    try {
+      const projects = await getVendorProjects({ stage: 'amc' })
+      if (!isMountedRef.current) return
+      const mapped = (projects || []).map((p: any) => ({
+        id: p.displayId ? `AMC-${p.displayId.replace('PRJ-', '')}` : `AMC-${p.id}`,
+        client: p.customerName || p.title || 'Client',
+        plan: p.capacityKw ? `${p.capacityKw}kW Comprehensive AMC SLA` : 'Comprehensive AMC SLA',
+        nextService: p.targetDate ? new Date(p.targetDate).toLocaleDateString('en-IN', { day: 'numeric', month: 'short', year: 'numeric' }) : 'Next Service Pending',
+        health: p.healthScore ? `${p.healthScore}%` : '—',
+        status: p.status === 'amc' ? 'Active' : (p.status || 'Active')
+      }))
+      setAmcContracts(mapped)
+    } catch (err: any) {
+      if (!isMountedRef.current) return
+      setError(err?.message || 'Failed to load AMC contracts.')
+      setAmcContracts([])
+    } finally {
+      if (isMountedRef.current) setLoading(false)
+    }
+  }, [])
+
+  useEffect(() => {
+    fetchAMC()
+  }, [fetchAMC])
 
   const filtered = amcContracts.filter(a =>
     a.client.toLowerCase().includes(search.toLowerCase()) ||
@@ -53,12 +62,14 @@ export function VendorAMC() {
     a.plan.toLowerCase().includes(search.toLowerCase())
   )
 
+  const badgeText = loading ? 'Loading Contracts...' : error ? '— Active Contracts' : `${amcContracts.length} Active Contracts`
+
   return (
     <div className="animate-fade-in">
       <DashboardHeader
         title="Annual Maintenance Contracts (AMC)"
         subtitle="Track system health compliance, automated maintenance schedules, and SLA guarantees."
-        badgeText={`${amcContracts.length} Active Contracts`}
+        badgeText={badgeText}
         actions={
           <button className="vendor-btn-primary" onClick={() => notify('New AMC Contract')}>
             + Issue New Contract
@@ -79,14 +90,15 @@ export function VendorAMC() {
         </div>
       </div>
 
-      <div className="vendor-glass-card" style={{ padding: 0, overflow: 'hidden' }}>
+      <div className="vendor-glass-card" style={{ padding: 0, overflow: 'hidden', minHeight: '300px' }}>
         {loading ? (
-          <div style={{ padding: '40px', textAlign: 'center', color: 'var(--vendor-text-secondary)' }}>
-            Loading AMC contracts...
+          <div style={{ padding: '60px 20px', textAlign: 'center', color: 'var(--vendor-text-secondary)' }}>
+            Loading AMC contracts from live database...
           </div>
         ) : error ? (
-          <div style={{ padding: '32px', textAlign: 'center', color: 'var(--vendor-danger)' }}>
-            {error}
+          <div style={{ padding: '48px 24px', textAlign: 'center' }}>
+            <p style={{ color: 'var(--vendor-danger)', margin: '0 0 16px', fontSize: '14px' }}>{error}</p>
+            <button className="vendor-btn-primary" onClick={fetchAMC}>🔄 Retry Load</button>
           </div>
         ) : filtered.length > 0 ? (
           <table className="vendor-table-container">
