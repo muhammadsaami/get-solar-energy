@@ -83,6 +83,7 @@ class LoginRequest(BaseModel):
     email: str
     password: str
     remember_me: bool = True
+    role_hint: Optional[str] = None
 
 
 # ---------------------------------------------------------------------------
@@ -208,8 +209,26 @@ def get_current_account(
 def login(data: LoginRequest, request: Request, response: Response, db: Session = Depends(get_db)):
     match = _find_account(db, data.email, data.password)
     if not match:
-        raise HTTPException(status_code=400, detail="Invalid email or password.")
+        raise HTTPException(status_code=401, detail="Invalid email or password.")
     role, account, _technician_id = match
+
+    # Portal integrity check: if frontend sent a role_hint, enforce role isolation.
+    # Admin accounts act as superusers and are authorized for all portals.
+    if data.role_hint and role != "admin":
+        requested = data.role_hint.lower().strip()
+        if requested != role:
+            role_labels = {
+                "customer": "Customer",
+                "vendor": "Vendor",
+                "admin": "Administrator",
+                "technician": "Technician"
+            }
+            requested_label = role_labels.get(requested, requested.capitalize())
+            stored_label = role_labels.get(role, role.capitalize())
+            raise HTTPException(
+                status_code=403,
+                detail=f"This account is registered as a {stored_label}, not a {requested_label}. Please use the correct portal."
+            )
 
     access_token = _create_access_token(data.email, role)
 

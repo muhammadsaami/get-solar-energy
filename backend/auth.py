@@ -184,8 +184,11 @@ async def signup(data: SignupRequest, request: Request):
         user_id = str(uuid.uuid4())
         referral_code = data.name[:3].upper() + user_id[:5].upper()
         
-        # Validate requested role
+        # Validate requested role - Admin self-registration is strictly forbidden
         requested_role = (data.role or "customer").lower().strip()
+        if requested_role == "admin":
+            log_auth_audit(data.email, "ADMIN_SIGNUP_ATTEMPT_REJECTED", client_ip, user_agent, {"error": "Admin self-registration is forbidden"})
+            raise HTTPException(status_code=403, detail="Forbidden: Administrator accounts cannot be created via public registration.")
         if requested_role not in ALLOWED_SIGNUP_ROLES:
             raise HTTPException(status_code=400, detail=f"Invalid role '{requested_role}'. Allowed: customer, vendor")
 
