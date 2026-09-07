@@ -1,6 +1,6 @@
 import React, { useRef } from 'react'
 import { useBillAnalyzer, calculatePlantPerformance } from '../hooks/useBillAnalyzer'
-import type { BillAnalysisData, SolarReportData, UnifiedEnergyData, PlantPerformanceResult } from '../hooks/billAnalyzer.types'
+import type { BillAnalysisData, SolarReportData, UnifiedEnergyData, PlantPerformanceResult, SolarReportState } from '../hooks/billAnalyzer.types'
 import DashboardSprites from '../components/dashboard/DashboardSprites'
 
 function safeNum(val: unknown, fallback = 0): number {
@@ -159,12 +159,14 @@ function SolarReportUploadCard({
   error,
   onFile,
   onRetry,
+  onClear,
 }: {
-  state: 'idle' | 'uploading' | 'complete' | 'error'
+  state: SolarReportState
   progress: { percent: number; status: string }
   error: string | null
   onFile: (file: File) => void
   onRetry: () => void
+  onClear?: () => void
 }) {
   const fileInputRef = useRef<HTMLInputElement>(null)
   const [dragOver, setDragOver] = React.useState(false)
@@ -180,6 +182,10 @@ function SolarReportUploadCard({
     if (e.target.files && e.target.files.length > 0) onFile(e.target.files[0])
   }
 
+  const isUploading = state === 'UPLOADING' || state === 'PROCESSING' || state === 'uploading'
+  const isExtracted = state === 'EXTRACTED' || state === 'complete'
+  const isError = state === 'EXTRACTION_FAILED' || state === 'INVALID_FILE' || state === 'API_ERROR' || state === 'error'
+
   return (
     <div className="card-base solar-report-upload-card" style={{ '--card-theme': '255, 138, 29' } as React.CSSProperties}>
       <div className="kpi-header-row">
@@ -190,22 +196,44 @@ function SolarReportUploadCard({
             <line x1="1" y1="12" x2="3" y2="12" /><line x1="21" y1="12" x2="23" y2="12" />
             <line x1="4.22" y1="19.78" x2="5.64" y2="18.36" /><line x1="18.36" y1="5.64" x2="19.78" y2="4.22" />
           </svg>
-          <span className="kpi-title">Upload Solar Production Report</span>
+          <div>
+            <span className="kpi-title">Upload Solar Production Report</span>
+            <span style={{ fontSize: '10px', color: 'var(--text-muted)', display: 'block', marginTop: '1px' }}>Optional for existing solar installations</span>
+          </div>
         </div>
-        <span className="api-tag" style={{ background: 'rgba(255,138,29,0.08)', color: 'var(--accent-orange)', borderColor: 'rgba(255,138,29,0.2)' }}>SCANNED</span>
+        <span className="api-tag" style={{ background: 'rgba(255,138,29,0.08)', color: 'var(--accent-orange)', borderColor: 'rgba(255,138,29,0.2)' }}>OPTIONAL</span>
       </div>
 
-      {state === 'complete' ? (
+      {isExtracted ? (
         <div
           className="drag-drop-area"
-          style={{ border: '2px dashed rgba(255,138,29,0.3)', borderRadius: '8px', padding: '24px', textAlign: 'center', marginTop: '12px', cursor: 'pointer', transition: 'all 0.3s ease' }}
-          onClick={() => fileInputRef.current?.click()}
+          style={{ border: '2px dashed rgba(255,138,29,0.3)', borderRadius: '8px', padding: '20px', textAlign: 'center', marginTop: '12px', transition: 'all 0.3s ease' }}
         >
-          <svg className="upload-icon" style={{ width: '44px', height: '44px', marginBottom: '10px', stroke: 'var(--accent-orange)', fill: 'none', strokeWidth: '1.5' }} viewBox="0 0 24 24">
+          <svg className="upload-icon" style={{ width: '38px', height: '38px', marginBottom: '8px', stroke: 'var(--accent-orange)', fill: 'none', strokeWidth: '1.5' }} viewBox="0 0 24 24">
             <polyline points="20 6 9 17 4 12" />
           </svg>
           <p style={{ fontSize: '13px', color: 'var(--accent-orange)', fontWeight: '700', margin: '0' }}>Solar Report Loaded!</p>
-          <span style={{ fontSize: '10px', color: 'var(--text-muted)' }}>Click to upload another report</span>
+          <span style={{ fontSize: '10px', color: 'var(--text-muted)', display: 'block', marginBottom: '10px' }}>Generation figures integrated with energy intelligence</span>
+          <div style={{ display: 'flex', justifyContent: 'center', gap: '8px' }}>
+            <button
+              type="button"
+              className="calc-btn"
+              onClick={() => fileInputRef.current?.click()}
+              style={{ padding: '4px 12px', fontSize: '11px', height: 'auto', width: 'auto' }}
+            >
+              Upload Different Report
+            </button>
+            {onClear && (
+              <button
+                type="button"
+                className="calc-btn"
+                onClick={onClear}
+                style={{ padding: '4px 12px', fontSize: '11px', height: 'auto', width: 'auto', background: 'transparent', border: '1px solid var(--border-color)', color: 'var(--text-muted)' }}
+              >
+                Remove
+              </button>
+            )}
+          </div>
           <input ref={fileInputRef} type="file" accept=".pdf,.png,.jpg,.jpeg,.webp,application/pdf,image/*" style={{ display: 'none' }} onChange={handleChange} />
         </div>
       ) : (
@@ -222,7 +250,7 @@ function SolarReportUploadCard({
               cursor: 'pointer',
               transition: 'all 0.3s ease',
               backgroundColor: dragOver ? 'rgba(255,138,29,0.08)' : 'transparent',
-              display: state === 'uploading' ? 'none' : 'block',
+              display: isUploading ? 'none' : 'block',
             }}
             onClick={() => fileInputRef.current?.click()}
             onDragOver={handleDragOver}
@@ -249,7 +277,7 @@ function SolarReportUploadCard({
           <div
             id="solarReportProgressBox"
             style={{
-              display: state === 'uploading' ? 'block' : 'none',
+              display: isUploading ? 'block' : 'none',
               marginTop: '12px',
               background: 'var(--bg-input)',
               padding: '12px',
@@ -263,7 +291,7 @@ function SolarReportUploadCard({
               <span id="solarReportFileSize" style={{ color: 'var(--text-muted)', fontSize: '10px' }}>Size: -</span>
             </div>
             <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '11px', marginBottom: '6px' }}>
-              <span id="solarReportStatus" style={{ color: 'var(--text-muted)', fontSize: '10px' }}>{progress.status || 'Analyzing Solar Production...'}</span>
+              <span id="solarReportStatus" style={{ color: 'var(--text-muted)', fontSize: '10px' }}>{progress.status || (state === 'PROCESSING' ? 'Processing Solar Yield Intelligence...' : 'Uploading Solar Report...')}</span>
               <span id="solarReportPercent" style={{ fontWeight: '800', color: 'var(--accent-orange)' }}>{progress.percent}%</span>
             </div>
             <div style={{ height: '6px', background: 'var(--border-color)', borderRadius: '3px', overflow: 'hidden' }}>
@@ -274,19 +302,46 @@ function SolarReportUploadCard({
           <div
             id="solarReportErrorBox"
             style={{
-              display: state === 'error' ? 'block' : 'none',
+              display: isError ? 'block' : 'none',
               marginTop: '12px',
-              padding: '10px',
+              padding: '12px',
               borderRadius: '6px',
               background: 'rgba(231,76,60,0.05)',
               border: '1px dashed rgba(231,76,60,0.25)',
               textAlign: 'center',
             }}
           >
-            <span style={{ fontSize: '11px', color: '#ef4444', display: 'block', marginBottom: '6px', fontWeight: '600' }}>
-              {error || 'Could not read solar report. Try another file.'}
+            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '6px', marginBottom: '4px' }}>
+              <span style={{ fontSize: '10px', textTransform: 'uppercase', letterSpacing: '0.05em', color: '#ef4444', fontWeight: '700' }}>
+                {state === 'INVALID_FILE' ? 'Invalid File' : state === 'API_ERROR' ? 'Service Notice' : 'Report Extraction Notice'}
+              </span>
+            </div>
+            <span style={{ fontSize: '11px', color: '#ef4444', display: 'block', marginBottom: '8px', fontWeight: '500', lineHeight: 1.4 }}>
+              {error || 'Could not extract solar generation figures from this report. Please upload an inverter or app screenshot showing kWh generation.'}
             </span>
-            <button type="button" className="calc-btn" onClick={onRetry} style={{ margin: '0 auto', width: 'auto', padding: '5px 14px', fontSize: '11px', height: 'auto' }}>Retry Upload</button>
+            <div style={{ display: 'flex', justifyContent: 'center', gap: '8px', flexWrap: 'wrap' }}>
+              <button
+                type="button"
+                className="calc-btn"
+                onClick={() => {
+                  if (fileInputRef.current) fileInputRef.current.click()
+                  else onRetry()
+                }}
+                style={{ margin: '0', width: 'auto', padding: '5px 14px', fontSize: '11px', height: 'auto' }}
+              >
+                Upload Another Report
+              </button>
+              {onClear && (
+                <button
+                  type="button"
+                  className="calc-btn"
+                  onClick={onClear}
+                  style={{ margin: '0', width: 'auto', padding: '5px 14px', fontSize: '11px', height: 'auto', background: 'transparent', border: '1px solid var(--border-color)', color: 'var(--text-muted)' }}
+                >
+                  Dismiss (Skip Optional Report)
+                </button>
+              )}
+            </div>
           </div>
         </>
       )}
@@ -322,7 +377,9 @@ function AnalysisResults({
   unifiedEnergy: UnifiedEnergyData | null
 }) {
   const d = analysis
-  const potentialScore = d.payback_years ? Math.round(Math.min(98, Math.max(60, 100 - (d.payback_years * 7)))) : 92
+  const potentialScore = d.payback_years && d.payback_years > 0
+    ? Math.round(Math.min(98, Math.max(50, 100 - (d.payback_years * 7))))
+    : null
 
   const isSolarConsumer = d.isSolarConsumer && d.importUnits != null
   const perfResult: PlantPerformanceResult | null = solarReport && solarReport.systemSizeKw && solarReport.productionKwh
@@ -345,12 +402,12 @@ function AnalysisResults({
   ]
 
   const solarUtilFields = [
-    { label: 'Solar Generated', value: `${d.monthlySolarGeneration.toFixed(1)} kWh`, id: 'resSolarGenerated' },
-    { label: 'Annual Solar Generation', value: `${Math.round(d.annualSolarGeneration).toLocaleString('en-IN')} kWh/year`, id: 'resAnnualSolarGeneration' },
-    { label: 'Solar Used Directly', value: `${d.solarUsedDirectly.toFixed(1)} kWh`, id: 'resSolarUsedDirectly' },
-    { label: 'Exported To Grid', value: `${d.solarExportedToGrid.toFixed(1)} kWh`, id: 'resExportedToGrid' },
-    { label: 'Solar Offset', value: `${d.solarOffsetPercent.toFixed(1)}%`, id: 'resSolarOffsetPercent', valueColor: 'var(--accent-blue)' },
-    { label: 'Grid Dependency', value: `${d.gridDependency.toFixed(1)} kWh`, id: 'resGridDependency', valueColor: 'var(--accent-orange)' },
+    { label: isSolarConsumer ? 'Solar Generated' : 'Projected Solar Generation', value: `${d.monthlySolarGeneration.toFixed(1)} kWh`, id: 'resSolarGenerated' },
+    { label: isSolarConsumer ? 'Annual Solar Generation' : 'Projected Annual Generation', value: `${Math.round(d.annualSolarGeneration).toLocaleString('en-IN')} kWh/year`, id: 'resAnnualSolarGeneration' },
+    { label: isSolarConsumer ? 'Solar Used Directly' : 'Estimated Direct Usage', value: `${d.solarUsedDirectly.toFixed(1)} kWh`, id: 'resSolarUsedDirectly' },
+    { label: isSolarConsumer ? 'Exported To Grid' : 'Estimated Grid Export', value: `${d.solarExportedToGrid.toFixed(1)} kWh`, id: 'resExportedToGrid' },
+    { label: isSolarConsumer ? 'Solar Offset' : 'Estimated Solar Offset', value: `${d.solarOffsetPercent.toFixed(1)}%`, id: 'resSolarOffsetPercent', valueColor: 'var(--accent-blue)' },
+    { label: isSolarConsumer ? 'Grid Dependency' : 'Estimated Grid Dependency', value: `${d.gridDependency.toFixed(1)} kWh`, id: 'resGridDependency', valueColor: 'var(--accent-orange)' },
   ]
 
   const unifiedFields = unifiedEnergy ? [
@@ -369,17 +426,20 @@ function AnalysisResults({
       {/* Premium Summary Snapshot */}
       <div className="card-base" style={{ '--card-theme': '54, 211, 153', marginBottom: '15px', padding: '12px 14px', background: 'rgba(54, 211, 153, 0.04)', border: '1px solid rgba(54, 211, 153, 0.25)' } as React.CSSProperties}>
         <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', borderBottom: '1px solid rgba(54, 211, 153, 0.15)', paddingBottom: '6px', marginBottom: '10px' }}>
-          <span style={{ fontSize: '10px', fontWeight: '800', color: 'var(--accent-green)', textTransform: 'uppercase', letterSpacing: '0.5px' }}>Analysis Summary</span>
+          <div>
+            <span style={{ fontSize: '10px', fontWeight: '800', color: 'var(--accent-green)', textTransform: 'uppercase', letterSpacing: '0.5px' }}>Electricity Bill Analysis & Recommendation Summary</span>
+            <span style={{ fontSize: '9px', color: 'var(--text-muted)', display: 'block', marginTop: '2px' }}>Verified bill consumption • Projected solar recommendations</span>
+          </div>
           <div style={{ display: 'flex', gap: '6px', alignItems: 'center' }}>
-            <span style={{ fontSize: '9px', background: 'var(--accent-green)', color: '#fff', padding: '1px 5px', borderRadius: '3px', fontWeight: '700', fontFamily: "'Outfit', sans-serif" }}>EXTRACTED</span>
+            <span style={{ fontSize: '9px', background: 'var(--accent-green)', color: '#fff', padding: '1px 5px', borderRadius: '3px', fontWeight: '700', fontFamily: "'Outfit', sans-serif" }}>BILL VERIFIED</span>
             <span id="resExtractionConfidenceBadge" className={`confidence-badge ${d.extractionConfidence.badgeClass}`}>{d.extractionConfidence.label}</span>
           </div>
         </div>
         <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: '6px', textAlign: 'center' }}>
-          <div><span style={{ fontSize: '8px', color: 'var(--text-muted)', display: 'block', textTransform: 'uppercase', fontWeight: '700' }}>Solar Potential</span><span style={{ fontSize: '16px', fontWeight: '900', color: 'var(--accent-green)', display: 'block', marginTop: '2px' }} id="snapSolarPotential">{potentialScore}/100</span></div>
-          <div><span style={{ fontSize: '8px', color: 'var(--text-muted)', display: 'block', textTransform: 'uppercase', fontWeight: '700' }}>System Size</span><span style={{ fontSize: '16px', fontWeight: '900', color: 'var(--accent-blue)', display: 'block', marginTop: '2px' }} id="snapSystemSize">{d.recommended_kw ? `${d.recommended_kw} kW` : 'Not Available'}</span></div>
-          <div><span style={{ fontSize: '8px', color: 'var(--text-muted)', display: 'block', textTransform: 'uppercase', fontWeight: '700' }}>Annual Savings</span><span style={{ fontSize: '16px', fontWeight: '900', color: 'var(--accent-blue)', display: 'block', marginTop: '2px' }} id="snapAnnualSavings">{d.monthly_savings_rs ? formatCurrency(d.monthly_savings_rs * 12) : 'Not Available'}</span></div>
-          <div><span style={{ fontSize: '8px', color: 'var(--text-muted)', display: 'block', textTransform: 'uppercase', fontWeight: '700' }}>Payback</span><span style={{ fontSize: '16px', fontWeight: '900', color: 'var(--accent-orange)', display: 'block', marginTop: '2px' }} id="snapPaybackPeriod">{d.payback_years ? `${d.payback_years} Yrs` : 'Not Available'}</span></div>
+          <div><span style={{ fontSize: '8px', color: 'var(--text-muted)', display: 'block', textTransform: 'uppercase', fontWeight: '700' }}>Solar Potential</span><span style={{ fontSize: '16px', fontWeight: '900', color: 'var(--accent-green)', display: 'block', marginTop: '2px' }} id="snapSolarPotential">{potentialScore != null ? `${potentialScore}/100` : '—'}</span></div>
+          <div><span style={{ fontSize: '8px', color: 'var(--text-muted)', display: 'block', textTransform: 'uppercase', fontWeight: '700' }}>System Size</span><span style={{ fontSize: '16px', fontWeight: '900', color: 'var(--accent-blue)', display: 'block', marginTop: '2px' }} id="snapSystemSize">{d.recommended_kw ? `${d.recommended_kw} kW` : '—'}</span></div>
+          <div><span style={{ fontSize: '8px', color: 'var(--text-muted)', display: 'block', textTransform: 'uppercase', fontWeight: '700' }}>Annual Savings</span><span style={{ fontSize: '16px', fontWeight: '900', color: 'var(--accent-blue)', display: 'block', marginTop: '2px' }} id="snapAnnualSavings">{d.monthly_savings_rs ? formatCurrency(d.monthly_savings_rs * 12) : '—'}</span></div>
+          <div><span style={{ fontSize: '8px', color: 'var(--text-muted)', display: 'block', textTransform: 'uppercase', fontWeight: '700' }}>Payback</span><span style={{ fontSize: '16px', fontWeight: '900', color: 'var(--accent-orange)', display: 'block', marginTop: '2px' }} id="snapPaybackPeriod">{d.payback_years != null && d.payback_years > 0 ? `${d.payback_years} Yrs` : '—'}</span></div>
         </div>
       </div>
 
@@ -412,7 +472,7 @@ function AnalysisResults({
       <div className="solar-util-section">
         <h3 style={{ fontSize: '11px', fontWeight: '700', color: 'var(--text-navy)', marginBottom: '10px', display: 'flex', alignItems: 'center', gap: '6px' }}>
           <svg style={{ width: '14px', height: '14px', stroke: 'var(--accent-orange)', fill: 'none', strokeWidth: '2' }} viewBox="0 0 24 24"><circle cx="12" cy="12" r="10" /><polyline points="12 6 12 12 16 14" /></svg>
-Solar Utilization Summary
+          {isSolarConsumer ? 'Solar Utilization Summary' : 'Projected Solar Utilization (Estimated)'}
         </h3>
         <div className="solar-util-grid">
           {solarUtilFields.map((item) => (
@@ -577,6 +637,7 @@ export default function BillAnalyzer() {
     handleSolarFile,
     retryBillUpload,
     retrySolarUpload,
+    clearSolarReport,
   } = useBillAnalyzer()
 
   const d = analysis
@@ -594,7 +655,14 @@ export default function BillAnalyzer() {
         {/* LEFT COLUMN */}
         <div style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
           <BillUploadCard state={billUploadState} progress={billProgress} error={billError} onFile={handleBillFile} onRetry={retryBillUpload} />
-          <SolarReportUploadCard state={solarUploadState} progress={solarProgress} error={solarError} onFile={handleSolarFile} onRetry={retrySolarUpload} />
+          <SolarReportUploadCard
+            state={solarUploadState}
+            progress={solarProgress}
+            error={solarError}
+            onFile={handleSolarFile}
+            onRetry={retrySolarUpload}
+            onClear={clearSolarReport}
+          />
 
           {analysis ? (
             <AnalysisResults analysis={analysis} solarReport={solarReport} unifiedEnergy={unifiedEnergy} />

@@ -19,9 +19,12 @@ import type {
   UnifiedEnergyData,
   ScoreResult,
   ConfidenceResult,
+  ConfidenceTier,
   PlantPerformanceResult,
   UploadState,
+  SolarReportState,
   UploadProgress,
+  AnalysisState,
 } from './billAnalyzer.types'
 import {
   SOLAR_YIELD,
@@ -195,11 +198,9 @@ function computeUnifiedEnergyIntelligence(billData: BillAnalysisData, solarData:
 }
 
 function extractSolarFields(text: string, filename: string) {
-  const normalizedText = text.toLowerCase()
-  const normalizedFilename = filename.toLowerCase()
+  const normalizedText = (text || '').toLowerCase()
   const keywords = ['solar consumer', 'net meter', 'net metering', 'solar energy', 'solar generation', 'pv system', 'renewable energy', 'export units', 'import units', 'solar export', 'solar import', 'gen_netmeter', 'netmeter', 'kwhe', 'kvah export', 'opening surplus', 'closing surplus']
-  let isSolarConsumer = keywords.some(kw => normalizedText.includes(kw) || normalizedFilename.includes(kw))
-  if (normalizedFilename.includes('solar')) isSolarConsumer = true
+  const isSolarConsumer = keywords.some(kw => normalizedText.includes(kw))
   let importUnits: number | null = null
   let exportUnits: number | null = null
   let solarGeneratedUnits: number | null = null
@@ -213,18 +214,11 @@ function extractSolarFields(text: string, filename: string) {
     if (solarMatch) solarGeneratedUnits = parseFloat(solarMatch[1])
     const netMatch = normalizedText.match(/net\s+units\s*[:=-]?\s*(\d+(?:\.\d+)?)/i)
     if (netMatch) netConsumptionUnits = parseFloat(netMatch[1])
-    if (normalizedFilename.includes('solar') && (importUnits === null || exportUnits === null)) {
-      importUnits = importUnits ?? 185.0
-      exportUnits = exportUnits ?? 112.0
-      if (solarGeneratedUnits === null) solarGeneratedUnits = 150.0
-      if (netConsumptionUnits === null) netConsumptionUnits = 73.0
-    }
   }
   return { isSolarConsumer, importUnits, exportUnits, solarGeneratedUnits, netConsumptionUnits }
 }
 
 function extractSolarProductionData(text: string, filename: string): SolarReportData {
-  const t = text.toLowerCase()
   let productionKwh: number | null = null
   const prodPatterns = [/total\s+generation\s*[:\-=]?\s*([\d,]+(?:\.\d+)?)\s*kwh/i, /total\s+yield\s*[:\-=]?\s*([\d,]+(?:\.\d+)?)\s*kwh/i, /production\s*\(kwh\)\s*[:\-=]?\s*([\d,]+(?:\.\d+)?)/i, /monthly\s+generation\s*[:\-=]?\s*([\d,]+(?:\.\d+)?)\s*kwh/i, /energy\s+generated\s*[:\-=]?\s*([\d,]+(?:\.\d+)?)\s*kwh/i, /generation\s*[:\-=]?\s*([\d,]+(?:\.\d+)?)\s*kwh/i, /yield\s*[:\-=]?\s*([\d,]+(?:\.\d+)?)\s*kwh/i, /e_total\s*[:\-=]?\s*([\d,]+(?:\.\d+)?)/i, /total\s+energy\s*[:\-=]?\s*([\d,]+(?:\.\d+)?)/i]
   for (const p of prodPatterns) {
@@ -248,30 +242,24 @@ function extractSolarProductionData(text: string, filename: string): SolarReport
     year = mMatch[2]
   }
   let source = 'Solar App'
-  const fnL = filename.toLowerCase()
+  const fnL = (filename || '').toLowerCase()
   if (fnL.includes('solarman') || fnL.includes('sungrow') || fnL.includes('huawei') || fnL.includes('growatt')) {
     source = fnL.match(/(solarman|sungrow|huawei|growatt)/i)?.[0] ?? 'Solar App'
     source = source.charAt(0).toUpperCase() + source.slice(1)
-  }
-  if (productionKwh == null && fnL.includes('solar')) {
-    productionKwh = 520
-    systemSizeKw = systemSizeKw ?? 5.0
-    month = month ?? 'June'
-    year = year ?? '2026'
   }
   return { productionKwh, systemSizeKw, month, year, source }
 }
 
 function enrichAnalysisData(apiData: Record<string, unknown>, filename: string, isFallback: boolean, solarFieldData: ReturnType<typeof extractSolarFields>): BillAnalysisData {
-  const monthlyUnits = safeNum(apiData.monthly_units ?? apiData.units, 100)
-  const billAmount = safeNum(apiData.bill_amount ?? apiData.total_amount ?? apiData.amount, 1000)
+  const monthlyUnits = safeNum(apiData.monthly_units ?? apiData.units, 0)
+  const billAmount = safeNum(apiData.bill_amount ?? apiData.total_amount ?? apiData.amount, 0)
   const perUnitRate = safeNum(
     apiData.per_unit_rate,
-    monthlyUnits > 0 ? Math.round((billAmount / monthlyUnits) * 100) / 100 : 7.5
+    monthlyUnits > 0 ? Math.round((billAmount / monthlyUnits) * 100) / 100 : 0
   )
   const recommendedKw = safeNum(
     apiData.recommended_kw,
-    Math.round((monthlyUnits / 135) * 2) / 2 || 1.0
+    monthlyUnits > 0 ? Math.round((monthlyUnits / 135) * 2) / 2 : 0
   )
   const monthlySolarGen = safeNum(
     apiData.monthly_generation_units,
@@ -289,14 +277,13 @@ function enrichAnalysisData(apiData: Record<string, unknown>, filename: string, 
   const subsidyRs = calculateSubsidy(recommendedKw)
   const netCostRs = Math.max(0, systemCostRs - subsidyRs)
   const annualSavingsRs = monthlySavingsRs * 12
-  const paybackYears = safeNum(
-    apiData.payback_years && apiData.payback_years <= 15 ? apiData.payback_years : null,
-    annualSavingsRs > 0 ? Math.round((netCostRs / annualSavingsRs) * 10) / 10 : 3.5
-  )
-  const savings25YearsRs = safeNum(
-    apiData.savings_25_years_rs,
-    (annualSavingsRs * 25) - netCostRs
-  )
+
+  // Canonical formula: Net Investment = max(0, System Cost - Subsidy), Payback = Net Investment / Annual Savings
+  const paybackYears = annualSavingsRs > 0
+    ? parseFloat((netCostRs / annualSavingsRs).toFixed(1))
+    : 0
+
+  const savings25YearsRs = (annualSavingsRs * 25) - netCostRs
 
   const solarUsedDirectlyVal = monthlySolarGen * 0.75
   const exportedToGridVal = monthlySolarGen - solarUsedDirectlyVal
@@ -343,7 +330,6 @@ function enrichAnalysisData(apiData: Record<string, unknown>, filename: string, 
     extractionConfidence: calculateExtractionConfidence(base as unknown as BillAnalysisData, isFallback),
     billHealth: calculateBillHealthScore(base as unknown as BillAnalysisData),
     solarOpportunity: calculateSolarOpportunityScore(base as unknown as BillAnalysisData, isSolarInstalled),
-    filename,
   }
   return enriched
 }
@@ -353,7 +339,7 @@ export interface BillAnalyzerState {
   solarReport: SolarReportData | null
   unifiedEnergy: UnifiedEnergyData | null
   billUploadState: UploadState
-  solarUploadState: UploadState
+  solarUploadState: SolarReportState
   billProgress: UploadProgress
   solarProgress: UploadProgress
   billError: string | null
@@ -365,17 +351,18 @@ export interface BillAnalyzerHandlers {
   handleSolarFile: (file: File) => void
   retryBillUpload: () => void
   retrySolarUpload: () => void
+  clearSolarReport: () => void
   resetBill: () => void
 }
 
-export interface BillAnalyzerReturn extends BillAnalyzerState, BillAnalyzerHandlers {}
+export interface BillAnalyzerReturn extends BillAnalyzerState, BillAnalyzerHandlers { }
 
 export function useBillAnalyzer(): BillAnalyzerReturn {
   const [analysis, setAnalysis] = useState<BillAnalysisData | null>(null)
   const [solarReport, setSolarReport] = useState<SolarReportData | null>(null)
   const [unifiedEnergy, setUnifiedEnergy] = useState<UnifiedEnergyData | null>(null)
   const [billUploadState, setBillUploadState] = useState<UploadState>('idle')
-  const [solarUploadState, setSolarUploadState] = useState<UploadState>('idle')
+  const [solarUploadState, setSolarUploadState] = useState<SolarReportState>('NOT_PROVIDED')
   const [billProgress, setBillProgress] = useState<UploadProgress>({ percent: 0, status: '' })
   const [solarProgress, setSolarProgress] = useState<UploadProgress>({ percent: 0, status: '' })
   const [billError, setBillError] = useState<string | null>(null)
@@ -386,6 +373,8 @@ export function useBillAnalyzer(): BillAnalyzerReturn {
   const historyChartRef = useRef<Chart | null>(null)
   const billProgressInterval = useRef<ReturnType<typeof setInterval> | null>(null)
   const solarProgressInterval = useRef<ReturnType<typeof setInterval> | null>(null)
+  const billRequestId = useRef(0)
+  const solarRequestId = useRef(0)
 
   const clearBillProgressInterval = useCallback(() => {
     if (billProgressInterval.current) {
@@ -534,6 +523,7 @@ export function useBillAnalyzer(): BillAnalyzerReturn {
   }, [])
 
   const handleBillFile = useCallback((file: File) => {
+    const reqId = ++billRequestId.current
     setBillError(null)
     setBillUploadState('uploading')
     setBillProgress({ percent: 0, status: 'Starting...' })
@@ -575,11 +565,12 @@ export function useBillAnalyzer(): BillAnalyzerReturn {
       }
     }, 250)
 
-    const solarFields = extractSolarFields(file.name, file.name)
-
     const doComplete = (apiData: Record<string, unknown>) => {
+      if (reqId !== billRequestId.current) return
       clearBillProgressInterval()
       updateBillProgress(100, 'Analysis Complete')
+      const apiText = JSON.stringify(apiData)
+      const solarFields = extractSolarFields(apiText, file.name)
       const enriched = enrichAnalysisData(apiData, file.name, false, solarFields)
       setAnalysis(enriched)
       writeLS(LS_KEY_BILL, enriched)
@@ -587,6 +578,7 @@ export function useBillAnalyzer(): BillAnalyzerReturn {
     }
 
     const doError = (err: Error) => {
+      if (reqId !== billRequestId.current) return
       clearBillProgressInterval()
       setAnalysis(null)
       setUnifiedEnergy(null)
@@ -601,6 +593,7 @@ export function useBillAnalyzer(): BillAnalyzerReturn {
     fd.append('image', file)
     api.post('/analyze-bill', fd)
       .then((res) => {
+        if (reqId !== billRequestId.current) return
         const result = res.data
         if (!result) throw new Error('No response received from the bill analysis service.')
         if (result.success !== true) {
@@ -614,14 +607,19 @@ export function useBillAnalyzer(): BillAnalyzerReturn {
         }
         return result.data as Record<string, unknown>
       })
-      .then(doComplete)
+      .then((data) => {
+        if (data) doComplete(data)
+      })
       .catch((err: unknown) => {
+        if (reqId !== billRequestId.current) return
         const msg = extractErrorMessage(err, 'Analysis failed. Please check the file or try again.')
         doError(new Error(msg))
       })
   }, [clearBillProgressInterval, updateBillProgress, destroyCharts])
 
   const retryBillUpload = useCallback(() => {
+    billRequestId.current++
+    clearBillProgressInterval()
     setAnalysis(null)
     setUnifiedEnergy(null)
     localStorage.removeItem(LS_KEY_BILL)
@@ -630,9 +628,11 @@ export function useBillAnalyzer(): BillAnalyzerReturn {
     setBillUploadState('idle')
     setBillProgress({ percent: 0, status: '' })
     setBillFileInputTrigger(prev => prev + 1)
-  }, [destroyCharts])
+  }, [clearBillProgressInterval, destroyCharts])
 
   const resetBill = useCallback(() => {
+    billRequestId.current++
+    clearBillProgressInterval()
     setAnalysis(null)
     setUnifiedEnergy(null)
     setBillUploadState('idle')
@@ -640,12 +640,28 @@ export function useBillAnalyzer(): BillAnalyzerReturn {
     setBillError(null)
     destroyCharts()
     localStorage.removeItem(LS_KEY_BILL)
-  }, [destroyCharts])
+  }, [clearBillProgressInterval, destroyCharts])
+
+  const clearSolarReport = useCallback(() => {
+    solarRequestId.current++
+    clearSolarProgressInterval()
+    setSolarReport(null)
+    setUnifiedEnergy(null)
+    localStorage.removeItem(LS_KEY_SOLAR)
+    setSolarError(null)
+    setSolarUploadState('NOT_PROVIDED')
+    setSolarProgress({ percent: 0, status: '' })
+  }, [clearSolarProgressInterval])
+
+  const retrySolarUpload = useCallback(() => {
+    clearSolarReport()
+  }, [clearSolarReport])
 
   const handleSolarFile = useCallback((file: File) => {
+    const reqId = ++solarRequestId.current
     setSolarError(null)
-    setSolarUploadState('uploading')
-    setSolarProgress({ percent: 0, status: 'Starting...' })
+    setSolarUploadState('UPLOADING')
+    setSolarProgress({ percent: 0, status: 'Starting upload...' })
     setSolarReport(null)
     setUnifiedEnergy(null)
     localStorage.removeItem(LS_KEY_SOLAR)
@@ -654,7 +670,14 @@ export function useBillAnalyzer(): BillAnalyzerReturn {
     const isValidType = VALID_MIME_TYPES.includes(file.type) || VALID_EXTENSIONS.includes(ext)
     if (!isValidType) {
       setSolarError('Please upload a valid solar report file (PDF, PNG, JPG, JPEG, WEBP)')
-      setSolarUploadState('error')
+      setSolarUploadState('INVALID_FILE')
+      setSolarProgress({ percent: 0, status: '' })
+      return
+    }
+
+    if (file.size > MAX_FILE_SIZE) {
+      setSolarError('File size exceeds 10MB limit. Please upload a smaller file.')
+      setSolarUploadState('INVALID_FILE')
       setSolarProgress({ percent: 0, status: '' })
       return
     }
@@ -671,33 +694,39 @@ export function useBillAnalyzer(): BillAnalyzerReturn {
       if (progress < 90) {
         progress += 10
         if (progress > 90) progress = 90
+        if (progress >= 30) {
+          setSolarUploadState('PROCESSING')
+        }
         const idx = Math.min(Math.floor(progress / 25), statuses.length - 1)
         updateSolarProgress(progress, statuses[idx])
       }
     }, 250)
 
     const doComplete = (prodData: SolarReportData) => {
+      if (reqId !== solarRequestId.current) return
       clearSolarProgressInterval()
       updateSolarProgress(100, 'Analysis Complete')
       setSolarReport(prodData)
       writeLS(LS_KEY_SOLAR, prodData)
-      setSolarUploadState('complete')
+      setSolarUploadState('EXTRACTED')
     }
 
-    const doError = (err: Error) => {
+    const doError = (err: Error, targetState: SolarReportState = 'EXTRACTION_FAILED') => {
+      if (reqId !== solarRequestId.current) return
       clearSolarProgressInterval()
       setSolarReport(null)
       setUnifiedEnergy(null)
       localStorage.removeItem(LS_KEY_SOLAR)
       setSolarProgress({ percent: 0, status: '' })
       setSolarError(err.message || 'Could not read solar report. Try another file.')
-      setSolarUploadState('error')
+      setSolarUploadState(targetState)
     }
 
     const fd = new FormData()
     fd.append('image', file)
     api.post('/analyze-bill', fd)
       .then((res) => {
+        if (reqId !== solarRequestId.current) return
         const result = res.data
         let apiText = ''
         if (result?.data) {
@@ -711,32 +740,33 @@ export function useBillAnalyzer(): BillAnalyzerReturn {
         }
         const prodData = extractSolarProductionData(apiText, file.name)
         if (prodData.productionKwh == null) {
-          throw new Error('Could not extract solar generation figures from this report. Please upload an inverter or app screenshot showing kWh generation.')
+          const extractionErr = new Error('Could not extract solar generation figures from this report. Please upload an inverter or app screenshot showing kWh generation.')
+          extractionErr.name = 'EXTRACTION_FAILED'
+          throw extractionErr
         }
         return prodData
       })
-      .then(doComplete)
+      .then((data) => {
+        if (data) doComplete(data)
+      })
       .catch((err: unknown) => {
-        const msg = extractErrorMessage(err, 'Could not read solar report. Please try uploading another document.')
-        doError(new Error(msg))
+        if (reqId !== solarRequestId.current) return
+        const errorObj = err as { name?: string; message?: string; response?: unknown }
+        if (errorObj?.name === 'EXTRACTION_FAILED') {
+          doError(new Error(errorObj.message || 'Could not extract solar generation figures from this report. Please upload an inverter or app screenshot showing kWh generation.'), 'EXTRACTION_FAILED')
+        } else {
+          const msg = extractErrorMessage(err, 'Solar report service could not be reached. Please check your connection and retry.')
+          doError(new Error(msg), 'API_ERROR')
+        }
       })
   }, [clearSolarProgressInterval, updateSolarProgress])
-
-  const retrySolarUpload = useCallback(() => {
-    setSolarReport(null)
-    setUnifiedEnergy(null)
-    localStorage.removeItem(LS_KEY_SOLAR)
-    setSolarError(null)
-    setSolarUploadState('idle')
-    setSolarProgress({ percent: 0, status: '' })
-  }, [])
 
   useEffect(() => {
     const savedBill = readLS<Record<string, unknown>>(LS_KEY_BILL)
     if (savedBill) {
       if (validateBillAnalysisResponse(savedBill as Record<string, unknown>)) {
-        const solarFields = extractSolarFields('', savedBill.filename as string ?? '')
-        const enriched = enrichAnalysisData(savedBill, savedBill.filename as string ?? '', false, solarFields)
+        const solarFields = extractSolarFields(JSON.stringify(savedBill), (savedBill.filename as string) ?? '')
+        const enriched = enrichAnalysisData(savedBill, (savedBill.filename as string) ?? '', false, solarFields)
         setAnalysis(enriched)
         setBillUploadState('complete')
       } else {
@@ -744,9 +774,12 @@ export function useBillAnalyzer(): BillAnalyzerReturn {
       }
     }
     const savedSolar = readLS<SolarReportData>(LS_KEY_SOLAR)
-    if (savedSolar) {
+    if (savedSolar && savedSolar.productionKwh != null) {
       setSolarReport(savedSolar)
-      setSolarUploadState('complete')
+      setSolarUploadState('EXTRACTED')
+    } else {
+      localStorage.removeItem(LS_KEY_SOLAR)
+      setSolarUploadState('NOT_PROVIDED')
     }
   }, [])
 
@@ -794,7 +827,7 @@ export function useBillAnalyzer(): BillAnalyzerReturn {
     handleSolarFile,
     retryBillUpload,
     retrySolarUpload,
+    clearSolarReport,
     resetBill,
-
   }
 }

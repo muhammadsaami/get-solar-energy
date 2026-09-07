@@ -76,6 +76,19 @@ export interface PlantPerformanceResult {
 
 export type UploadState = 'idle' | 'uploading' | 'complete' | 'error'
 
+export type SolarReportState =
+  | 'NOT_PROVIDED'
+  | 'UPLOADING'
+  | 'PROCESSING'
+  | 'EXTRACTED'
+  | 'EXTRACTION_FAILED'
+  | 'INVALID_FILE'
+  | 'API_ERROR'
+  | 'idle'
+  | 'uploading'
+  | 'complete'
+  | 'error'
+
 export interface UploadProgress {
   percent: number
   status: string
@@ -88,7 +101,7 @@ export interface AnalysisState {
   solarReport: SolarReportData | null
   unifiedEnergy: UnifiedEnergyData | null
   billUploadState: UploadState
-  solarUploadState: UploadState
+  solarUploadState: SolarReportState
   billProgress: UploadProgress
   solarProgress: UploadProgress
   billError: string | null
