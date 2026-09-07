@@ -996,7 +996,6 @@ Rules:
         for msg in request.history[-10:]:  # Last 10 messages for context window
             prefix = "User" if msg.role == "user" else "Assistant"
             history_text += f"{prefix}: {msg.content}\n"
-
         full_prompt = f"{full_system_prompt}\n\n{history_text}User: {request.message}\nAssistant:"
 
         max_attempts = 3
@@ -1007,8 +1006,6 @@ Rules:
                     model="gemini-2.5-flash-lite",
                     contents=full_prompt
                 )
-                global last_gemini_success_time
-                last_gemini_success_time = time.time()
                 return {
                     "success": True,
                     "response": response.text.strip()
@@ -1017,22 +1014,32 @@ Rules:
                 last_error = e
                 err_str = str(e).lower()
                 if any(t in err_str for t in ["503", "429", "unavailable", "exhausted", "demand"]):
-                    import time
                     time.sleep(2 ** (attempt + 1))
                 else:
                     raise e
         raise last_error
 
+    except HTTPException:
+        raise
     except Exception as e:
         err_str = str(e).lower()
-        if any(t in err_str for t in ["resource_exhausted", "quota", "rate limit", "429", "503", "unavailable", "timeout", "deadline"]):
-            logger.warning("Gemini quota exhausted or timeout for solar assistant. Returning fallback error.")
-            return {
-                "success": False,
-                "error": "rate_limit_or_timeout",
-                "message": "GET Solar Copilot is currently experiencing high demand. Please try again in a few moments."
-            }
-        return {"success": False, "error": str(e)}
+        if any(t in err_str for t in ["resource_exhausted", "quota", "rate limit", "429", "503"]):
+            logger.warning("Gemini quota exhausted for solar assistant: %s", str(e))
+            raise HTTPException(
+                status_code=429,
+                detail="Solar AI Assistant is currently experiencing high demand. Please try again shortly."
+            )
+        elif any(t in err_str for t in ["timeout", "deadline"]):
+            logger.warning("Gemini timeout for solar assistant: %s", str(e))
+            raise HTTPException(
+                status_code=504,
+                detail="Solar AI Assistant request timed out. Please try again."
+            )
+        logger.error("Solar assistant generation error: %s", str(e))
+        raise HTTPException(
+            status_code=500,
+            detail="Solar AI service encountered an unexpected error. Please try again later."
+        )
 
 
 def _is_valid_bill_analysis(data: dict) -> bool:
