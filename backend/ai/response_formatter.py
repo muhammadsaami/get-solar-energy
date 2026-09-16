@@ -37,6 +37,9 @@ def format_response(
     warnings: Optional[List[str]] = None,
     errors: Optional[List[str]] = None,
     context: Optional[Dict[str, Any]] = None,
+    provider: Optional[str] = None,
+    model: Optional[str] = None,
+    fallback_used: bool = False,
 ) -> Dict[str, Any]:
     """
     Build the structured API response envelope.
@@ -76,6 +79,9 @@ def format_response(
         "elapsed_ms": round(elapsed_ms, 2),
         "warnings": warnings,
         "errors": errors,
+        "provider": provider,
+        "model": model,
+        "fallback_used": fallback_used,
     }
 
 

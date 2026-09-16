@@ -3,15 +3,26 @@ from security import verify_token
 from auth import auth_rate_limiter
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.staticfiles import StaticFiles
-from fastapi.responses import FileResponse
+from fastapi.responses import FileResponse, JSONResponse
 from pathlib import Path
-from google import genai
-from google.genai import types
 from dotenv import load_dotenv
+from typing import Optional
+from pydantic import BaseModel, field_validator
+from sqlalchemy.orm import Session
 from database import engine, Base
+from database_sqlite import get_sqlite_db
+from quota_service import get_user_quotas, check_quota, record_quota_consumption
+from bill_document_service import (
+    validate_file_type,
+    process_pdf_document,
+    process_solar_pdf_document,
+    normalize_image_bytes,
+    UNSUPPORTED_FORMAT_MESSAGE,
+    UNSUPPORTED_SOLAR_FORMAT_MESSAGE,
+)
 import technician_models  # noqa: F401 — must import before create_all() so Phase 3 tables are registered
-import monitoring_models  # noqa: F401 — must import before create_all() so Phase 4 tables are registered
 import work_order_extras_models  # noqa: F401 — must import before create_all() so notes/attachments/checklist tables are registered
+import monitoring_models  # noqa: F401 — must import before create_all() so Phase 4 tables are registered
 import performance_models  # noqa: F401 — must import before create_all() so ratings/skills/badges/profile-photo tables are registered
 import knowledge_base_models  # noqa: F401 — must import before create_all() so knowledge base tables are registered
 import ai_troubleshoot_models  # noqa: F401 — must import before create_all() so AI conversation log table is registered
@@ -31,28 +42,35 @@ logger = logging.getLogger(__name__)
 
 load_dotenv()
 
-Base.metadata.create_all(bind=engine)
+from ai.provider_factory import get_ai_provider
+from ai.provider_base import AIRequest, AIImageInput
 
-client = genai.Client(api_key=os.getenv("GEMINI_API_KEY"))
+Base.metadata.create_all(bind=engine)
 
 app = FastAPI(title="GET Solar Energy API")
 
 # ── CORS ──────────────────────────────────────────────────────────────────
-# NOTE: allow_origins=["*"] cannot be combined with allow_credentials=True —
-# browsers reject that combination outright. Since the new session-auth flow
+# browsers reject that combination outright. Since the session-auth flow
 # relies on HttpOnly cookies (withCredentials: true on the frontend), the
-# origin list must be explicit — and since this is a real deployed project
-# (not just localhost), it comes from .env, not a hardcoded value, so dev/
-# staging/production can each set their own without touching code.
+# origin list must be explicit.
 #
-# .env: CORS_ALLOWED_ORIGINS=http://localhost:5173,http://localhost:3000,http://localhost:8080,http://127.0.0.1:5173
-_cors_origins_raw = os.getenv(
-    "CORS_ALLOWED_ORIGINS",
-    os.getenv("CORS_ORIGINS", "http://localhost:5173,http://localhost:3000,http://localhost:8080,http://127.0.0.1:5173,http://127.0.0.1:3000")
-)
-if _cors_origins_raw == "*":
-    _cors_origins_raw = "http://localhost:5173,http://localhost:3000,http://localhost:8080,http://127.0.0.1:5173,http://127.0.0.1:3000"
-CORS_ALLOWED_ORIGINS = [origin.strip() for origin in _cors_origins_raw.split(",") if origin.strip()]
+# Default development origins cover standard Vite and local dev server ports.
+DEFAULT_CORS_ORIGINS = [
+    "http://localhost:5173",
+    "http://localhost:5174",
+    "http://localhost:3000",
+    "http://localhost:8080",
+    "http://127.0.0.1:5173",
+    "http://127.0.0.1:5174",
+    "http://127.0.0.1:3000",
+]
+
+_cors_env = os.getenv("CORS_ALLOWED_ORIGINS", os.getenv("CORS_ORIGINS", ""))
+if _cors_env and _cors_env.strip() != "*":
+    _parsed_env_origins = [origin.strip() for origin in _cors_env.split(",") if origin.strip()]
+    CORS_ALLOWED_ORIGINS = list(dict.fromkeys(DEFAULT_CORS_ORIGINS + _parsed_env_origins))
+else:
+    CORS_ALLOWED_ORIGINS = DEFAULT_CORS_ORIGINS
 
 app.add_middleware(
     CORSMiddleware,
@@ -91,7 +109,6 @@ from technician_models import *  # registers Technician / Training / Job / WorkO
 from technician_auth import router as technician_auth_router
 from training import router as training_router
 from job_marketplace import router as job_marketplace_router
-from job_marketplace import technician_jobs_router
 from work_orders import router as work_orders_router
 from earnings import router as earnings_router
 from technician_ai import router as technician_ai_router
@@ -113,6 +130,7 @@ from uploads import router as uploads_router
 
 # ── Phase 3 extension: Technician Dashboard ──────────────────────────────
 from technician_dashboard import router as technician_dashboard_router
+from job_marketplace import technician_jobs_router
 from performance import router as performance_router
 from knowledge_base import router as knowledge_base_router
 from ai_troubleshoot import router as ai_troubleshoot_router
@@ -149,15 +167,20 @@ app.include_router(alerts_router)
 app.include_router(technician_auth_router)
 app.include_router(training_router)
 app.include_router(job_marketplace_router)
-app.include_router(technician_jobs_router)
 app.include_router(work_orders_router)
 app.include_router(earnings_router)
 app.include_router(technician_ai_router)
 
-# ── Phase 5: Vendor Portals routers ──────────────────────────────────────
+# ── Phase 5: Vendor Inventory routers ──────────────────────────────────
 app.include_router(vendor_inventory_router)
+
+# ── Phase 5: Vendor Payments/Payouts routers ─────────────────────────────
 app.include_router(vendor_payments_router)
+
+# ── Phase 5: Vendor Teams routers ────────────────────────────────────────
 app.include_router(vendor_teams_router)
+
+# ── Phase 5: Vendor Documents routers ────────────────────────────────────
 app.include_router(vendor_documents_router)
 
 # ── Phase 3 extension: Shared Upload API ─────────────────────────────────
@@ -165,6 +188,7 @@ app.include_router(uploads_router)
 
 # ── Phase 3 extension: Technician Dashboard ──────────────────────────────
 app.include_router(technician_dashboard_router)
+app.include_router(technician_jobs_router)
 app.include_router(performance_router)
 app.include_router(knowledge_base_router)
 app.include_router(ai_troubleshoot_router)
@@ -877,11 +901,16 @@ def get_admin_activity(user_email: str = Depends(verify_token)):
 
 
 # Serve frontend static files at /frontend/
-app.mount("/frontend", StaticFiles(directory="../frontend", html=True), name="frontend")
+_frontend_dir = Path(__file__).resolve().parent.parent / "frontend"
+if not _frontend_dir.exists():
+    _frontend_dir = Path(__file__).resolve().parent / "frontend"
+if _frontend_dir.exists():
+    app.mount("/frontend", StaticFiles(directory=str(_frontend_dir), html=True), name="frontend")
 
 # Serve uploaded files (work order photos, documents, profile photos, etc.)
-os.makedirs("uploads", exist_ok=True)
-app.mount("/uploads", StaticFiles(directory="uploads"), name="uploads")
+_uploads_dir = Path(__file__).resolve().parent / "uploads"
+os.makedirs(str(_uploads_dir), exist_ok=True)
+app.mount("/uploads", StaticFiles(directory=str(_uploads_dir)), name="uploads")
 
 @app.get("/", response_class=FileResponse)
 def home():
@@ -1003,18 +1032,21 @@ Rules:
         last_error = None
         for attempt in range(max_attempts):
             try:
-                response = client.models.generate_content(
-                    model="gemini-2.5-flash-lite",
-                    contents=full_prompt
+                provider = get_ai_provider()
+                ai_request = AIRequest(
+                    prompt=full_prompt,
+                    temperature=0.2,
+                    metadata={"route": "solar-assistant"},
                 )
+                ai_response = provider.generate_response(ai_request)
                 return {
                     "success": True,
-                    "response": response.text.strip()
+                    "response": ai_response.content
                 }
             except Exception as e:
                 last_error = e
                 err_str = str(e).lower()
-                if any(t in err_str for t in ["503", "429", "unavailable", "exhausted", "demand"]):
+                if any(t in err_str for t in ["503", "429", "unavailable", "exhausted", "demand", "rate_limit"]):
                     time.sleep(2 ** (attempt + 1))
                 else:
                     raise e
@@ -1025,13 +1057,13 @@ Rules:
     except Exception as e:
         err_str = str(e).lower()
         if any(t in err_str for t in ["resource_exhausted", "quota", "rate limit", "429", "503"]):
-            logger.warning("Gemini quota exhausted for solar assistant: %s", str(e))
+            logger.warning("AI quota exhausted for solar assistant: %s", str(e))
             raise HTTPException(
                 status_code=429,
                 detail="Solar AI Assistant is currently experiencing high demand. Please try again shortly."
             )
         elif any(t in err_str for t in ["timeout", "deadline"]):
-            logger.warning("Gemini timeout for solar assistant: %s", str(e))
+            logger.warning("AI timeout for solar assistant: %s", str(e))
             raise HTTPException(
                 status_code=504,
                 detail="Solar AI Assistant request timed out. Please try again."
@@ -1064,89 +1096,328 @@ def _is_valid_bill_analysis(data: dict) -> bool:
     return True
 
 
+class ManualBillRequest(BaseModel):
+    billing_period: str
+    bill_amount: float
+    monthly_units: float
+    sanctioned_load_kw: float
+    customer_name: Optional[str] = "Valued Customer"
+    consumer_number: Optional[str] = None
+    discom: Optional[str] = None
+    payable_amount: Optional[float] = None
+    previous_dues: Optional[float] = None
+    billed_demand: Optional[float] = None
+    tariff_category: Optional[str] = None
+    meter_type: Optional[str] = None
+    solar_installed: bool = False
+    solar_capacity_kw: Optional[float] = None
+    solar_generation_units: Optional[float] = None
+    solar_generation_kwh: Optional[float] = None
+    solar_export_units: Optional[float] = None
+    solar_export_kwh: Optional[float] = None
+
+    @field_validator("bill_amount", "monthly_units", "sanctioned_load_kw")
+    @classmethod
+    def validate_positive_numbers(cls, v: float, info) -> float:
+        if v is None or v <= 0:
+            raise ValueError(f"{info.field_name} must be greater than 0.")
+        return float(v)
+
+    @field_validator("billing_period")
+    @classmethod
+    def validate_period(cls, v: str) -> str:
+        if not v or not v.strip():
+            raise ValueError("Billing period is required.")
+        return v.strip()
+
+
+def _is_valid_solar_report(data: dict) -> bool:
+    """
+    Validate that the extracted solar production report contains valid numeric generation figures
+    and conforms to domain constraints without conflating with bill consumption or export.
+    """
+    if not isinstance(data, dict):
+        return False
+
+    gen = data.get("monthly_generation_kwh")
+    if not isinstance(gen, (int, float)) or isinstance(gen, bool):
+        return False
+    # Realistic monthly production range: 0.01 kWh to 500,000 kWh
+    if gen < 0.01 or gen > 500_000:
+        return False
+
+    # Optional system capacity validation if present
+    cap = data.get("system_capacity_kw")
+    if cap is not None:
+        if not isinstance(cap, (int, float)) or isinstance(cap, bool):
+            return False
+        if cap < 0.01 or cap > 50_000:
+            return False
+
+    # Optional confidence validation if present
+    conf = data.get("confidence")
+    if conf is not None:
+        if not isinstance(conf, (int, float)) or isinstance(conf, bool):
+            return False
+        if conf < 0.0 or conf > 1.0:
+            return False
+
+    return True
+
+
+def _normalize_solar_report_data(data: dict) -> dict:
+    """Ensure canonical types and derived date fields for the solar report."""
+    prod_kwh = data.get("monthly_generation_kwh")
+    if prod_kwh is not None:
+        try:
+            prod_kwh = float(prod_kwh)
+        except (ValueError, TypeError):
+            prod_kwh = None
+
+    cap_kw = data.get("system_capacity_kw")
+    if cap_kw is not None:
+        try:
+            cap_kw = float(cap_kw)
+        except (ValueError, TypeError):
+            cap_kw = None
+
+    prod_month = data.get("production_month")
+    month = data.get("month")
+    year = data.get("year")
+
+    months_map = {
+        "01": "January", "02": "February", "03": "March", "04": "April",
+        "05": "May", "06": "June", "07": "July", "08": "August",
+        "09": "September", "10": "October", "11": "November", "12": "December"
+    }
+
+    month_nums = {
+        "january": "01", "february": "02", "march": "03", "april": "04",
+        "may": "05", "june": "06", "july": "07", "august": "08",
+        "september": "09", "october": "10", "november": "11", "december": "12",
+        "jan": "01", "feb": "02", "mar": "03", "apr": "04", "jun": "06",
+        "jul": "07", "aug": "08", "sep": "09", "oct": "10", "nov": "11", "dec": "12"
+    }
+
+    if prod_month and isinstance(prod_month, str):
+        cleaned_pm = prod_month.strip()
+        if "-" in cleaned_pm:
+            parts = cleaned_pm.split("-")
+            if len(parts) == 2:
+                y, m = parts
+                if not year and len(y) == 4:
+                    year = y
+                if not month:
+                    month = months_map.get(m, m)
+        elif "/" in cleaned_pm:
+            parts = cleaned_pm.split("/")
+            if len(parts) == 2:
+                p1, p2 = parts[0].strip(), parts[1].strip()
+                if len(p2) == 4:
+                    year = p2
+                    if p1.lower() in month_nums:
+                        month = p1.capitalize()
+                        prod_month = f"{p2}-{month_nums[p1.lower()]}"
+                    elif p1 in months_map:
+                        month = months_map[p1]
+                        prod_month = f"{p2}-{p1}"
+
+    if not prod_month and month and year:
+        mn = month_nums.get(str(month).strip().lower())
+        if mn and str(year).strip().isdigit():
+            prod_month = f"{str(year).strip()}-{mn}"
+
+    daily = data.get("daily_generation_kwh")
+    if not isinstance(daily, list):
+        daily = []
+    else:
+        valid_daily = []
+        for d in daily:
+            try:
+                valid_daily.append(float(d))
+            except (ValueError, TypeError):
+                pass
+        daily = valid_daily
+
+    conf = data.get("confidence", 0.95)
+    try:
+        conf = float(conf)
+    except (ValueError, TypeError):
+        conf = 0.95
+
+    return {
+        "system_capacity_kw": cap_kw,
+        "monthly_generation_kwh": prod_kwh,
+        "production_month": str(prod_month) if prod_month else None,
+        "month": str(month) if month else None,
+        "year": str(year) if year else None,
+        "source": str(data.get("source") or "Solar App"),
+        "daily_generation_kwh": daily,
+        "confidence": conf,
+    }
+
+
+SOLAR_REPORT_ANALYSIS_PROMPT = """
+You are an expert solar energy engineer and data extractor.
+Analyze this solar production report, inverter monitor, or solar app screenshot.
+
+Extract the following verified figures:
+1. "system_capacity_kw": System rated size/capacity in kW (e.g. 3.6, 5.0). If not visible, return null.
+2. "monthly_generation_kwh": Total energy produced/generated during the visible month/period in kWh (look for "Production (kWh)", "Generation", "Yield", "Total Yield", "Monthly Yield", "E-Total"). If shown in MWh, convert to kWh (*1000).
+3. "production_month": The reporting month and year in format "YYYY-MM" (e.g. "2026-05"). If only month name and year are visible, convert to "YYYY-MM".
+4. "month": The reporting month name (e.g. "May"). If not visible, return null.
+5. "year": The reporting year as string (e.g. "2026"). If not visible, return null.
+6. "source": App or inverter brand/name if identifiable (e.g. "Solarman", "Sungrow", "Huawei", "Growatt", "Enphase", "Solis", "GoodWe") or "Solar App".
+7. "daily_generation_kwh": If a daily production bar chart is clearly visible with numbers, extract an array of daily values in kWh. Otherwise return an empty list [].
+8. "confidence": Number between 0.0 and 1.0 indicating clarity and confidence of the extraction.
+
+CRITICAL RULES:
+- Distinguish solar GENERATION/PRODUCTION from household electricity consumption, grid import, or solar export.
+- Do not guess or fabricate values. If monthly generation is not clearly present, set "monthly_generation_kwh": null.
+
+Return ONLY valid JSON matching this exact structure with no extra text:
+{
+    "system_capacity_kw": <number or null>,
+    "monthly_generation_kwh": <number or null>,
+    "production_month": "<YYYY-MM or null>",
+    "month": "<Month name or null>",
+    "year": "<YYYY or null>",
+    "source": "<source name>",
+    "daily_generation_kwh": [],
+    "confidence": <number between 0.0 and 1.0>
+}
+"""
+
+
+BILL_ANALYSIS_PROMPT = """
+You are an expert at reading Indian electricity bills.
+
+Carefully analyze this electricity bill and extract the following real data:
+1. Customer name exactly as written on the bill
+2. Monthly units consumed in kWh (look for units, consumption)
+3. Total bill amount in Rupees
+4. Per unit electricity rate in Rs/kWh
+5. Billing period (month and year)
+6. Consumer number if visible
+7. Discom/utility company name if visible
+
+Then calculate solar recommendations based on extracted data:
+- Recommended solar system size: monthly_units / 135 (rounded to nearest 0.5)
+- Monthly generation: recommended_kw * 4.5 * 30
+- Monthly savings: monthly_generation * per_unit_rate
+- System cost: recommended_kw * 55000
+- Payback years: system_cost / (monthly_savings * 12)
+- 25 year savings: (monthly_savings * 12 * 25) - system_cost
+
+Return ONLY valid JSON with real extracted values, no extra text:
+{
+    "customer_name": "<exact name from bill>",
+    "consumer_number": "<consumer number from bill>",
+    "discom": "<electricity company name>",
+    "monthly_units": <actual units from bill>,
+    "bill_amount": <actual amount from bill>,
+    "per_unit_rate": <actual rate from bill>,
+    "billing_period": "<actual month year from bill>",
+    "recommended_kw": <calculated>,
+    "monthly_generation_units": <calculated>,
+    "monthly_savings_rs": <calculated>,
+    "system_cost_rs": <calculated>,
+    "payback_years": <calculated>,
+    "savings_25_years_rs": <calculated>
+}
+"""
+
+
+@app.get("/api/analyze-bill/quota")
+def get_bill_quota(
+    db: Session = Depends(get_sqlite_db),
+    user_email: str = Depends(verify_token),
+):
+    quotas = get_user_quotas(db, user_email)
+    return {"success": True, "quota": quotas}
+
+
 @app.post("/api/analyze-bill")
-async def analyze_bill(image: UploadFile = File(...), req: Request = None, user_email: str = Depends(verify_token)):
+async def analyze_bill(
+    image: UploadFile = File(...),
+    req: Request = None,
+    user_email: str = Depends(verify_token),
+    db: Session = Depends(get_sqlite_db),
+):
     client_ip = req.client.host if req else "unknown"
     if not auth_rate_limiter.is_allowed(user_email, client_ip):
-        return {"success": False, "error": "Rate limit exceeded. Please try again later."}
+        return JSONResponse(
+            status_code=429,
+            content={"success": False, "error": "Rate limit exceeded. Please try again later."}
+        )
+
+    # 1. Enforce independent server-side upload quota (3/day)
+    allowed, quota_err, quotas = check_quota(db, user_email, "upload")
+    if not allowed:
+        return JSONResponse(
+            status_code=429,
+            content={"success": False, "error": quota_err, "quota": quotas}
+        )
+
     try:
         image_data = await image.read()
 
-        prompt = """
-        You are an expert at reading Indian electricity bills.
-        
-        Carefully analyze this electricity bill image and extract the following real data:
-        1. Customer name exactly as written on the bill
-        2. Monthly units consumed in kWh (look for units, consumption)
-        3. Total bill amount in Rupees
-        4. Per unit electricity rate in Rs/kWh
-        5. Billing period (month and year)
-        6. Consumer number if visible
-        7. Discom/utility company name if visible
-        
-        Then calculate solar recommendations based on extracted data:
-        - Recommended solar system size: monthly_units / 135 (rounded to nearest 0.5)
-        - Monthly generation: recommended_kw * 4.5 * 30
-        - Monthly savings: monthly_generation * per_unit_rate
-        - System cost: recommended_kw * 55000
-        - Payback years: system_cost / (monthly_savings * 12)
-        - 25 year savings: (monthly_savings * 12 * 25) - system_cost
-        
-        Return ONLY valid JSON with real extracted values, no extra text:
-        {
-            "customer_name": "<exact name from bill>",
-            "consumer_number": "<consumer number from bill>",
-            "discom": "<electricity company name>",
-            "monthly_units": <actual units from bill>,
-            "bill_amount": <actual amount from bill>,
-            "per_unit_rate": <actual rate from bill>,
-            "billing_period": "<actual month year from bill>",
-            "recommended_kw": <calculated>,
-            "monthly_generation_units": <calculated>,
-            "monthly_savings_rs": <calculated>,
-            "system_cost_rs": <calculated>,
-            "payback_years": <calculated>,
-            "savings_25_years_rs": <calculated>
-        }
-        """
+        # 2. Validate file format by magic bytes
+        is_valid, mime_type = validate_file_type(image_data, image.filename)
+        if not is_valid:
+            return JSONResponse(
+                status_code=400,
+                content={"success": False, "error": UNSUPPORTED_FORMAT_MESSAGE, "quota": quotas}
+            )
 
-        mime_type = image.content_type
-        if not mime_type or mime_type == "application/octet-stream":
-            ext = (image.filename or "").split(".")[-1].lower()
-            if ext == "pdf":
-                mime_type = "application/pdf"
-            elif ext in ["jpg", "jpeg"]:
-                mime_type = "image/jpeg"
-            elif ext == "webp":
-                mime_type = "image/webp"
+        # 3. Document processing: PDF text-first / vision fallback vs Image normalization
+        if mime_type == "application/pdf":
+            pdf_res = process_pdf_document(image_data)
+            if pdf_res.error:
+                return JSONResponse(
+                    status_code=400,
+                    content={"success": False, "error": pdf_res.error, "quota": quotas}
+                )
+
+            if pdf_res.use_text:
+                # Text-first path
+                full_prompt = (
+                    f"{BILL_ANALYSIS_PROMPT}\n\n"
+                    f"DOCUMENT TEXT EXTRACTED FROM BILL PDF ({pdf_res.page_count} pages):\n"
+                    f"{pdf_res.text_content}"
+                )
+                ai_request = AIRequest(
+                    prompt=full_prompt,
+                    metadata={"route": "analyze-bill", "input_type": "pdf_text"},
+                )
             else:
-                mime_type = "image/png"
+                # Vision fallback path
+                image_inputs = [
+                    AIImageInput(data=img_bytes, mime_type=img_mime)
+                    for img_bytes, img_mime in pdf_res.images
+                ]
+                ai_request = AIRequest(
+                    prompt=BILL_ANALYSIS_PROMPT,
+                    image_inputs=image_inputs,
+                    metadata={"route": "analyze-bill", "input_type": "pdf_vision_fallback"},
+                )
+        else:
+            # Image normalization
+            norm_bytes, norm_mime = normalize_image_bytes(image_data, mime_type)
+            ai_request = AIRequest(
+                prompt=BILL_ANALYSIS_PROMPT,
+                image_inputs=[AIImageInput(data=norm_bytes, mime_type=norm_mime)],
+                metadata={"route": "analyze-bill", "input_type": "image"},
+            )
 
+        # 4. Centralized AI execution
         max_attempts = 2
         last_error = None
         for attempt in range(max_attempts):
             try:
-                config = types.GenerateContentConfig(
-                    temperature=0.1,
-                    response_mime_type="application/json"
-                )
-                response = client.models.generate_content(
-                    model="gemini-2.5-flash",
-                    contents=[
-                        types.Content(
-                            role="user",
-                            parts=[
-                                types.Part.from_bytes(
-                                    data=image_data,
-                                    mime_type=mime_type
-                                ),
-                                types.Part.from_text(text=prompt)
-                            ]
-                        )
-                    ],
-                    config=config
-                )
-                text = response.text.strip()
+                provider = get_ai_provider()
+                ai_response = provider.generate_response(ai_request)
+                text = ai_response.content
                 if "```json" in text:
                     text = text.split("```json")[1].split("```")[0]
                 elif "```" in text:
@@ -1155,16 +1426,25 @@ async def analyze_bill(image: UploadFile = File(...), req: Request = None, user_
                 result = json.loads(text.strip())
 
                 if not _is_valid_bill_analysis(result):
-                    logger.warning(f"Gemini returned invalid bill data: {result}")
-                    return {"success": False, "error": "AI returned invalid bill analysis data. Please upload a clearer image."}
+                    logger.warning("OpenAI returned invalid bill data: %s", result)
+                    return JSONResponse(
+                        status_code=422,
+                        content={
+                            "success": False,
+                            "error": "We couldn't read this bill. Please try another copy or enter the bill details manually.",
+                            "quota": quotas,
+                        }
+                    )
 
-                global last_gemini_success_time
-                last_gemini_success_time = time.time()
-                return {"success": True, "data": result}
+                # Consume 1 upload quota only after successful validation
+                updated_quotas = record_quota_consumption(db, user_email, "upload")
+                global last_ai_success_time
+                last_ai_success_time = time.time()
+                return {"success": True, "data": result, "quota": updated_quotas}
             except Exception as e:
                 last_error = e
                 err_str = str(e).lower()
-                if "503" in err_str or "429" in err_str or "unavailable" in err_str or "exhausted" in err_str or "demand" in err_str:
+                if any(t in err_str for t in ["503", "429", "unavailable", "exhausted", "demand"]):
                     logger.warning(f"Transient AI error on attempt {attempt+1}/{max_attempts}: {e}")
                     if attempt < max_attempts - 1:
                         time.sleep(1.5)
@@ -1173,26 +1453,275 @@ async def analyze_bill(image: UploadFile = File(...), req: Request = None, user_
         raise last_error
 
     except Exception as e:
+        logger.error("Bill analysis error: %s", e)
         err_str = str(e).lower()
-        if any(term in err_str for term in ["resource_exhausted", "quota exceeded", "rate limit", "exhausted", "429", "503", "unavailable"]):
-            logger.warning("Gemini quota exhausted. Returning demo fallback response.")
-            return {
-                "success": True,
-                "fallback": True,
-                "data": {
-                    "customer_name": "Demo Consumer",
-                    "consumer_number": "5109642660",
-                    "discom": "Madhyanchal Vidyut Vitran Nigam Ltd",
-                    "monthly_units": 187,
-                    "bill_amount": 1450,
-                    "per_unit_rate": 7.75,
-                    "billing_period": "June 2026",
-                    "recommended_kw": 1.5,
-                    "monthly_generation_units": 202,
-                    "monthly_savings_rs": 1565,
-                    "system_cost_rs": 75000,
-                    "payback_years": 5.4,
-                    "savings_25_years_rs": 394500
+        if any(term in err_str for term in ["resource_exhausted", "quota exceeded", "rate limit", "exhausted", "429"]):
+            return JSONResponse(
+                status_code=429,
+                content={
+                    "success": False,
+                    "error": "AI service is currently busy. Please wait a moment and try again or use Manual Bill Analysis.",
+                    "quota": quotas,
                 }
+            )
+        return JSONResponse(
+            status_code=503,
+            content={
+                "success": False,
+                "error": "We couldn't complete the analysis right now. Please try again or use Manual Bill Analysis.",
+                "quota": quotas,
             }
-        return {"success": False, "error": str(e)}
+        )
+
+
+@app.post("/api/analyze-bill/manual")
+async def analyze_bill_manual(
+    data: ManualBillRequest,
+    req: Request = None,
+    user_email: str = Depends(verify_token),
+    db: Session = Depends(get_sqlite_db),
+):
+    client_ip = req.client.host if req else "unknown"
+    if not auth_rate_limiter.is_allowed(user_email, client_ip):
+        return JSONResponse(
+            status_code=429,
+            content={"success": False, "error": "Rate limit exceeded. Please try again later."}
+        )
+
+    # 1. Enforce independent server-side manual quota (5/day)
+    allowed, quota_err, quotas = check_quota(db, user_email, "manual")
+    if not allowed:
+        return JSONResponse(
+            status_code=429,
+            content={"success": False, "error": quota_err, "quota": quotas}
+        )
+
+    try:
+        # Calculate per unit rate from entered values
+        per_unit_rate = round(data.bill_amount / max(1.0, data.monthly_units), 2)
+        if per_unit_rate <= 0 or per_unit_rate > 50:
+            per_unit_rate = 7.50
+
+        solar_context = ""
+        if data.solar_installed and data.solar_capacity_kw:
+            gen_val = data.solar_generation_units or data.solar_generation_kwh or 0
+            exp_val = data.solar_export_units or data.solar_export_kwh or 0
+            solar_context = (
+                f"\nExisting Solar Plant Details:\n"
+                f"- Installed Solar Capacity: {data.solar_capacity_kw} kW\n"
+                f"- Solar Monthly Generation: {gen_val} kWh\n"
+                f"- Solar Monthly Export: {exp_val} kWh\n"
+            )
+
+        customer_display_name = (data.customer_name or "").strip() or "Valued Customer"
+
+        manual_prompt = f"""
+        You are an expert at analyzing Indian electricity bills and calculating solar plant economics.
+        
+        The user has manually entered the following verified bill details:
+        - Customer Name: {customer_display_name}
+        - Consumer / Account Number: {data.consumer_number or 'N/A'}
+        - Electricity Utility / Discom: {data.discom or 'Electricity Board'}
+        - Billing Period: {data.billing_period}
+        - Total Bill Amount: Rs. {data.bill_amount}
+        - Monthly Units Consumed: {data.monthly_units} kWh
+        - Calculated Average Rate: Rs. {per_unit_rate}/kWh
+        - Sanctioned Load: {data.sanctioned_load_kw} kW
+        {solar_context}
+        
+        Calculate standard solar recommendations based on these values:
+        - Recommended solar system size: monthly_units / 135 (rounded to nearest 0.5)
+        - Monthly generation: recommended_kw * 4.5 * 30
+        - Monthly savings: monthly_generation * per_unit_rate
+        - System cost: recommended_kw * 55000
+        - Payback years: system_cost / (monthly_savings * 12)
+        - 25 year savings: (monthly_savings * 12 * 25) - system_cost
+        
+        Return ONLY valid JSON matching this schema, with no markdown or extra commentary:
+        {{
+            "customer_name": "{customer_display_name}",
+            "consumer_number": "{data.consumer_number or 'N/A'}",
+            "discom": "{data.discom or 'Electricity Board'}",
+            "monthly_units": {data.monthly_units},
+            "bill_amount": {data.bill_amount},
+            "per_unit_rate": {per_unit_rate},
+            "billing_period": "{data.billing_period}",
+            "recommended_kw": <calculated>,
+            "monthly_generation_units": <calculated>,
+            "monthly_savings_rs": <calculated>,
+            "system_cost_rs": <calculated>,
+            "payback_years": <calculated>,
+            "savings_25_years_rs": <calculated>
+        }}
+        """
+
+        ai_request = AIRequest(
+            prompt=manual_prompt,
+            metadata={"route": "analyze-bill-manual", "input_type": "manual"},
+        )
+
+        provider = get_ai_provider()
+        ai_response = provider.generate_response(ai_request)
+        text = ai_response.content
+        if "```json" in text:
+            text = text.split("```json")[1].split("```")[0]
+        elif "```" in text:
+            text = text.split("```")[1].split("```")[0]
+
+        result = json.loads(text.strip())
+
+        if data.solar_installed and data.solar_capacity_kw:
+            result["solar_installed"] = True
+            result["solar_capacity_kw"] = data.solar_capacity_kw
+            result["solar_generation_units"] = data.solar_generation_units or data.solar_generation_kwh
+            result["solar_export_units"] = data.solar_export_units or data.solar_export_kwh
+
+        if not _is_valid_bill_analysis(result):
+            logger.warning("OpenAI returned invalid manual bill calculation: %s", result)
+            return JSONResponse(
+                status_code=422,
+                content={
+                    "success": False,
+                    "error": "Calculation validation failed. Please check the entered numbers and try again.",
+                    "quota": quotas,
+                }
+            )
+
+        # Consume 1 manual quota only on successful validation
+        updated_quotas = record_quota_consumption(db, user_email, "manual")
+        return {"success": True, "data": result, "quota": updated_quotas}
+
+    except Exception as e:
+        logger.error("Manual bill analysis error: %s", e)
+        return JSONResponse(
+            status_code=503,
+            content={
+                "success": False,
+                "error": "We couldn't complete the analysis right now. Please try again or check your inputs.",
+                "quota": quotas,
+            }
+        )
+
+
+@app.post("/api/analyze-solar-report")
+async def analyze_solar_report(
+    image: UploadFile = File(...),
+    req: Request = None,
+    user_email: str = Depends(verify_token),
+):
+    """
+    Dedicated endpoint for Solar Production Reports (inverter/app screenshots & PDF reports).
+    Does NOT consume electricity bill upload quota.
+    Uses centralized OpenAIProvider (gpt-5.6-luna).
+    """
+    client_ip = req.client.host if req else "unknown"
+    if not auth_rate_limiter.is_allowed(user_email, client_ip):
+        return JSONResponse(
+            status_code=429,
+            content={"success": False, "error": "Rate limit exceeded. Please try again later."}
+        )
+
+    try:
+        image_data = await image.read()
+
+        # 1. Validate file format by magic bytes
+        is_valid, mime_type = validate_file_type(image_data, image.filename)
+        if not is_valid:
+            return JSONResponse(
+                status_code=400,
+                content={"success": False, "error": UNSUPPORTED_SOLAR_FORMAT_MESSAGE}
+            )
+
+        # 2. Process document: PDF text-first / Vision fallback vs Image normalization
+        if mime_type == "application/pdf":
+            pdf_res = process_solar_pdf_document(image_data)
+            if pdf_res.error:
+                return JSONResponse(
+                    status_code=400,
+                    content={"success": False, "error": pdf_res.error}
+                )
+
+            if pdf_res.use_text:
+                full_prompt = (
+                    f"{SOLAR_REPORT_ANALYSIS_PROMPT}\n\n"
+                    f"DOCUMENT TEXT EXTRACTED FROM SOLAR REPORT PDF ({pdf_res.page_count} pages):\n"
+                    f"{pdf_res.text_content}"
+                )
+                ai_request = AIRequest(
+                    prompt=full_prompt,
+                    metadata={"route": "analyze-solar-report", "input_type": "pdf_text"},
+                )
+            else:
+                image_inputs = [
+                    AIImageInput(data=img_bytes, mime_type=img_mime)
+                    for img_bytes, img_mime in pdf_res.images
+                ]
+                ai_request = AIRequest(
+                    prompt=SOLAR_REPORT_ANALYSIS_PROMPT,
+                    image_inputs=image_inputs,
+                    metadata={"route": "analyze-solar-report", "input_type": "pdf_vision_fallback"},
+                )
+        else:
+            norm_bytes, norm_mime = normalize_image_bytes(image_data, mime_type)
+            ai_request = AIRequest(
+                prompt=SOLAR_REPORT_ANALYSIS_PROMPT,
+                image_inputs=[AIImageInput(data=norm_bytes, mime_type=norm_mime)],
+                metadata={"route": "analyze-solar-report", "input_type": "image"},
+            )
+
+        # 3. Centralized AI execution
+        max_attempts = 2
+        last_error = None
+        for attempt in range(max_attempts):
+            try:
+                provider = get_ai_provider()
+                ai_response = provider.generate_response(ai_request)
+                text = ai_response.content
+                if "```json" in text:
+                    text = text.split("```json")[1].split("```")[0]
+                elif "```" in text:
+                    text = text.split("```")[1].split("```")[0]
+
+                result = json.loads(text.strip())
+                normalized = _normalize_solar_report_data(result)
+
+                if not _is_valid_solar_report(normalized):
+                    logger.warning("OpenAI returned invalid solar report data: %s", result)
+                    return JSONResponse(
+                        status_code=422,
+                        content={
+                            "success": False,
+                            "error": "Could not extract solar generation figures from this report. Please upload an inverter or app screenshot showing kWh generation, or skip the optional report."
+                        }
+                    )
+
+                return {"success": True, "data": normalized}
+            except Exception as e:
+                last_error = e
+                err_str = str(e).lower()
+                if any(t in err_str for t in ["503", "429", "unavailable", "exhausted", "demand"]):
+                    logger.warning(f"Transient AI error on solar report attempt {attempt+1}/{max_attempts}: {e}")
+                    if attempt < max_attempts - 1:
+                        time.sleep(1.5)
+                else:
+                    raise e
+        raise last_error
+
+    except Exception as e:
+        logger.error("Solar report analysis error: %s", e)
+        err_str = str(e).lower()
+        if any(term in err_str for term in ["resource_exhausted", "quota exceeded", "rate limit", "exhausted", "429"]):
+            return JSONResponse(
+                status_code=429,
+                content={
+                    "success": False,
+                    "error": "AI service is currently busy. Please wait a moment and try again or skip the optional report."
+                }
+            )
+        return JSONResponse(
+            status_code=503,
+            content={
+                "success": False,
+                "error": "We couldn't process this solar report right now. Please try again or skip the optional report."
+            }
+        )

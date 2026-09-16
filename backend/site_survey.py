@@ -2,8 +2,8 @@ from fastapi import APIRouter, Depends, Request, Query
 from sqlalchemy.orm import Session
 from pydantic import BaseModel
 from typing import Optional
-from google import genai
-from google.genai import types
+from ai.provider_factory import get_ai_provider
+from ai.provider_base import AIRequest
 from dotenv import load_dotenv
 import os, json, time
 import logging
@@ -26,7 +26,6 @@ from utils.logger import log_api_request, log_api_response
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
 load_dotenv()
-client = genai.Client(api_key=os.getenv("GEMINI_API_KEY"))
 router = APIRouter(dependencies=[Depends(verify_token)])
 
 DEMO_SITE_SURVEY_DATA = {
@@ -200,14 +199,15 @@ async def ai_site_survey(data: SiteSurveyRequest, req: Request = None, user_emai
         last_error = None
         for attempt in range(max_attempts):
             try:
-                response = client.models.generate_content(
-                    model="gemini-2.5-flash",
-                    contents=[
-                        types.Content(role="user", parts=[types.Part.from_text(text=prompt)])
-                    ]
+                provider = get_ai_provider()
+                ai_request = AIRequest(
+                    prompt=prompt,
+                    temperature=0.3,
+                    metadata={"route": "site-survey"},
                 )
+                ai_response = provider.generate_response(ai_request)
 
-                text = response.text.strip()
+                text = ai_response.content
                 if "```json" in text:
                     text = text.split("```json")[1].split("```")[0]
                 elif "```" in text:

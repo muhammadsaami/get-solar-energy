@@ -292,8 +292,19 @@ class ToolExecutor:
     def _call_roi(self, params: Dict) -> Dict:
         from roi import ROIRequest, calculate_roi
         import asyncio
-        req = ROIRequest(**{k: v for k, v in params.items() if k in ROIRequest.__fields__})
-        result = asyncio.get_event_loop().run_until_complete(calculate_roi(req))
+        import concurrent.futures
+        fields = getattr(ROIRequest, "model_fields", getattr(ROIRequest, "__fields__", {}))
+        req = ROIRequest(**{k: v for k, v in params.items() if k in fields})
+        try:
+            loop = asyncio.get_running_loop()
+        except RuntimeError:
+            loop = None
+
+        if loop and loop.is_running():
+            with concurrent.futures.ThreadPoolExecutor() as pool:
+                result = pool.submit(asyncio.run, calculate_roi(req)).result()
+        else:
+            result = asyncio.run(calculate_roi(req))
         return result.get("data", result)
 
     def _call_bill_analyze(self, params: Dict) -> Dict:

@@ -1,5 +1,5 @@
 from jose import JWTError, jwt
-from passlib.context import CryptContext
+import bcrypt
 from datetime import datetime, timedelta
 from fastapi import Depends, HTTPException
 from fastapi.security import OAuth2PasswordBearer
@@ -16,16 +16,19 @@ SECRET_KEY = os.getenv("JWT_SECRET_KEY")
 ALGORITHM = os.getenv("JWT_ALGORITHM", "HS256")
 ACCESS_TOKEN_EXPIRE_MINUTES = 60 * 24
 RESET_TOKEN_EXPIRE_MINUTES = int(os.getenv("RESET_TOKEN_EXPIRE_MINUTES", "30"))
-
-pwd_context = CryptContext(schemes=["bcrypt"], deprecated="auto", bcrypt__rounds=12)
 oauth2_scheme = OAuth2PasswordBearer(tokenUrl="/api/login")
 
 def validate_password_strength(password: str) -> str:
     cleaned = password.strip()
-    if len(cleaned) < 8 or len(cleaned) > 72:
+    if len(cleaned) < 8:
         raise HTTPException(
             status_code=400, 
-            detail="Password must be between 8 and 72 characters long."
+            detail="Password must be at least 8 characters long."
+        )
+    if len(cleaned.encode("utf-8")) > 72:
+        raise HTTPException(
+            status_code=400,
+            detail="Password cannot exceed 72 bytes."
         )
     if not re.search(r"[A-Z]", cleaned):
         raise HTTPException(
@@ -49,13 +52,22 @@ def validate_password_strength(password: str) -> str:
         )
     return cleaned
 
-def hash_password(password: str):
-    password = password[:72]
-    return pwd_context.hash(password)
+def hash_password(password: str) -> str:
+    pwd_bytes = password.encode("utf-8")
+    if len(pwd_bytes) > 72:
+        raise ValueError("Password cannot exceed 72 bytes.")
+    salt = bcrypt.gensalt(rounds=12)
+    return bcrypt.hashpw(pwd_bytes, salt).decode("utf-8")
 
-def verify_password(plain_password: str, hashed_password: str):
-    plain_password = plain_password[:72]
-    return pwd_context.verify(plain_password, hashed_password)
+def verify_password(plain_password: str, hashed_password: str) -> bool:
+    try:
+        pwd_bytes = plain_password.encode("utf-8")
+        if len(pwd_bytes) > 72:
+            return False
+        hash_bytes = hashed_password.encode("utf-8")
+        return bcrypt.checkpw(pwd_bytes, hash_bytes)
+    except Exception:
+        return False
 
 def create_access_token(data: dict):
     to_encode = data.copy()

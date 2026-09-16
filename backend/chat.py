@@ -3,13 +3,8 @@ from security import verify_token
 from auth import auth_rate_limiter
 from pydantic import BaseModel
 from typing import List
-from google import genai
-from dotenv import load_dotenv
-import os
-
-load_dotenv()
-
-client = genai.Client(api_key=os.getenv("GEMINI_API_KEY"))
+from ai.provider_factory import get_ai_provider
+from ai.provider_base import AIRequest
 
 router = APIRouter(dependencies=[Depends(verify_token)])
 
@@ -48,14 +43,17 @@ async def chat(request: ChatRequest, req: Request = None, user_email: str = Depe
 
         full_prompt = f"{system_prompt}\n\n{history_text}User: {request.message}\nAssistant:"
 
-        response = client.models.generate_content(
-            model="gemini-2.5-flash",
-            contents=full_prompt
+        provider = get_ai_provider()
+        ai_request = AIRequest(
+            prompt=full_prompt,
+            temperature=0.2,
+            metadata={"route": "chat"},
         )
+        ai_response = provider.generate_response(ai_request)
 
         return {
             "success": True,
-            "reply": response.text.strip()
+            "reply": ai_response.content.strip()
         }
 
     except Exception as e:

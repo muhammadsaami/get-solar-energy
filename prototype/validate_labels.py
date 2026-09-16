@@ -389,10 +389,16 @@ def main():
     script_dir = Path(__file__).parent
     labels_path = Path(args.labels)
     if not labels_path.is_absolute():
-        labels_path = script_dir / labels_path
+        if labels_path.exists():
+            labels_path = labels_path.resolve()
+        else:
+            labels_path = script_dir / labels_path
     images_dir = Path(args.images) if args.images else None
     if images_dir and not images_dir.is_absolute():
-        images_dir = script_dir / images_dir
+        if images_dir.exists():
+            images_dir = images_dir.resolve()
+        else:
+            images_dir = script_dir / images_dir
 
     validator = LabelValidator(str(labels_path), str(images_dir) if images_dir else None, strict=args.strict)
     passed = validator.validate()

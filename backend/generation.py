@@ -7,7 +7,7 @@ from dotenv import load_dotenv
 import os, json
 
 load_dotenv()
-client = genai.Client(api_key=os.getenv("GEMINI_API_KEY"))
+client = genai.Client(api_key=os.getenv("GEMINI_API_KEY") or "offline-placeholder")
 router = APIRouter(dependencies=[Depends(verify_token)])
 
 @router.post("/api/analyze-generation")

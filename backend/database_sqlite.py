@@ -72,6 +72,21 @@ Index("idx_customer_number",   CustomerModel.consumer_number)
 Index("idx_customer_city",     CustomerModel.city)
 Index("idx_customer_discom",   CustomerModel.discom)
 
+
+class BillAnalysisUsageModel(BaseSqlite):
+    """Tracks daily bill analyzer usage per user and method (upload vs manual)."""
+    __tablename__ = "bill_analysis_usage"
+
+    id = Column(Integer, primary_key=True, index=True)
+    user_email = Column(String, index=True, nullable=False)
+    method = Column(String, index=True, nullable=False)  # 'upload' | 'manual'
+    usage_date = Column(String, index=True, nullable=False)  # 'YYYY-MM-DD' (IST)
+    created_at = Column(DateTime(timezone=True), server_default=func.now())
+
+
+Index("idx_bill_usage_user_date", BillAnalysisUsageModel.user_email, BillAnalysisUsageModel.usage_date)
+Index("idx_bill_usage_method",    BillAnalysisUsageModel.method)
+
 # ─── CRM Performance Indexes (Phase 12.4A+++) ─────────────────────────────────
 Index("idx_customer_status",       CustomerModel.status)
 Index("idx_customer_salesperson",  CustomerModel.salesperson)
@@ -199,3 +214,6 @@ def get_sqlite_db():
         yield db
     finally:
         db.close()
+
+
+BaseSqlite.metadata.create_all(bind=engine_sqlite)

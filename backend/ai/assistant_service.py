@@ -2,21 +2,24 @@
 backend/ai/assistant_service.py
 ================================
 GET Solar Energy — Enterprise AI Assistant Orchestration Service
-Phase 13.0D
+Phase 1: AI Provider Abstraction Foundation
 
 Central orchestration service. Receives chat requests, builds context,
-delegates to intent router → planner → tool executor → LLM → response
+delegates to intent router → planner → tool executor → LLM Provider → response
 formatter → memory update.
 
 No HTTP logic — only business orchestration.
+Decoupled from Google GenAI SDK via BaseAIProvider abstraction.
 """
 
 import time
 import uuid
 import logging
-from typing import Any, Dict, List, Optional
+from typing import Any, Dict, List, Optional, Tuple
 
-from .client import get_genai_client, ASSISTANT_MODEL
+from .provider_base import AIRequest, AIProviderError, BaseAIProvider
+from .provider_factory import get_ai_provider
+from .client import ASSISTANT_MODEL
 from .conversation_memory import get_memory_store, _empty_session, _new_session_id
 from .intent_router import get_intent_router
 from .assistant_planner import get_planner
@@ -43,13 +46,21 @@ class AssistantService:
         if self._initialized:
             return
         self._memory = get_memory_store()
-        self._client = None
+        self._provider: Optional[BaseAIProvider] = None
         self._intent_router = get_intent_router()
         self._planner = get_planner()
         self._executor = get_tool_executor()
         self._registry = get_tool_registry()
         self._prompt_builder = get_prompt_builder()
         self._initialized = True
+
+    def set_provider(self, provider: Optional[BaseAIProvider]) -> None:
+        """Set or override the active provider instance (e.g. for testing/fixtures)."""
+        self._provider = provider
+
+    def get_provider(self) -> Optional[BaseAIProvider]:
+        """Return the current active provider instance."""
+        return self._provider
 
     # ------------------------------------------------------------------
     # Public API
@@ -105,13 +116,13 @@ class AssistantService:
         # 3. Record user turn
         self._memory.add_turn(conversation_id, "user", message)
 
-        # 4. Classify intent (placeholder — wired in Milestone 2)
+        # 4. Classify intent (determines required capabilities/tools)
         intent_result = self._classify_intent(message, state)
 
-        # 5. Build execution plan (placeholder — wired in Milestone 2)
+        # 5. Build execution plan
         plan = self._build_plan(intent_result, state, user_role)
 
-        # 6. Execute plan (placeholder — wired in Milestone 3)
+        # 6. Execute plan server-side
         tool_results = self._execute_plan(plan, state, user_role)
 
         # 7. Build system prompt
@@ -119,12 +130,16 @@ class AssistantService:
             message, state, intent_result, tool_results, user_role, user_name
         )
 
-        # 8. Generate LLM response
-        llm_response = self._generate_response(
+        # 8. Generate LLM response via provider-neutral interface
+        llm_response, gen_meta = self._generate_response(
             system_prompt, state["conversation_history"]
         )
 
-        # 9. Format response
+        safe_provider = gen_meta.get("provider") if not gen_meta.get("error") else None
+        safe_model = gen_meta.get("model") if not gen_meta.get("error") else None
+        fallback_used = bool(gen_meta.get("fallback_active", False))
+
+        # 9. Format response into public envelope
         response = self._format_response(
             llm_response=llm_response,
             tool_results=tool_results,
@@ -132,6 +147,9 @@ class AssistantService:
             conversation_id=conversation_id,
             request_id=request_id,
             elapsed_ms=(time.time() - t0) * 1000,
+            provider=safe_provider,
+            model=safe_model,
+            fallback_used=fallback_used,
         )
 
         # 10. Record assistant turn + update memory
@@ -189,7 +207,7 @@ class AssistantService:
         return self._memory.clear(session_id)
 
     # ------------------------------------------------------------------
-    # Internal helpers — wired to Milestone 2-3 components
+    # Internal helpers
     # ------------------------------------------------------------------
 
     def _classify_intent(self, message: str, state: Dict) -> Dict[str, Any]:
@@ -225,39 +243,37 @@ class AssistantService:
             conversation_history=state.get("conversation_history", []),
         )
 
-    def _generate_response(self, system_prompt: str, history: List[Dict]) -> str:
-        """Call the LLM (gemini-2.5-flash-lite) with retry/backoff."""
-        if self._client is None:
-            self._client = get_genai_client()
+    def _generate_response(self, system_prompt: str, history: List[Dict]) -> Tuple[str, Dict[str, Any]]:
+        """Call the configured BaseAIProvider with normalized AIRequest."""
+        if self._provider is None:
+            self._provider = get_ai_provider()
 
-        from .client import ASSISTANT_MODEL
+        request = AIRequest(
+            prompt=system_prompt,
+            history=history,
+            temperature=0.2,
+        )
 
-        history_text = ""
-        for turn in history[-10:]:
-            prefix = "User" if turn["role"] == "user" else "Assistant"
-            history_text += f"{prefix}: {turn['content']}\n"
-
-        full_prompt = f"{system_prompt}\n\n{history_text}"
-
-        max_attempts = 3
-        last_error = None
-        for attempt in range(max_attempts):
-            try:
-                response = self._client.models.generate_content(
-                    model=ASSISTANT_MODEL,
-                    contents=full_prompt,
-                )
-                return response.text.strip()
-            except Exception as e:
-                last_error = e
-                err_str = str(e).lower()
-                if any(t in err_str for t in ["503", "429", "unavailable", "exhausted", "demand"]):
-                    time.sleep(2 ** (attempt + 1))
+        try:
+            response = self._provider.generate_response(request)
+            meta = dict(response.metadata) if isinstance(response.metadata, dict) else {}
+            if "model" not in meta and response.model:
+                meta["model"] = response.model
+            if "provider" not in meta:
+                model_str = str(meta.get("model", "")).lower()
+                if "mock" in model_str:
+                    meta["provider"] = "mock"
+                elif "gpt" in model_str or "luna" in model_str:
+                    meta["provider"] = "openai"
                 else:
-                    break
-
-        logger.warning("LLM call failed after %d attempts: %s", max_attempts, last_error)
-        return "I'm currently experiencing high demand. Please try again in a moment."
+                    meta["provider"] = "gemini"
+            return response.content.strip(), meta
+        except AIProviderError as e:
+            logger.warning("AI Provider generation failed: %s", e)
+            return "I'm currently experiencing high demand. Please try again in a moment.", {"error": True}
+        except Exception as e:
+            logger.error("Unexpected generation error: %s", e)
+            return "I'm currently experiencing high demand. Please try again in a moment.", {"error": True}
 
     def _format_response(
         self,
@@ -268,6 +284,9 @@ class AssistantService:
         conversation_id: str,
         request_id: str,
         elapsed_ms: float,
+        provider: Optional[str] = None,
+        model: Optional[str] = None,
+        fallback_used: bool = False,
     ) -> Dict[str, Any]:
         return format_response(
             llm_response=llm_response,
@@ -276,6 +295,9 @@ class AssistantService:
             conversation_id=conversation_id,
             request_id=request_id,
             elapsed_ms=elapsed_ms,
+            provider=provider,
+            model=model,
+            fallback_used=fallback_used,
         )
 
     def _audit_log(
@@ -288,10 +310,11 @@ class AssistantService:
         elapsed_ms: float,
     ) -> None:
         """Audit the request via ml.audit + monitoring."""
+        model_name = self._provider.get_model_name() if self._provider else ASSISTANT_MODEL
         try:
             from ml.audit import get_audit_logger
             get_audit_logger().log(
-                model=ASSISTANT_MODEL,
+                model=model_name,
                 version="1.0.0",
                 endpoint="assistant_chat",
                 latency_ms=elapsed_ms,

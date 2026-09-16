@@ -1,12 +1,30 @@
+"""
+direct_analyze.py — Offline ML Dataset Builder (NOT a production route)
+=======================================================================
+Batch script for processing electricity bill images into an Excel dataset.
+
+SECURITY: The previously hardcoded GEMINI_API_KEY has been removed.
+Configure the key via environment variable before running:
+    export GEMINI_API_KEY="<your-key>"
+
+NOTE: The previously exposed key (prefix: AQ.Ab8RN...) must be treated as
+COMPROMISED. Rotate it immediately in the Google AI Studio console.
+"""
+
 import os
+import sys
 import json
 import time
 import openpyxl
 from google import genai
 from google.genai import types
 
-# ✅ Paste your fresh API key here directly
-GEMINI_API_KEY = "AQ.Ab8RN6JESwlWiij2hgjda_wpdLwXWAJy6WJJoR_KKOyiAfHg6w"
+# Read API key from environment — fail safely if not set
+GEMINI_API_KEY = os.environ.get("GEMINI_API_KEY", "").strip()
+if not GEMINI_API_KEY:
+    print("ERROR: GEMINI_API_KEY environment variable is not set.")
+    print("Set it with:  export GEMINI_API_KEY='your-key-here'")
+    sys.exit(1)
 
 JPG_FOLDER = "bills_jpg"
 OUTPUT_FILE = "../ml-models/bills_dataset.xlsx"

@@ -2,11 +2,40 @@
 backend/ai/__init__.py
 ======================
 GET Solar Energy — Enterprise AI Assistant
-Phase 13.0D
+Phase 2.0: Controlled Backend-Only Integration
 
 Orchestration layer on top of existing platform services.
+Provides provider-neutral LLM abstraction for Gemini, Mock, and OpenAI Luna providers.
 """
 
+from .provider_base import (
+    BaseAIProvider,
+    AIRequest,
+    AIResponse,
+    AIUsage,
+    AIProviderError,
+    AIProviderAuthError,
+    AIProviderRateLimitError,
+    AIProviderTimeoutError,
+    AIProviderUnavailableError,
+    AIProviderResponseError,
+)
+from .provider_factory import (
+    get_ai_provider,
+    set_ai_provider,
+    get_selected_provider,
+    get_provider_status,
+)
+from .provider_selector import (
+    ProviderSelector,
+    ProviderConfig,
+    AIProviderConfigError,
+    EligibilityResult,
+    FallbackProviderWrapper,
+)
+from .providers.gemini_provider import GeminiProvider
+from .providers.mock_provider import MockAIProvider
+from .providers.luna_provider import OpenAIProvider, LunaProvider
 from .client import ASSISTANT_MODEL, get_genai_client
 from .conversation_memory import (
     ConversationMemoryStore,
@@ -24,8 +53,34 @@ from .response_formatter import format_response
 from .routes import router as assistant_router
 
 __all__ = [
+    # Provider Abstraction Core
+    "BaseAIProvider",
+    "AIRequest",
+    "AIResponse",
+    "AIUsage",
+    "AIProviderError",
+    "AIProviderAuthError",
+    "AIProviderRateLimitError",
+    "AIProviderTimeoutError",
+    "AIProviderUnavailableError",
+    "AIProviderResponseError",
+    "get_ai_provider",
+    "set_ai_provider",
+    "get_selected_provider",
+    "get_provider_status",
+    "ProviderSelector",
+    "ProviderConfig",
+    "AIProviderConfigError",
+    "EligibilityResult",
+    "FallbackProviderWrapper",
+    "GeminiProvider",
+    "MockAIProvider",
+    "OpenAIProvider",
+    "LunaProvider",
+    # Legacy / Compatibility
     "ASSISTANT_MODEL",
     "get_genai_client",
+    # Memory & Orchestration
     "ConversationMemoryStore",
     "InMemoryConversationMemory",
     "get_memory_store",

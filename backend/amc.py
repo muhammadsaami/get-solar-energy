@@ -11,7 +11,7 @@ import logging
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
 load_dotenv()
-client = genai.Client(api_key=os.getenv("GEMINI_API_KEY"))
+client = genai.Client(api_key=os.getenv("GEMINI_API_KEY") or "offline-placeholder")
 router = APIRouter(dependencies=[Depends(verify_token)])
 
 DEMO_AMC_DATA = {

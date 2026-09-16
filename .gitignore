@@ -113,3 +113,13 @@ prototype/__pycache__/
 Thumbs.db
 Desktop.ini
 dist/
+
+# ==========================================================
+# Repository Archive (Generated & Historical Artifacts)
+# ==========================================================
+_repository_archive/*
+!_repository_archive/CLEANUP_MANIFEST.md
+
+# Test Generated Artifacts
+GET-Solar-Energy-Proposal-*.pdf
+**/GET-Solar-Energy-Proposal-*.pdf

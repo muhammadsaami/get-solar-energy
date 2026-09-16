@@ -78,6 +78,9 @@ def chat_endpoint(
     db=Depends(get_sqlite_db),
 ):
     """Process a chat message through the Enterprise AI Assistant."""
+    if not request.message or not request.message.strip():
+        return bad_request(message="Message cannot be empty")
+
     try:
         service = get_assistant_service()
         result = service.chat(
@@ -92,6 +95,20 @@ def chat_endpoint(
     except Exception as e:
         logger.exception("Assistant chat failed")
         return server_error(message="Assistant request failed")
+
+
+@router.get("/status")
+def get_status_endpoint(
+    user: Dict[str, Any] = Depends(get_current_user),
+):
+    """Return safe metadata about the active AI provider and fallback configuration."""
+    try:
+        from .provider_selector import get_provider_status
+        status_info = get_provider_status()
+        return ok(data=status_info, message="Provider status retrieved")
+    except Exception as e:
+        logger.exception("Failed to get provider status")
+        return server_error(message="Failed to get provider status")
 
 
 @router.post("/tool")

@@ -20,7 +20,7 @@ import logging
 logger = logging.getLogger(__name__)
 router = APIRouter(prefix="/api/technician/ai", tags=["AI Troubleshooting"])
 
-client = genai.Client(api_key=os.getenv("GEMINI_API_KEY"))
+client = genai.Client(api_key=os.getenv("GEMINI_API_KEY") or "offline-placeholder")
 
 SYSTEM_PROMPT = """You are the GET Solar Energy Technician AI Assistant — a practical,
 safety-first troubleshooting helper for field technicians working on residential
