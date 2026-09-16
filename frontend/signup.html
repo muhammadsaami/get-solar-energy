@@ -217,6 +217,14 @@
   <!-- TOAST NOTIFICATION -->
   <div class="auth-toast" id="authToast" role="status" aria-live="polite"></div>
 
+  <!-- Estimate pre-fill from landing page -->
+  <script>
+  try {
+    var _estCity = localStorage.getItem('solar_estimate_city');
+    var _estBill = localStorage.getItem('solar_estimate_bill');
+    if (_estCity) window.__solarEstimate = { city: _estCity, bill: _estBill };
+  } catch(e) {}
+  </script>
   <script src="auth.js"></script>
 </body>
 </html>

@@ -237,12 +237,46 @@
 .stagger-children > *:nth-child(6) { animation-delay: 400ms; }
 
 /* ── REDUCED MOTION OVERRIDE ────────────────────────────── */
+
+/* Slide in from right — used by drawers sliding in from edge */
+@keyframes gs-slide-in-right {
+  from {
+    transform: translateX(100%);
+    opacity: 0;
+  }
+  to {
+    transform: translateX(0);
+    opacity: 1;
+  }
+}
+
+/* Slide in from left — used by sidebar on mobile */
+@keyframes gs-slide-in-left {
+  from {
+    transform: translateX(-100%);
+    opacity: 0;
+  }
+  to {
+    transform: translateX(0);
+    opacity: 1;
+  }
+
+/* Utility classes */
+.animate-slide-in-right {
+  animation: gs-slide-in-right var(--duration-normal) var(--ease-standard) both;
+}
+.animate-slide-in-left {
+  animation: gs-slide-in-left var(--duration-normal) var(--ease-standard) both;
+}
+
 @media (prefers-reduced-motion: reduce) {
   .animate-fade-in,
   .animate-slide-up,
   .animate-slide-down,
   .animate-slide-left,
   .animate-slide-right,
+  .animate-slide-in-right,
+  .animate-slide-in-left,
   .animate-scale-in,
   .animate-float,
   .animate-pulse,

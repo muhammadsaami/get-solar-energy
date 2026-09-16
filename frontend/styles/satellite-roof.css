@@ -1,0 +1,407 @@
+/*
+ * Satellite Roof Analysis — Premium UX Styles
+ * Uses ONLY design system tokens. No hardcoded colors, spacing, or radii.
+ */
+
+/* ── Mode Toggle Pill Strip ─────────────────────────────── */
+.satellite-mode-toggle {
+  display: flex;
+  gap: 0;
+  margin-bottom: var(--space-5);
+  background: rgba(255, 255, 255, 0.03);
+  border: 1px solid var(--border-color);
+  border-radius: var(--radius-md);
+  overflow: hidden;
+}
+
+.satellite-mode-toggle .btn {
+  flex: 1;
+  border-radius: 0;
+  font-size: var(--font-size-sm);
+  padding: 10px var(--space-4);
+  border: none;
+}
+
+.satellite-mode-toggle .btn:first-child {
+  border-radius: var(--radius-md) 0 0 var(--radius-md);
+}
+
+.satellite-mode-toggle .btn:last-child {
+  border-radius: 0 var(--radius-md) var(--radius-md) 0;
+}
+
+/* ── Mode Panels ────────────────────────────────────────── */
+.satellite-panel {
+  display: none;
+  animation: satFadeSlideIn 0.25s var(--ease-decelerate);
+}
+
+.satellite-panel.active {
+  display: block;
+}
+
+@keyframes satFadeSlideIn {
+  from { opacity: 0; transform: translateY(6px); }
+  to   { opacity: 1; transform: translateY(0); }
+}
+
+@keyframes satFadeSlideOut {
+  from { opacity: 1; transform: translateY(0); }
+  to   { opacity: 0; transform: translateY(-4px); }
+}
+
+/* ── Step Indicator ─────────────────────────────────────── */
+.satellite-step-indicator {
+  display: flex;
+  align-items: center;
+  gap: var(--space-1);
+  margin-bottom: var(--space-5);
+  padding: 0;
+}
+
+.satellite-step {
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
+  font-size: var(--font-size-xs);
+  font-weight: var(--font-weight-semibold);
+  color: var(--text-muted);
+  text-transform: uppercase;
+  letter-spacing: var(--letter-spacing-wide);
+  transition: color var(--transition-fast);
+}
+
+.satellite-step .step-num {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 22px;
+  height: 22px;
+  border-radius: var(--radius-full);
+  background: rgba(255, 255, 255, 0.06);
+  border: 1px solid var(--border-color);
+  font-size: 11px;
+  font-weight: var(--font-weight-bold);
+  color: var(--text-muted);
+  transition: all var(--transition-fast);
+}
+
+.satellite-step.active {
+  color: var(--text-primary);
+}
+
+.satellite-step.active .step-num {
+  background: var(--color-blue);
+  border-color: transparent;
+  color: #fff;
+  box-shadow: 0 2px 8px var(--color-blue-glow);
+}
+
+.satellite-step.completed {
+  color: var(--color-green);
+}
+
+.satellite-step.completed .step-num {
+  background: var(--color-green);
+  border-color: transparent;
+  color: #fff;
+  box-shadow: 0 2px 8px var(--color-green-glow);
+}
+
+.satellite-step-connector {
+  flex: 1;
+  height: 1px;
+  background: var(--border-color);
+  margin: 0 var(--space-2);
+  min-width: 20px;
+}
+
+.satellite-step-connector.completed {
+  background: var(--color-green);
+}
+
+/* ── Beta Banner ────────────────────────────────────────── */
+.satellite-beta-banner {
+  display: flex;
+  align-items: flex-start;
+  gap: var(--space-3);
+  padding: var(--space-4) var(--space-4);
+  background: var(--color-yellow-surface);
+  border: 1px solid var(--color-yellow-border);
+  border-radius: var(--radius-sm);
+  margin-bottom: var(--space-5);
+  font-size: var(--font-size-sm);
+  color: var(--text-secondary);
+  line-height: var(--line-height-relaxed);
+}
+
+.satellite-beta-banner .badge {
+  flex-shrink: 0;
+  margin-top: 2px;
+}
+
+/* ── Search Section ─────────────────────────────────────── */
+.satellite-search-wrapper {
+  position: relative;
+  margin-bottom: var(--space-4);
+}
+
+.satellite-search-wrapper .form-input {
+  padding-left: 40px;
+  padding-right: var(--space-4);
+}
+
+.satellite-search-icon {
+  position: absolute;
+  left: var(--space-4);
+  top: 50%;
+  transform: translateY(-50%);
+  width: 16px;
+  height: 16px;
+  color: var(--text-muted);
+  pointer-events: none;
+}
+
+/* ── Address Search Results ──────────────────────────────── */
+
+/* Fix: card-glass overflow:hidden clips the absolute dropdown.
+   Override overflow to visible specifically for the roof analysis card. */
+#tab-roof-analysis .card-glass {
+  overflow: visible;
+}
+
+.satellite-address-results {
+  display: none;
+  position: absolute;
+  top: 100%;
+  left: 0;
+  right: 0;
+  background: var(--bg-card-solid);
+  border: 1px solid var(--border-color);
+  border-top: none;
+  border-radius: 0 0 var(--radius-sm) var(--radius-sm);
+  max-height: 200px;
+  overflow-y: auto;
+  z-index: 1001;
+}
+
+.satellite-address-result-item {
+  padding: 10px var(--space-4);
+  font-size: var(--font-size-sm);
+  color: var(--text-primary);
+  cursor: pointer;
+  border-bottom: 1px solid var(--border-subtle);
+  transition: background var(--transition-fast);
+}
+
+.satellite-address-result-item:hover,
+.satellite-address-result-item:focus {
+  background: var(--color-blue-surface);
+  outline: none;
+}
+
+.satellite-address-result-item:last-child {
+  border-bottom: none;
+}
+
+.satellite-location-label {
+  font-size: var(--font-size-xs);
+  color: var(--text-muted);
+  margin-top: var(--space-2);
+  padding-left: var(--space-1);
+  word-break: break-all;
+}
+
+/* ── Map Container ──────────────────────────────────────── */
+.satellite-map-container {
+  width: 100%;
+  height: 480px;
+  border-radius: var(--radius-lg);
+  overflow: hidden;
+  border: 1px solid var(--border-color);
+  background: var(--bg-primary);
+  margin-bottom: var(--space-4);
+}
+
+.satellite-map-container .leaflet-container {
+  background: var(--bg-primary);
+}
+
+/* ── Layer Toggle (Segmented Control) ───────────────────── */
+.satellite-layer-toggle {
+  display: flex;
+  gap: 0;
+  margin-bottom: var(--space-4);
+  background: rgba(255, 255, 255, 0.03);
+  border: 1px solid var(--border-color);
+  border-radius: var(--radius-md);
+  overflow: hidden;
+}
+
+.satellite-layer-toggle .btn {
+  flex: 1;
+  font-size: var(--font-size-xs);
+  padding: 7px var(--space-3);
+  border: none;
+  border-radius: 0;
+}
+
+.satellite-layer-toggle .btn:first-child {
+  border-radius: var(--radius-md) 0 0 var(--radius-md);
+}
+
+.satellite-layer-toggle .btn:last-child {
+  border-radius: 0 var(--radius-md) var(--radius-md) 0;
+}
+
+.satellite-layer-toggle .btn.active {
+  background: var(--color-blue);
+  color: #fff;
+  border-color: transparent;
+  box-shadow: 0 2px 8px var(--color-blue-glow);
+}
+
+/* ── Capture Button Row ─────────────────────────────────── */
+.satellite-capture-row {
+  display: flex;
+  gap: var(--space-3);
+  align-items: center;
+  margin-bottom: var(--space-2);
+  flex-wrap: wrap;
+}
+
+.satellite-capture-row .btn {
+  min-width: 200px;
+}
+
+/* ── Capture Validation Message ─────────────────────────── */
+.satellite-capture-status {
+  font-size: var(--font-size-sm);
+  color: var(--color-yellow);
+  padding: var(--space-2) var(--space-3);
+  background: var(--color-yellow-surface);
+  border: 1px solid var(--color-yellow-border);
+  border-radius: var(--radius-sm);
+  margin-bottom: var(--space-4);
+  display: none;
+}
+
+/* ── Preview Card ───────────────────────────────────────── */
+.satellite-preview-card {
+  display: none;
+  background: var(--bg-card);
+  border: 1px solid var(--border-color);
+  border-radius: var(--radius-md);
+  padding: var(--space-4);
+  margin-bottom: var(--space-4);
+  animation: satFadeSlideIn 0.25s var(--ease-decelerate);
+  border-left: 3px solid var(--color-green);
+}
+
+.satellite-preview-card .preview-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: var(--space-3);
+  padding-bottom: var(--space-2);
+  border-bottom: 1px solid var(--border-subtle);
+}
+
+.satellite-preview-card .preview-title {
+  font-size: var(--font-size-sm);
+  font-weight: var(--font-weight-semibold);
+  color: var(--text-primary);
+}
+
+.satellite-preview-card .preview-body {
+  display: flex;
+  gap: var(--space-4);
+}
+
+.satellite-preview-card .preview-thumb-wrap {
+  flex-shrink: 0;
+  width: 140px;
+  height: 90px;
+  border-radius: var(--radius-sm);
+  overflow: hidden;
+  background: var(--bg-primary);
+  border: 1px solid var(--border-color);
+  box-shadow: var(--shadow-xs);
+}
+
+.satellite-preview-card .preview-thumb {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+.satellite-preview-card .preview-details {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-1);
+  font-size: var(--font-size-sm);
+  color: var(--text-secondary);
+}
+
+.satellite-preview-card .preview-details .detail-row {
+  display: flex;
+  gap: var(--space-2);
+}
+
+.satellite-preview-card .preview-details .detail-label {
+  color: var(--text-muted);
+  min-width: 74px;
+  flex-shrink: 0;
+  font-size: var(--font-size-xs);
+  font-weight: var(--font-weight-semibold);
+  text-transform: uppercase;
+  letter-spacing: var(--letter-spacing-wide);
+}
+
+.satellite-preview-card .preview-details .detail-value {
+  color: var(--text-primary);
+  font-weight: var(--font-weight-medium);
+}
+
+/* ── Analyze Button Area ────────────────────────────────── */
+.satellite-analyze-area {
+  margin-bottom: var(--space-4);
+}
+
+/* ── Responsive ────────────────────────────────────────── */
+@media (max-width: 992px) {
+  .satellite-map-container {
+    height: 340px;
+  }
+
+  .satellite-capture-row {
+    flex-direction: column;
+    align-items: stretch;
+  }
+
+  .satellite-capture-row .btn {
+    width: 100%;
+    min-width: unset;
+  }
+}
+
+@media (max-width: 640px) {
+  .satellite-map-container {
+    height: 260px;
+  }
+
+  .satellite-preview-card .preview-body {
+    flex-direction: column;
+  }
+
+  .satellite-preview-card .preview-thumb-wrap {
+    width: 100%;
+    height: 160px;
+  }
+
+  .satellite-layer-toggle .btn {
+    font-size: 10px;
+    padding: 6px var(--space-2);
+  }
+}

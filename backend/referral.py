@@ -1,11 +1,12 @@
-from fastapi import APIRouter
+from fastapi import APIRouter, Depends
+from security import verify_token
 from pydantic import BaseModel
 from typing import Optional
 import json
 import os
 from datetime import datetime
 
-router = APIRouter()
+router = APIRouter(dependencies=[Depends(verify_token)])
 
 USERS_FILE = "users.json"
 REFERRALS_FILE = "referrals.json"

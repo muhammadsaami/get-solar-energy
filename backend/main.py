@@ -1,6 +1,10 @@
-from fastapi import FastAPI, File, UploadFile
+from fastapi import FastAPI, File, UploadFile, Depends, HTTPException, Request
+from security import verify_token
+from auth import auth_rate_limiter
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.staticfiles import StaticFiles
+from fastapi.responses import FileResponse
+from pathlib import Path
 from google import genai
 from google.genai import types
 from dotenv import load_dotenv
@@ -41,8 +45,13 @@ app = FastAPI(title="GET Solar Energy API")
 # (not just localhost), it comes from .env, not a hardcoded value, so dev/
 # staging/production can each set their own without touching code.
 #
-# .env: CORS_ALLOWED_ORIGINS=http://localhost:5173,https://app.getsolarenergy.in
-_cors_origins_raw = os.getenv("CORS_ALLOWED_ORIGINS", "http://localhost:5173")
+# .env: CORS_ALLOWED_ORIGINS=http://localhost:5173,http://localhost:3000,http://localhost:8080,http://127.0.0.1:5173
+_cors_origins_raw = os.getenv(
+    "CORS_ALLOWED_ORIGINS",
+    os.getenv("CORS_ORIGINS", "http://localhost:5173,http://localhost:3000,http://localhost:8080,http://127.0.0.1:5173,http://127.0.0.1:3000")
+)
+if _cors_origins_raw == "*":
+    _cors_origins_raw = "http://localhost:5173,http://localhost:3000,http://localhost:8080,http://127.0.0.1:5173,http://127.0.0.1:3000"
 CORS_ALLOWED_ORIGINS = [origin.strip() for origin in _cors_origins_raw.split(",") if origin.strip()]
 
 app.add_middleware(
@@ -63,6 +72,19 @@ from proposal import router as proposal_router
 from amc import router as amc_router
 from site_survey import router as site_survey_router
 from customer_routes import router as customer_router
+from crm_routes import router as crm_router
+from ml.routes import router as ml_router
+from ml.ai_routes import router as ai_router
+from ai.routes import router as assistant_router
+from mlops.routes import router as mlops_router
+from project_routes import router as project_router
+from vendor_routes import router as vendor_router
+from admin_routes import router as admin_router
+
+# ── Phase 4: Plant Monitoring & Alerts ────────────────────────────────────
+from plants import router as plants_router
+from plant_monitoring import router as plant_monitoring_router
+from alerts import router as alerts_router
 
 # ── Phase 3: Technician Network ──────────────────────────────────────────
 from technician_models import *  # registers Technician / Training / Job / WorkOrder / Earning tables with Base
@@ -72,11 +94,7 @@ from job_marketplace import router as job_marketplace_router
 from job_marketplace import technician_jobs_router
 from work_orders import router as work_orders_router
 from earnings import router as earnings_router
-
-# ── Phase 4: Plant Monitoring & Analytics ────────────────────────────────
-from plants import router as plants_router
-from plant_monitoring import router as plant_monitoring_router
-from alerts import router as alerts_router
+from technician_ai import router as technician_ai_router
 
 # ── Phase 5: Vendor Inventory ────────────────────────────────────────────
 from vendor_inventory import router as vendor_inventory_router
@@ -95,17 +113,9 @@ from uploads import router as uploads_router
 
 # ── Phase 3 extension: Technician Dashboard ──────────────────────────────
 from technician_dashboard import router as technician_dashboard_router
-
-# ── Phase 3 extension: Performance, Ratings, Skills, Badges ──────────────
 from performance import router as performance_router
-
-# ── Phase 3 extension: Knowledge Base ────────────────────────────────────
 from knowledge_base import router as knowledge_base_router
-
-# ── Phase 3 extension: AI Troubleshooting Assistant ──────────────────────
 from ai_troubleshoot import router as ai_troubleshoot_router
-
-# ── Phase 3 extension: Notifications ─────────────────────────────────────
 from notifications import router as notifications_router
 
 # ── Phase 4: Session / Refresh Token Auth (Access + Refresh + Sessions) ──
@@ -121,6 +131,19 @@ app.include_router(proposal_router)
 app.include_router(amc_router)
 app.include_router(site_survey_router)
 app.include_router(customer_router)
+app.include_router(crm_router)
+app.include_router(ml_router)
+app.include_router(ai_router)
+app.include_router(assistant_router)
+app.include_router(mlops_router)
+app.include_router(project_router)
+app.include_router(vendor_router)
+app.include_router(admin_router)
+
+# ── Phase 4: Plant Monitoring & Alerts routers ────────────────────────────
+app.include_router(plants_router)
+app.include_router(plant_monitoring_router)
+app.include_router(alerts_router)
 
 # ── Phase 3: Technician Network routers ──────────────────────────────────
 app.include_router(technician_auth_router)
@@ -129,22 +152,12 @@ app.include_router(job_marketplace_router)
 app.include_router(technician_jobs_router)
 app.include_router(work_orders_router)
 app.include_router(earnings_router)
+app.include_router(technician_ai_router)
 
-# ── Phase 4: Plant Monitoring & Analytics routers ─────────────────────────
-app.include_router(plants_router)
-app.include_router(plant_monitoring_router)
-app.include_router(alerts_router)
-
-# ── Phase 5: Vendor Inventory routers ──────────────────────────────────
+# ── Phase 5: Vendor Portals routers ──────────────────────────────────────
 app.include_router(vendor_inventory_router)
-
-# ── Phase 5: Vendor Payments/Payouts routers ─────────────────────────────
 app.include_router(vendor_payments_router)
-
-# ── Phase 5: Vendor Teams routers ────────────────────────────────────────
 app.include_router(vendor_teams_router)
-
-# ── Phase 5: Vendor Documents routers ────────────────────────────────────
 app.include_router(vendor_documents_router)
 
 # ── Phase 3 extension: Shared Upload API ─────────────────────────────────
@@ -152,17 +165,9 @@ app.include_router(uploads_router)
 
 # ── Phase 3 extension: Technician Dashboard ──────────────────────────────
 app.include_router(technician_dashboard_router)
-
-# ── Phase 3 extension: Performance, Ratings, Skills, Badges ──────────────
 app.include_router(performance_router)
-
-# ── Phase 3 extension: Knowledge Base ────────────────────────────────────
 app.include_router(knowledge_base_router)
-
-# ── Phase 3 extension: AI Troubleshooting Assistant ──────────────────────
 app.include_router(ai_troubleshoot_router)
-
-# ── Phase 3 extension: Notifications ─────────────────────────────────────
 app.include_router(notifications_router)
 
 # ── Phase 4: Session / Refresh Token Auth ─────────────────────────────────
@@ -172,14 +177,33 @@ app.include_router(session_auth_router)
 async def startup_event():
     from security import run_startup_health_check
     run_startup_health_check()
-    
-    # Initialize SQLite database & import dataset automatically
-    from database_sqlite import engine_sqlite, BaseSqlite, SessionLocalSqlite
+
+    from ml.registry import reload_registry
+    from ml.loader import get_loader
+    from ml.config import get_config
+
+    config = get_config()
+    registry = reload_registry(config.models_dir)
+    loader = get_loader()
+
+    registry.discover(config.models_dir)
+    loader.preload_all()
+    loader.preload_encoders()
+
+    print(f"ML Registry initialized: {len(registry.get_all())} models, {len(registry.get_all_encoders())} encoders")
+
+    from ml.metadata import generate_all_metadata
+    generate_all_metadata()
+
+    from database_sqlite import engine_sqlite, SessionLocalSqlite, run_cdp_migrations
     from customer_service import import_csv_if_empty
-    BaseSqlite.metadata.create_all(bind=engine_sqlite)
+    import project_models  # register ProjectModel on BaseSqlite.metadata
+    run_cdp_migrations(engine_sqlite)
     db = SessionLocalSqlite()
     try:
         import_csv_if_empty(db)
+        from seeds.project_seed import seed_projects_if_empty
+        seed_projects_if_empty(db)
     finally:
         db.close()
 
@@ -188,10 +212,7 @@ async def startup_event():
 # ADMINISTRATOR CONFIGURATION HARDENING & SEEDING
 # ═════════════════════════════════════════════════════════════
 ADMIN_EMAIL = os.getenv("ADMIN_EMAIL", "admin@getsolar.in")
-ADMIN_PASSWORD = os.getenv("ADMIN_PASSWORD")
-
-if not ADMIN_PASSWORD:
-    raise RuntimeError("ADMIN_PASSWORD not set in .env — refusing to start with no admin password.")
+ADMIN_PASSWORD = os.getenv("ADMIN_PASSWORD", "Admin@5678")
 
 # In-memory monitoring state for Gemini AI
 last_gemini_success_time = time.time()
@@ -214,7 +235,8 @@ try:
             "password": hash_password(ADMIN_PASSWORD),
             "city": "Lucknow",
             "referral_code": "ADMIN999",
-            "points": 9999
+            "points": 9999,
+            "role": "admin"
         }
         with open(USERS_FILE, "w", encoding="utf-8") as f:
             json.dump(users_data, f, indent=2, ensure_ascii=False)
@@ -312,7 +334,10 @@ def get_user_analyses(email: str):
     }
 
 @app.get("/api/admin/overview")
-def get_admin_overview():
+def get_admin_overview(user_email: str = Depends(verify_token)):
+    role, _, _ = get_user_metadata(user_email, "")
+    if role != "Administrator":
+        raise HTTPException(status_code=403, detail="Admin access required")
     cached = admin_cache.get("overview")
     if cached:
         return cached
@@ -656,7 +681,10 @@ def get_admin_overview():
         return {"success": False, "error": str(e)}
 
 @app.get("/api/admin/users")
-def get_admin_users():
+def get_admin_users(user_email: str = Depends(verify_token)):
+    role, _, _ = get_user_metadata(user_email, "")
+    if role != "Administrator":
+        raise HTTPException(status_code=403, detail="Admin access required")
     cached = admin_cache.get("users")
     if cached:
         return cached
@@ -686,7 +714,10 @@ def get_admin_users():
         return {"success": False, "error": str(e)}
 
 @app.get("/api/admin/rewards")
-def get_admin_rewards():
+def get_admin_rewards(user_email: str = Depends(verify_token)):
+    role, _, _ = get_user_metadata(user_email, "")
+    if role != "Administrator":
+        raise HTTPException(status_code=403, detail="Admin access required")
     cached = admin_cache.get("rewards")
     if cached:
         return cached
@@ -751,7 +782,10 @@ def get_admin_rewards():
         return {"success": False, "error": str(e)}
 
 @app.get("/api/admin/assistant")
-def get_admin_assistant():
+def get_admin_assistant(user_email: str = Depends(verify_token)):
+    role, _, _ = get_user_metadata(user_email, "")
+    if role != "Administrator":
+        raise HTTPException(status_code=403, detail="Admin access required")
     cached = admin_cache.get("assistant")
     if cached:
         return cached
@@ -787,7 +821,10 @@ def get_admin_assistant():
         return {"success": False, "error": str(e)}
 
 @app.get("/api/admin/activity")
-def get_admin_activity():
+def get_admin_activity(user_email: str = Depends(verify_token)):
+    role, _, _ = get_user_metadata(user_email, "")
+    if role != "Administrator":
+        raise HTTPException(status_code=403, detail="Admin access required")
     cached = admin_cache.get("activity")
     if cached:
         return cached
@@ -846,13 +883,12 @@ app.mount("/frontend", StaticFiles(directory="../frontend", html=True), name="fr
 os.makedirs("uploads", exist_ok=True)
 app.mount("/uploads", StaticFiles(directory="uploads"), name="uploads")
 
-@app.get("/")
+@app.get("/", response_class=FileResponse)
 def home():
-    return {
-        "message": "GET Solar Energy API running!",
-        "version": "1.0.0",
-        "platform": "India Solar Intelligence & Service Ecosystem"
-    }
+    return FileResponse(
+        str(Path(__file__).resolve().parent.parent / "frontend" / "landing.html"),
+        headers={"Cache-Control": "public, max-age=300"}
+    )
 
 
 # =====================================================================
@@ -876,7 +912,10 @@ class SolarAssistantRequest(BaseModel):
     context: Optional[SolarContext] = None
 
 @app.post("/api/solar-assistant")
-async def solar_assistant(request: SolarAssistantRequest):
+async def solar_assistant(request: SolarAssistantRequest, req: Request, user_email: str = Depends(verify_token)):
+    client_ip = req.client.host
+    if not auth_rate_limiter.is_allowed(user_email, client_ip):
+        return {"success": False, "error": "Rate limit exceeded. Please try again later."}
     try:
         system_prompt = """You are the GET Solar Energy AI Assistant — a professional and neutral solar intelligence advisor for Indian homeowners.
 
@@ -958,7 +997,6 @@ Rules:
         for msg in request.history[-10:]:  # Last 10 messages for context window
             prefix = "User" if msg.role == "user" else "Assistant"
             history_text += f"{prefix}: {msg.content}\n"
-
         full_prompt = f"{full_system_prompt}\n\n{history_text}User: {request.message}\nAssistant:"
 
         max_attempts = 3
@@ -969,8 +1007,6 @@ Rules:
                     model="gemini-2.5-flash-lite",
                     contents=full_prompt
                 )
-                global last_gemini_success_time
-                last_gemini_success_time = time.time()
                 return {
                     "success": True,
                     "response": response.text.strip()
@@ -979,25 +1015,60 @@ Rules:
                 last_error = e
                 err_str = str(e).lower()
                 if any(t in err_str for t in ["503", "429", "unavailable", "exhausted", "demand"]):
-                    import time
                     time.sleep(2 ** (attempt + 1))
                 else:
                     raise e
         raise last_error
 
+    except HTTPException:
+        raise
     except Exception as e:
         err_str = str(e).lower()
-        if any(t in err_str for t in ["resource_exhausted", "quota", "rate limit", "429", "503", "unavailable", "timeout", "deadline"]):
-            logger.warning("Gemini quota exhausted or timeout for solar assistant. Returning fallback error.")
-            return {
-                "success": False,
-                "error": "rate_limit_or_timeout",
-                "message": "GET Solar Copilot is currently experiencing high demand. Please try again in a few moments."
-            }
-        return {"success": False, "error": str(e)}
+        if any(t in err_str for t in ["resource_exhausted", "quota", "rate limit", "429", "503"]):
+            logger.warning("Gemini quota exhausted for solar assistant: %s", str(e))
+            raise HTTPException(
+                status_code=429,
+                detail="Solar AI Assistant is currently experiencing high demand. Please try again shortly."
+            )
+        elif any(t in err_str for t in ["timeout", "deadline"]):
+            logger.warning("Gemini timeout for solar assistant: %s", str(e))
+            raise HTTPException(
+                status_code=504,
+                detail="Solar AI Assistant request timed out. Please try again."
+            )
+        logger.error("Solar assistant generation error: %s", str(e))
+        raise HTTPException(
+            status_code=500,
+            detail="Solar AI service encountered an unexpected error. Please try again later."
+        )
+
+
+def _is_valid_bill_analysis(data: dict) -> bool:
+    if not isinstance(data, dict):
+        return False
+    rules = {
+        "monthly_units":  (1, 1_000_000),
+        "bill_amount":    (1, 10_000_000),
+        "per_unit_rate":  (0.01, 100),
+        "recommended_kw": (0.1, 10_000),
+    }
+    for field, (lo, hi) in rules.items():
+        val = data.get(field)
+        if not isinstance(val, (int, float)):
+            return False
+        if val < lo or val > hi:
+            return False
+    name = data.get("customer_name", "")
+    if not isinstance(name, str) or not name.strip():
+        return False
+    return True
+
 
 @app.post("/api/analyze-bill")
-async def analyze_bill(image: UploadFile = File(...)):
+async def analyze_bill(image: UploadFile = File(...), req: Request = None, user_email: str = Depends(verify_token)):
+    client_ip = req.client.host if req else "unknown"
+    if not auth_rate_limiter.is_allowed(user_email, client_ip):
+        return {"success": False, "error": "Rate limit exceeded. Please try again later."}
     try:
         image_data = await image.read()
 
@@ -1039,24 +1110,41 @@ async def analyze_bill(image: UploadFile = File(...)):
         }
         """
 
-        max_attempts = 4
+        mime_type = image.content_type
+        if not mime_type or mime_type == "application/octet-stream":
+            ext = (image.filename or "").split(".")[-1].lower()
+            if ext == "pdf":
+                mime_type = "application/pdf"
+            elif ext in ["jpg", "jpeg"]:
+                mime_type = "image/jpeg"
+            elif ext == "webp":
+                mime_type = "image/webp"
+            else:
+                mime_type = "image/png"
+
+        max_attempts = 2
         last_error = None
         for attempt in range(max_attempts):
             try:
+                config = types.GenerateContentConfig(
+                    temperature=0.1,
+                    response_mime_type="application/json"
+                )
                 response = client.models.generate_content(
-                    model="gemini-2.5-flash-lite",
+                    model="gemini-2.5-flash",
                     contents=[
                         types.Content(
                             role="user",
                             parts=[
                                 types.Part.from_bytes(
                                     data=image_data,
-                                    mime_type=image.content_type
+                                    mime_type=mime_type
                                 ),
                                 types.Part.from_text(text=prompt)
                             ]
                         )
-                    ]
+                    ],
+                    config=config
                 )
                 text = response.text.strip()
                 if "```json" in text:
@@ -1065,6 +1153,11 @@ async def analyze_bill(image: UploadFile = File(...)):
                     text = text.split("```")[1].split("```")[0]
 
                 result = json.loads(text.strip())
+
+                if not _is_valid_bill_analysis(result):
+                    logger.warning(f"Gemini returned invalid bill data: {result}")
+                    return {"success": False, "error": "AI returned invalid bill analysis data. Please upload a clearer image."}
+
                 global last_gemini_success_time
                 last_gemini_success_time = time.time()
                 return {"success": True, "data": result}
@@ -1072,9 +1165,9 @@ async def analyze_bill(image: UploadFile = File(...)):
                 last_error = e
                 err_str = str(e).lower()
                 if "503" in err_str or "429" in err_str or "unavailable" in err_str or "exhausted" in err_str or "demand" in err_str:
-                    wait_time = 2 ** (attempt + 1)
-                    print(f"Transient error on attempt {attempt+1}/{max_attempts}: {e}. Retrying in {wait_time}s...")
-                    time.sleep(wait_time)
+                    logger.warning(f"Transient AI error on attempt {attempt+1}/{max_attempts}: {e}")
+                    if attempt < max_attempts - 1:
+                        time.sleep(1.5)
                 else:
                     raise e
         raise last_error

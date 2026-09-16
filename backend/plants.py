@@ -59,7 +59,7 @@ def list_my_plants(db: Session = Depends(get_db), current_customer: dict = Depen
                 "inverter_brand": p.inverter_brand,
                 "city": p.city,
                 "status": p.status,
-                "installed_at": p.installed_at.isoformat()
+                "installed_at": p.installed_at.isoformat() if p.installed_at else None
             } for p in plants
         ]
     }
@@ -82,6 +82,6 @@ def get_plant_detail(plant_id: int, db: Session = Depends(get_db), current_custo
             "inverter_serial": plant.inverter_serial,
             "city": plant.city,
             "status": plant.status,
-            "installed_at": plant.installed_at.isoformat()
+            "installed_at": plant.installed_at.isoformat() if plant.installed_at else None
         }
     }

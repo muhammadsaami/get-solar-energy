@@ -1,0 +1,16 @@
+<!DOCTYPE html>
+<html>
+<body>
+<script>
+const localStorage = { getItem: () => "fake_token" };
+function _mlopsAuth() { return localStorage.getItem("token") || ""; }
+function _mlopsHeaders() { return { 'Authorization': 'Bearer ' + _mlopsAuth(), 'Content-Type': 'application/json' }; }
+async function _mlopsFetch(url, opts) {
+  opts = opts || {};
+  opts.headers = Object.assign({}, _mlopsHeaders(), opts.headers || {});
+  console.log("opts.headers:", opts.headers);
+}
+_mlopsFetch('/api/mlops/status');
+</script>
+</body>
+</html>

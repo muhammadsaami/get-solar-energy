@@ -1,7 +1,9 @@
-from fastapi import APIRouter, File, UploadFile, Form
+from fastapi import APIRouter, Depends, File, UploadFile, Form, Request
 from google import genai
 from google.genai import types
 from dotenv import load_dotenv
+from security import verify_token
+from auth import auth_rate_limiter
 import os
 import json
 import time
@@ -12,7 +14,7 @@ logger = logging.getLogger(__name__)
 load_dotenv()
 
 client = genai.Client(api_key=os.getenv("GEMINI_API_KEY"))
-router = APIRouter()
+router = APIRouter(dependencies=[Depends(verify_token)])
 
 # 3kW Fixed Layout (Ahmed Bhai Requirements)
 SOLAR_3KW_LAYOUT = {
@@ -36,8 +38,14 @@ async def analyze_roof(
     image: UploadFile = File(...),
     length_ft: float = Form(...),
     width_ft: float = Form(...),
-    city: str = Form(...)
+    city: str = Form(...),
+    source: str = Form("camera"),
+    req: Request = None,
+    user_email: str = Depends(verify_token)
 ):
+    client_ip = req.client.host if req else "unknown"
+    if not auth_rate_limiter.is_allowed(user_email, client_ip):
+        return {"success": False, "error": "Rate limit exceeded. Please try again later."}
     try:
         image_data = await image.read()
         
@@ -138,6 +146,17 @@ async def analyze_roof(
                     "analysis_notes": ai_result.get("analysis_notes", "")
                 }
                 
+                if source == "satellite":
+                    result["satellite_analysis"] = True
+                    disclaimer = (
+                        "BETA - Satellite-based estimate. "
+                        "Results are estimated from satellite imagery and should be confirmed "
+                        "through an on-site survey before installation or purchasing decisions. "
+                    )
+                    result["analysis_notes"] = disclaimer + result.get("analysis_notes", "")
+                else:
+                    result["satellite_analysis"] = False
+                
                 return {"success": True, "data": result}
                 
             except Exception as e:
@@ -182,7 +201,8 @@ async def analyze_roof(
                     "front_leg_height_ft": 5,
                     "back_leg_height_ft": 7,
                     "monthly_generation_units": 360,
-                    "annual_generation_units": 4320
+                    "annual_generation_units": 4320,
+                    "satellite_analysis": source == "satellite" if 'source' in dir() else False
                 }
             }
         return {"success": False, "error": str(e)}

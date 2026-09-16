@@ -1,0 +1,2751 @@
+[
+  {
+    "path": "/",
+    "method": "GET",
+    "summary": "Home",
+    "operationId": "home__get",
+    "tags": [],
+    "parameters": [],
+    "hasRequestBody": false,
+    "responses": [
+      "200"
+    ]
+  },
+  {
+    "path": "/api/admin/activity",
+    "method": "GET",
+    "summary": "Get Admin Activity",
+    "operationId": "get_admin_activity_api_admin_activity_get",
+    "tags": [],
+    "parameters": [],
+    "hasRequestBody": false,
+    "responses": [
+      "200"
+    ]
+  },
+  {
+    "path": "/api/admin/assistant",
+    "method": "GET",
+    "summary": "Get Admin Assistant",
+    "operationId": "get_admin_assistant_api_admin_assistant_get",
+    "tags": [],
+    "parameters": [],
+    "hasRequestBody": false,
+    "responses": [
+      "200"
+    ]
+  },
+  {
+    "path": "/api/admin/dashboard",
+    "method": "GET",
+    "summary": "Admin Dashboard",
+    "operationId": "admin_dashboard_api_admin_dashboard_get",
+    "tags": [],
+    "parameters": [],
+    "hasRequestBody": false,
+    "responses": [
+      "200"
+    ]
+  },
+  {
+    "path": "/api/admin/health",
+    "method": "GET",
+    "summary": "Admin Health",
+    "operationId": "admin_health_api_admin_health_get",
+    "tags": [],
+    "parameters": [],
+    "hasRequestBody": false,
+    "responses": [
+      "200"
+    ]
+  },
+  {
+    "path": "/api/admin/overview",
+    "method": "GET",
+    "summary": "Get Admin Overview",
+    "operationId": "get_admin_overview_api_admin_overview_get",
+    "tags": [],
+    "parameters": [],
+    "hasRequestBody": false,
+    "responses": [
+      "200"
+    ]
+  },
+  {
+    "path": "/api/admin/rewards",
+    "method": "GET",
+    "summary": "Get Admin Rewards",
+    "operationId": "get_admin_rewards_api_admin_rewards_get",
+    "tags": [],
+    "parameters": [],
+    "hasRequestBody": false,
+    "responses": [
+      "200"
+    ]
+  },
+  {
+    "path": "/api/admin/users",
+    "method": "GET",
+    "summary": "Get Admin Users",
+    "operationId": "get_admin_users_api_admin_users_get",
+    "tags": [],
+    "parameters": [],
+    "hasRequestBody": false,
+    "responses": [
+      "200"
+    ]
+  },
+  {
+    "path": "/api/ai/analyze",
+    "method": "POST",
+    "summary": "Ai Analyze",
+    "operationId": "ai_analyze_api_ai_analyze_post",
+    "tags": [
+      "ai-intelligence"
+    ],
+    "parameters": [],
+    "hasRequestBody": true,
+    "responses": [
+      "200",
+      "422"
+    ]
+  },
+  {
+    "path": "/api/ai/customer-score",
+    "method": "POST",
+    "summary": "Ai Customer Score",
+    "operationId": "ai_customer_score_api_ai_customer_score_post",
+    "tags": [
+      "ai-intelligence"
+    ],
+    "parameters": [],
+    "hasRequestBody": true,
+    "responses": [
+      "200",
+      "422"
+    ]
+  },
+  {
+    "path": "/api/ai/explain",
+    "method": "POST",
+    "summary": "Ai Explain",
+    "operationId": "ai_explain_api_ai_explain_post",
+    "tags": [
+      "ai-intelligence"
+    ],
+    "parameters": [],
+    "hasRequestBody": true,
+    "responses": [
+      "200",
+      "422"
+    ]
+  },
+  {
+    "path": "/api/ai/recommend",
+    "method": "POST",
+    "summary": "Ai Recommend",
+    "operationId": "ai_recommend_api_ai_recommend_post",
+    "tags": [
+      "ai-intelligence"
+    ],
+    "parameters": [],
+    "hasRequestBody": true,
+    "responses": [
+      "200",
+      "422"
+    ]
+  },
+  {
+    "path": "/api/ai/solar-readiness",
+    "method": "POST",
+    "summary": "Ai Solar Readiness",
+    "operationId": "ai_solar_readiness_api_ai_solar_readiness_post",
+    "tags": [
+      "ai-intelligence"
+    ],
+    "parameters": [],
+    "hasRequestBody": true,
+    "responses": [
+      "200",
+      "422"
+    ]
+  },
+  {
+    "path": "/api/amc-recommendation",
+    "method": "POST",
+    "summary": "Amc Recommendation",
+    "operationId": "amc_recommendation_api_amc_recommendation_post",
+    "tags": [],
+    "parameters": [],
+    "hasRequestBody": true,
+    "responses": [
+      "200",
+      "422"
+    ]
+  },
+  {
+    "path": "/api/analyze-bill",
+    "method": "POST",
+    "summary": "Analyze Bill",
+    "operationId": "analyze_bill_api_analyze_bill_post",
+    "tags": [],
+    "parameters": [],
+    "hasRequestBody": true,
+    "responses": [
+      "200",
+      "422"
+    ]
+  },
+  {
+    "path": "/api/analyze-generation",
+    "method": "POST",
+    "summary": "Analyze Generation",
+    "operationId": "analyze_generation_api_analyze_generation_post",
+    "tags": [],
+    "parameters": [],
+    "hasRequestBody": true,
+    "responses": [
+      "200",
+      "422"
+    ]
+  },
+  {
+    "path": "/api/analyze-roof",
+    "method": "POST",
+    "summary": "Analyze Roof",
+    "operationId": "analyze_roof_api_analyze_roof_post",
+    "tags": [],
+    "parameters": [],
+    "hasRequestBody": true,
+    "responses": [
+      "200",
+      "422"
+    ]
+  },
+  {
+    "path": "/api/assistant/chat",
+    "method": "POST",
+    "summary": "Chat Endpoint",
+    "operationId": "chat_endpoint_api_assistant_chat_post",
+    "tags": [
+      "Enterprise AI Assistant"
+    ],
+    "parameters": [],
+    "hasRequestBody": true,
+    "responses": [
+      "200",
+      "422"
+    ]
+  },
+  {
+    "path": "/api/assistant/history",
+    "method": "GET",
+    "summary": "Get History Endpoint",
+    "operationId": "get_history_endpoint_api_assistant_history_get",
+    "tags": [
+      "Enterprise AI Assistant"
+    ],
+    "parameters": [
+      "session_id"
+    ],
+    "hasRequestBody": false,
+    "responses": [
+      "200",
+      "422"
+    ]
+  },
+  {
+    "path": "/api/assistant/history",
+    "method": "DELETE",
+    "summary": "Clear History Endpoint",
+    "operationId": "clear_history_endpoint_api_assistant_history_delete",
+    "tags": [
+      "Enterprise AI Assistant"
+    ],
+    "parameters": [
+      "session_id"
+    ],
+    "hasRequestBody": false,
+    "responses": [
+      "200",
+      "422"
+    ]
+  },
+  {
+    "path": "/api/assistant/tool",
+    "method": "POST",
+    "summary": "Execute Tool Endpoint",
+    "operationId": "execute_tool_endpoint_api_assistant_tool_post",
+    "tags": [
+      "Enterprise AI Assistant"
+    ],
+    "parameters": [],
+    "hasRequestBody": true,
+    "responses": [
+      "200",
+      "422"
+    ]
+  },
+  {
+    "path": "/api/assistant/tools",
+    "method": "GET",
+    "summary": "List Tools Endpoint",
+    "operationId": "list_tools_endpoint_api_assistant_tools_get",
+    "tags": [
+      "Enterprise AI Assistant"
+    ],
+    "parameters": [],
+    "hasRequestBody": false,
+    "responses": [
+      "200"
+    ]
+  },
+  {
+    "path": "/api/calculate-roi",
+    "method": "POST",
+    "summary": "Calculate Roi",
+    "operationId": "calculate_roi_api_calculate_roi_post",
+    "tags": [],
+    "parameters": [],
+    "hasRequestBody": true,
+    "responses": [
+      "200",
+      "422"
+    ]
+  },
+  {
+    "path": "/api/chat",
+    "method": "POST",
+    "summary": "Chat",
+    "operationId": "chat_api_chat_post",
+    "tags": [],
+    "parameters": [],
+    "hasRequestBody": true,
+    "responses": [
+      "200",
+      "422"
+    ]
+  },
+  {
+    "path": "/api/crm/alerts",
+    "method": "GET",
+    "summary": "Get Crm Alerts",
+    "operationId": "get_crm_alerts_api_crm_alerts_get",
+    "tags": [
+      "Enterprise CRM Core"
+    ],
+    "parameters": [
+      "severity"
+    ],
+    "hasRequestBody": false,
+    "responses": [
+      "200",
+      "422"
+    ]
+  },
+  {
+    "path": "/api/crm/audit-log",
+    "method": "GET",
+    "summary": "Get Audit Log",
+    "operationId": "get_audit_log_api_crm_audit_log_get",
+    "tags": [
+      "Enterprise CRM Core"
+    ],
+    "parameters": [
+      "entity_id",
+      "limit"
+    ],
+    "hasRequestBody": false,
+    "responses": [
+      "200",
+      "422"
+    ]
+  },
+  {
+    "path": "/api/crm/communications",
+    "method": "POST",
+    "summary": "Create Communication",
+    "operationId": "create_communication_api_crm_communications_post",
+    "tags": [
+      "Enterprise CRM Core"
+    ],
+    "parameters": [],
+    "hasRequestBody": true,
+    "responses": [
+      "201",
+      "422"
+    ]
+  },
+  {
+    "path": "/api/crm/customers/{id}",
+    "method": "PUT",
+    "summary": "Update Customer Crm",
+    "operationId": "update_customer_crm_api_crm_customers__id__put",
+    "tags": [
+      "Enterprise CRM Core"
+    ],
+    "parameters": [
+      "id"
+    ],
+    "hasRequestBody": true,
+    "responses": [
+      "200",
+      "422"
+    ]
+  },
+  {
+    "path": "/api/crm/customers/{id}/360",
+    "method": "GET",
+    "summary": "Get Customer 360",
+    "operationId": "get_customer_360_api_crm_customers__id__360_get",
+    "tags": [
+      "Enterprise CRM Core"
+    ],
+    "parameters": [
+      "id"
+    ],
+    "hasRequestBody": false,
+    "responses": [
+      "200",
+      "422"
+    ]
+  },
+  {
+    "path": "/api/crm/customers/{id}/amc",
+    "method": "GET",
+    "summary": "Get Customer Amc",
+    "operationId": "get_customer_amc_api_crm_customers__id__amc_get",
+    "tags": [
+      "Enterprise CRM Core"
+    ],
+    "parameters": [
+      "id"
+    ],
+    "hasRequestBody": false,
+    "responses": [
+      "200",
+      "422"
+    ]
+  },
+  {
+    "path": "/api/crm/customers/{id}/amc",
+    "method": "PUT",
+    "summary": "Update Customer Amc",
+    "operationId": "update_customer_amc_api_crm_customers__id__amc_put",
+    "tags": [
+      "Enterprise CRM Core"
+    ],
+    "parameters": [
+      "id"
+    ],
+    "hasRequestBody": true,
+    "responses": [
+      "200",
+      "422"
+    ]
+  },
+  {
+    "path": "/api/crm/customers/{id}/communications",
+    "method": "GET",
+    "summary": "Get Customer Communications",
+    "operationId": "get_customer_communications_api_crm_customers__id__communications_get",
+    "tags": [
+      "Enterprise CRM Core"
+    ],
+    "parameters": [
+      "id",
+      "page",
+      "limit",
+      "search",
+      "sort_by",
+      "sort_order",
+      "filter_status"
+    ],
+    "hasRequestBody": false,
+    "responses": [
+      "200",
+      "422"
+    ]
+  },
+  {
+    "path": "/api/crm/customers/{id}/documents",
+    "method": "GET",
+    "summary": "Get Customer Documents",
+    "operationId": "get_customer_documents_api_crm_customers__id__documents_get",
+    "tags": [
+      "Enterprise CRM Core"
+    ],
+    "parameters": [
+      "id",
+      "page",
+      "limit",
+      "search",
+      "sort_by",
+      "sort_order",
+      "filter_status"
+    ],
+    "hasRequestBody": false,
+    "responses": [
+      "200",
+      "422"
+    ]
+  },
+  {
+    "path": "/api/crm/customers/{id}/installation",
+    "method": "GET",
+    "summary": "Get Customer Installation",
+    "operationId": "get_customer_installation_api_crm_customers__id__installation_get",
+    "tags": [
+      "Enterprise CRM Core"
+    ],
+    "parameters": [
+      "id"
+    ],
+    "hasRequestBody": false,
+    "responses": [
+      "200",
+      "422"
+    ]
+  },
+  {
+    "path": "/api/crm/customers/{id}/installation",
+    "method": "PUT",
+    "summary": "Update Customer Installation",
+    "operationId": "update_customer_installation_api_crm_customers__id__installation_put",
+    "tags": [
+      "Enterprise CRM Core"
+    ],
+    "parameters": [
+      "id"
+    ],
+    "hasRequestBody": true,
+    "responses": [
+      "200",
+      "422"
+    ]
+  },
+  {
+    "path": "/api/crm/customers/{id}/payments",
+    "method": "GET",
+    "summary": "Get Customer Payments",
+    "operationId": "get_customer_payments_api_crm_customers__id__payments_get",
+    "tags": [
+      "Enterprise CRM Core"
+    ],
+    "parameters": [
+      "id",
+      "page",
+      "limit",
+      "search",
+      "sort_by",
+      "sort_order",
+      "filter_status"
+    ],
+    "hasRequestBody": false,
+    "responses": [
+      "200",
+      "422"
+    ]
+  },
+  {
+    "path": "/api/crm/customers/{id}/timeline-paginated",
+    "method": "GET",
+    "summary": "Get Customer Timeline Paginated",
+    "operationId": "get_customer_timeline_paginated_api_crm_customers__id__timeline_paginated_get",
+    "tags": [
+      "Enterprise CRM Core"
+    ],
+    "parameters": [
+      "id",
+      "page",
+      "limit"
+    ],
+    "hasRequestBody": false,
+    "responses": [
+      "200",
+      "422"
+    ]
+  },
+  {
+    "path": "/api/crm/documents",
+    "method": "POST",
+    "summary": "Upload Document",
+    "operationId": "upload_document_api_crm_documents_post",
+    "tags": [
+      "Enterprise CRM Core"
+    ],
+    "parameters": [],
+    "hasRequestBody": true,
+    "responses": [
+      "200",
+      "422"
+    ]
+  },
+  {
+    "path": "/api/crm/documents/{id}",
+    "method": "PUT",
+    "summary": "Update Document",
+    "operationId": "update_document_api_crm_documents__id__put",
+    "tags": [
+      "Enterprise CRM Core"
+    ],
+    "parameters": [
+      "id"
+    ],
+    "hasRequestBody": true,
+    "responses": [
+      "200",
+      "422"
+    ]
+  },
+  {
+    "path": "/api/crm/documents/{id}",
+    "method": "DELETE",
+    "summary": "Delete Document",
+    "operationId": "delete_document_api_crm_documents__id__delete",
+    "tags": [
+      "Enterprise CRM Core"
+    ],
+    "parameters": [
+      "id"
+    ],
+    "hasRequestBody": false,
+    "responses": [
+      "200",
+      "422"
+    ]
+  },
+  {
+    "path": "/api/crm/followups",
+    "method": "GET",
+    "summary": "Get Followups",
+    "operationId": "get_followups_api_crm_followups_get",
+    "tags": [
+      "Enterprise CRM Core"
+    ],
+    "parameters": [
+      "customer_id"
+    ],
+    "hasRequestBody": false,
+    "responses": [
+      "200",
+      "422"
+    ]
+  },
+  {
+    "path": "/api/crm/followups",
+    "method": "POST",
+    "summary": "Create Followup",
+    "operationId": "create_followup_api_crm_followups_post",
+    "tags": [
+      "Enterprise CRM Core"
+    ],
+    "parameters": [],
+    "hasRequestBody": true,
+    "responses": [
+      "201",
+      "422"
+    ]
+  },
+  {
+    "path": "/api/crm/followups/{id}",
+    "method": "PUT",
+    "summary": "Update Followup",
+    "operationId": "update_followup_api_crm_followups__id__put",
+    "tags": [
+      "Enterprise CRM Core"
+    ],
+    "parameters": [
+      "id"
+    ],
+    "hasRequestBody": true,
+    "responses": [
+      "200",
+      "422"
+    ]
+  },
+  {
+    "path": "/api/crm/followups/{id}",
+    "method": "DELETE",
+    "summary": "Delete Followup",
+    "operationId": "delete_followup_api_crm_followups__id__delete",
+    "tags": [
+      "Enterprise CRM Core"
+    ],
+    "parameters": [
+      "id"
+    ],
+    "hasRequestBody": false,
+    "responses": [
+      "200",
+      "422"
+    ]
+  },
+  {
+    "path": "/api/crm/global-search",
+    "method": "GET",
+    "summary": "Global Crm Search",
+    "operationId": "global_crm_search_api_crm_global_search_get",
+    "tags": [
+      "Enterprise CRM Core"
+    ],
+    "parameters": [
+      "q"
+    ],
+    "hasRequestBody": false,
+    "responses": [
+      "200",
+      "422"
+    ]
+  },
+  {
+    "path": "/api/crm/meetings",
+    "method": "GET",
+    "summary": "Get Meetings",
+    "operationId": "get_meetings_api_crm_meetings_get",
+    "tags": [
+      "Enterprise CRM Core"
+    ],
+    "parameters": [
+      "customer_id"
+    ],
+    "hasRequestBody": false,
+    "responses": [
+      "200",
+      "422"
+    ]
+  },
+  {
+    "path": "/api/crm/meetings",
+    "method": "POST",
+    "summary": "Create Meeting",
+    "operationId": "create_meeting_api_crm_meetings_post",
+    "tags": [
+      "Enterprise CRM Core"
+    ],
+    "parameters": [],
+    "hasRequestBody": true,
+    "responses": [
+      "201",
+      "422"
+    ]
+  },
+  {
+    "path": "/api/crm/meetings/{id}",
+    "method": "PUT",
+    "summary": "Update Meeting",
+    "operationId": "update_meeting_api_crm_meetings__id__put",
+    "tags": [
+      "Enterprise CRM Core"
+    ],
+    "parameters": [
+      "id"
+    ],
+    "hasRequestBody": true,
+    "responses": [
+      "200",
+      "422"
+    ]
+  },
+  {
+    "path": "/api/crm/meetings/{id}",
+    "method": "DELETE",
+    "summary": "Delete Meeting",
+    "operationId": "delete_meeting_api_crm_meetings__id__delete",
+    "tags": [
+      "Enterprise CRM Core"
+    ],
+    "parameters": [
+      "id"
+    ],
+    "hasRequestBody": false,
+    "responses": [
+      "200",
+      "422"
+    ]
+  },
+  {
+    "path": "/api/crm/payments",
+    "method": "POST",
+    "summary": "Create Payment",
+    "operationId": "create_payment_api_crm_payments_post",
+    "tags": [
+      "Enterprise CRM Core"
+    ],
+    "parameters": [],
+    "hasRequestBody": true,
+    "responses": [
+      "201",
+      "422"
+    ]
+  },
+  {
+    "path": "/api/crm/payments/{id}",
+    "method": "PUT",
+    "summary": "Update Payment",
+    "operationId": "update_payment_api_crm_payments__id__put",
+    "tags": [
+      "Enterprise CRM Core"
+    ],
+    "parameters": [
+      "id"
+    ],
+    "hasRequestBody": true,
+    "responses": [
+      "200",
+      "422"
+    ]
+  },
+  {
+    "path": "/api/crm/pipeline-metrics",
+    "method": "GET",
+    "summary": "Get Pipeline Metrics",
+    "operationId": "get_pipeline_metrics_api_crm_pipeline_metrics_get",
+    "tags": [
+      "Enterprise CRM Core"
+    ],
+    "parameters": [],
+    "hasRequestBody": false,
+    "responses": [
+      "200"
+    ]
+  },
+  {
+    "path": "/api/crm/reports/{report_type}",
+    "method": "GET",
+    "summary": "Get Crm Reports",
+    "operationId": "get_crm_reports_api_crm_reports__report_type__get",
+    "tags": [
+      "Enterprise CRM Core"
+    ],
+    "parameters": [
+      "report_type"
+    ],
+    "hasRequestBody": false,
+    "responses": [
+      "200",
+      "422"
+    ]
+  },
+  {
+    "path": "/api/crm/tasks",
+    "method": "GET",
+    "summary": "Get Tasks",
+    "operationId": "get_tasks_api_crm_tasks_get",
+    "tags": [
+      "Enterprise CRM Core"
+    ],
+    "parameters": [
+      "customer_id"
+    ],
+    "hasRequestBody": false,
+    "responses": [
+      "200",
+      "422"
+    ]
+  },
+  {
+    "path": "/api/crm/tasks",
+    "method": "POST",
+    "summary": "Create Task",
+    "operationId": "create_task_api_crm_tasks_post",
+    "tags": [
+      "Enterprise CRM Core"
+    ],
+    "parameters": [],
+    "hasRequestBody": true,
+    "responses": [
+      "201",
+      "422"
+    ]
+  },
+  {
+    "path": "/api/crm/tasks/{id}",
+    "method": "PUT",
+    "summary": "Update Task",
+    "operationId": "update_task_api_crm_tasks__id__put",
+    "tags": [
+      "Enterprise CRM Core"
+    ],
+    "parameters": [
+      "id"
+    ],
+    "hasRequestBody": true,
+    "responses": [
+      "200",
+      "422"
+    ]
+  },
+  {
+    "path": "/api/crm/tasks/{id}",
+    "method": "DELETE",
+    "summary": "Delete Task",
+    "operationId": "delete_task_api_crm_tasks__id__delete",
+    "tags": [
+      "Enterprise CRM Core"
+    ],
+    "parameters": [
+      "id"
+    ],
+    "hasRequestBody": false,
+    "responses": [
+      "200",
+      "422"
+    ]
+  },
+  {
+    "path": "/api/crm/timeline/{customer_id}",
+    "method": "GET",
+    "summary": "Get Customer Timeline",
+    "operationId": "get_customer_timeline_api_crm_timeline__customer_id__get",
+    "tags": [
+      "Enterprise CRM Core"
+    ],
+    "parameters": [
+      "customer_id"
+    ],
+    "hasRequestBody": false,
+    "responses": [
+      "200",
+      "422"
+    ]
+  },
+  {
+    "path": "/api/customers",
+    "method": "GET",
+    "summary": "Get Customers",
+    "operationId": "get_customers_api_customers_get",
+    "tags": [
+      "Customer Data Platform"
+    ],
+    "parameters": [
+      "skip",
+      "limit"
+    ],
+    "hasRequestBody": false,
+    "responses": [
+      "200",
+      "422"
+    ]
+  },
+  {
+    "path": "/api/customers",
+    "method": "POST",
+    "summary": "Create Customer",
+    "operationId": "create_customer_api_customers_post",
+    "tags": [
+      "Customer Data Platform"
+    ],
+    "parameters": [],
+    "hasRequestBody": true,
+    "responses": [
+      "201",
+      "422"
+    ]
+  },
+  {
+    "path": "/api/customers/search",
+    "method": "GET",
+    "summary": "Search Customers",
+    "operationId": "search_customers_api_customers_search_get",
+    "tags": [
+      "Customer Data Platform"
+    ],
+    "parameters": [
+      "q"
+    ],
+    "hasRequestBody": false,
+    "responses": [
+      "200",
+      "422"
+    ]
+  },
+  {
+    "path": "/api/customers/{id}",
+    "method": "GET",
+    "summary": "Get Customer Profile",
+    "operationId": "get_customer_profile_api_customers__id__get",
+    "tags": [
+      "Customer Data Platform"
+    ],
+    "parameters": [
+      "id"
+    ],
+    "hasRequestBody": false,
+    "responses": [
+      "200",
+      "422"
+    ]
+  },
+  {
+    "path": "/api/customers/{id}",
+    "method": "PUT",
+    "summary": "Update Customer",
+    "operationId": "update_customer_api_customers__id__put",
+    "tags": [
+      "Customer Data Platform"
+    ],
+    "parameters": [
+      "id"
+    ],
+    "hasRequestBody": true,
+    "responses": [
+      "200",
+      "422"
+    ]
+  },
+  {
+    "path": "/api/customers/{id}",
+    "method": "DELETE",
+    "summary": "Delete Customer",
+    "operationId": "delete_customer_api_customers__id__delete",
+    "tags": [
+      "Customer Data Platform"
+    ],
+    "parameters": [
+      "id"
+    ],
+    "hasRequestBody": false,
+    "responses": [
+      "200",
+      "422"
+    ]
+  },
+  {
+    "path": "/api/dashboard/analytics",
+    "method": "GET",
+    "summary": "Get Dashboard Analytics",
+    "operationId": "get_dashboard_analytics_api_dashboard_analytics_get",
+    "tags": [
+      "Customer Data Platform"
+    ],
+    "parameters": [],
+    "hasRequestBody": false,
+    "responses": [
+      "200"
+    ]
+  },
+  {
+    "path": "/api/dashboard/recent-bills",
+    "method": "GET",
+    "summary": "Get Recent Bills",
+    "operationId": "get_recent_bills_api_dashboard_recent_bills_get",
+    "tags": [
+      "Customer Data Platform"
+    ],
+    "parameters": [
+      "skip",
+      "limit"
+    ],
+    "hasRequestBody": false,
+    "responses": [
+      "200",
+      "422"
+    ]
+  },
+  {
+    "path": "/api/dashboard/stats",
+    "method": "GET",
+    "summary": "Get Dashboard Stats",
+    "operationId": "get_dashboard_stats_api_dashboard_stats_get",
+    "tags": [
+      "Customer Data Platform"
+    ],
+    "parameters": [],
+    "hasRequestBody": false,
+    "responses": [
+      "200"
+    ]
+  },
+  {
+    "path": "/api/forgot-password",
+    "method": "POST",
+    "summary": "Forgot Password",
+    "operationId": "forgot_password_api_forgot_password_post",
+    "tags": [],
+    "parameters": [],
+    "hasRequestBody": true,
+    "responses": [
+      "200",
+      "422"
+    ]
+  },
+  {
+    "path": "/api/generate-proposal",
+    "method": "POST",
+    "summary": "Generate Proposal",
+    "operationId": "generate_proposal_api_generate_proposal_post",
+    "tags": [],
+    "parameters": [],
+    "hasRequestBody": true,
+    "responses": [
+      "200",
+      "422"
+    ]
+  },
+  {
+    "path": "/api/jobs/application/{application_id}",
+    "method": "PATCH",
+    "summary": "Update Application Status",
+    "operationId": "update_application_status_api_jobs_application__application_id__patch",
+    "tags": [
+      "Job Marketplace"
+    ],
+    "parameters": [
+      "application_id"
+    ],
+    "hasRequestBody": true,
+    "responses": [
+      "200",
+      "422"
+    ]
+  },
+  {
+    "path": "/api/jobs/application/{application_id}",
+    "method": "DELETE",
+    "summary": "Delete Application",
+    "operationId": "delete_application_api_jobs_application__application_id__delete",
+    "tags": [
+      "Job Marketplace"
+    ],
+    "parameters": [
+      "application_id"
+    ],
+    "hasRequestBody": false,
+    "responses": [
+      "200",
+      "422"
+    ]
+  },
+  {
+    "path": "/api/jobs/applications/{application_id}/accept",
+    "method": "POST",
+    "summary": "Accept Application",
+    "operationId": "accept_application_api_jobs_applications__application_id__accept_post",
+    "tags": [
+      "Job Marketplace"
+    ],
+    "parameters": [
+      "application_id"
+    ],
+    "hasRequestBody": false,
+    "responses": [
+      "200",
+      "422"
+    ]
+  },
+  {
+    "path": "/api/jobs/open",
+    "method": "GET",
+    "summary": "List Open Jobs",
+    "operationId": "list_open_jobs_api_jobs_open_get",
+    "tags": [
+      "Job Marketplace"
+    ],
+    "parameters": [
+      "city",
+      "job_type"
+    ],
+    "hasRequestBody": false,
+    "responses": [
+      "200",
+      "422"
+    ]
+  },
+  {
+    "path": "/api/jobs/post",
+    "method": "POST",
+    "summary": "Post Job",
+    "operationId": "post_job_api_jobs_post_post",
+    "tags": [
+      "Job Marketplace"
+    ],
+    "parameters": [],
+    "hasRequestBody": true,
+    "responses": [
+      "200",
+      "422"
+    ]
+  },
+  {
+    "path": "/api/jobs/{job_id}",
+    "method": "GET",
+    "summary": "Get Job Detail",
+    "operationId": "get_job_detail_api_jobs__job_id__get",
+    "tags": [
+      "Job Marketplace"
+    ],
+    "parameters": [
+      "job_id"
+    ],
+    "hasRequestBody": false,
+    "responses": [
+      "200",
+      "422"
+    ]
+  },
+  {
+    "path": "/api/jobs/{job_id}/applications",
+    "method": "GET",
+    "summary": "List Applications",
+    "operationId": "list_applications_api_jobs__job_id__applications_get",
+    "tags": [
+      "Job Marketplace"
+    ],
+    "parameters": [
+      "job_id"
+    ],
+    "hasRequestBody": false,
+    "responses": [
+      "200",
+      "422"
+    ]
+  },
+  {
+    "path": "/api/jobs/{job_id}/apply",
+    "method": "POST",
+    "summary": "Apply To Job",
+    "operationId": "apply_to_job_api_jobs__job_id__apply_post",
+    "tags": [
+      "Job Marketplace"
+    ],
+    "parameters": [
+      "job_id"
+    ],
+    "hasRequestBody": false,
+    "responses": [
+      "200",
+      "422"
+    ]
+  },
+  {
+    "path": "/api/knowledge-base",
+    "method": "GET",
+    "summary": "List Articles",
+    "operationId": "list_articles_api_knowledge_base_get",
+    "tags": [
+      "Knowledge Base"
+    ],
+    "parameters": [
+      "category"
+    ],
+    "hasRequestBody": false,
+    "responses": [
+      "200",
+      "422"
+    ]
+  },
+  {
+    "path": "/api/knowledge-base/",
+    "method": "GET",
+    "summary": "List Articles",
+    "operationId": "list_articles_api_knowledge_base__get",
+    "tags": [
+      "Knowledge Base"
+    ],
+    "parameters": [
+      "category"
+    ],
+    "hasRequestBody": false,
+    "responses": [
+      "200",
+      "422"
+    ]
+  },
+  {
+    "path": "/api/knowledge-base/bookmark/{article_id}",
+    "method": "POST",
+    "summary": "Toggle Bookmark",
+    "operationId": "toggle_bookmark_api_knowledge_base_bookmark__article_id__post",
+    "tags": [
+      "Knowledge Base"
+    ],
+    "parameters": [
+      "article_id"
+    ],
+    "hasRequestBody": false,
+    "responses": [
+      "200",
+      "422"
+    ]
+  },
+  {
+    "path": "/api/knowledge-base/bookmarks",
+    "method": "GET",
+    "summary": "Get Bookmarks",
+    "operationId": "get_bookmarks_api_knowledge_base_bookmarks_get",
+    "tags": [
+      "Knowledge Base"
+    ],
+    "parameters": [],
+    "hasRequestBody": false,
+    "responses": [
+      "200"
+    ]
+  },
+  {
+    "path": "/api/knowledge-base/categories",
+    "method": "GET",
+    "summary": "List Categories",
+    "operationId": "list_categories_api_knowledge_base_categories_get",
+    "tags": [
+      "Knowledge Base"
+    ],
+    "parameters": [],
+    "hasRequestBody": false,
+    "responses": [
+      "200"
+    ]
+  },
+  {
+    "path": "/api/knowledge-base/recent",
+    "method": "GET",
+    "summary": "Get Recent",
+    "operationId": "get_recent_api_knowledge_base_recent_get",
+    "tags": [
+      "Knowledge Base"
+    ],
+    "parameters": [],
+    "hasRequestBody": false,
+    "responses": [
+      "200"
+    ]
+  },
+  {
+    "path": "/api/knowledge-base/recent",
+    "method": "POST",
+    "summary": "Mark Recent",
+    "operationId": "mark_recent_api_knowledge_base_recent_post",
+    "tags": [
+      "Knowledge Base"
+    ],
+    "parameters": [],
+    "hasRequestBody": true,
+    "responses": [
+      "200",
+      "422"
+    ]
+  },
+  {
+    "path": "/api/knowledge-base/search",
+    "method": "GET",
+    "summary": "Search Articles",
+    "operationId": "search_articles_api_knowledge_base_search_get",
+    "tags": [
+      "Knowledge Base"
+    ],
+    "parameters": [
+      "q"
+    ],
+    "hasRequestBody": false,
+    "responses": [
+      "200",
+      "422"
+    ]
+  },
+  {
+    "path": "/api/knowledge-base/{article_id}",
+    "method": "GET",
+    "summary": "Get Article",
+    "operationId": "get_article_api_knowledge_base__article_id__get",
+    "tags": [
+      "Knowledge Base"
+    ],
+    "parameters": [
+      "article_id"
+    ],
+    "hasRequestBody": false,
+    "responses": [
+      "200",
+      "422"
+    ]
+  },
+  {
+    "path": "/api/login",
+    "method": "POST",
+    "summary": "Login",
+    "operationId": "login_api_login_post",
+    "tags": [],
+    "parameters": [],
+    "hasRequestBody": true,
+    "responses": [
+      "200",
+      "422"
+    ]
+  },
+  {
+    "path": "/api/ml/batch-predict",
+    "method": "POST",
+    "summary": "Batch Predict",
+    "operationId": "batch_predict_api_ml_batch_predict_post",
+    "tags": [
+      "ml"
+    ],
+    "parameters": [],
+    "hasRequestBody": true,
+    "responses": [
+      "200",
+      "422"
+    ]
+  },
+  {
+    "path": "/api/ml/metrics",
+    "method": "GET",
+    "summary": "Ml Metrics",
+    "operationId": "ml_metrics_api_ml_metrics_get",
+    "tags": [
+      "ml"
+    ],
+    "parameters": [],
+    "hasRequestBody": false,
+    "responses": [
+      "200"
+    ]
+  },
+  {
+    "path": "/api/ml/models",
+    "method": "GET",
+    "summary": "List Models",
+    "operationId": "list_models_api_ml_models_get",
+    "tags": [
+      "ml"
+    ],
+    "parameters": [],
+    "hasRequestBody": false,
+    "responses": [
+      "200"
+    ]
+  },
+  {
+    "path": "/api/ml/predict/bill",
+    "method": "POST",
+    "summary": "Predict Bill",
+    "operationId": "predict_bill_api_ml_predict_bill_post",
+    "tags": [
+      "ml"
+    ],
+    "parameters": [],
+    "hasRequestBody": true,
+    "responses": [
+      "200",
+      "422"
+    ]
+  },
+  {
+    "path": "/api/ml/predict/savings",
+    "method": "POST",
+    "summary": "Predict Savings",
+    "operationId": "predict_savings_api_ml_predict_savings_post",
+    "tags": [
+      "ml"
+    ],
+    "parameters": [],
+    "hasRequestBody": true,
+    "responses": [
+      "200",
+      "422"
+    ]
+  },
+  {
+    "path": "/api/ml/status",
+    "method": "GET",
+    "summary": "Ml Status",
+    "operationId": "ml_status_api_ml_status_get",
+    "tags": [
+      "ml"
+    ],
+    "parameters": [],
+    "hasRequestBody": false,
+    "responses": [
+      "200"
+    ]
+  },
+  {
+    "path": "/api/mlops/deploy",
+    "method": "POST",
+    "summary": "Deploy Model",
+    "operationId": "deploy_model_api_mlops_deploy_post",
+    "tags": [
+      "mlops"
+    ],
+    "parameters": [],
+    "hasRequestBody": true,
+    "responses": [
+      "200",
+      "422"
+    ]
+  },
+  {
+    "path": "/api/mlops/drift",
+    "method": "GET",
+    "summary": "Get Drift",
+    "operationId": "get_drift_api_mlops_drift_get",
+    "tags": [
+      "mlops"
+    ],
+    "parameters": [
+      "model_name"
+    ],
+    "hasRequestBody": false,
+    "responses": [
+      "200",
+      "422"
+    ]
+  },
+  {
+    "path": "/api/mlops/events",
+    "method": "GET",
+    "summary": "Get Events",
+    "operationId": "get_events_api_mlops_events_get",
+    "tags": [
+      "mlops"
+    ],
+    "parameters": [
+      "event_type",
+      "limit"
+    ],
+    "hasRequestBody": false,
+    "responses": [
+      "200",
+      "422"
+    ]
+  },
+  {
+    "path": "/api/mlops/health",
+    "method": "GET",
+    "summary": "Get Health",
+    "operationId": "get_health_api_mlops_health_get",
+    "tags": [
+      "mlops"
+    ],
+    "parameters": [
+      "model_name"
+    ],
+    "hasRequestBody": false,
+    "responses": [
+      "200",
+      "422"
+    ]
+  },
+  {
+    "path": "/api/mlops/metrics",
+    "method": "GET",
+    "summary": "Get Metrics",
+    "operationId": "get_metrics_api_mlops_metrics_get",
+    "tags": [
+      "mlops"
+    ],
+    "parameters": [],
+    "hasRequestBody": false,
+    "responses": [
+      "200"
+    ]
+  },
+  {
+    "path": "/api/mlops/models",
+    "method": "GET",
+    "summary": "List Models",
+    "operationId": "list_models_api_mlops_models_get",
+    "tags": [
+      "mlops"
+    ],
+    "parameters": [],
+    "hasRequestBody": false,
+    "responses": [
+      "200"
+    ]
+  },
+  {
+    "path": "/api/mlops/models/{name}",
+    "method": "GET",
+    "summary": "Get Model",
+    "operationId": "get_model_api_mlops_models__name__get",
+    "tags": [
+      "mlops"
+    ],
+    "parameters": [
+      "name"
+    ],
+    "hasRequestBody": false,
+    "responses": [
+      "200",
+      "422"
+    ]
+  },
+  {
+    "path": "/api/mlops/rollback",
+    "method": "POST",
+    "summary": "Rollback Model",
+    "operationId": "rollback_model_api_mlops_rollback_post",
+    "tags": [
+      "mlops"
+    ],
+    "parameters": [],
+    "hasRequestBody": true,
+    "responses": [
+      "200",
+      "422"
+    ]
+  },
+  {
+    "path": "/api/mlops/status",
+    "method": "GET",
+    "summary": "Get Status",
+    "operationId": "get_status_api_mlops_status_get",
+    "tags": [
+      "mlops"
+    ],
+    "parameters": [],
+    "hasRequestBody": false,
+    "responses": [
+      "200"
+    ]
+  },
+  {
+    "path": "/api/mlops/validate",
+    "method": "POST",
+    "summary": "Validate Model Endpoint",
+    "operationId": "validate_model_endpoint_api_mlops_validate_post",
+    "tags": [
+      "mlops"
+    ],
+    "parameters": [
+      "model_name"
+    ],
+    "hasRequestBody": false,
+    "responses": [
+      "200",
+      "422"
+    ]
+  },
+  {
+    "path": "/api/mlops/versions",
+    "method": "GET",
+    "summary": "List Versions",
+    "operationId": "list_versions_api_mlops_versions_get",
+    "tags": [
+      "mlops"
+    ],
+    "parameters": [
+      "model_name"
+    ],
+    "hasRequestBody": false,
+    "responses": [
+      "200",
+      "422"
+    ]
+  },
+  {
+    "path": "/api/projects",
+    "method": "GET",
+    "summary": "List Projects",
+    "operationId": "list_projects_api_projects_get",
+    "tags": [
+      "Project Tracking"
+    ],
+    "parameters": [
+      "status",
+      "priority",
+      "stage",
+      "page",
+      "limit",
+      "search",
+      "sort_by"
+    ],
+    "hasRequestBody": false,
+    "responses": [
+      "200",
+      "422"
+    ]
+  },
+  {
+    "path": "/api/projects",
+    "method": "POST",
+    "summary": "Create Project Endpoint",
+    "operationId": "create_project_endpoint_api_projects_post",
+    "tags": [
+      "Project Tracking"
+    ],
+    "parameters": [],
+    "hasRequestBody": true,
+    "responses": [
+      "200",
+      "422"
+    ]
+  },
+  {
+    "path": "/api/projects/metrics",
+    "method": "GET",
+    "summary": "Project Metrics",
+    "operationId": "project_metrics_api_projects_metrics_get",
+    "tags": [
+      "Project Tracking"
+    ],
+    "parameters": [],
+    "hasRequestBody": false,
+    "responses": [
+      "200"
+    ]
+  },
+  {
+    "path": "/api/projects/{project_id}",
+    "method": "GET",
+    "summary": "Get Project By Id",
+    "operationId": "get_project_by_id_api_projects__project_id__get",
+    "tags": [
+      "Project Tracking"
+    ],
+    "parameters": [
+      "project_id"
+    ],
+    "hasRequestBody": false,
+    "responses": [
+      "200",
+      "422"
+    ]
+  },
+  {
+    "path": "/api/projects/{project_id}",
+    "method": "PUT",
+    "summary": "Update Project Full",
+    "operationId": "update_project_full_api_projects__project_id__put",
+    "tags": [
+      "Project Tracking"
+    ],
+    "parameters": [
+      "project_id"
+    ],
+    "hasRequestBody": true,
+    "responses": [
+      "200",
+      "422"
+    ]
+  },
+  {
+    "path": "/api/projects/{project_id}",
+    "method": "PATCH",
+    "summary": "Update Project Partial",
+    "operationId": "update_project_partial_api_projects__project_id__patch",
+    "tags": [
+      "Project Tracking"
+    ],
+    "parameters": [
+      "project_id"
+    ],
+    "hasRequestBody": true,
+    "responses": [
+      "200",
+      "422"
+    ]
+  },
+  {
+    "path": "/api/projects/{project_id}",
+    "method": "DELETE",
+    "summary": "Delete Project Endpoint",
+    "operationId": "delete_project_endpoint_api_projects__project_id__delete",
+    "tags": [
+      "Project Tracking"
+    ],
+    "parameters": [
+      "project_id"
+    ],
+    "hasRequestBody": false,
+    "responses": [
+      "200",
+      "422"
+    ]
+  },
+  {
+    "path": "/api/projects/{project_id}/stage",
+    "method": "PATCH",
+    "summary": "Update Project Stage Endpoint",
+    "operationId": "update_project_stage_endpoint_api_projects__project_id__stage_patch",
+    "tags": [
+      "Project Tracking"
+    ],
+    "parameters": [
+      "project_id"
+    ],
+    "hasRequestBody": true,
+    "responses": [
+      "200",
+      "422"
+    ]
+  },
+  {
+    "path": "/api/referral/analytics/{email}",
+    "method": "GET",
+    "summary": "Get Analytics",
+    "operationId": "get_analytics_api_referral_analytics__email__get",
+    "tags": [],
+    "parameters": [
+      "email"
+    ],
+    "hasRequestBody": false,
+    "responses": [
+      "200",
+      "422"
+    ]
+  },
+  {
+    "path": "/api/referral/apply",
+    "method": "POST",
+    "summary": "Apply Referral",
+    "operationId": "apply_referral_api_referral_apply_post",
+    "tags": [],
+    "parameters": [],
+    "hasRequestBody": true,
+    "responses": [
+      "200",
+      "422"
+    ]
+  },
+  {
+    "path": "/api/referral/history/{email}",
+    "method": "GET",
+    "summary": "Get Referral History",
+    "operationId": "get_referral_history_api_referral_history__email__get",
+    "tags": [],
+    "parameters": [
+      "email"
+    ],
+    "hasRequestBody": false,
+    "responses": [
+      "200",
+      "422"
+    ]
+  },
+  {
+    "path": "/api/referral/leaderboard",
+    "method": "GET",
+    "summary": "Get Leaderboard",
+    "operationId": "get_leaderboard_api_referral_leaderboard_get",
+    "tags": [],
+    "parameters": [],
+    "hasRequestBody": false,
+    "responses": [
+      "200"
+    ]
+  },
+  {
+    "path": "/api/referral/points/{email}",
+    "method": "GET",
+    "summary": "Get Points",
+    "operationId": "get_points_api_referral_points__email__get",
+    "tags": [],
+    "parameters": [
+      "email"
+    ],
+    "hasRequestBody": false,
+    "responses": [
+      "200",
+      "422"
+    ]
+  },
+  {
+    "path": "/api/referral/redeem",
+    "method": "POST",
+    "summary": "Redeem Reward",
+    "operationId": "redeem_reward_api_referral_redeem_post",
+    "tags": [],
+    "parameters": [],
+    "hasRequestBody": true,
+    "responses": [
+      "200",
+      "422"
+    ]
+  },
+  {
+    "path": "/api/referral/rewards",
+    "method": "GET",
+    "summary": "Get Rewards",
+    "operationId": "get_rewards_api_referral_rewards_get",
+    "tags": [],
+    "parameters": [],
+    "hasRequestBody": false,
+    "responses": [
+      "200"
+    ]
+  },
+  {
+    "path": "/api/referral/summary/{email}",
+    "method": "GET",
+    "summary": "Get Referral Summary",
+    "operationId": "get_referral_summary_api_referral_summary__email__get",
+    "tags": [],
+    "parameters": [
+      "email"
+    ],
+    "hasRequestBody": false,
+    "responses": [
+      "200",
+      "422"
+    ]
+  },
+  {
+    "path": "/api/referral/wallet/{email}",
+    "method": "GET",
+    "summary": "Get Wallet",
+    "operationId": "get_wallet_api_referral_wallet__email__get",
+    "tags": [],
+    "parameters": [
+      "email"
+    ],
+    "hasRequestBody": false,
+    "responses": [
+      "200",
+      "422"
+    ]
+  },
+  {
+    "path": "/api/reset-password",
+    "method": "POST",
+    "summary": "Reset Password",
+    "operationId": "reset_password_api_reset_password_post",
+    "tags": [],
+    "parameters": [],
+    "hasRequestBody": true,
+    "responses": [
+      "200",
+      "422"
+    ]
+  },
+  {
+    "path": "/api/signup",
+    "method": "POST",
+    "summary": "Signup",
+    "operationId": "signup_api_signup_post",
+    "tags": [],
+    "parameters": [],
+    "hasRequestBody": true,
+    "responses": [
+      "200",
+      "422"
+    ]
+  },
+  {
+    "path": "/api/site-survey",
+    "method": "POST",
+    "summary": "Ai Site Survey",
+    "operationId": "ai_site_survey_api_site_survey_post",
+    "tags": [],
+    "parameters": [],
+    "hasRequestBody": true,
+    "responses": [
+      "200",
+      "422"
+    ]
+  },
+  {
+    "path": "/api/site-surveys",
+    "method": "POST",
+    "summary": "Create Survey Endpoint",
+    "operationId": "create_survey_endpoint_api_site_surveys_post",
+    "tags": [],
+    "parameters": [],
+    "hasRequestBody": true,
+    "responses": [
+      "200",
+      "422"
+    ]
+  },
+  {
+    "path": "/api/site-surveys",
+    "method": "GET",
+    "summary": "List Surveys",
+    "operationId": "list_surveys_api_site_surveys_get",
+    "tags": [],
+    "parameters": [
+      "status",
+      "assigned_to",
+      "customer_id",
+      "search",
+      "sort_by",
+      "sort_desc",
+      "page",
+      "limit"
+    ],
+    "hasRequestBody": false,
+    "responses": [
+      "200",
+      "422"
+    ]
+  },
+  {
+    "path": "/api/site-surveys/dashboard",
+    "method": "GET",
+    "summary": "Dashboard Stats",
+    "operationId": "dashboard_stats_api_site_surveys_dashboard_get",
+    "tags": [],
+    "parameters": [],
+    "hasRequestBody": false,
+    "responses": [
+      "200"
+    ]
+  },
+  {
+    "path": "/api/site-surveys/photos/{photo_id}",
+    "method": "DELETE",
+    "summary": "Delete Photo Endpoint",
+    "operationId": "delete_photo_endpoint_api_site_surveys_photos__photo_id__delete",
+    "tags": [],
+    "parameters": [
+      "photo_id"
+    ],
+    "hasRequestBody": false,
+    "responses": [
+      "200",
+      "422"
+    ]
+  },
+  {
+    "path": "/api/site-surveys/{survey_id}",
+    "method": "GET",
+    "summary": "Get Survey Endpoint",
+    "operationId": "get_survey_endpoint_api_site_surveys__survey_id__get",
+    "tags": [],
+    "parameters": [
+      "survey_id"
+    ],
+    "hasRequestBody": false,
+    "responses": [
+      "200",
+      "422"
+    ]
+  },
+  {
+    "path": "/api/site-surveys/{survey_id}",
+    "method": "PUT",
+    "summary": "Update Survey Endpoint",
+    "operationId": "update_survey_endpoint_api_site_surveys__survey_id__put",
+    "tags": [],
+    "parameters": [
+      "survey_id"
+    ],
+    "hasRequestBody": true,
+    "responses": [
+      "200",
+      "422"
+    ]
+  },
+  {
+    "path": "/api/site-surveys/{survey_id}",
+    "method": "DELETE",
+    "summary": "Delete Survey Endpoint",
+    "operationId": "delete_survey_endpoint_api_site_surveys__survey_id__delete",
+    "tags": [],
+    "parameters": [
+      "survey_id"
+    ],
+    "hasRequestBody": false,
+    "responses": [
+      "200",
+      "422"
+    ]
+  },
+  {
+    "path": "/api/site-surveys/{survey_id}/assign",
+    "method": "PATCH",
+    "summary": "Assign Surveyor Endpoint",
+    "operationId": "assign_surveyor_endpoint_api_site_surveys__survey_id__assign_patch",
+    "tags": [],
+    "parameters": [
+      "survey_id"
+    ],
+    "hasRequestBody": true,
+    "responses": [
+      "200",
+      "422"
+    ]
+  },
+  {
+    "path": "/api/site-surveys/{survey_id}/checklist",
+    "method": "PUT",
+    "summary": "Update Checklist Endpoint",
+    "operationId": "update_checklist_endpoint_api_site_surveys__survey_id__checklist_put",
+    "tags": [],
+    "parameters": [
+      "survey_id"
+    ],
+    "hasRequestBody": true,
+    "responses": [
+      "200",
+      "422"
+    ]
+  },
+  {
+    "path": "/api/site-surveys/{survey_id}/handoff-installation",
+    "method": "POST",
+    "summary": "Handoff Installation",
+    "operationId": "handoff_installation_api_site_surveys__survey_id__handoff_installation_post",
+    "tags": [],
+    "parameters": [
+      "survey_id"
+    ],
+    "hasRequestBody": false,
+    "responses": [
+      "200",
+      "422"
+    ]
+  },
+  {
+    "path": "/api/site-surveys/{survey_id}/photos",
+    "method": "POST",
+    "summary": "Add Photo Endpoint",
+    "operationId": "add_photo_endpoint_api_site_surveys__survey_id__photos_post",
+    "tags": [],
+    "parameters": [
+      "survey_id"
+    ],
+    "hasRequestBody": true,
+    "responses": [
+      "200",
+      "422"
+    ]
+  },
+  {
+    "path": "/api/site-surveys/{survey_id}/photos",
+    "method": "GET",
+    "summary": "List Photos Endpoint",
+    "operationId": "list_photos_endpoint_api_site_surveys__survey_id__photos_get",
+    "tags": [],
+    "parameters": [
+      "survey_id"
+    ],
+    "hasRequestBody": false,
+    "responses": [
+      "200",
+      "422"
+    ]
+  },
+  {
+    "path": "/api/site-surveys/{survey_id}/proposal-prefill",
+    "method": "GET",
+    "summary": "Proposal Prefill",
+    "operationId": "proposal_prefill_api_site_surveys__survey_id__proposal_prefill_get",
+    "tags": [],
+    "parameters": [
+      "survey_id"
+    ],
+    "hasRequestBody": false,
+    "responses": [
+      "200",
+      "422"
+    ]
+  },
+  {
+    "path": "/api/site-surveys/{survey_id}/status",
+    "method": "PATCH",
+    "summary": "Update Status Endpoint",
+    "operationId": "update_status_endpoint_api_site_surveys__survey_id__status_patch",
+    "tags": [],
+    "parameters": [
+      "survey_id"
+    ],
+    "hasRequestBody": true,
+    "responses": [
+      "200",
+      "422"
+    ]
+  },
+  {
+    "path": "/api/solar-assistant",
+    "method": "POST",
+    "summary": "Solar Assistant",
+    "operationId": "solar_assistant_api_solar_assistant_post",
+    "tags": [],
+    "parameters": [],
+    "hasRequestBody": true,
+    "responses": [
+      "200",
+      "422"
+    ]
+  },
+  {
+    "path": "/api/technician/ai/chat",
+    "method": "POST",
+    "summary": "Ai Chat",
+    "operationId": "ai_chat_api_technician_ai_chat_post",
+    "tags": [
+      "AI Troubleshooting"
+    ],
+    "parameters": [],
+    "hasRequestBody": true,
+    "responses": [
+      "200",
+      "422"
+    ]
+  },
+  {
+    "path": "/api/technician/ai/diagnose",
+    "method": "POST",
+    "summary": "Ai Structured Diagnose",
+    "operationId": "ai_structured_diagnose_api_technician_ai_diagnose_post",
+    "tags": [
+      "AI Troubleshooting"
+    ],
+    "parameters": [],
+    "hasRequestBody": true,
+    "responses": [
+      "200",
+      "422"
+    ]
+  },
+  {
+    "path": "/api/technician/ai/history",
+    "method": "GET",
+    "summary": "Ai History",
+    "operationId": "ai_history_api_technician_ai_history_get",
+    "tags": [
+      "AI Troubleshooting"
+    ],
+    "parameters": [],
+    "hasRequestBody": false,
+    "responses": [
+      "200"
+    ]
+  },
+  {
+    "path": "/api/technician/ai/image",
+    "method": "POST",
+    "summary": "Ai Image Diagnose",
+    "operationId": "ai_image_diagnose_api_technician_ai_image_post",
+    "tags": [
+      "AI Troubleshooting"
+    ],
+    "parameters": [],
+    "hasRequestBody": true,
+    "responses": [
+      "200",
+      "422"
+    ]
+  },
+  {
+    "path": "/api/technician/ai/troubleshoot",
+    "method": "POST",
+    "summary": "Troubleshoot Issue",
+    "operationId": "troubleshoot_issue_api_technician_ai_troubleshoot_post",
+    "tags": [
+      "Technician AI Troubleshooting"
+    ],
+    "parameters": [],
+    "hasRequestBody": true,
+    "responses": [
+      "200",
+      "422"
+    ]
+  },
+  {
+    "path": "/api/technician/badges",
+    "method": "GET",
+    "summary": "Get Badges",
+    "operationId": "get_badges_api_technician_badges_get",
+    "tags": [
+      "Performance & Ratings"
+    ],
+    "parameters": [],
+    "hasRequestBody": false,
+    "responses": [
+      "200"
+    ]
+  },
+  {
+    "path": "/api/technician/dashboard",
+    "method": "GET",
+    "summary": "Get Dashboard",
+    "operationId": "get_dashboard_api_technician_dashboard_get",
+    "tags": [
+      "Technician Dashboard"
+    ],
+    "parameters": [],
+    "hasRequestBody": false,
+    "responses": [
+      "200"
+    ]
+  },
+  {
+    "path": "/api/technician/earnings",
+    "method": "GET",
+    "summary": "List Earnings",
+    "operationId": "list_earnings_api_technician_earnings_get",
+    "tags": [
+      "Earnings"
+    ],
+    "parameters": [],
+    "hasRequestBody": false,
+    "responses": [
+      "200"
+    ]
+  },
+  {
+    "path": "/api/technician/earnings/",
+    "method": "GET",
+    "summary": "List Earnings",
+    "operationId": "list_earnings_api_technician_earnings__get",
+    "tags": [
+      "Earnings"
+    ],
+    "parameters": [],
+    "hasRequestBody": false,
+    "responses": [
+      "200"
+    ]
+  },
+  {
+    "path": "/api/technician/earnings/history",
+    "method": "GET",
+    "summary": "Transaction History",
+    "operationId": "transaction_history_api_technician_earnings_history_get",
+    "tags": [
+      "Earnings"
+    ],
+    "parameters": [
+      "page",
+      "page_size"
+    ],
+    "hasRequestBody": false,
+    "responses": [
+      "200",
+      "422"
+    ]
+  },
+  {
+    "path": "/api/technician/earnings/invoice/{earning_id}",
+    "method": "GET",
+    "summary": "Get Invoice",
+    "operationId": "get_invoice_api_technician_earnings_invoice__earning_id__get",
+    "tags": [
+      "Earnings"
+    ],
+    "parameters": [
+      "earning_id"
+    ],
+    "hasRequestBody": false,
+    "responses": [
+      "200",
+      "422"
+    ]
+  },
+  {
+    "path": "/api/technician/earnings/monthly",
+    "method": "GET",
+    "summary": "Monthly Earnings",
+    "operationId": "monthly_earnings_api_technician_earnings_monthly_get",
+    "tags": [
+      "Earnings"
+    ],
+    "parameters": [
+      "year"
+    ],
+    "hasRequestBody": false,
+    "responses": [
+      "200",
+      "422"
+    ]
+  },
+  {
+    "path": "/api/technician/earnings/payouts",
+    "method": "GET",
+    "summary": "Payout History",
+    "operationId": "payout_history_api_technician_earnings_payouts_get",
+    "tags": [
+      "Earnings"
+    ],
+    "parameters": [],
+    "hasRequestBody": false,
+    "responses": [
+      "200"
+    ]
+  },
+  {
+    "path": "/api/technician/earnings/seed-demo-data",
+    "method": "POST",
+    "summary": "Seed Demo Earnings",
+    "operationId": "seed_demo_earnings_api_technician_earnings_seed_demo_data_post",
+    "tags": [
+      "Earnings"
+    ],
+    "parameters": [],
+    "hasRequestBody": false,
+    "responses": [
+      "200"
+    ]
+  },
+  {
+    "path": "/api/technician/earnings/yearly",
+    "method": "GET",
+    "summary": "Yearly Earnings",
+    "operationId": "yearly_earnings_api_technician_earnings_yearly_get",
+    "tags": [
+      "Earnings"
+    ],
+    "parameters": [],
+    "hasRequestBody": false,
+    "responses": [
+      "200"
+    ]
+  },
+  {
+    "path": "/api/technician/login",
+    "method": "POST",
+    "summary": "Login Technician",
+    "operationId": "login_technician_api_technician_login_post",
+    "tags": [
+      "Technician Auth"
+    ],
+    "parameters": [],
+    "hasRequestBody": true,
+    "responses": [
+      "200",
+      "422"
+    ]
+  },
+  {
+    "path": "/api/technician/notifications",
+    "method": "GET",
+    "summary": "List Notifications",
+    "operationId": "list_notifications_api_technician_notifications_get",
+    "tags": [
+      "Notifications"
+    ],
+    "parameters": [],
+    "hasRequestBody": false,
+    "responses": [
+      "200"
+    ]
+  },
+  {
+    "path": "/api/technician/notifications/",
+    "method": "GET",
+    "summary": "List Notifications",
+    "operationId": "list_notifications_api_technician_notifications__get",
+    "tags": [
+      "Notifications"
+    ],
+    "parameters": [],
+    "hasRequestBody": false,
+    "responses": [
+      "200"
+    ]
+  },
+  {
+    "path": "/api/technician/notifications/read-all",
+    "method": "PATCH",
+    "summary": "Mark All Read",
+    "operationId": "mark_all_read_api_technician_notifications_read_all_patch",
+    "tags": [
+      "Notifications"
+    ],
+    "parameters": [],
+    "hasRequestBody": false,
+    "responses": [
+      "200"
+    ]
+  },
+  {
+    "path": "/api/technician/notifications/{notification_id}/read",
+    "method": "PATCH",
+    "summary": "Mark Read",
+    "operationId": "mark_read_api_technician_notifications__notification_id__read_patch",
+    "tags": [
+      "Notifications"
+    ],
+    "parameters": [
+      "notification_id"
+    ],
+    "hasRequestBody": false,
+    "responses": [
+      "200",
+      "422"
+    ]
+  },
+  {
+    "path": "/api/technician/performance",
+    "method": "GET",
+    "summary": "Get Performance",
+    "operationId": "get_performance_api_technician_performance_get",
+    "tags": [
+      "Performance & Ratings"
+    ],
+    "parameters": [],
+    "hasRequestBody": false,
+    "responses": [
+      "200"
+    ]
+  },
+  {
+    "path": "/api/technician/profile",
+    "method": "GET",
+    "summary": "Get Profile",
+    "operationId": "get_profile_api_technician_profile_get",
+    "tags": [
+      "Technician Auth"
+    ],
+    "parameters": [],
+    "hasRequestBody": false,
+    "responses": [
+      "200"
+    ]
+  },
+  {
+    "path": "/api/technician/profile",
+    "method": "PUT",
+    "summary": "Update Profile",
+    "operationId": "update_profile_api_technician_profile_put",
+    "tags": [
+      "Technician Auth"
+    ],
+    "parameters": [],
+    "hasRequestBody": true,
+    "responses": [
+      "200",
+      "422"
+    ]
+  },
+  {
+    "path": "/api/technician/ratings",
+    "method": "GET",
+    "summary": "Get Ratings",
+    "operationId": "get_ratings_api_technician_ratings_get",
+    "tags": [
+      "Performance & Ratings"
+    ],
+    "parameters": [],
+    "hasRequestBody": false,
+    "responses": [
+      "200"
+    ]
+  },
+  {
+    "path": "/api/technician/ratings/{work_order_id}",
+    "method": "POST",
+    "summary": "Submit Rating",
+    "operationId": "submit_rating_api_technician_ratings__work_order_id__post",
+    "tags": [
+      "Performance & Ratings"
+    ],
+    "parameters": [
+      "work_order_id"
+    ],
+    "hasRequestBody": true,
+    "responses": [
+      "200",
+      "422"
+    ]
+  },
+  {
+    "path": "/api/technician/signup",
+    "method": "POST",
+    "summary": "Signup Technician",
+    "operationId": "signup_technician_api_technician_signup_post",
+    "tags": [
+      "Technician Auth"
+    ],
+    "parameters": [],
+    "hasRequestBody": true,
+    "responses": [
+      "200",
+      "422"
+    ]
+  },
+  {
+    "path": "/api/technician/skills",
+    "method": "GET",
+    "summary": "Get Skills",
+    "operationId": "get_skills_api_technician_skills_get",
+    "tags": [
+      "Performance & Ratings"
+    ],
+    "parameters": [],
+    "hasRequestBody": false,
+    "responses": [
+      "200"
+    ]
+  },
+  {
+    "path": "/api/technician/skills",
+    "method": "POST",
+    "summary": "Add Skill",
+    "operationId": "add_skill_api_technician_skills_post",
+    "tags": [
+      "Performance & Ratings"
+    ],
+    "parameters": [],
+    "hasRequestBody": true,
+    "responses": [
+      "200",
+      "422"
+    ]
+  },
+  {
+    "path": "/api/technician/training/certifications",
+    "method": "GET",
+    "summary": "Get Certifications",
+    "operationId": "get_certifications_api_technician_training_certifications_get",
+    "tags": [
+      "Technician Training"
+    ],
+    "parameters": [],
+    "hasRequestBody": false,
+    "responses": [
+      "200"
+    ]
+  },
+  {
+    "path": "/api/technician/training/modules",
+    "method": "GET",
+    "summary": "List Modules",
+    "operationId": "list_modules_api_technician_training_modules_get",
+    "tags": [
+      "Technician Training"
+    ],
+    "parameters": [],
+    "hasRequestBody": false,
+    "responses": [
+      "200"
+    ]
+  },
+  {
+    "path": "/api/technician/training/modules/{module_id}/quiz",
+    "method": "GET",
+    "summary": "Get Quiz",
+    "operationId": "get_quiz_api_technician_training_modules__module_id__quiz_get",
+    "tags": [
+      "Technician Training"
+    ],
+    "parameters": [
+      "module_id"
+    ],
+    "hasRequestBody": false,
+    "responses": [
+      "200",
+      "422"
+    ]
+  },
+  {
+    "path": "/api/technician/training/quiz/submit",
+    "method": "POST",
+    "summary": "Submit Quiz",
+    "operationId": "submit_quiz_api_technician_training_quiz_submit_post",
+    "tags": [
+      "Technician Training"
+    ],
+    "parameters": [],
+    "hasRequestBody": true,
+    "responses": [
+      "200",
+      "422"
+    ]
+  },
+  {
+    "path": "/api/technician/work-orders",
+    "method": "GET",
+    "summary": "List My Work Orders",
+    "operationId": "list_my_work_orders_api_technician_work_orders_get",
+    "tags": [
+      "Work Orders"
+    ],
+    "parameters": [],
+    "hasRequestBody": false,
+    "responses": [
+      "200"
+    ]
+  },
+  {
+    "path": "/api/technician/work-orders/",
+    "method": "GET",
+    "summary": "List My Work Orders",
+    "operationId": "list_my_work_orders_api_technician_work_orders__get",
+    "tags": [
+      "Work Orders"
+    ],
+    "parameters": [],
+    "hasRequestBody": false,
+    "responses": [
+      "200"
+    ]
+  },
+  {
+    "path": "/api/technician/work-orders/{work_order_id}/status",
+    "method": "PATCH",
+    "summary": "Update Work Order Status",
+    "operationId": "update_work_order_status_api_technician_work_orders__work_order_id__status_patch",
+    "tags": [
+      "Work Orders"
+    ],
+    "parameters": [
+      "work_order_id"
+    ],
+    "hasRequestBody": true,
+    "responses": [
+      "200",
+      "422"
+    ]
+  },
+  {
+    "path": "/api/vendor/alerts",
+    "method": "GET",
+    "summary": "Vendor Alerts",
+    "operationId": "vendor_alerts_api_vendor_alerts_get",
+    "tags": [
+      "Vendor Portal"
+    ],
+    "parameters": [],
+    "hasRequestBody": false,
+    "responses": [
+      "200"
+    ]
+  },
+  {
+    "path": "/api/vendor/dashboard",
+    "method": "GET",
+    "summary": "Vendor Dashboard",
+    "operationId": "vendor_dashboard_api_vendor_dashboard_get",
+    "tags": [
+      "Vendor Portal"
+    ],
+    "parameters": [],
+    "hasRequestBody": false,
+    "responses": [
+      "200"
+    ]
+  },
+  {
+    "path": "/api/vendor/projects",
+    "method": "GET",
+    "summary": "Vendor Projects",
+    "operationId": "vendor_projects_api_vendor_projects_get",
+    "tags": [
+      "Vendor Portal"
+    ],
+    "parameters": [
+      "status",
+      "priority",
+      "stage",
+      "search"
+    ],
+    "hasRequestBody": false,
+    "responses": [
+      "200",
+      "422"
+    ]
+  },
+  {
+    "path": "/api/vendor/tasks",
+    "method": "GET",
+    "summary": "Vendor Tasks",
+    "operationId": "vendor_tasks_api_vendor_tasks_get",
+    "tags": [
+      "Vendor Portal"
+    ],
+    "parameters": [
+      "status",
+      "priority"
+    ],
+    "hasRequestBody": false,
+    "responses": [
+      "200",
+      "422"
+    ]
+  }
+]

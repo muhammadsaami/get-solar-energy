@@ -50,8 +50,8 @@ REFRESH_COOKIE_NAME = os.getenv("REFRESH_COOKIE_NAME", "refresh_token")
 COOKIE_SECURE = os.getenv("COOKIE_SECURE", "false").lower() == "true"
 COOKIE_SAMESITE = os.getenv("COOKIE_SAMESITE", "lax")  # "none" required if cross-site + secure
 COOKIE_DOMAIN = os.getenv("COOKIE_DOMAIN") or None  # e.g. ".getsolarenergy.in" in production; None for localhost
-
-USERS_FILE = "users.json"
+BACKEND_USERS_FILE = os.path.join(os.path.dirname(__file__), "users.json")
+USERS_FILE = BACKEND_USERS_FILE if os.path.exists(BACKEND_USERS_FILE) else "users.json"
 
 
 # ---------------------------------------------------------------------------
@@ -83,6 +83,7 @@ class LoginRequest(BaseModel):
     email: str
     password: str
     remember_me: bool = True
+    role_hint: Optional[str] = None
 
 
 # ---------------------------------------------------------------------------
@@ -107,9 +108,11 @@ def _find_account(db: Session, email: str, password: str):
     customers = _load_customers()
     customer = customers.get(email)
     if customer and verify_password(password, customer["password"]):
-        return "customer", {
+        user_role = customer.get("role", "customer")
+        return user_role, {
             "id": customer["id"], "name": customer["name"], "email": customer["email"],
             "city": customer.get("city"), "referral_code": customer.get("referral_code"),
+            "role": user_role,
         }, None
 
     return None
@@ -120,12 +123,13 @@ def _get_account_by_email_role(db: Session, email: str, role: str):
         t = db.query(Technician).filter(Technician.email == email).first()
         if not t:
             return None
-        return {"id": t.id, "name": t.name, "email": t.email, "city": t.city, "skill_level": t.skill_level}
+        return {"id": t.id, "name": t.name, "email": t.email, "city": t.city, "skill_level": t.skill_level, "role": "technician"}
     customers = _load_customers()
     c = customers.get(email)
     if not c:
         return None
-    return {"id": c["id"], "name": c["name"], "email": c["email"], "city": c.get("city")}
+    user_role = c.get("role", "customer")
+    return {"id": c["id"], "name": c["name"], "email": c["email"], "city": c.get("city"), "role": user_role}
 
 
 # ---------------------------------------------------------------------------
@@ -135,6 +139,7 @@ def _create_access_token(email: str, role: str) -> str:
     payload = {
         "sub": email,
         "role": role,
+        "type": "access",
         "jti": secrets.token_hex(8),  # ensures uniqueness even if issued in the same second
         "iat": datetime.utcnow(),
         "exp": datetime.utcnow() + timedelta(minutes=ACCESS_TOKEN_EXPIRE_MINUTES),
@@ -204,9 +209,26 @@ def get_current_account(
 def login(data: LoginRequest, request: Request, response: Response, db: Session = Depends(get_db)):
     match = _find_account(db, data.email, data.password)
     if not match:
-        raise HTTPException(status_code=400, detail="Invalid email or password.")
+        raise HTTPException(status_code=401, detail="Invalid email or password.")
     role, account, _technician_id = match
 
+    # Portal integrity check: if frontend sent a role_hint, enforce role isolation.
+    # Admin accounts act as superusers and are authorized for all portals.
+    if data.role_hint and role != "admin":
+        requested = data.role_hint.lower().strip()
+        if requested != role:
+            role_labels = {
+                "customer": "Customer",
+                "vendor": "Vendor",
+                "admin": "Administrator",
+                "technician": "Technician"
+            }
+            requested_label = role_labels.get(requested, requested.capitalize())
+            stored_label = role_labels.get(role, role.capitalize())
+            raise HTTPException(
+                status_code=403,
+                detail=f"This account is registered as a {stored_label}, not a {requested_label}. Please use the correct portal."
+            )
     access_token = _create_access_token(data.email, role)
 
     raw_refresh, hashed_refresh = _new_refresh_token()

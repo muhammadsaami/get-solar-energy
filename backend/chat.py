@@ -1,4 +1,6 @@
-from fastapi import APIRouter
+from fastapi import APIRouter, Depends, Request
+from security import verify_token
+from auth import auth_rate_limiter
 from pydantic import BaseModel
 from typing import List
 from google import genai
@@ -9,7 +11,7 @@ load_dotenv()
 
 client = genai.Client(api_key=os.getenv("GEMINI_API_KEY"))
 
-router = APIRouter()
+router = APIRouter(dependencies=[Depends(verify_token)])
 
 class Message(BaseModel):
     role: str
@@ -20,7 +22,10 @@ class ChatRequest(BaseModel):
     history: List[Message] = []
 
 @router.post("/api/chat")
-async def chat(request: ChatRequest):
+async def chat(request: ChatRequest, req: Request = None, user_email: str = Depends(verify_token)):
+    client_ip = req.client.host if req else "unknown"
+    if not auth_rate_limiter.is_allowed(user_email, client_ip):
+        return {"success": False, "error": "Rate limit exceeded. Please try again later."}
     try:
         system_prompt = """You are a helpful solar energy assistant for Indian consumers. 
         You help with:

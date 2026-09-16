@@ -1,0 +1,27 @@
+{
+  "name": "bill_model",
+  "lifecycle_state": "active",
+  "created_at": "2026-07-11T05:32:55.057372Z",
+  "lifecycle_updated_at": null,
+  "_updated_at": "2026-07-11T05:41:03.285284Z",
+  "version_history": [
+    {
+      "version": "1.0.0",
+      "model_name": "bill_model",
+      "training_date": "2026-07-05",
+      "status": "deployed",
+      "algorithm": "RandomForestRegressor",
+      "framework": "sklearn",
+      "checksum": "28223288f95b13715d6d439dd7e559aacb269ddb76311aa6c0f6b6bafd7d9497",
+      "notes": "Seeded from ML registry",
+      "created_at": "2026-07-11T05:32:55.091862Z",
+      "is_current": true,
+      "rollback_target": true,
+      "deployment_date": "2026-07-11T05:41:03.257051Z"
+    }
+  ],
+  "current_version": "1.0.0",
+  "previous_version": null,
+  "last_deployment": "2026-07-11T05:41:03.285179Z",
+  "deployment_strategy": "standard"
+}
