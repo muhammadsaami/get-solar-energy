@@ -5015,6 +5015,9 @@ input[type="date"]::-webkit-calendar-picker-indicator {
   #tab-bill-analyzer .tab-grid-layout {
     grid-template-columns: 1fr !important;
   }
+  .primary-kpis-grid {
+    grid-template-columns: 1fr !important;
+  }
   .solar-util-grid {
     grid-template-columns: 1fr !important;
   }
@@ -5027,6 +5030,24 @@ input[type="date"]::-webkit-calendar-picker-indicator {
   }
   #billAnalysisResults div[style*="grid-template-columns: repeat(4, 1fr)"] {
     grid-template-columns: repeat(2, 1fr) !important;
+  }
+  .primary-energy-cards-grid {
+    grid-template-columns: repeat(2, 1fr) !important;
+  }
+  .derived-metrics-row {
+    grid-template-columns: 1fr !important;
+  }
+  .net-meter-financial-grid {
+    grid-template-columns: 1fr !important;
+  }
+  .energy-flow-container {
+    grid-template-columns: 1fr !important;
+  }
+}
+
+@media (max-width: 480px) {
+  .primary-energy-cards-grid {
+    grid-template-columns: 1fr !important;
   }
 }
 

@@ -25,6 +25,8 @@ import type {
   SolarReportState,
   UploadProgress,
   AnalysisState,
+  BillQuotas,
+  ManualBillInput,
 } from './billAnalyzer.types'
 import {
   SOLAR_YIELD,
@@ -171,51 +173,218 @@ function calculateSolarOpportunityScore(data: BillAnalysisData, isSolarInstalled
   return { score, rating }
 }
 
-export function calculatePlantPerformance(actualKwh: number, systemSizeKw: number): PlantPerformanceResult | null {
-  if (!systemSizeKw || systemSizeKw <= 0) return null
+export function getDaysInMonth(month?: string | null, year?: string | number | null): number | null {
+  if (!month) return null
+  const m = month.toLowerCase().trim()
+  const daysMap: Record<string, number> = {
+    january: 31, jan: 31, '01': 31, '1': 31,
+    february: 28, feb: 28, '02': 28, '2': 28,
+    march: 31, mar: 31, '03': 31, '3': 31,
+    april: 30, apr: 30, '04': 30, '4': 30,
+    may: 31, '05': 31, '5': 31,
+    june: 30, jun: 30, '06': 30, '6': 30,
+    july: 31, jul: 31, '07': 31, '7': 31,
+    august: 31, aug: 31, '08': 31, '8': 31,
+    september: 30, sep: 30, sept: 30, '09': 30, '9': 30,
+    october: 31, oct: 31, '10': 31,
+    november: 30, nov: 30, '11': 30,
+    december: 31, dec: 31, '12': 31,
+  }
+  let days: number | null = null
+  for (const [key, d] of Object.entries(daysMap)) {
+    if (m === key || m.startsWith(key)) {
+      days = d
+      break
+    }
+  }
+  if (days === 28 && year) {
+    const y = Number(year)
+    if (isFinite(y) && ((y % 4 === 0 && y % 100 !== 0) || y % 400 === 0)) {
+      days = 29
+    }
+  }
+  return days
+}
+
+export function calculateSpecificYield(productionKwh?: number | null, systemSizeKw?: number | null): number | null {
+  if (
+    productionKwh != null &&
+    systemSizeKw != null &&
+    isFinite(productionKwh) &&
+    isFinite(systemSizeKw) &&
+    productionKwh > 0 &&
+    systemSizeKw > 0
+  ) {
+    const res = productionKwh / systemSizeKw
+    return isFinite(res) ? Math.round(res * 10) / 10 : null
+  }
+  return null
+}
+
+export function calculateAverageDailyGeneration(
+  productionKwh?: number | null,
+  month?: string | null,
+  year?: string | number | null
+): number | null {
+  if (productionKwh == null || !isFinite(productionKwh) || productionKwh <= 0) return null
+  const days = getDaysInMonth(month, year)
+  if (days != null && days > 0) {
+    const res = productionKwh / days
+    return isFinite(res) ? Math.round(res * 100) / 100 : null
+  }
+  return null
+}
+
+export function calculatePlantPerformance(
+  actualKwh: number,
+  systemSizeKw: number,
+  month?: string | null,
+  year?: string | number | null
+): PlantPerformanceResult | null {
+  if (!systemSizeKw || systemSizeKw <= 0 || !isFinite(systemSizeKw)) return null
+  if (!actualKwh || actualKwh <= 0 || !isFinite(actualKwh)) return null
   const expected = systemSizeKw * SOLAR_YIELD
-  if (!actualKwh || actualKwh <= 0) return null
   const pct = Math.min(150, (actualKwh / expected) * 100)
   let rating = 'Needs Attention'
   let ratingClass = 'perf-needs-attention'
   if (pct >= 95) { rating = 'Excellent'; ratingClass = 'perf-excellent' }
   else if (pct >= 85) { rating = 'Good'; ratingClass = 'perf-good' }
   else if (pct >= 70) { rating = 'Average'; ratingClass = 'perf-average' }
-  return { pct: Math.round(pct * 10) / 10, expected, actual: actualKwh, rating, ratingClass }
+
+  const specificYield = calculateSpecificYield(actualKwh, systemSizeKw)
+  const averageDailyGeneration = calculateAverageDailyGeneration(actualKwh, month, year)
+
+  return {
+    pct: Math.round(pct * 10) / 10,
+    expected,
+    actual: actualKwh,
+    rating,
+    ratingClass,
+    specificYield,
+    averageDailyGeneration,
+  }
+}
+
+export function checkPeriodCompatibility(
+  billingPeriod?: string | null,
+  solarMonth?: string | null,
+  solarYear?: string | number | null
+): boolean {
+  if (!billingPeriod || !solarMonth) return false
+  const bp = billingPeriod.toLowerCase()
+  const sm = solarMonth.toLowerCase().trim()
+
+  const monthAliases: Record<string, string[]> = {
+    january: ['january', 'jan', '01'],
+    february: ['february', 'feb', '02'],
+    march: ['march', 'mar', '03'],
+    april: ['april', 'apr', '04'],
+    may: ['may', '05'],
+    june: ['june', 'jun', '06'],
+    july: ['july', 'jul', '07'],
+    august: ['august', 'aug', '08'],
+    september: ['september', 'sep', 'sept', '09'],
+    october: ['october', 'oct', '10'],
+    november: ['november', 'nov', '11'],
+    december: ['december', 'dec', '12'],
+  }
+
+  let canonicalMonth: string | null = null
+  for (const [key, aliases] of Object.entries(monthAliases)) {
+    if (aliases.some(a => sm === a || sm.startsWith(a))) {
+      canonicalMonth = key
+      break
+    }
+  }
+
+  if (!canonicalMonth) return false
+
+  const aliases = monthAliases[canonicalMonth]
+  const hasMonthMatch = aliases.some(alias => {
+    const reg = new RegExp(`(^|[^a-z0-9])${alias}([^a-z0-9]|$)`, 'i')
+    return reg.test(bp)
+  })
+
+  if (!hasMonthMatch) return false
+
+  if (solarYear) {
+    const yr = String(solarYear).trim()
+    if (yr && !bp.includes(yr)) {
+      return false
+    }
+  }
+
+  return true
 }
 
 function computeUnifiedEnergyIntelligence(billData: BillAnalysisData, solarData: SolarReportData): UnifiedEnergyData {
   const solarGenerated = safeNum(solarData.productionKwh)
-  const exportUnits = billData.exportUnits != null ? safeNum(billData.exportUnits) : 0
-  const importUnits = billData.importUnits != null ? safeNum(billData.importUnits) : 0
-  const gridImport = importUnits > 0 ? importUnits : safeNum(billData.monthly_units)
-  const solarUsedDirectly = Math.max(0, solarGenerated - exportUnits)
-  const selfConsumptionPct = solarGenerated > 0 ? Math.min(100, Math.round((solarUsedDirectly / solarGenerated) * 1000) / 10) : 0
-  const solarOffsetPct = gridImport > 0 ? Math.min(200, Math.round((solarGenerated / gridImport) * 1000) / 10) : 0
-  const gridDependencyPct = Math.max(0, Math.round((100 - selfConsumptionPct) * 10) / 10)
-  const netMeteringBenefit = Math.round(exportUnits * NET_METERING_RATE)
-  return { solarGenerated, gridImport, gridExport: exportUnits, solarUsedDirectly, selfConsumptionPct, solarOffsetPct, gridDependencyPct, netMeteringBenefit }
+  const exportUnits = billData.exportUnits != null ? safeNum(billData.exportUnits) : null
+  const importUnits = billData.importUnits != null ? safeNum(billData.importUnits) : null
+  const gridImport = importUnits != null ? importUnits : (billData.monthly_units > 0 ? billData.monthly_units : 0)
+  const solarUsedDirectly = exportUnits != null ? Math.max(0, solarGenerated - exportUnits) : null
+  const selfConsumptionPct = (solarGenerated > 0 && solarUsedDirectly != null)
+    ? Math.min(100, Math.round((solarUsedDirectly / solarGenerated) * 1000) / 10)
+    : null
+  const solarOffsetPct = gridImport > 0
+    ? Math.min(200, Math.round((solarGenerated / gridImport) * 1000) / 10)
+    : null
+  const gridDependencyPct = selfConsumptionPct != null
+    ? Math.max(0, Math.round((100 - selfConsumptionPct) * 10) / 10)
+    : null
+  const netMeteringBenefit = exportUnits != null
+    ? Math.round(exportUnits * NET_METERING_RATE)
+    : null
+  return {
+    solarGenerated,
+    gridImport,
+    gridExport: exportUnits,
+    solarUsedDirectly,
+    selfConsumptionPct,
+    solarOffsetPct,
+    gridDependencyPct,
+    netMeteringBenefit,
+  }
 }
 
 function extractSolarFields(text: string, filename: string) {
   const normalizedText = (text || '').toLowerCase()
-  const keywords = ['solar consumer', 'net meter', 'net metering', 'solar energy', 'solar generation', 'pv system', 'renewable energy', 'export units', 'import units', 'solar export', 'solar import', 'gen_netmeter', 'netmeter', 'kwhe', 'kvah export', 'opening surplus', 'closing surplus']
+  const keywords = ['solar consumer', 'net meter', 'net metering', 'solar energy', 'solar generation', 'pv system', 'renewable energy', 'export units', 'import units', 'solar export', 'solar import', 'gen_netmeter', 'netmeter', 'kwhe', 'kvah export', 'opening surplus', 'closing surplus', 'grid import', 'grid export', 'solar surplus']
   const isSolarConsumer = keywords.some(kw => normalizedText.includes(kw))
   let importUnits: number | null = null
   let exportUnits: number | null = null
   let solarGeneratedUnits: number | null = null
   let netConsumptionUnits: number | null = null
+  let openingSolarSurplus: number | null = null
+  let closingSolarSurplus: number | null = null
+  let netBilledUnits: number | null = null
+
   if (isSolarConsumer) {
-    const importMatch = normalizedText.match(/import\s+units\s*[:=-]?\s*(\d+(?:\.\d+)?)/i)
+    const importMatch = normalizedText.match(/(?:grid\s+import|import\s+units|active\s+import|kwh\s+consumption)\s*[:=-]?\s*(\d+(?:\.\d+)?)/i)
     if (importMatch) importUnits = parseFloat(importMatch[1])
-    const exportMatch = normalizedText.match(/export\s+units\s*[:=-]?\s*(\d+(?:\.\d+)?)/i)
+    const exportMatch = normalizedText.match(/(?:grid\s+export|export\s+units|solar\s+export|kwhe\s+consumption|kwhe\s+export)\s*[:=-]?\s*(\d+(?:\.\d+)?)/i)
     if (exportMatch) exportUnits = parseFloat(exportMatch[1])
     const solarMatch = normalizedText.match(/solar\s+generated\s*[:=-]?\s*(\d+(?:\.\d+)?)/i)
     if (solarMatch) solarGeneratedUnits = parseFloat(solarMatch[1])
     const netMatch = normalizedText.match(/net\s+units\s*[:=-]?\s*(\d+(?:\.\d+)?)/i)
     if (netMatch) netConsumptionUnits = parseFloat(netMatch[1])
+    const openingMatch = normalizedText.match(/(?:opening\s+(?:solar\s+)?surplus|open\s+surplus)\s*[:=-]?\s*(\d+(?:\.\d+)?)/i)
+    if (openingMatch) openingSolarSurplus = parseFloat(openingMatch[1])
+    const closingMatch = normalizedText.match(/(?:closing\s+(?:solar\s+)?surplus|close\s+surplus)\s*[:=-]?\s*(\d+(?:\.\d+)?)/i)
+    if (closingMatch) closingSolarSurplus = parseFloat(closingMatch[1])
+    const billedMatch = normalizedText.match(/(?:net\s+billed\s+units|billed\s+units)\s*[:=-]?\s*(\d+(?:\.\d+)?)/i)
+    if (billedMatch) netBilledUnits = parseFloat(billedMatch[1])
   }
-  return { isSolarConsumer, importUnits, exportUnits, solarGeneratedUnits, netConsumptionUnits }
+  return {
+    isSolarConsumer,
+    importUnits,
+    exportUnits,
+    solarGeneratedUnits,
+    netConsumptionUnits,
+    openingSolarSurplus,
+    closingSolarSurplus,
+    netBilledUnits,
+  }
 }
 
 function extractSolarProductionData(text: string, filename: string): SolarReportData {
@@ -290,10 +459,23 @@ function enrichAnalysisData(apiData: Record<string, unknown>, filename: string, 
   const offsetPercent = monthlyUnits > 0 ? Math.min(100, (solarUsedDirectlyVal / monthlyUnits) * 100) : 0
   const gridDep = Math.max(0, monthlyUnits - solarUsedDirectlyVal)
   const netMeteringBen = exportedToGridVal * NET_METERING_RATE
-  const isSolarInstalled = solarFieldData.isSolarConsumer && solarFieldData.importUnits !== null
-  const netCons = solarFieldData.importUnits !== null && solarFieldData.exportUnits !== null
-    ? Math.max(solarFieldData.importUnits - solarFieldData.exportUnits, 0) : 0
-  const netCredit = solarFieldData.exportUnits !== null ? solarFieldData.exportUnits * NET_METERING_RATE : 0
+
+  const gridImportRaw = apiData.grid_import ?? apiData.import_units ?? apiData.importUnits ?? (solarFieldData.importUnits != null ? solarFieldData.importUnits : null)
+  const gridImportVal = gridImportRaw != null ? Number(gridImportRaw) : (solarFieldData.isSolarConsumer ? null : (monthlyUnits > 0 ? monthlyUnits : null))
+  const gridExportRaw = apiData.grid_export ?? apiData.export_units ?? apiData.exportUnits ?? solarFieldData.exportUnits
+  const gridExportVal = gridExportRaw != null ? Number(gridExportRaw) : null
+  const openingSurplusRaw = apiData.opening_solar_surplus ?? apiData.openingSolarSurplus ?? solarFieldData.openingSolarSurplus
+  const openingSurplusVal = openingSurplusRaw != null ? Number(openingSurplusRaw) : null
+  const closingSurplusRaw = apiData.closing_solar_surplus ?? apiData.closingSolarSurplus ?? solarFieldData.closingSolarSurplus
+  const closingSurplusVal = closingSurplusRaw != null ? Number(closingSurplusRaw) : null
+  const netBilledRaw = apiData.net_billed_units ?? apiData.netBilledUnits ?? solarFieldData.netBilledUnits
+  const netBilledVal = netBilledRaw != null ? Number(netBilledRaw) : null
+
+  const isSolarInstalled = solarFieldData.isSolarConsumer && (gridImportVal !== null || gridExportVal !== null)
+  const netCons = gridImportVal !== null && gridExportVal !== null
+    ? Math.max(gridImportVal - gridExportVal, 0)
+    : (solarFieldData.isSolarConsumer ? null : (monthlyUnits > 0 ? monthlyUnits : 0))
+  const netCredit = gridExportVal !== null ? gridExportVal * NET_METERING_RATE : 0
 
   const base = {
     customer_name: String(apiData.customer_name ?? ''),
@@ -320,9 +502,14 @@ function enrichAnalysisData(apiData: Record<string, unknown>, filename: string, 
     solarOffsetPercent: offsetPercent,
     gridDependency: gridDep,
     netMeteringBenefit: netMeteringBen,
-    isSolarConsumer: solarFieldData.isSolarConsumer,
-    importUnits: solarFieldData.importUnits,
-    exportUnits: solarFieldData.exportUnits,
+    isSolarConsumer: solarFieldData.isSolarConsumer || isSolarInstalled,
+    importUnits: gridImportVal,
+    exportUnits: gridExportVal,
+    gridImport: gridImportVal,
+    gridExport: gridExportVal,
+    openingSolarSurplus: openingSurplusVal,
+    closingSolarSurplus: closingSurplusVal,
+    netBilledUnits: netBilledVal,
     solarGeneratedUnits: solarFieldData.solarGeneratedUnits,
     netConsumptionUnits: solarFieldData.netConsumptionUnits,
     netConsumption: netCons,
@@ -330,6 +517,7 @@ function enrichAnalysisData(apiData: Record<string, unknown>, filename: string, 
     extractionConfidence: calculateExtractionConfidence(base as unknown as BillAnalysisData, isFallback),
     billHealth: calculateBillHealthScore(base as unknown as BillAnalysisData),
     solarOpportunity: calculateSolarOpportunityScore(base as unknown as BillAnalysisData, isSolarInstalled),
+    filename: filename || 'bill.pdf',
   }
   return enriched
 }
@@ -344,6 +532,7 @@ export interface BillAnalyzerState {
   solarProgress: UploadProgress
   billError: string | null
   solarError: string | null
+  quotas: BillQuotas | null
 }
 
 export interface BillAnalyzerHandlers {
@@ -353,6 +542,8 @@ export interface BillAnalyzerHandlers {
   retrySolarUpload: () => void
   clearSolarReport: () => void
   resetBill: () => void
+  submitManualBill: (formData: ManualBillInput) => void
+  fetchQuotas: () => void
 }
 
 export interface BillAnalyzerReturn extends BillAnalyzerState, BillAnalyzerHandlers { }
@@ -367,6 +558,7 @@ export function useBillAnalyzer(): BillAnalyzerReturn {
   const [solarProgress, setSolarProgress] = useState<UploadProgress>({ percent: 0, status: '' })
   const [billError, setBillError] = useState<string | null>(null)
   const [solarError, setSolarError] = useState<string | null>(null)
+  const [quotas, setQuotas] = useState<BillQuotas | null>(null)
   const [billFileInputTrigger, setBillFileInputTrigger] = useState(0)
 
   const billChartRef = useRef<Chart | null>(null)
@@ -602,6 +794,9 @@ export function useBillAnalyzer(): BillAnalyzerReturn {
         if (!result.data || typeof result.data !== 'object') {
           throw new Error('Analysis completed but extracted bill data was missing.')
         }
+        if (result.quota) {
+          setQuotas(result.quota)
+        }
         if (!validateBillAnalysisResponse(result.data)) {
           throw new Error('Could not extract valid monthly units or bill amount from the document. Please upload a clearer electricity bill.')
         }
@@ -656,6 +851,83 @@ export function useBillAnalyzer(): BillAnalyzerReturn {
   const retrySolarUpload = useCallback(() => {
     clearSolarReport()
   }, [clearSolarReport])
+
+  const fetchQuotas = useCallback(() => {
+    api.get('/analyze-bill/quota')
+      .then((res) => {
+        if (res.data?.success && res.data?.quota) {
+          setQuotas(res.data.quota)
+        }
+      })
+      .catch(() => {
+        // Non-blocking quota lookup
+      })
+  }, [])
+
+  useEffect(() => {
+    fetchQuotas()
+  }, [fetchQuotas])
+
+  const submitManualBill = useCallback((formData: ManualBillInput) => {
+    billRequestId.current++
+    const reqId = billRequestId.current
+    clearBillProgressInterval()
+    setAnalysis(null)
+    setUnifiedEnergy(null)
+    localStorage.removeItem(LS_KEY_BILL)
+    destroyCharts()
+    setBillError(null)
+    setBillUploadState('uploading')
+
+    let progress = 0
+    const statuses = [
+      'Validating bill parameters...',
+      'Computing consumption averages...',
+      'Running solar generation analysis...',
+      'Calculating 25-year financial returns...',
+    ]
+    billProgressInterval.current = setInterval(() => {
+      if (progress < 90) {
+        progress += 15
+        if (progress > 90) progress = 90
+        const idx = Math.min(Math.floor(progress / 25), statuses.length - 1)
+        updateBillProgress(progress, statuses[idx])
+      }
+    }, 200)
+
+    api.post('/analyze-bill/manual', formData)
+      .then((res) => {
+        if (reqId !== billRequestId.current) return
+        const result = res.data
+        if (!result) throw new Error('No response received from the bill analysis service.')
+        if (result.success !== true) {
+          throw new Error(result.error || 'Manual bill analysis could not be completed.')
+        }
+        if (!result.data || typeof result.data !== 'object') {
+          throw new Error('Analysis completed but result data was missing.')
+        }
+        if (result.quota) {
+          setQuotas(result.quota)
+        }
+        clearBillProgressInterval()
+        updateBillProgress(100, 'Analysis Complete')
+        const apiData = result.data as Record<string, unknown>
+        const apiText = JSON.stringify(apiData)
+        const solarFields = extractSolarFields(apiText, 'manual_entry')
+        const enriched = enrichAnalysisData(apiData, 'manual_entry', false, solarFields)
+        setAnalysis(enriched)
+        writeLS(LS_KEY_BILL, enriched)
+        setBillUploadState('complete')
+      })
+      .catch((err: unknown) => {
+        if (reqId !== billRequestId.current) return
+        clearBillProgressInterval()
+        setBillProgress({ percent: 0, status: '' })
+        const msg = extractErrorMessage(err, 'Manual analysis failed. Please verify the entered numbers.')
+        setBillError(msg)
+        setBillUploadState('error')
+      })
+  }, [clearBillProgressInterval, updateBillProgress, destroyCharts])
 
   const handleSolarFile = useCallback((file: File) => {
     const reqId = ++solarRequestId.current
@@ -724,25 +996,25 @@ export function useBillAnalyzer(): BillAnalyzerReturn {
 
     const fd = new FormData()
     fd.append('image', file)
-    api.post('/analyze-bill', fd)
+    api.post('/analyze-solar-report', fd)
       .then((res) => {
         if (reqId !== solarRequestId.current) return
-        const result = res.data
-        let apiText = ''
-        if (result?.data) {
-          apiText = [
-            result.data._raw_text || '',
-            result.data.customer_name || '',
-            result.data.billing_period || '',
-            result.data.discom || '',
-            JSON.stringify(result.data),
-          ].join(' ')
-        }
-        const prodData = extractSolarProductionData(apiText, file.name)
-        if (prodData.productionKwh == null) {
-          const extractionErr = new Error('Could not extract solar generation figures from this report. Please upload an inverter or app screenshot showing kWh generation.')
+        const report = res.data?.data
+        if (!report || report.monthly_generation_kwh == null) {
+          const extractionErr = new Error('Could not extract solar generation figures from this report. Please upload an inverter or app screenshot showing kWh generation, or skip the optional report.')
           extractionErr.name = 'EXTRACTION_FAILED'
           throw extractionErr
+        }
+        const prodData: SolarReportData = {
+          productionKwh: report.monthly_generation_kwh != null ? Number(report.monthly_generation_kwh) : null,
+          systemSizeKw: report.system_capacity_kw != null ? Number(report.system_capacity_kw) : null,
+          month: report.month || null,
+          year: report.year || null,
+          source: report.source || null,
+          dailyGenerationKwh: report.daily_generation_kwh != null
+            ? Number(report.daily_generation_kwh)
+            : (report.dailyGenerationKwh != null ? Number(report.dailyGenerationKwh) : null),
+          confidence: report.confidence != null ? report.confidence : null,
         }
         return prodData
       })
@@ -751,11 +1023,16 @@ export function useBillAnalyzer(): BillAnalyzerReturn {
       })
       .catch((err: unknown) => {
         if (reqId !== solarRequestId.current) return
-        const errorObj = err as { name?: string; message?: string; response?: unknown }
-        if (errorObj?.name === 'EXTRACTION_FAILED') {
-          doError(new Error(errorObj.message || 'Could not extract solar generation figures from this report. Please upload an inverter or app screenshot showing kWh generation.'), 'EXTRACTION_FAILED')
+        const errorObj = err as { name?: string; message?: string; response?: { status?: number; data?: { error?: string } } }
+        const status = errorObj?.response?.status
+        const backendError = errorObj?.response?.data?.error
+
+        if (status === 400) {
+          doError(new Error(backendError || 'Please upload a PDF, PNG, JPG, JPEG, or WEBP solar production report.'), 'INVALID_FILE')
+        } else if (status === 422 || errorObj?.name === 'EXTRACTION_FAILED') {
+          doError(new Error(backendError || errorObj.message || 'Could not extract solar generation figures from this report. Please upload an inverter or app screenshot showing kWh generation, or skip the optional report.'), 'EXTRACTION_FAILED')
         } else {
-          const msg = extractErrorMessage(err, 'Solar report service could not be reached. Please check your connection and retry.')
+          const msg = backendError || extractErrorMessage(err, 'We couldn\'t process this solar report right now. Please try again or skip the optional report.')
           doError(new Error(msg), 'API_ERROR')
         }
       })
@@ -784,7 +1061,12 @@ export function useBillAnalyzer(): BillAnalyzerReturn {
   }, [])
 
   useEffect(() => {
-    if (analysis && solarReport && solarReport.productionKwh != null) {
+    if (
+      analysis &&
+      solarReport &&
+      solarReport.productionKwh != null &&
+      checkPeriodCompatibility(analysis.billing_period, solarReport.month, solarReport.year)
+    ) {
       setUnifiedEnergy(computeUnifiedEnergyIntelligence(analysis, solarReport))
     } else {
       setUnifiedEnergy(null)
@@ -823,11 +1105,14 @@ export function useBillAnalyzer(): BillAnalyzerReturn {
     solarProgress,
     billError,
     solarError,
+    quotas,
     handleBillFile,
     handleSolarFile,
     retryBillUpload,
     retrySolarUpload,
     clearSolarReport,
     resetBill,
+    submitManualBill,
+    fetchQuotas,
   }
 }
