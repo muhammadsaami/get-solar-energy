@@ -84,10 +84,10 @@ export const JOURNEY_CONFIG = {
     description: "A certified surveyor will verify structural integrity and roof metrics.",
     owner: "engineer",
     etaDays: 3,
-    unlockRoutes: ["/app/home", "/app/journey", "/app/planning/bills", "/app/planning/roof", "/app/planning/proposal"],
+    unlockRoutes: ["/app/home", "/app/journey", "/app/planning/bills", "/app/planning/roof", "/app/planning/proposal", "/app/site-survey"],
     requiredDocs: ["SITE_SURVEY_REPORT"],
     customerAction: "WAIT_FOR_SURVEY",
-    completionRules: "survey_report_uploaded is not null",
+    completionRules: "Site survey approved by engineer",
     progressWeight: 60
   },
   "ST-08": {

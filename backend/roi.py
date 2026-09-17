@@ -1,10 +1,11 @@
-from fastapi import APIRouter
+from fastapi import APIRouter, Depends
+from security import verify_token
 from pydantic import BaseModel
 import logging
 
 logger = logging.getLogger(__name__)
 
-router = APIRouter()
+router = APIRouter(dependencies=[Depends(verify_token)])
 
 class ROIRequest(BaseModel):
     monthly_bill: float

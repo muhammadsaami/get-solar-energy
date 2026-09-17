@@ -3,10 +3,11 @@ Phase 3 - Work Order Management
 Technician views their assigned jobs, updates status, adds notes, uploads
 photos/documents/signature, manages a completion checklist, and marks the
 job complete. Completing a work order auto-generates an Earning record.
+Also supports admin surrogate access for cross-portal workflows.
 """
 from fastapi import APIRouter, HTTPException, Depends
 from pydantic import BaseModel
-from typing import List
+from typing import List, Optional
 from sqlalchemy.orm import Session
 from database import get_db
 from technician_models import WorkOrder, JobPosting, Technician, Earning
@@ -23,8 +24,8 @@ VALID_STATUSES = ["Assigned", "In Progress", "Completed", "Verified"]
 
 class WorkOrderStatusUpdate(BaseModel):
     status: str
-    notes: str = None
-    proof_photo_url: str = None
+    notes: Optional[str] = None
+    proof_photo_url: Optional[str] = None
 
 
 class NoteCreate(BaseModel):
@@ -40,20 +41,22 @@ class ChecklistItemsCreate(BaseModel):
 
 
 def _get_owned_work_order(work_order_id: int, db: Session, current_technician: Technician) -> WorkOrder:
-    work_order = db.query(WorkOrder).filter(
-        WorkOrder.id == work_order_id,
-        WorkOrder.technician_id == current_technician.id
-    ).first()
+    query = db.query(WorkOrder).filter(WorkOrder.id == work_order_id)
+    if current_technician.id != 0:
+        query = query.filter(WorkOrder.technician_id == current_technician.id)
+    work_order = query.first()
     if not work_order:
         raise HTTPException(status_code=404, detail="Work order not found.")
     return work_order
 
 
+@router.get("")
 @router.get("/")
 def list_my_work_orders(db: Session = Depends(get_db), current_technician: Technician = Depends(get_current_technician)):
-    orders = db.query(WorkOrder).filter(
-        WorkOrder.technician_id == current_technician.id
-    ).order_by(WorkOrder.assigned_at.desc()).all()
+    query = db.query(WorkOrder)
+    if current_technician.id != 0:
+        query = query.filter(WorkOrder.technician_id == current_technician.id)
+    orders = query.order_by(WorkOrder.assigned_at.desc()).all()
 
     result = []
     for wo in orders:
@@ -65,7 +68,9 @@ def list_my_work_orders(db: Session = Depends(get_db), current_technician: Techn
             "city": job.city if job else "N/A",
             "budget": job.budget if job else None,
             "status": wo.status,
-            "assigned_at": wo.assigned_at.isoformat(),
+            "notes": wo.notes,
+            "proof_photo_url": wo.proof_photo_url,
+            "assigned_at": wo.assigned_at.isoformat() if wo.assigned_at else None,
             "completed_at": wo.completed_at.isoformat() if wo.completed_at else None
         })
     return {"success": True, "work_orders": result}
@@ -76,24 +81,38 @@ def get_work_order_detail(work_order_id: int, db: Session = Depends(get_db), cur
     wo = _get_owned_work_order(work_order_id, db, current_technician)
     job = db.query(JobPosting).filter(JobPosting.id == wo.job_id).first()
 
-    notes = db.query(WorkOrderNote).filter(WorkOrderNote.work_order_id == wo.id).order_by(WorkOrderNote.created_at.desc()).all()
-    attachments = db.query(WorkOrderAttachment).filter(WorkOrderAttachment.work_order_id == wo.id).all()
-    checklist = db.query(WorkOrderChecklistItem).filter(WorkOrderChecklistItem.work_order_id == wo.id).all()
+    notes = db.query(WorkOrderNote).filter(
+        WorkOrderNote.work_order_id == wo.id
+    ).order_by(WorkOrderNote.created_at.asc()).all()
+
+    attachments = db.query(WorkOrderAttachment).filter(
+        WorkOrderAttachment.work_order_id == wo.id
+    ).all()
+
+    checklist = db.query(WorkOrderChecklistItem).filter(
+        WorkOrderChecklistItem.work_order_id == wo.id
+    ).order_by(WorkOrderChecklistItem.id.asc()).all()
 
     return {
         "success": True,
         "work_order": {
             "id": wo.id,
+            "job_id": wo.job_id,
             "status": wo.status,
-            "notes": wo.notes,
-            "assigned_at": wo.assigned_at.isoformat(),
+            "assigned_at": wo.assigned_at.isoformat() if wo.assigned_at else None,
             "started_at": wo.started_at.isoformat() if wo.started_at else None,
             "completed_at": wo.completed_at.isoformat() if wo.completed_at else None,
+            "notes": wo.notes,
+            "proof_photo_url": wo.proof_photo_url,
             "job": {
-                "id": job.id, "title": job.title, "description": job.description,
-                "job_type": job.job_type, "city": job.city, "budget": job.budget
+                "title": job.title,
+                "job_type": job.job_type,
+                "city": job.city,
+                "description": job.description,
+                "budget": job.budget,
+                "required_skill": job.required_skill,
             } if job else None,
-            "notes_log": [{"id": n.id, "note": n.note, "created_at": n.created_at.isoformat()} for n in notes],
+            "notes_log": [{"id": n.id, "note": n.note, "created_at": n.created_at.isoformat() if n.created_at else None} for n in notes],
             "photos": [a.file_url for a in attachments if a.file_type == "photo"],
             "documents": [a.file_url for a in attachments if a.file_type == "document"],
             "signature": next((a.file_url for a in attachments if a.file_type == "signature"), None),
@@ -158,7 +177,7 @@ def add_note(work_order_id: int, data: NoteCreate, db: Session = Depends(get_db)
     db.add(note)
     db.commit()
     db.refresh(note)
-    return {"success": True, "message": "Note added.", "note": {"id": note.id, "note": note.note, "created_at": note.created_at.isoformat()}}
+    return {"success": True, "message": "Note added.", "note": {"id": note.id, "note": note.note, "created_at": note.created_at.isoformat() if note.created_at else None}}
 
 
 @router.post("/{work_order_id}/photos")

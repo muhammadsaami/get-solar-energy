@@ -1,7 +1,9 @@
-from fastapi import APIRouter, File, UploadFile, Form
-from google import genai
-from google.genai import types
+from fastapi import APIRouter, Depends, File, UploadFile, Form, Request
 from dotenv import load_dotenv
+from security import verify_token
+from auth import auth_rate_limiter
+from ai.provider_factory import get_ai_provider
+from ai.provider_base import AIRequest, AIImageInput
 import os
 import json
 import time
@@ -11,8 +13,7 @@ logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
 load_dotenv()
 
-client = genai.Client(api_key=os.getenv("GEMINI_API_KEY"))
-router = APIRouter()
+router = APIRouter(dependencies=[Depends(verify_token)])
 
 # 3kW Fixed Layout (Ahmed Bhai Requirements)
 SOLAR_3KW_LAYOUT = {
@@ -36,8 +37,14 @@ async def analyze_roof(
     image: UploadFile = File(...),
     length_ft: float = Form(...),
     width_ft: float = Form(...),
-    city: str = Form(...)
+    city: str = Form(...),
+    source: str = Form("camera"),
+    req: Request = None,
+    user_email: str = Depends(verify_token)
 ):
+    client_ip = req.client.host if req else "unknown"
+    if not auth_rate_limiter.is_allowed(user_email, client_ip):
+        return {"success": False, "error": "Rate limit exceeded. Please try again later."}
     try:
         image_data = await image.read()
         
@@ -72,29 +79,35 @@ async def analyze_roof(
             "analysis_notes": "Good south facing roof ideal for solar"
         }}
         """
+
+        # Determine mime type from uploaded file
+        mime_type = image.content_type or "image/jpeg"
+        if not mime_type or mime_type == "application/octet-stream":
+            ext = (image.filename or "").split(".")[-1].lower()
+            if ext == "pdf":
+                mime_type = "application/pdf"
+            elif ext in ["jpg", "jpeg"]:
+                mime_type = "image/jpeg"
+            elif ext == "webp":
+                mime_type = "image/webp"
+            else:
+                mime_type = "image/png"
         
         max_attempts = 4
         last_error = None
         
         for attempt in range(max_attempts):
             try:
-                response = client.models.generate_content(
-                    model="gemini-2.5-flash",
-                    contents=[
-                        types.Content(
-                            role="user",
-                            parts=[
-                                types.Part.from_bytes(
-                                    data=image_data,
-                                    mime_type=image.content_type
-                                ),
-                                types.Part.from_text(text=prompt)
-                            ]
-                        )
-                    ]
+                provider = get_ai_provider()
+                ai_request = AIRequest(
+                    prompt=prompt,
+                    temperature=0.2,
+                    image_inputs=[AIImageInput(data=image_data, mime_type=mime_type)],
+                    metadata={"route": "analyze-roof"},
                 )
+                ai_response = provider.generate_response(ai_request)
                 
-                text = response.text.strip()
+                text = ai_response.content
                 if "```json" in text:
                     text = text.split("```json")[1].split("```")[0]
                 elif "```" in text:
@@ -138,6 +151,17 @@ async def analyze_roof(
                     "analysis_notes": ai_result.get("analysis_notes", "")
                 }
                 
+                if source == "satellite":
+                    result["satellite_analysis"] = True
+                    disclaimer = (
+                        "BETA - Satellite-based estimate. "
+                        "Results are estimated from satellite imagery and should be confirmed "
+                        "through an on-site survey before installation or purchasing decisions. "
+                    )
+                    result["analysis_notes"] = disclaimer + result.get("analysis_notes", "")
+                else:
+                    result["satellite_analysis"] = False
+                
                 return {"success": True, "data": result}
                 
             except Exception as e:
@@ -145,7 +169,7 @@ async def analyze_roof(
                 err_str = str(e).lower()
                 if "503" in err_str or "429" in err_str or "unavailable" in err_str or "exhausted" in err_str or "demand" in err_str:
                     wait_time = 2 ** (attempt + 1)
-                    print(f"Attempt {attempt+1}/{max_attempts} failed: {e}. Retrying in {wait_time}s...")
+                    logger.warning("Attempt %d/%d failed: %s. Retrying in %ds...", attempt + 1, max_attempts, e, wait_time)
                     time.sleep(wait_time)
                 else:
                     raise e
@@ -155,7 +179,7 @@ async def analyze_roof(
     except Exception as e:
         err_str = str(e).lower()
         if any(term in err_str for term in ["resource_exhausted", "quota", "rate limit", "exhausted", "429", "503", "unavailable"]):
-            logger.warning("Gemini quota exhausted. Returning fallback response.")
+            logger.warning("AI quota exhausted. Returning fallback response.")
             return {
                 "success": True,
                 "fallback": True,
@@ -182,7 +206,8 @@ async def analyze_roof(
                     "front_leg_height_ft": 5,
                     "back_leg_height_ft": 7,
                     "monthly_generation_units": 360,
-                    "annual_generation_units": 4320
+                    "annual_generation_units": 4320,
+                    "satellite_analysis": source == "satellite" if 'source' in dir() else False
                 }
             }
         return {"success": False, "error": str(e)}

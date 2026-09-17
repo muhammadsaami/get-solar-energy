@@ -10,39 +10,39 @@
    ========================================================================== */
 const DEV_MODE = false;
 
-console.log('ROI DEBUG: app.js loaded');
-
 const API_BASE =
-    window.location.hostname === "localhost" ||
+  window.location.hostname === "localhost" ||
     window.location.hostname === "127.0.0.1"
-        ? "http://127.0.0.1:8000"
-        : "";
+    ? "http://127.0.0.1:8000"
+    : "";
 
 /**
  * safeFetch(url, options) — Centralized Safe Fetch Wrapper
  * Validates status codes and content type to prevent HTML parsing errors, returning the response object.
  */
 async function safeFetch(url, options = {}) {
-  const logLabel = `API [${options.method || 'GET'}] ${url}`;
-  console.log(`${logLabel} - Fetching...`);
-  
   try {
+    const token = localStorage.getItem('token');
+    if (token) {
+      options.headers = { ...options.headers, 'Authorization': `Bearer ${token}` };
+    }
+
     const res = await fetch(url, options);
-    console.log(`${logLabel} - Status: ${res.status}`);
-    
+    if (DEV_MODE) console.log(`API [${options.method || 'GET'}] ${url} - Status: ${res.status}`);
+
     if (!res.ok) {
       const errorMsg = `Admin API Request Failed\n\nURL:\n${url}\n\nStatus:\n${res.status}`;
       console.error(errorMsg);
       throw new Error(errorMsg);
     }
-    
+
     const contentType = res.headers.get("content-type") || "";
     if (res.status !== 204 && !url.endsWith('.json') && !contentType.includes("application/json")) {
       const errorMsg = `Admin API Request Failed\n\nURL:\n${url}\n\nStatus:\n${res.status}\n\nReason:\nExpected JSON response but received content-type "${contentType}"`;
       console.error(errorMsg);
       throw new Error(errorMsg);
     }
-    
+
     return res;
   } catch (err) {
     console.error(`Fetch execution error for URL: ${url}`, err);
@@ -96,15 +96,15 @@ function getCurrentUser() {
   return {
     name,
     firstName,
-    initials:         getInitials(name),
-    email:            raw.email || '',
-    role:             raw.role || 'Standard User',
+    initials: getInitials(name),
+    email: raw.email || '',
+    role: raw.role || 'Standard User',
     subscriptionTier: raw.subscriptionTier || raw.subscription_tier || raw.role || 'Standard User',
-    city:             resolvedCity,
-    state:            resolvedState,
+    city: resolvedCity,
+    state: resolvedState,
     location,
-    avatarUrl:        raw.avatar_url || raw.profile_image || raw.avatarUrl || null,
-    points:           raw.points || 0,
+    avatarUrl: raw.avatar_url || raw.profile_image || raw.avatarUrl || null,
+    points: raw.points || 0,
   };
 }
 
@@ -148,9 +148,9 @@ function renderInitialsAvatar(containerEl, user) {
   containerEl.innerHTML = user.initials;
   containerEl.className = 'profile-avatar profile-avatar-initials';
   // Pick a deterministic color from the brand palette based on first char
-  const colors = ['#ff8a1d','#17a8e5','#36d399','#c084fc','#f472b6','#38bdf8'];
+  const colors = ['#ff8a1d', '#17a8e5', '#36d399', '#c084fc', '#f472b6', '#38bdf8'];
   const idx = (user.name || '').charCodeAt(0) % colors.length;
-  containerEl.style.background = `linear-gradient(135deg, ${colors[idx]}, ${colors[(idx+2)%colors.length]})`;
+  containerEl.style.background = `linear-gradient(135deg, ${colors[idx]}, ${colors[(idx + 2) % colors.length]})`;
 }
 
 let dashboardData = null;
@@ -213,20 +213,23 @@ function initDashboard() {
   initMobileMenu();
   initLocationSelector();
   initGaugesAnimation();
+  migrateStoredAnalysisData();
   hydrateHeroDashboard(); // Revert to original Dashboard Hydration
 
   initCharts();
   initROICalculator();
   initTestimonialCarousel();
   initRewardsTab();
-  
+
   // Redesign additions
   initTabsNavigation();
   initAIInsightsFeed(); // Restore AI insights feed
   initBillUploadSimulator();
   initSolarReportUploader();
   initRoofScannerSimulator();
+  initSatelliteRoofModule();
   initAIAdvisorChat();
+  initEnterpriseAI();
   initReportsCenter();
   initTabROICalculator();
   initAdminDashboard();
@@ -239,6 +242,7 @@ function initDashboard() {
   initVendorPortal();
   initAmcWorkspace();
   initSiteSurveyWorkspace();
+  initReferralCopy();
 }
 
 /**
@@ -249,7 +253,7 @@ function initAuth() {
   const token = localStorage.getItem('token');
   const userStr = localStorage.getItem('user');
   let rawUser = null;
-  try { rawUser = userStr ? JSON.parse(userStr) : null; } catch(e) {}
+  try { rawUser = userStr ? JSON.parse(userStr) : null; } catch (e) { }
 
   if (!token || !rawUser) {
     window.location.replace('login.html');
@@ -277,10 +281,10 @@ function initAuth() {
   if (greetEl) {
     const hour = new Date().getHours();
     let greeting;
-    if      (hour >= 5  && hour < 12) greeting = 'Good Morning';
+    if (hour >= 5 && hour < 12) greeting = 'Good Morning';
     else if (hour >= 12 && hour < 17) greeting = 'Good Afternoon';
     else if (hour >= 17 && hour < 21) greeting = 'Good Evening';
-    else                              greeting = 'Welcome Back';
+    else greeting = 'Welcome Back';
     greetEl.innerHTML = `${greeting}, ${cu.firstName} <span class="wave">👋</span>`;
   }
 
@@ -324,23 +328,6 @@ function initAuth() {
     });
   }
 
-  // Wire standalone logout button (inside dropdown)
-  function doLogout() {
-    const u = _getUser() || {};
-    logAuditEvent(u.email || 'anonymous', 'User Logout', 'Authentication', `User ${u.name || 'Unknown'} logged out.`, 'Low');
-    sessionStorage.removeItem('loginLogged');
-    if (typeof window.authLogout === 'function') {
-      window.authLogout();
-    } else {
-      localStorage.removeItem('token');
-      localStorage.removeItem('user');
-      window.location.replace('login.html');
-    }
-  }
-  // Legacy standalone logout btn (may still be in DOM in some slots)
-  const logoutBtnLegacy = document.getElementById('logoutBtn');
-  if (logoutBtnLegacy) logoutBtnLegacy.addEventListener('click', doLogout);
-
   // Audit login event once per session
   const loginLogged = sessionStorage.getItem('loginLogged');
   if (!loginLogged && rawUser) {
@@ -365,19 +352,6 @@ function initProfileDropdown(cu) {
   if (pdName) pdName.textContent = cu.name;
   const pdRole = document.getElementById('pdRole');
   if (pdRole) pdRole.textContent = cu.subscriptionTier;
-
-  function doLogout() {
-    const u = _getUser() || {};
-    logAuditEvent(u.email || 'anonymous', 'User Logout', 'Authentication', `User ${u.name || 'Unknown'} logged out.`, 'Low');
-    sessionStorage.removeItem('loginLogged');
-    if (typeof window.authLogout === 'function') {
-      window.authLogout();
-    } else {
-      localStorage.removeItem('token');
-      localStorage.removeItem('user');
-      window.location.replace('login.html');
-    }
-  }
 
   // Open/close toggle on pill click (but not on child logout btn clicks)
   pill.addEventListener('click', (e) => {
@@ -564,7 +538,7 @@ function initLocationSelector() {
           if (label) label.textContent = newValue;
           localStorage.setItem('gse_selected_location', newValue);
           selector.classList.remove('active');
-          
+
           showToast(`Location switched to ${newValue}`);
           if (typeof hydrateHeroDashboard === 'function') {
             hydrateHeroDashboard();
@@ -583,18 +557,87 @@ function initLocationSelector() {
    3. GAUGES & ANIMATIONS
    ========================================================================== */
 /* ==========================================================================
-   FIX 12 + 13 — HERO DASHBOARD ONBOARDING / REAL DATA HYDRATION
+   HELPER — ROI State Validation
+   Checks the 8 numeric fields inside lastROIAnalysis.data for finite non-negative.
    ========================================================================== */
+function _isValidROIState(stateObj) {
+  if (!stateObj || typeof stateObj !== 'object' || !stateObj.data || typeof stateObj.data !== 'object') return false;
+  var d = stateObj.data;
+  var fields = ['monthly_savings', 'annual_savings', 'system_cost', 'net_cost', 'lifetime_savings', 'payback_period', 'recommended_kw', 'roi_percentage'];
+  for (var i = 0; i < fields.length; i++) {
+    if (d[fields[i]] !== undefined) {
+      var n = Number(d[fields[i]]);
+      if (!isFinite(n) || n < 0) return false;
+    }
+  }
+  return true;
+}
+
+/* ==========================================================================
+   HELPER — Bill Analysis Response Validation
+   Must match backend main.py _is_valid_bill_analysis() rules.
+   Prevents corrupted Gemini sentinel values from entering application state.
+   ========================================================================== */
+function validateBillAnalysisResponse(data) {
+  if (!data || typeof data !== 'object') return false;
+  var fields = [
+    { key: 'monthly_units',  min: 1,       max: 1000000 },
+    { key: 'bill_amount',    min: 1,       max: 10000000 },
+    { key: 'per_unit_rate',  min: 0.01,    max: 100 },
+    { key: 'recommended_kw', min: 0.1,     max: 10000 }
+  ];
+  for (var i = 0; i < fields.length; i++) {
+    var f = fields[i];
+    if (data[f.key] === undefined || data[f.key] === null) return false;
+    var n = Number(data[f.key]);
+    if (!isFinite(n) || n < f.min || n > f.max) return false;
+  }
+  return true;
+}
+
+/* ==========================================================================
+   MIGRATION — Remove corrupted localStorage entries before hydration
+   Reuses validateBillAnalysisResponse() and _isValidROIState().
+   Never calls localStorage.clear() — only removes known analysis keys.
+   ========================================================================== */
+function migrateStoredAnalysisData() {
+  try {
+    var raw = localStorage.getItem('lastBillAnalysis');
+    if (raw) {
+      var d = JSON.parse(raw);
+      if (!validateBillAnalysisResponse(d)) {
+        localStorage.removeItem('lastBillAnalysis');
+        console.warn('Migrated corrupted lastBillAnalysis');
+      }
+    }
+  } catch (e) {
+    localStorage.removeItem('lastBillAnalysis');
+    console.warn('Migrated unparseable lastBillAnalysis');
+  }
+  try {
+    var raw = localStorage.getItem('lastROIAnalysis');
+    if (raw) {
+      var obj = JSON.parse(raw);
+      if (!_isValidROIState(obj)) {
+        localStorage.removeItem('lastROIAnalysis');
+        console.warn('Migrated corrupted lastROIAnalysis');
+      }
+    }
+  } catch (e) {
+    localStorage.removeItem('lastROIAnalysis');
+    console.warn('Migrated unparseable lastROIAnalysis');
+  }
+}
 function hydrateHeroDashboard() {
   const cu = getCurrentUser();
   const firstName = cu.firstName || 'Explorer';
-  
+
   // Time-based greeting
   const hrs = new Date().getHours();
   let greet = 'Good Morning';
   if (hrs >= 12 && hrs < 17) greet = 'Good Afternoon';
   else if (hrs >= 17 || hrs < 4) greet = 'Good Evening';
-  
+
   const greetingEl = document.getElementById('heroGreeting');
   if (greetingEl) {
     greetingEl.textContent = `${greet}, ${firstName}`;
@@ -602,9 +645,9 @@ function hydrateHeroDashboard() {
 
   // Load data sources
   let billData = null, roofData = null, roiData = null;
-  try { billData = JSON.parse(localStorage.getItem('lastBillAnalysis')); } catch(e) {}
-  try { roofData = JSON.parse(localStorage.getItem('lastRoofAnalysis')); } catch(e) {}
-  try { roiData  = JSON.parse(localStorage.getItem('lastROIAnalysis'));  } catch(e) {}
+  try { billData = JSON.parse(localStorage.getItem('lastBillAnalysis')); } catch (e) { }
+  try { roofData = JSON.parse(localStorage.getItem('lastRoofAnalysis')); } catch (e) { }
+  try { roiData = JSON.parse(localStorage.getItem('lastROIAnalysis')); } catch (e) { }
 
   const hasAnyData = billData || roofData || roiData;
 
@@ -742,7 +785,7 @@ function hydrateHeroDashboard() {
   try {
     const propHistory = JSON.parse(localStorage.getItem('proposalHistory') || '[]');
     if (propHistory.length > 0) hasProposal = true;
-  } catch(e) {}
+  } catch (e) { }
   if (checkProposal) {
     if (hasProposal) checkProposal.classList.add('completed');
     else checkProposal.classList.remove('completed');
@@ -756,7 +799,7 @@ function hydrateHeroDashboard() {
     if (myLead && myLead.status === 'Won') {
       hasInstallation = true;
     }
-  } catch(e) {}
+  } catch (e) { }
   if (checkInstallation) {
     if (hasInstallation) checkInstallation.classList.add('completed');
     else checkInstallation.classList.remove('completed');
@@ -820,14 +863,14 @@ function initGaugesAnimation() {
 
   if (readinessText && readinessCircle) {
     animateValue(readinessText, 0, readinessScore, 1200, '%');
-    
+
     // Animate circular gauge fill stroke-dashoffset
     const totalCircumference = 220; // 2 * PI * 35 approx
     const offset = totalCircumference - (readinessScore / 100 * totalCircumference);
-    
+
     readinessCircle.style.strokeDasharray = `${totalCircumference}`;
     readinessCircle.style.strokeDashoffset = `${totalCircumference}`;
-    
+
     setTimeout(() => {
       readinessCircle.style.transition = 'stroke-dashoffset 1.2s cubic-bezier(0.4, 0, 0.2, 1)';
       readinessCircle.style.strokeDashoffset = `${offset}`;
@@ -840,10 +883,10 @@ function initGaugesAnimation() {
     const totalCircumference = 251.2; // 2 * PI * 40
     const percentage = 88;
     const offset = totalCircumference - (percentage / 100 * totalCircumference);
-    
+
     perfCircle.style.strokeDasharray = `${totalCircumference}`;
     perfCircle.style.strokeDashoffset = `${totalCircumference}`;
-    
+
     setTimeout(() => {
       perfCircle.style.transition = 'stroke-dashoffset 1.2s cubic-bezier(0.4, 0, 0.2, 1)';
       perfCircle.style.strokeDashoffset = `${offset}`;
@@ -883,11 +926,10 @@ let consumptionChartInstance = null;
 let performanceTrendChartInstance = null;
 let savingsSparklineInstance = null;
 let lifetimeSparklineInstance = null;
-let roiChartInstance = null;
 
 function initCharts() {
   if (!dashboardData) return;
-  
+
   // 1. Savings Sparkline Chart (Annual)
   const savingsCtx = document.getElementById('savingsSparklineCanvas');
   if (savingsCtx) {
@@ -940,10 +982,10 @@ function initCharts() {
 
   // 3. Energy Production Chart
   initProductionChart();
-  
+
   // 4. Electricity Consumption Chart
   initConsumptionChart();
-  
+
   // 5. Performance Trend Chart
   initPerformanceTrendChart();
 }
@@ -954,25 +996,25 @@ function initProductionChart() {
   if (!canvas) return;
 
   const ctx = canvas.getContext('2d');
-  
+
   const typeSelect = document.getElementById('productionChartTypeSelect');
   const periodSelect = document.getElementById('productionPeriodSelect');
-  
+
   function getProductionData() {
     const period = periodSelect ? periodSelect.value : 'this-month';
     const type = typeSelect ? typeSelect.value : 'trend';
-    
+
     let labels = [];
     let datasets = [];
-    
-    const days = Array.from({length: 30}, (_, i) => (i + 1).toString());
+
+    const days = Array.from({ length: 30 }, (_, i) => (i + 1).toString());
     const monthlyProd = [
-      12, 18, 14, 22, 25, 20, 24, 27, 21, 23, 
-      26, 29, 32, 28, 30, 31, 33, 27, 29, 31, 
+      12, 18, 14, 22, 25, 20, 24, 27, 21, 23,
+      26, 29, 32, 28, 30, 31, 33, 27, 29, 31,
       34, 32, 28, 29, 35, 30, 32, 29, 28, 31
     ];
     const monthlyCons = monthlyProd.map(v => Math.max(10, Math.round(v * 0.8 + Math.random() * 3)));
-    
+
     if (period === 'year') {
       labels = dashboardData.chartData.months;
       if (type === 'trend') {
@@ -1007,7 +1049,7 @@ function initProductionChart() {
       const multiplier = (period === 'last-month') ? 0.9 : 1.0;
       const dataProd = monthlyProd.map(v => Math.round(v * multiplier));
       const dataCons = monthlyCons.map(v => Math.round(v * multiplier));
-      
+
       if (type === 'trend') {
         datasets.push({
           label: 'Production (kWh)',
@@ -1034,19 +1076,19 @@ function initProductionChart() {
         });
       }
     }
-    
+
     return { labels, datasets };
   }
-  
+
   function render() {
     const chartData = getProductionData();
     const type = typeSelect ? typeSelect.value : 'trend';
     const chartType = (type === 'trend') ? 'bar' : 'line';
-    
+
     if (productionChartInstance) {
       productionChartInstance.destroy();
     }
-    
+
     productionChartInstance = new Chart(ctx, {
       type: chartType,
       data: chartData,
@@ -1081,10 +1123,10 @@ function initProductionChart() {
       }
     });
   }
-  
+
   if (typeSelect) typeSelect.addEventListener('change', render);
   if (periodSelect) periodSelect.addEventListener('change', render);
-  
+
   render();
 }
 
@@ -1094,26 +1136,26 @@ function initConsumptionChart() {
   if (!canvas) return;
 
   const ctx = canvas.getContext('2d');
-  
+
   const typeSelect = document.getElementById('consumptionChartTypeSelect');
   const periodSelect = document.getElementById('consumptionPeriodSelect');
-  
+
   function getConsumptionData() {
     const period = periodSelect ? periodSelect.value : 'this-month';
     const type = typeSelect ? typeSelect.value : 'trend';
-    
+
     let labels = [];
     let datasets = [];
-    
-    const days = Array.from({length: 30}, (_, i) => (i + 1).toString());
+
+    const days = Array.from({ length: 30 }, (_, i) => (i + 1).toString());
     const monthlyCons = [
-      16, 22, 15, 19, 25, 20, 24, 28, 22, 20, 
+      16, 22, 15, 19, 25, 20, 24, 28, 22, 20,
       23, 26, 21, 18, 20, 24, 27, 21, 23, 26,
       29, 32, 28, 30, 31, 33, 27, 29, 31, 34
     ];
     const monthlyImport = monthlyCons.map(v => Math.round(v * 0.4));
     const monthlyExport = monthlyCons.map(v => Math.round(v * 0.6));
-    
+
     if (period === 'year') {
       labels = dashboardData.chartData.months;
       if (type === 'trend') {
@@ -1145,7 +1187,7 @@ function initConsumptionChart() {
       const dataCons = monthlyCons.map(v => Math.round(v * multiplier));
       const dataImport = monthlyImport.map(v => Math.round(v * multiplier));
       const dataExport = monthlyExport.map(v => Math.round(v * multiplier));
-      
+
       if (type === 'trend') {
         datasets.push({
           label: 'Consumption (kWh)',
@@ -1170,20 +1212,20 @@ function initConsumptionChart() {
         });
       }
     }
-    
+
     return { labels, datasets };
   }
-  
+
   function render() {
     const chartData = getConsumptionData();
     const type = typeSelect ? typeSelect.value : 'trend';
     const chartType = (type === 'trend') ? 'line' : 'bar';
     const isStacked = (type === 'import-export');
-    
+
     if (consumptionChartInstance) {
       consumptionChartInstance.destroy();
     }
-    
+
     consumptionChartInstance = new Chart(ctx, {
       type: chartType,
       data: chartData,
@@ -1220,10 +1262,10 @@ function initConsumptionChart() {
       }
     });
   }
-  
+
   if (typeSelect) typeSelect.addEventListener('change', render);
   if (periodSelect) periodSelect.addEventListener('change', render);
-  
+
   render();
 }
 
@@ -1236,12 +1278,12 @@ function initPerformanceTrendChart() {
   const viewSelect = document.getElementById('performanceViewSelect');
   const statusView = document.getElementById('performanceStatusView');
   const trendView = document.getElementById('performanceTrendView');
-  
+
   function renderTrend() {
     if (performanceTrendChartInstance) {
       performanceTrendChartInstance.destroy();
     }
-    
+
     performanceTrendChartInstance = new Chart(ctx, {
       type: 'line',
       data: {
@@ -1283,7 +1325,7 @@ function initPerformanceTrendChart() {
       }
     });
   }
-  
+
   if (viewSelect && statusView && trendView) {
     viewSelect.addEventListener('change', (e) => {
       const val = e.target.value;
@@ -1305,13 +1347,10 @@ function initPerformanceTrendChart() {
 let modalRoiChartInstance = null;
 
 function initROICalculator() {
-  console.log('ROI DEBUG: ROI modal initialized (Delegated Event Listeners)');
-
   document.addEventListener('click', async (e) => {
     // 1. Show modal
     const showBtn = e.target.closest('#heroCalcBtn') || e.target.closest('#actCalc') || e.target.closest('#btnEmptyROI');
     if (showBtn) {
-      console.log('ROI DEBUG: Show modal clicked');
       const modal = document.getElementById('calcModal');
       if (modal) {
         modal.classList.add('active');
@@ -1324,7 +1363,6 @@ function initROICalculator() {
       const closeBtn = e.target.closest('#closeCalcModal');
       const isOverlay = e.target === modal;
       if (closeBtn || isOverlay) {
-        console.log('ROI DEBUG: Hide modal clicked');
         modal.classList.remove('active');
         const calcResults = document.getElementById('calcResults');
         if (calcResults) calcResults.classList.remove('active');
@@ -1335,12 +1373,10 @@ function initROICalculator() {
     const calcBtn = e.target.closest('#computeSavingsBtn');
     if (calcBtn) {
       e.preventDefault();
-      console.log('ROI DEBUG: Calculate ROI clicked');
       const monthlyBillEl = document.getElementById('monthlyBill');
       const sunHoursEl = document.getElementById('sunHours');
       const systemSizeEl = document.getElementById('systemSize');
       if (!monthlyBillEl || !sunHoursEl || !systemSizeEl) {
-        console.warn('ROI DEBUG: Input elements missing', { monthlyBillEl, sunHoursEl, systemSizeEl });
         return;
       }
 
@@ -1372,7 +1408,6 @@ function initROICalculator() {
         controller.abort();
       }, 30000);
 
-      console.log('ROI DEBUG: API request started', { monthly_bill: monthlyBill, system_size: systemSize });
       try {
         const res = await fetch(`${API_BASE}/api/calculate-roi`, {
           method: 'POST',
@@ -1395,8 +1430,7 @@ function initROICalculator() {
         }
 
         const result = await res.json();
-        console.log('ROI DEBUG: API response received', result);
-        
+
         if (!result || result.success !== true || !result.data) {
           throw new Error((result && result.error) || 'Invalid API response format.');
         }
@@ -1416,7 +1450,6 @@ function initROICalculator() {
           showToast(err.message || 'API connection failed. Switched to fallback calculation.', 'warning');
         }
 
-        console.log('ROI DEBUG: Fallback executed');
         // Demo Fallback Calculation
         try {
           const fallbackData = runClientSideROIFallback(monthlyBill, systemSize);
@@ -1460,24 +1493,23 @@ function updateModalResultsUI(data) {
 }
 
 function initModalRoiCalculatorChart(payback = 4.8, netCost = 102000, annualSavings = 58400) {
-  console.log('ROI DEBUG: Chart rendered');
   const canvas = document.getElementById('roiTrendChart');
   if (!canvas) return;
   const ctx = canvas.getContext('2d');
-  
+
   if (modalRoiChartInstance) {
     modalRoiChartInstance.destroy();
   }
-  
-  const labels = Array.from({length: 25}, (_, i) => `Yr ${i+1}`);
+
+  const labels = Array.from({ length: 25 }, (_, i) => `Yr ${i + 1}`);
   const data = [];
   for (let year = 1; year <= 25; year++) {
     const val = (year * annualSavings) - netCost;
     data.push(Math.round(val));
   }
-  
+
   const baselineData = Array(25).fill(0);
-  
+
   modalRoiChartInstance = new Chart(ctx, {
     type: 'line',
     data: {
@@ -1507,7 +1539,7 @@ function initModalRoiCalculatorChart(payback = 4.8, netCost = 102000, annualSavi
       responsive: true,
       maintainAspectRatio: false,
       plugins: {
-        legend: { 
+        legend: {
           display: true,
           labels: {
             color: '#9fb3c8',
@@ -1532,7 +1564,7 @@ function initModalRoiCalculatorChart(payback = 4.8, netCost = 102000, annualSavi
           ticks: {
             color: '#9fb3c8',
             font: { family: 'Outfit', size: 9 },
-            callback: function(value) {
+            callback: function (value) {
               if (Math.abs(value) >= 100000) {
                 return _safeNum(value / 100000).toFixed(1) + 'L';
               }
@@ -1575,7 +1607,7 @@ function initTestimonialCarousel() {
   const avatarEl = document.getElementById('testQuoteAvatar');
   const nameEl = document.getElementById('testQuoteName');
   const locEl = document.getElementById('testQuoteLoc');
-  
+
   const prevBtn = document.getElementById('prevTestBtn');
   const nextBtn = document.getElementById('nextTestBtn');
 
@@ -1585,7 +1617,7 @@ function initTestimonialCarousel() {
       avatarEl.style.opacity = 0;
       nameEl.style.opacity = 0;
       locEl.style.opacity = 0;
-      
+
       setTimeout(() => {
         const item = testimonials[index];
         quoteEl.textContent = item.text;
@@ -1616,10 +1648,14 @@ function initTestimonialCarousel() {
     });
 
     // Auto rotate every 10 seconds
-    setInterval(() => {
+    let testimonialInterval = setInterval(() => {
       currentIndex = (currentIndex + 1) % testimonials.length;
       update(currentIndex);
     }, 10000);
+
+    // Cleanup previous interval if re-initialized
+    if (window._testimonialInterval) clearInterval(window._testimonialInterval);
+    window._testimonialInterval = testimonialInterval;
   }
 }
 
@@ -1633,11 +1669,11 @@ function initReferralCopy() {
   if (copyBtn && codeDisplay) {
     copyBtn.addEventListener('click', () => {
       const code = codeDisplay.textContent.trim();
-      
+
       navigator.clipboard.writeText(code).then(() => {
         const originalSVG = copyBtn.innerHTML;
         copyBtn.innerHTML = '<svg viewBox="0 0 24 24" fill="none" stroke="#16a34a" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" style="width: 14px; height: 14px;"><polyline points="20 6 9 17 4 12"></polyline></svg>';
-        
+
         showToast('Referral code copied to clipboard!');
 
         setTimeout(() => {
@@ -1655,13 +1691,6 @@ function initReferralCopy() {
   if (sidebarExploreBtn) {
     sidebarExploreBtn.addEventListener('click', () => {
       showToast('Opening GET Solar product explorer...');
-    });
-  }
-
-  const heroPlanBtn = document.getElementById('heroPlanBtn');
-  if (heroPlanBtn) {
-    heroPlanBtn.addEventListener('click', () => {
-      showToast('Loading customized installation blueprint plan...');
     });
   }
 
@@ -1740,39 +1769,41 @@ function initReferralCopy() {
    8. TABS CONTROLLER NAVIGATION SYSTEM
    ========================================================================== */
 function initTabsNavigation() {
-  const menuItems = document.querySelectorAll('.sidebar-menu .menu-item');
-  
-  menuItems.forEach(item => {
-    item.addEventListener('click', (e) => {
-      const targetTabId = item.getAttribute('data-tab');
-      if (!targetTabId) return;
-      
-      e.preventDefault();
-      
-      // Toggle menu item active class
-      menuItems.forEach(mi => mi.classList.remove('active'));
-      item.classList.add('active');
-      
-      // Close mobile drawer if open
-      const sidebar = document.getElementById('sidebar');
-      if (sidebar) sidebar.classList.remove('mobile-active');
-      
-      // Switch tab contents
-      switchTab(targetTabId);
-    });
+  const menuWrapper = document.querySelector('.sidebar-menu');
+  if (!menuWrapper) return;
+
+  menuWrapper.addEventListener('click', (e) => {
+    const item = e.target.closest('.menu-item');
+    if (!item) return;
+
+    const targetTabId = item.getAttribute('data-tab');
+    if (!targetTabId) return;
+
+    e.preventDefault();
+
+    // Toggle menu item active class
+    menuWrapper.querySelectorAll('.menu-item').forEach(mi => mi.classList.remove('active'));
+    item.classList.add('active');
+
+    // Close mobile drawer if open
+    const sidebar = document.getElementById('sidebar');
+    if (sidebar) sidebar.classList.remove('mobile-active');
+
+    // Switch tab contents
+    switchTab(targetTabId);
   });
 }
 
 function switchTab(tabId) {
   const user = _getUser() || {};
-  if (['admin-dashboard', 'crm-dashboard', 'audit-monitoring', 'business-intelligence'].includes(tabId)) {
+  if (['admin-dashboard', 'crm-dashboard', 'audit-monitoring', 'business-intelligence', 'mlops-dashboard'].includes(tabId)) {
     if (user.role !== 'Administrator') {
       logAuditEvent(user.email || 'anonymous', 'Unauthorized Admin Access Attempt', 'Security', `Attempted to access restricted tab: ${tabId}`, 'Critical');
       showToast('Access Denied: Administrator permissions required.', 'error');
-      
+
       // Force redirect back to dashboard
       tabId = 'dashboard';
-      
+
       // Sync active menu selection back to dashboard
       const menuItems = document.querySelectorAll('.menu-item');
       menuItems.forEach(item => {
@@ -1793,7 +1824,7 @@ function switchTab(tabId) {
       tab.classList.remove('active');
     }
   });
-  
+
   // Redraw visible Chart.js instances to avoid scaling bugs on display toggles
   if (tabId === 'dashboard') {
     if (typeof hydrateHeroDashboard === 'function') hydrateHeroDashboard();
@@ -1813,8 +1844,8 @@ function switchTab(tabId) {
     loadAdminDashboardData();
     // Resize admin charts after data load so they fill available width
     setTimeout(() => {
-      if (typeof adminActivityTrendChartInstance !== 'undefined' && adminActivityTrendChartInstance) {
-        adminActivityTrendChartInstance.resize();
+      if (typeof adminTrendChartInstance !== 'undefined' && adminTrendChartInstance) {
+        adminTrendChartInstance.resize();
       }
     }, 300);
   } else if (tabId === 'crm-dashboard') {
@@ -1837,25 +1868,21 @@ function switchTab(tabId) {
         refreshBusinessIntelligenceUI();
         // Resize BI charts after they become visible
         setTimeout(() => {
-          if (typeof biStageDistributionChartInstance !== 'undefined' && biStageDistributionChartInstance) {
-            biStageDistributionChartInstance.resize();
-          }
-          if (typeof biSegmentationChartInstance !== 'undefined' && biSegmentationChartInstance) {
-            biSegmentationChartInstance.resize();
+          if (typeof biInteractiveChartInstance !== 'undefined' && biInteractiveChartInstance) {
+            biInteractiveChartInstance.resize();
           }
         }, 200);
       }, 800);
     } else {
       refreshBusinessIntelligenceUI();
       setTimeout(() => {
-        if (typeof biStageDistributionChartInstance !== 'undefined' && biStageDistributionChartInstance) {
-          biStageDistributionChartInstance.resize();
-        }
-        if (typeof biSegmentationChartInstance !== 'undefined' && biSegmentationChartInstance) {
-          biSegmentationChartInstance.resize();
+        if (typeof biInteractiveChartInstance !== 'undefined' && biInteractiveChartInstance) {
+          biInteractiveChartInstance.resize();
         }
       }, 200);
     }
+  } else if (tabId === 'enterprise-ai') {
+    if (typeof loadEnterpriseTools === 'function') loadEnterpriseTools();
   }
 }
 
@@ -1865,9 +1892,9 @@ function switchTab(tabId) {
 function initAIInsightsFeed() {
   const recommendationsList = document.getElementById('aiRecommendationsList');
   if (!recommendationsList) return;
-  
+
   recommendationsList.innerHTML = '';
-  
+
   const insights = (dashboardData && dashboardData.insights) ? dashboardData.insights : [
     "Customers consuming above 350 kWh/month achieve the highest solar ROI.",
     "Average payback period decreased by 8% this quarter.",
@@ -1875,7 +1902,7 @@ function initAIInsightsFeed() {
     "Solar adoption potential is highest among high-consumption households.",
     "Energy independence increased by 12% compared to last year."
   ];
-  
+
   insights.forEach(insight => {
     const li = document.createElement('li');
     li.className = 'insight-feed-item';
@@ -1898,27 +1925,27 @@ function initBillUploadSimulator() {
   const progressPercent = document.getElementById('billUploadPercent');
   const progressStatus = document.getElementById('billUploadStatus');
   const fileNameLabel = document.getElementById('billFileName');
-  
+
   const resultsContainer = document.getElementById('billAnalysisResults');
   const errorBox = document.getElementById('billAnalysisErrorBox');
   const retryBtn = document.getElementById('billAnalysisRetryBtn');
-  
+
   if (!dropArea || !fileInput) return;
-  
+
   // Setup file selection
   dropArea.addEventListener('click', () => fileInput.click());
-  
+
   dropArea.addEventListener('dragover', (e) => {
     e.preventDefault();
     dropArea.style.borderColor = 'var(--accent-blue)';
     dropArea.style.backgroundColor = 'rgba(23,168,229,0.08)';
   });
-  
+
   dropArea.addEventListener('dragleave', () => {
     dropArea.style.borderColor = 'var(--border-color)';
     dropArea.style.backgroundColor = 'transparent';
   });
-  
+
   dropArea.addEventListener('drop', (e) => {
     e.preventDefault();
     dropArea.style.borderColor = 'var(--border-color)';
@@ -1927,13 +1954,13 @@ function initBillUploadSimulator() {
       handleFile(e.dataTransfer.files[0]);
     }
   });
-  
+
   fileInput.addEventListener('change', (e) => {
     if (e.target.files.length > 0) {
       handleFile(e.target.files[0]);
     }
   });
-  
+
   if (retryBtn) {
     retryBtn.addEventListener('click', (e) => {
       e.stopPropagation();
@@ -1965,12 +1992,31 @@ function initBillUploadSimulator() {
     });
   }
 
+  /* ── State Validation Helpers ───────────────────────────── */
+  function _isValidBillState(data) {
+    if (!data || typeof data !== 'object') return false;
+    if (data.monthly_units !== undefined) {
+      var n = Number(data.monthly_units);
+      if (!isFinite(n) || n < 0) return false;
+    }
+    if (data.bill_amount !== undefined) {
+      var n = Number(data.bill_amount);
+      if (!isFinite(n) || n < 0) return false;
+    }
+    return true;
+  }
+
   function restoreAnalysisState() {
     const saved = localStorage.getItem('lastBillAnalysis');
     if (saved) {
       try {
         const data = JSON.parse(saved);
-        
+
+        if (!_isValidBillState(data)) {
+          localStorage.removeItem('lastBillAnalysis');
+          return;
+        }
+
         // Ensure new properties are calculated and written back if missing (Patch 2.1 additions)
         // Also backfill solarYield if an older cached entry is missing it
         if (data.solarYield === undefined) {
@@ -1991,13 +2037,13 @@ function initBillUploadSimulator() {
           const filename = data.filename || '';
           const textToSearch = `${data.customer_name || ''} ${data.discom || ''} ${data.billing_period || ''}`;
           const solarData = extractSolarFields(textToSearch, filename);
-          
+
           data.isSolarConsumer = solarData.isSolarConsumer;
           data.importUnits = solarData.importUnits;
           data.exportUnits = solarData.exportUnits;
           data.solarGeneratedUnits = solarData.solarGeneratedUnits;
           data.netConsumptionUnits = solarData.netConsumptionUnits;
-          
+
           if (data.isSolarConsumer && data.importUnits !== null && data.exportUnits !== null) {
             data.netConsumption = Math.max(data.importUnits - data.exportUnits, 0);
             data.netMeteringCredit = data.exportUnits * 7;
@@ -2005,17 +2051,17 @@ function initBillUploadSimulator() {
             data.netConsumption = 0;
             data.netMeteringCredit = 0;
           }
-          
+
           data.extractionConfidence = calculateExtractionConfidence(data, false);
           data.billHealth = calculateBillHealthScore(data);
           data.solarOpportunity = calculateSolarOpportunityScore(data, data.isSolarConsumer && data.importUnits !== null);
-          
+
           localStorage.setItem('lastBillAnalysis', JSON.stringify(data));
         }
 
         renderData(data);
         checkAndRenderUnified();
-        
+
         // Show success state on drop area
         dropArea.innerHTML = `
           <svg class="upload-icon" style="width: 48px; height: 48px; margin-bottom: 12px; stroke: var(--accent-green); fill: none; stroke-width: 1.5;" viewBox="0 0 24 24">
@@ -2036,12 +2082,12 @@ function initBillUploadSimulator() {
     const consumerNumber = data.consumer_number || "Not Available";
     const discom = data.discom || "Not Available";
     const billingPeriod = data.billing_period || "Not Available";
-    
+
     // Numeric/Calculated Fallbacks
     const monthlyUnits = Number(data.monthly_units) || 0;
     const billAmount = Number(data.bill_amount) || 0;
     const perUnitRate = Number(data.per_unit_rate) || 0;
-    
+
     const recommendedKw = Number(data.recommended_kw) || 0;
     const monthlyGen = Number(data.monthly_generation_units) || 0;
     const monthlySavings = Number(data.monthly_savings_rs) || 0;
@@ -2058,14 +2104,14 @@ function initBillUploadSimulator() {
     if (resElectricityCompany) resElectricityCompany.textContent = discom;
     const resBillingPeriod = document.getElementById('resBillingPeriod');
     if (resBillingPeriod) resBillingPeriod.textContent = billingPeriod;
-    
+
     const resMonthlyUnits = document.getElementById('resMonthlyUnits');
     if (resMonthlyUnits) resMonthlyUnits.textContent = monthlyUnits ? `${monthlyUnits} kWh` : "Not Available";
     const resBillAmount = document.getElementById('resBillAmount');
     if (resBillAmount) resBillAmount.textContent = billAmount ? `₹${billAmount.toLocaleString('en-IN')}` : "Not Available";
     const resPerUnitRate = document.getElementById('resPerUnitRate');
     if (resPerUnitRate) resPerUnitRate.textContent = perUnitRate ? `₹${perUnitRate} / kWh` : "Not Available";
-    
+
     const resRecommendedSolarSize = document.getElementById('resRecommendedSolarSize');
     if (resRecommendedSolarSize) resRecommendedSolarSize.textContent = recommendedKw ? `${recommendedKw} kW` : "Not Available";
     const resMonthlyGeneration = document.getElementById('resMonthlyGeneration');
@@ -2126,42 +2172,42 @@ function initBillUploadSimulator() {
     // 5. Update Solar Consumer Intelligence section (Patch 2.1)
     const isSolar = data.isSolarConsumer === true;
     const hasImportExport = data.importUnits !== undefined && data.importUnits !== null && data.exportUnits !== undefined && data.exportUnits !== null;
-    
+
     const resSolarInstalled = document.getElementById('resSolarInstalled');
     const rowSolarFields = document.querySelectorAll('.row-solar-field');
-    
+
     if (isSolar && hasImportExport) {
       if (resSolarInstalled) resSolarInstalled.textContent = 'Yes';
       rowSolarFields.forEach(el => el.style.display = 'block');
-      
+
       const impUnits = Number(data.importUnits) || 0;
       const expUnits = Number(data.exportUnits) || 0;
       const netCons = Number(data.netConsumption) || 0;
       const netCredit = Number(data.netMeteringCredit) || 0;
-      
+
       const resImportUnits = document.getElementById('resImportUnits');
       if (resImportUnits) resImportUnits.textContent = `${_safeNum(impUnits).toFixed(1)} kWh`;
-      
+
       const resExportUnits = document.getElementById('resExportUnits');
       if (resExportUnits) resExportUnits.textContent = `${_safeNum(expUnits).toFixed(1)} kWh`;
-      
+
       const resNetConsumption = document.getElementById('resNetConsumption');
       if (resNetConsumption) resNetConsumption.textContent = `${_safeNum(netCons).toFixed(1)} kWh`;
-      
+
       const resNetMeterCredit = document.getElementById('resNetMeterCredit');
       if (resNetMeterCredit) resNetMeterCredit.textContent = `₹${Math.round(netCredit).toLocaleString('en-IN')}`;
     } else {
       if (resSolarInstalled) resSolarInstalled.textContent = 'No';
       rowSolarFields.forEach(el => el.style.display = 'none');
     }
-    
+
     // Confidence badge
     const resConfidenceBadge = document.getElementById('resExtractionConfidenceBadge');
     if (resConfidenceBadge && data.extractionConfidence) {
       resConfidenceBadge.textContent = data.extractionConfidence.label;
       resConfidenceBadge.className = `confidence-badge ${data.extractionConfidence.badgeClass}`;
     }
-    
+
     // Scores
     const resBillHealthScore = document.getElementById('resBillHealthScore');
     if (resBillHealthScore && data.billHealth) {
@@ -2171,7 +2217,7 @@ function initBillUploadSimulator() {
     if (resBillHealthRating && data.billHealth) {
       resBillHealthRating.textContent = data.billHealth.rating;
     }
-    
+
     const resSolarOpportunityScore = document.getElementById('resSolarOpportunityScore');
     if (resSolarOpportunityScore && data.solarOpportunity) {
       resSolarOpportunityScore.textContent = `${data.solarOpportunity.score}/100`;
@@ -2190,44 +2236,9 @@ function initBillUploadSimulator() {
     initBillCostBreakdownChart(billAmount, monthlySavings);
   }
 
-  function loadPdfJS() {
-    return new Promise((resolve, reject) => {
-      if (window.pdfjsLib) {
-        resolve(window.pdfjsLib);
-        return;
-      }
-      const script = document.createElement('script');
-      script.src = 'https://cdnjs.cloudflare.com/ajax/libs/pdf.js/2.16.105/pdf.min.js';
-      script.onload = () => {
-        window.pdfjsLib.GlobalWorkerOptions.workerSrc = 'https://cdnjs.cloudflare.com/ajax/libs/pdf.js/2.16.105/pdf.worker.min.js';
-        resolve(window.pdfjsLib);
-      };
-      script.onerror = () => reject(new Error('Failed to load PDF.js library'));
-      document.head.appendChild(script);
-    });
-  }
-
-  async function convertPdfToImageBlob(pdfFile) {
-    const pdfjsLib = await loadPdfJS();
-    const arrayBuffer = await pdfFile.arrayBuffer();
-    const pdf = await pdfjsLib.getDocument({ data: arrayBuffer }).promise;
-    const page = await pdf.getPage(1);
-    const viewport = page.getViewport({ scale: 2.0 });
-    const canvas = document.createElement('canvas');
-    const context = canvas.getContext('2d');
-    canvas.height = viewport.height;
-    canvas.width = viewport.width;
-    await page.render({ canvasContext: context, viewport: viewport }).promise;
-    return new Promise((resolve) => {
-      canvas.toBlob((blob) => {
-        resolve(blob);
-      }, 'image/png');
-    });
-  }
-
   function handleFile(file) {
     if (!file) return;
-    
+
     // Type validation
     const fileType = file.type || '';
     const validTypes = ['image/jpeg', 'image/jpg', 'image/png', 'image/webp', 'application/pdf'];
@@ -2240,7 +2251,7 @@ function initBillUploadSimulator() {
     }
 
     if (fileNameLabel) fileNameLabel.textContent = file.name;
-    
+
     // Update metadata on UI
     const billFileType = document.getElementById('billFileType');
     const billFileSize = document.getElementById('billFileSize');
@@ -2258,7 +2269,7 @@ function initBillUploadSimulator() {
     if (errorBox) errorBox.style.display = 'none';
     if (resultsContainer) resultsContainer.style.display = 'none';
     if (progressBox) progressBox.style.display = 'block';
-    
+
     // Extract PDF text if PDF, then run pipeline
     if (extension === 'pdf') {
       extractPdfText(file)
@@ -2280,9 +2291,9 @@ function initBillUploadSimulator() {
   function runPipeline(fileOrBlob, fileName, fileContentType, isFallback = false, solarData = null) {
     if (progressBar) progressBar.style.width = '0%';
     if (progressPercent) progressPercent.textContent = '0%';
-    
+
     const isPDF = fileContentType === 'application/pdf' || fileName.toLowerCase().endsWith('.pdf');
-    
+
     // Progress interval simulator
     let progress = 0;
     const progressInterval = setInterval(() => {
@@ -2291,7 +2302,7 @@ function initBillUploadSimulator() {
         if (progress > 90) progress = 90;
         if (progressBar) progressBar.style.width = `${progress}%`;
         if (progressPercent) progressPercent.textContent = `${progress}%`;
-        
+
         if (progress === 10) {
           if (progressStatus) progressStatus.textContent = 'Uploading...';
         } else if (progress === 30) {
@@ -2320,62 +2331,66 @@ function initBillUploadSimulator() {
       method: 'POST',
       body: formData
     })
-    .then(async (res) => {
-      clearInterval(progressInterval);
-      if (!res.ok) {
-        throw new Error('API server returned an error.');
-      }
-      return res.json();
-    })
-    .then((result) => {
-      // Validate Response
-      if (!result || result.success !== true || !result.data) {
-        throw new Error((result && result.error) || 'Invalid API response format.');
-      }
+      .then(async (res) => {
+        clearInterval(progressInterval);
+        if (!res.ok) {
+          throw new Error('API server returned an error.');
+        }
+        return res.json();
+      })
+      .then((result) => {
+        // Validate Response
+        if (!result || result.success !== true || !result.data) {
+          throw new Error((result && result.error) || 'Invalid API response format.');
+        }
 
-      // Check for low-confidence PDF text extraction fallback
-      const customerName = result.data.customer_name || '';
-      const monthlyUnits = Number(result.data.monthly_units) || 0;
-      const isLowConfidence = isPDF && !isFallback && (
-        !customerName || customerName === 'Not Available' || customerName === 'Demo Consumer' || monthlyUnits === 0
-      );
+        // Validate bill analysis data before any downstream processing
+        if (!validateBillAnalysisResponse(result.data)) {
+          handlePipelineError(new Error('Analysis returned invalid data. Please upload a clearer image.'));
+          return;
+        }
 
-      if (isLowConfidence) {
-        console.log('PDF text extraction was low-confidence or empty. Triggering OCR Fallback...');
-        if (progressStatus) progressStatus.textContent = 'Running OCR...';
-        
-        convertPdfToImageBlob(fileOrBlob)
-          .then((imgBlob) => {
-            runPipeline(imgBlob, 'bill_page1.png', 'image/png', true, solarData);
-          })
-          .catch((err) => {
-            console.error('OCR Fallback page conversion failed:', err);
-            completeSuccess(result.data);
-          });
-        return;
-      }
+        // Check for low-confidence PDF text extraction fallback
+        const customerName = result.data.customer_name || '';
+        const monthlyUnits = Number(result.data.monthly_units) || 0;
+        const isLowConfidence = isPDF && !isFallback && (
+          !customerName || customerName === 'Not Available' || customerName === 'Demo Consumer' || monthlyUnits === 0
+        );
 
-      completeSuccess(result.data);
-    })
-    .catch((err) => {
-      clearInterval(progressInterval);
-      
-      // Try OCR fallback as a last resort for PDF upload failure
-      if (isPDF && !isFallback) {
-        console.log('PDF upload failed, attempting OCR Fallback...');
-        if (progressStatus) progressStatus.textContent = 'Running OCR...';
-        convertPdfToImageBlob(fileOrBlob)
-          .then((imgBlob) => {
-            runPipeline(imgBlob, 'bill_page1.png', 'image/png', true, solarData);
-          })
-          .catch((ocrErr) => {
-            handlePipelineError(err);
-          });
-        return;
-      }
-      
-      handlePipelineError(err);
-    });
+        if (isLowConfidence) {
+          if (progressStatus) progressStatus.textContent = 'Running OCR...';
+
+          pdfToImageBlob(fileOrBlob)
+            .then((imgBlob) => {
+              runPipeline(imgBlob, 'bill_page1.png', 'image/png', true, solarData);
+            })
+            .catch((err) => {
+              console.error('OCR Fallback page conversion failed:', err);
+              completeSuccess(result.data);
+            });
+          return;
+        }
+
+        completeSuccess(result.data);
+      })
+      .catch((err) => {
+        clearInterval(progressInterval);
+
+        // Try OCR fallback as a last resort for PDF upload failure
+        if (isPDF && !isFallback) {
+          if (progressStatus) progressStatus.textContent = 'Running OCR...';
+          pdfToImageBlob(fileOrBlob)
+            .then((imgBlob) => {
+              runPipeline(imgBlob, 'bill_page1.png', 'image/png', true, solarData);
+            })
+            .catch((ocrErr) => {
+              handlePipelineError(err);
+            });
+          return;
+        }
+
+        handlePipelineError(err);
+      });
 
     function completeSuccess(data) {
       if (progressBar) progressBar.style.width = '100%';
@@ -2389,7 +2404,7 @@ function initBillUploadSimulator() {
       const monthlyUnits = Number(data.monthly_units) || 0;
       const billAmount = Number(data.bill_amount) || 0;
       const monthlySavings = Number(data.monthly_savings_rs) || 0;
-      
+
       const solarYield = 125;
       const monthlySolarGen = recommendedKw * solarYield;
       const annualSolarGen = monthlySolarGen * 12;
@@ -2401,7 +2416,7 @@ function initBillUploadSimulator() {
 
       // Extract solar fields if not already provided
       const finalSolarData = solarData || extractSolarFields('', fileName);
-      
+
       // Calculate confidence, health, and opportunity
       const isSolarInstalled = finalSolarData.isSolarConsumer && finalSolarData.importUnits !== null;
       const confidence = calculateExtractionConfidence(data, isFallback);
@@ -2427,7 +2442,7 @@ function initBillUploadSimulator() {
         solarOffsetPercent: offsetPercent,
         gridDependency: gridDep,
         netMeteringBenefit: netMeteringBen,
-        
+
         // Patch 2.1 fields
         isSolarConsumer: finalSolarData.isSolarConsumer,
         importUnits: finalSolarData.importUnits,
@@ -2443,7 +2458,7 @@ function initBillUploadSimulator() {
 
       // Save to local storage
       localStorage.setItem('lastBillAnalysis', JSON.stringify(extendedData));
-      
+
       logAuditEvent((_getUser() || {}).email, 'Bill Analysis Completed', 'Assessment', `Completed bill analysis: units consumed = ${extendedData.monthly_units}, recommended system = ${extendedData.recommended_kw} kW.`, 'Medium');
       createNotification('assessment', 'Bill Analysis Completed', `Extracted consumption of ${extendedData.monthly_units} units for customer ${extendedData.customer_name}. Recommended system size: ${extendedData.recommended_kw} kW.`, 'medium');
       addActivityLog('bill', 'Bill Analysis Completed', `Uploaded electric bill matching ${extendedData.monthly_units} kWh consumption.`);
@@ -2589,7 +2604,7 @@ function initSolarReportUploader() {
             runSolarPipeline(file, file.name, file.type, text, false);
           } else {
             updateProgress(40, 'Running OCR...');
-            convertSolarPdfToImageBlob(file).then(blob => {
+            pdfToImageBlob(file).then(blob => {
               runSolarPipeline(blob, 'solar_page1.png', 'image/png', '', true);
             }).catch(() => {
               // proceed with empty text anyway
@@ -2604,19 +2619,6 @@ function initSolarReportUploader() {
       // PLUS attempt a local text read via FileReader for filenames
       runSolarPipeline(file, file.name, fileType, '', false);
     }
-  }
-
-  async function convertSolarPdfToImageBlob(pdfFile) {
-    const pdfjsLib = await loadPdfJS();
-    const arrayBuffer = await pdfFile.arrayBuffer();
-    const pdf = await pdfjsLib.getDocument({ data: arrayBuffer }).promise;
-    const page = await pdf.getPage(1);
-    const viewport = page.getViewport({ scale: 2.0 });
-    const canvas = document.createElement('canvas');
-    canvas.height = viewport.height;
-    canvas.width = viewport.width;
-    await page.render({ canvasContext: canvas.getContext('2d'), viewport }).promise;
-    return new Promise(resolve => canvas.toBlob(resolve, 'image/png'));
   }
 
   function updateProgress(pct, status) {
@@ -2646,47 +2648,47 @@ function initSolarReportUploader() {
       method: 'POST',
       body: formData
     })
-    .then(res => res.ok ? res.json() : Promise.reject(new Error('API error')))
-    .then(result => {
-      clearInterval(progressInterval);
-      // Extract text from the API response (raw text may be embedded in result.data._raw_text)
-      let apiText = '';
-      if (result && result.data) {
-        apiText = [
-          result.data._raw_text || '',
-          result.data.customer_name || '',
-          result.data.billing_period || ''
-        ].join(' ');
-      }
-
-      const combinedText = [prefetchedText, apiText].join(' ');
-      const prodData = extractSolarProductionData(combinedText, fileName);
-
-      // If extraction yielded nothing useful from OCR, at minimum save filename + source
-      if (prodData.productionKwh == null && !isOcrFallback) {
-        // Try OCR fallback for PDFs
-        const ext = fileName.split('.').pop().toLowerCase();
-        if (ext === 'pdf') {
-          clearInterval(progressInterval);
-          convertSolarPdfToImageBlob(fileOrBlob).then(blob => {
-            runSolarPipeline(blob, 'solar_page1.png', 'image/png', prefetchedText, true);
-          }).catch(() => completeSolarSuccess(prodData));
-          return;
+      .then(res => res.ok ? res.json() : Promise.reject(new Error('API error')))
+      .then(result => {
+        clearInterval(progressInterval);
+        // Extract text from the API response (raw text may be embedded in result.data._raw_text)
+        let apiText = '';
+        if (result && result.data) {
+          apiText = [
+            result.data._raw_text || '',
+            result.data.customer_name || '',
+            result.data.billing_period || ''
+          ].join(' ');
         }
-      }
 
-      completeSolarSuccess(prodData);
-    })
-    .catch(err => {
-      clearInterval(progressInterval);
-      // Even if API fails, try parsing any prefetched PDF text
-      if (prefetchedText && prefetchedText.trim().length > 10) {
-        const prodData = extractSolarProductionData(prefetchedText, fileName);
+        const combinedText = [prefetchedText, apiText].join(' ');
+        const prodData = extractSolarProductionData(combinedText, fileName);
+
+        // If extraction yielded nothing useful from OCR, at minimum save filename + source
+        if (prodData.productionKwh == null && !isOcrFallback) {
+          // Try OCR fallback for PDFs
+          const ext = fileName.split('.').pop().toLowerCase();
+          if (ext === 'pdf') {
+            clearInterval(progressInterval);
+            pdfToImageBlob(fileOrBlob).then(blob => {
+              runSolarPipeline(blob, 'solar_page1.png', 'image/png', prefetchedText, true);
+            }).catch(() => completeSolarSuccess(prodData));
+            return;
+          }
+        }
+
         completeSolarSuccess(prodData);
-      } else {
-        handleSolarError(err);
-      }
-    });
+      })
+      .catch(err => {
+        clearInterval(progressInterval);
+        // Even if API fails, try parsing any prefetched PDF text
+        if (prefetchedText && prefetchedText.trim().length > 10) {
+          const prodData = extractSolarProductionData(prefetchedText, fileName);
+          completeSolarSuccess(prodData);
+        } else {
+          handleSolarError(err);
+        }
+      });
 
     function completeSolarSuccess(prodData) {
       updateProgress(100, 'Analysis Complete');
@@ -2740,23 +2742,6 @@ function checkAndRenderUnified() {
 }
 
 
-function loadPdfJS() {
-  return new Promise((resolve, reject) => {
-    if (window.pdfjsLib) {
-      resolve(window.pdfjsLib);
-      return;
-    }
-    const script = document.createElement('script');
-    script.src = 'https://cdnjs.cloudflare.com/ajax/libs/pdf.js/2.16.105/pdf.min.js';
-    script.onload = () => {
-      window.pdfjsLib.GlobalWorkerOptions.workerSrc = 'https://cdnjs.cloudflare.com/ajax/libs/pdf.js/2.16.105/pdf.worker.min.js';
-      resolve(window.pdfjsLib);
-    };
-    script.onerror = () => reject(new Error('Failed to load PDF.js library'));
-    document.head.appendChild(script);
-  });
-}
-
 async function extractPdfText(pdfFile) {
   try {
     const pdfjsLib = await loadPdfJS();
@@ -2779,7 +2764,7 @@ async function extractPdfText(pdfFile) {
 function extractSolarFields(text, filename) {
   const normalizedText = text ? text.toLowerCase() : '';
   const normalizedFilename = filename ? filename.toLowerCase() : '';
-  
+
   const keywords = [
     // Existing keywords
     'solar consumer', 'net meter', 'net metering', 'solar energy',
@@ -2789,7 +2774,7 @@ function extractSolarFields(text, filename) {
     'gen_netmeter', 'netmeter', 'kwhe', 'kvah export',
     'opening surplus', 'closing surplus'
   ];
-  
+
   let isSolarConsumer = false;
   for (const kw of keywords) {
     if (normalizedText.includes(kw) || normalizedFilename.includes(kw)) {
@@ -2797,17 +2782,17 @@ function extractSolarFields(text, filename) {
       break;
     }
   }
-  
+
   // Also check if filename strictly has 'solar' as word
   if (normalizedFilename.includes('solar')) {
     isSolarConsumer = true;
   }
-  
+
   let importUnits = null;
   let exportUnits = null;
   let solarGeneratedUnits = null;
   let netConsumptionUnits = null;
-  
+
   if (isSolarConsumer) {
     const importPatterns = [
       /import\s+units\s*[:=-]?\s*(\d+(?:\.\d+)?)/i,
@@ -2817,7 +2802,7 @@ function extractSolarFields(text, filename) {
       /active\s+import\s*[:=-]?\s*(\d+(?:\.\d+)?)/i,
       /imp\s*[:=-]?\s*(\d+(?:\.\d+)?)/i
     ];
-    
+
     const exportPatterns = [
       /export\s+units\s*[:=-]?\s*(\d+(?:\.\d+)?)/i,
       /export\s+energy\s*[:=-]?\s*(\d+(?:\.\d+)?)/i,
@@ -2826,7 +2811,7 @@ function extractSolarFields(text, filename) {
       /active\s+export\s*[:=-]?\s*(\d+(?:\.\d+)?)/i,
       /exp\s*[:=-]?\s*(\d+(?:\.\d+)?)/i
     ];
-    
+
     const solarPatterns = [
       /solar\s+generated\s*[:=-]?\s*(\d+(?:\.\d+)?)/i,
       /solar\s+generation\s*[:=-]?\s*(\d+(?:\.\d+)?)/i,
@@ -2834,13 +2819,13 @@ function extractSolarFields(text, filename) {
       /pv\s+generation\s*[:=-]?\s*(\d+(?:\.\d+)?)/i,
       /pv\s+gen\s*[:=-]?\s*(\d+(?:\.\d+)?)/i
     ];
-    
+
     const netPatterns = [
       /net\s+units\s*[:=-]?\s*(\d+(?:\.\d+)?)/i,
       /net\s+consumption\s*[:=-]?\s*(\d+(?:\.\d+)?)/i,
       /net\s+energy\s*[:=-]?\s*(\d+(?:\.\d+)?)/i
     ];
-    
+
     for (const p of importPatterns) {
       const match = normalizedText.match(p);
       if (match) {
@@ -2869,7 +2854,7 @@ function extractSolarFields(text, filename) {
         break;
       }
     }
-    
+
     // Fallback Mock Override: if filename contains solar, and import/export units are not matched
     if (normalizedFilename.includes('solar') && (importUnits === null || exportUnits === null)) {
       importUnits = importUnits !== null ? importUnits : 185.0;
@@ -2878,7 +2863,7 @@ function extractSolarFields(text, filename) {
       if (netConsumptionUnits === null) netConsumptionUnits = 73.0;
     }
   }
-  
+
   return {
     isSolarConsumer,
     importUnits,
@@ -2935,7 +2920,7 @@ function extractSolarProductionData(text, filename) {
   // --- Month ---
   let month = null;
   let year = null;
-  const months = ['january','february','march','april','may','june','july','august','september','october','november','december'];
+  const months = ['january', 'february', 'march', 'april', 'may', 'june', 'july', 'august', 'september', 'october', 'november', 'december'];
   const monthPatterns = [
     /\b(january|february|march|april|may|june|july|august|september|october|november|december)\s+(\d{4})\b/i,
     /\b(jan|feb|mar|apr|may|jun|jul|aug|sep|oct|nov|dec)[\s\-\/]+(\d{4})\b/i,
@@ -2949,7 +2934,7 @@ function extractSolarProductionData(text, filename) {
         year = m[2];
       } else {
         const mn = parseInt(m[1], 10);
-        month = months[mn - 1] ? (months[mn-1].charAt(0).toUpperCase() + months[mn-1].slice(1)) : null;
+        month = months[mn - 1] ? (months[mn - 1].charAt(0).toUpperCase() + months[mn - 1].slice(1)) : null;
         year = m[2];
       }
       break;
@@ -3078,7 +3063,7 @@ function renderUnifiedIntelligence(unified) {
 function calculateExtractionConfidence(data, isFallback) {
 
   let score = 30; // base score if pipeline succeeds
-  
+
   if (data.customer_name && data.customer_name !== 'Not Available' && data.customer_name !== 'Demo Consumer') {
     score += 15;
   }
@@ -3094,13 +3079,13 @@ function calculateExtractionConfidence(data, isFallback) {
   if (Number(data.bill_amount) > 0) {
     score += 10;
   }
-  
+
   if (isFallback) {
     score -= 10;
   }
-  
+
   score = Math.max(0, Math.min(100, score));
-  
+
   let label = 'Low Confidence';
   let badgeClass = 'confidence-low';
   if (score >= 85) {
@@ -3110,13 +3095,13 @@ function calculateExtractionConfidence(data, isFallback) {
     label = 'Medium Confidence';
     badgeClass = 'confidence-medium';
   }
-  
+
   return { score, label, badgeClass };
 }
 
 function calculateBillHealthScore(data) {
   let score = 40; // Base score for successful API extraction
-  
+
   if (data.customer_name && data.customer_name !== 'Not Available') {
     score += 15;
   }
@@ -3132,9 +3117,9 @@ function calculateBillHealthScore(data) {
   if (data.discom && data.discom !== 'Not Available') {
     score += 10;
   }
-  
+
   score = Math.max(0, Math.min(100, score));
-  
+
   let rating = 'Poor';
   if (score >= 90) {
     rating = 'Excellent';
@@ -3143,7 +3128,7 @@ function calculateBillHealthScore(data) {
   } else if (score >= 50) {
     rating = 'Average';
   }
-  
+
   return { score, rating };
 }
 
@@ -3152,14 +3137,14 @@ function calculateSolarOpportunityScore(data, isSolarInstalled) {
   const monthlyUnits = Number(data.monthly_units) || 0;
   const recommendedKw = Number(data.recommended_kw) || 0;
   const annualSavings = (Number(data.monthly_savings_rs) || 0) * 12;
-  
+
   const scoreBill = Math.min(30, (billAmount / 6000) * 30);
   const scoreUnits = Math.min(20, (monthlyUnits / 500) * 20);
   const scoreKw = Math.min(10, (recommendedKw / 8) * 10);
   const scoreSavings = Math.min(10, (annualSavings / 80000) * 10);
-  
+
   let score = Math.round(scoreBill + scoreUnits + scoreKw + scoreSavings);
-  
+
   if (monthlyUnits > 300) {
     score += 10;
   }
@@ -3169,9 +3154,9 @@ function calculateSolarOpportunityScore(data, isSolarInstalled) {
   if (!isSolarInstalled) {
     score += 10;
   }
-  
+
   score = Math.max(0, Math.min(100, score));
-  
+
   let rating = 'Weak Candidate';
   if (score >= 85) {
     rating = 'Excellent Candidate';
@@ -3180,7 +3165,7 @@ function calculateSolarOpportunityScore(data, isSolarInstalled) {
   } else if (score >= 50) {
     rating = 'Average Candidate';
   }
-  
+
   return { score, rating };
 }
 
@@ -3189,16 +3174,16 @@ function initBillCostBreakdownChart(billAmount, monthlySavings) {
   const canvas = document.getElementById('billCostBreakdownChart');
   if (!canvas) return;
   const ctx = canvas.getContext('2d');
-  
+
   if (billCostBreakdownChartInstance) {
     billCostBreakdownChartInstance.destroy();
   }
-  
+
   const energyVal = Math.round(billAmount * 0.70);
   const fixedVal = Math.round(billAmount * 0.15);
   const taxesVal = Math.round(billAmount * 0.10);
   const otherVal = Math.round(billAmount * 0.05);
-  
+
   billCostBreakdownChartInstance = new Chart(ctx, {
     type: 'pie',
     data: {
@@ -3238,7 +3223,7 @@ function initBillCostBreakdownChart(billAmount, monthlySavings) {
         },
         tooltip: {
           callbacks: {
-            label: function(context) {
+            label: function (context) {
               const val = context.raw;
               const pct = _safeNum((val / (billAmount || 1)) * 100).toFixed(0);
               return ` ${context.label}: ₹${val.toLocaleString('en-IN')} (${pct}%)`;
@@ -3258,7 +3243,7 @@ function initBillCostBreakdownChart(billAmount, monthlySavings) {
   if (topCostDriverEl) {
     topCostDriverEl.textContent = `Energy Charges - ₹${energyVal.toLocaleString('en-IN')} (70% of total)`;
   }
-  
+
   const savingsPercent = billAmount > 0 ? Math.min(100, Math.round((monthlySavings / billAmount) * 100)) : 0;
   const potentialSavingsEl = document.getElementById('resPotentialSavingsText');
   if (potentialSavingsEl) {
@@ -3274,11 +3259,11 @@ function initBillHistoryChart() {
   const canvas = document.getElementById('billHistoryChart');
   if (!canvas) return;
   const ctx = canvas.getContext('2d');
-  
+
   if (billHistoryChartInstance) {
     billHistoryChartInstance.destroy();
   }
-  
+
   // Read last analysis to scale the chart
   const savedAnalysis = localStorage.getItem('lastBillAnalysis');
   let baseBill = 6500; // default mock bill
@@ -3286,14 +3271,14 @@ function initBillHistoryChart() {
     try {
       const data = JSON.parse(savedAnalysis);
       baseBill = Number(data.bill_amount) || 6500;
-    } catch (e) {}
+    } catch (e) { }
   }
-  
+
   const labels = (dashboardData && dashboardData.chartData) ? dashboardData.chartData.months : ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"];
   const multipliers = [0.95, 0.9, 0.93, 1.05, 1.1, 1.3, 1.25, 1.2, 1.1, 1.0, 0.9, 0.96];
   const bills = multipliers.map(mult => Math.round(baseBill * mult));
   const savings = bills.map(val => Math.round(val * 0.74));
-  
+
   billHistoryChartInstance = new Chart(ctx, {
     type: 'bar',
     data: {
@@ -3349,6 +3334,12 @@ function initBillHistoryChart() {
 /* ==========================================================================
    12. SATELLITE ROOF SCANNER SIMULATOR
    ========================================================================== */
+function initSatelliteRoofModule() {
+  if (window.GSE && window.GSE.Modules && window.GSE.Modules.SatelliteRoof) {
+    window.GSE.Modules.SatelliteRoof.init();
+  }
+}
+
 function initRoofScannerSimulator() {
   const dropArea = document.getElementById('roofDragDropArea');
   const fileInput = document.getElementById('roofFileInput');
@@ -3361,7 +3352,7 @@ function initRoofScannerSimulator() {
   const poly1 = document.querySelector('.polygon-1');
   const poly2 = document.querySelector('.polygon-2');
   const scanBtn = document.getElementById('startRoofScanBtn');
-  
+
   const resultsContainer = document.getElementById('roofAnalysisResults');
   const errorBox = document.getElementById('roofAnalysisErrorBox');
   const retryBtn = document.getElementById('roofAnalysisRetryBtn');
@@ -3372,23 +3363,24 @@ function initRoofScannerSimulator() {
   if (!dropArea || !fileInput) return;
 
   // Expose validate+enable function globally so inline oninput handlers can reach it
-  window.updateRoofAnalyzeBtn = function() {
+  window.updateRoofAnalyzeBtn = function () {
     const btn = document.getElementById('roofAnalyzeBtn');
     if (!btn) return;
-    const lenVal  = parseFloat(document.getElementById('roofLengthInput')?.value);
-    const widVal  = parseFloat(document.getElementById('roofWidthInput')?.value);
+    const lenVal = parseFloat(document.getElementById('roofLengthInput')?.value);
+    const widVal = parseFloat(document.getElementById('roofWidthInput')?.value);
     const cityVal = (document.getElementById('roofCityInput')?.value || '').trim();
-    const valid   = _selectedRoofFile && lenVal > 0 && widVal > 0 && cityVal.length > 0;
+    const valid = _selectedRoofFile && lenVal > 0 && widVal > 0 && cityVal.length > 0;
     btn.disabled = !valid;
-    btn.style.opacity  = valid ? '1'         : '0.45';
-    btn.style.cursor   = valid ? 'pointer'   : 'not-allowed';
+    btn.style.opacity = valid ? '1' : '0.45';
+    btn.style.cursor = valid ? 'pointer' : 'not-allowed';
     btn.style.boxShadow = valid ? '0 4px 18px rgba(54,211,153,0.35)' : 'none';
   };
 
   // Expose trigger function globally so the onclick attribute can reach it
-  window.triggerRoofAnalyze = function() {
-    if (!_selectedRoofFile) return;
-    handleRoofFile(_selectedRoofFile);
+  window.triggerRoofAnalyze = function (file) {
+    var f = file || _selectedRoofFile;
+    if (!f) return;
+    handleRoofFile(f);
   };
 
   // Setup click & drag event listeners — only store file, do NOT auto-upload
@@ -3465,7 +3457,7 @@ function initRoofScannerSimulator() {
       try {
         const data = JSON.parse(saved);
         renderRoofData(data);
-        
+
         // Show success state on drop area
         dropArea.innerHTML = `
           <svg class="upload-icon" style="width: 44px; height: 44px; margin-bottom: 10px; stroke: var(--accent-green); fill: none; stroke-width: 1.5;" viewBox="0 0 24 24">
@@ -3474,7 +3466,7 @@ function initRoofScannerSimulator() {
           <p style="font-size: 12px; color: var(--accent-green); font-weight: 700; margin: 0;">Rooftop Scan Verified & Extracted!</p>
           <span style="font-size: 9px; color: var(--text-muted);">Click to upload another image</span>
         `;
-        
+
         // Show polygons
         if (poly1) poly1.style.display = 'block';
         if (poly2) poly2.style.display = 'block';
@@ -3492,74 +3484,88 @@ function initRoofScannerSimulator() {
     }
 
     // ---- Map new backend fields ----
-    const roofAreaSqft        = Number(data.roof_area_sqft)          || 0;
-    const facingDirection     = data.facing_direction                || 'Not Available';
-    const compassAngle        = data.compass_angle                   ? `${data.compass_angle}°` : 'Not Available';
-    const roofCondition       = data.roof_condition                  || 'Not Available';
-    const roofType            = data.roof_type                       || 'Not Available';
-    const shadingIssues       = data.shading_issues                  || 'Not Available';
-    const solarPotential      = data.solar_potential                 || 'Not Available';
-    const obstacles           = data.obstacles                      || 'None';
-    const recommendedSystem   = data.recommended_system             || 'Not Available';
-    const systemSizeKw        = Number(data.system_size_kw)          || 0;
-    const totalPanels         = Number(data.total_panels)            || 0;
-    const panelRows           = Number(data.panel_rows)              || 0;
-    const panelsPerRow        = Number(data.panels_per_row)          || 0;
-    const totalLegs           = Number(data.total_legs)              || 0;
-    const frontLegs           = Number(data.front_legs)              || 0;
-    const backLegs            = Number(data.back_legs)               || 0;
-    const frontLegHeightFt    = Number(data.front_leg_height_ft)     || 0;
-    const backLegHeightFt     = Number(data.back_leg_height_ft)      || 0;
-    const monthlyGeneration   = Number(data.monthly_generation_units)|| 0;
-    const annualGeneration    = Number(data.annual_generation_units) || 0;
-    const analysisNotes       = data.analysis_notes                  || '';
+    const roofAreaSqft = Number(data.roof_area_sqft) || 0;
+    const facingDirection = data.facing_direction || 'Not Available';
+    const compassAngle = data.compass_angle ? `${data.compass_angle}°` : 'Not Available';
+    const roofCondition = data.roof_condition || 'Not Available';
+    const roofType = data.roof_type || 'Not Available';
+    const shadingIssues = data.shading_issues || 'Not Available';
+    const solarPotential = data.solar_potential || 'Not Available';
+    const obstacles = data.obstacles || 'None';
+    const recommendedSystem = data.recommended_system || 'Not Available';
+    const systemSizeKw = Number(data.system_size_kw) || 0;
+    const totalPanels = Number(data.total_panels) || 0;
+    const panelRows = Number(data.panel_rows) || 0;
+    const panelsPerRow = Number(data.panels_per_row) || 0;
+    const totalLegs = Number(data.total_legs) || 0;
+    const frontLegs = Number(data.front_legs) || 0;
+    const backLegs = Number(data.back_legs) || 0;
+    const frontLegHeightFt = Number(data.front_leg_height_ft) || 0;
+    const backLegHeightFt = Number(data.back_leg_height_ft) || 0;
+    const monthlyGeneration = Number(data.monthly_generation_units) || 0;
+    const annualGeneration = Number(data.annual_generation_units) || 0;
+    const analysisNotes = data.analysis_notes || '';
 
     // ---- Derive suitability score from solar_potential ----
     const potLower = solarPotential.toLowerCase();
     let suitabilityScore = 80;
-    if (potLower.includes('high'))       suitabilityScore = 92;
+    if (potLower.includes('high')) suitabilityScore = 92;
     else if (potLower.includes('medium')) suitabilityScore = 70;
-    else if (potLower.includes('low'))    suitabilityScore = 50;
+    else if (potLower.includes('low')) suitabilityScore = 50;
 
     // ---- Derive shade display from shading_issues ----
     let shadePercent = '8%';
     const shadeLower = shadingIssues.toLowerCase();
-    if      (shadeLower.includes('none'))     shadePercent = '0%';
-    else if (shadeLower.includes('partial'))  shadePercent = '15%';
-    else if (shadeLower.includes('heavy'))    shadePercent = '30%';
+    if (shadeLower.includes('none')) shadePercent = '0%';
+    else if (shadeLower.includes('partial')) shadePercent = '15%';
+    else if (shadeLower.includes('heavy')) shadePercent = '30%';
 
     // ---- 1. Detailed Results Grid ----
-    _set('resTotalRoofArea',          roofAreaSqft ? `${roofAreaSqft} sq ft` : 'Not Available');
-    _set('resFacingDirection',        facingDirection);
-    _set('resCompassAngle',           compassAngle);
-    _set('resRoofCondition',          roofCondition);
-    _set('resRoofType',               roofType);
-    _set('resRoofShading',            shadingIssues);
-    _set('resSolarPotential',         solarPotential);
-    _set('resObstacles',              obstacles);
+    _set('resTotalRoofArea', roofAreaSqft ? `${roofAreaSqft} sq ft` : 'Not Available');
+    _set('resFacingDirection', facingDirection);
+    _set('resCompassAngle', compassAngle);
+    _set('resRoofCondition', roofCondition);
+    _set('resRoofType', roofType);
+    _set('resRoofShading', shadingIssues);
+    _set('resSolarPotential', solarPotential);
+    _set('resObstacles', obstacles);
     _set('resRoofRecommendedSolarSize', recommendedSystem);
-    _set('resSystemSizeKw',           systemSizeKw ? `${systemSizeKw} kW` : 'Not Available');
-    _set('resRoofNumberOfPanels',     totalPanels  ? `${totalPanels}`      : 'Not Available');
-    _set('resPanelLayout',            (panelRows && panelsPerRow) ? `${panelRows} rows × ${panelsPerRow} per row` : 'Not Available');
-    _set('resTotalLegs',              totalLegs    ? `${totalLegs}`         : 'Not Available');
-    _set('resFrontBackLegs',          (frontLegs || backLegs) ? `${frontLegs}F / ${backLegs}B` : 'Not Available');
-    _set('resFrontLegHeight',         frontLegHeightFt ? `${frontLegHeightFt} ft` : 'Not Available');
-    _set('resBackLegHeight',          backLegHeightFt  ? `${backLegHeightFt} ft`  : 'Not Available');
-    _set('resRoofMonthlyGeneration',  monthlyGeneration  ? `${monthlyGeneration} units/month`  : 'Not Available');
-    _set('resAnnualGeneration',       annualGeneration   ? `${annualGeneration} units/year`    : 'Not Available');
-    _set('resAnalysisNotes',          analysisNotes);
+    _set('resSystemSizeKw', systemSizeKw ? `${systemSizeKw} kW` : 'Not Available');
+    _set('resRoofNumberOfPanels', totalPanels ? `${totalPanels}` : 'Not Available');
+    _set('resPanelLayout', (panelRows && panelsPerRow) ? `${panelRows} rows × ${panelsPerRow} per row` : 'Not Available');
+    _set('resTotalLegs', totalLegs ? `${totalLegs}` : 'Not Available');
+    _set('resFrontBackLegs', (frontLegs || backLegs) ? `${frontLegs}F / ${backLegs}B` : 'Not Available');
+    _set('resFrontLegHeight', frontLegHeightFt ? `${frontLegHeightFt} ft` : 'Not Available');
+    _set('resBackLegHeight', backLegHeightFt ? `${backLegHeightFt} ft` : 'Not Available');
+    _set('resRoofMonthlyGeneration', monthlyGeneration ? `${monthlyGeneration} units/month` : 'Not Available');
+    _set('resAnnualGeneration', annualGeneration ? `${annualGeneration} units/year` : 'Not Available');
+    _set('resAnalysisNotes', analysisNotes);
+
+    // ---- Beta tag for satellite analysis ----
+    var snapTag = document.getElementById('snapTagBadge');
+    if (snapTag) {
+      if (data.satellite_analysis === true) {
+        snapTag.textContent = 'BETA';
+        snapTag.style.background = 'var(--color-yellow)';
+        snapTag.style.color = '#000';
+      } else {
+        snapTag.textContent = 'AI EXTRACTED';
+        snapTag.style.background = 'var(--accent-green)';
+        snapTag.style.color = '#fff';
+      }
+    }
 
     // ---- 2. Analytics Snapshot Card ----
     _set('snapRoofSuitability', `${suitabilityScore}%`);
-    _set('snapRoofSystemSize',  systemSizeKw ? `${systemSizeKw} kW` : 'Not Available');
-    _set('snapRoofMonthlyGen',  monthlyGeneration ? `${monthlyGeneration} units` : 'Not Available');
-    _set('snapRoofPanels',      totalPanels  ? `${totalPanels}`      : 'Not Available');
+    _set('snapRoofSystemSize', systemSizeKw ? `${systemSizeKw} kW` : 'Not Available');
+    _set('snapRoofMonthlyGen', monthlyGeneration ? `${monthlyGeneration} units` : 'Not Available');
+    _set('snapRoofPanels', totalPanels ? `${totalPanels}` : 'Not Available');
 
     // ---- 3. Tab KPI Cards ----
-    _set('roofTabReadiness',  `${suitabilityScore}%`);
-    _set('roofTabArea',       roofAreaSqft ? `${roofAreaSqft} sq ft` : 'Not Available');
-    _set('roofTabShade',      shadePercent);
-    _set('roofTabSystemSize', systemSizeKw ? `${systemSizeKw} kW`    : 'Not Available');
+    _set('roofTabReadiness', `${suitabilityScore}%`);
+    _set('roofTabArea', roofAreaSqft ? `${roofAreaSqft} sq ft` : 'Not Available');
+    _set('roofTabShade', shadePercent);
+    _set('roofTabSystemSize', systemSizeKw ? `${systemSizeKw} kW` : 'Not Available');
 
     // ---- 4. Dashboard Dials ----
     _set('readinessTextVal', `${suitabilityScore}%`);
@@ -3574,12 +3580,41 @@ function initRoofScannerSimulator() {
     // Update readiness description
     const descEl = document.querySelector('.readiness-card .readiness-desc');
     if (descEl) {
-      if (suitabilityScore >= 90)      descEl.textContent = 'Excellent! Your home is ready for solar.';
+      if (suitabilityScore >= 90) descEl.textContent = 'Excellent! Your home is ready for solar.';
       else if (suitabilityScore >= 75) descEl.textContent = 'Good readiness. Suitable for solar.';
-      else                             descEl.textContent = 'Moderate readiness. Check shading / obstacles.';
+      else descEl.textContent = 'Moderate readiness. Check shading / obstacles.';
     }
 
-    // ---- 5. Charts ----
+    // ---- 5. Dashboard KPI Cards (Annual Savings, Lifetime, ROI, Carbon, etc.) ----
+    const annualGenUnits = annualGeneration || monthlyGeneration * 12;
+    const savingsRate = 8;
+    const estimatedAnnualSavings = annualGenUnits * savingsRate;
+    const lifetimeSavings = estimatedAnnualSavings * 25;
+    const estSystemCost = systemSizeKw * 55000;
+    const roiYears = estimatedAnnualSavings > 0 ? (estSystemCost / estimatedAnnualSavings) : 0;
+    const carbonOffsetTons = Math.round(annualGenUnits * 0.8 / 1000 * 10) / 10;
+
+    function _setAnimated(id, text) {
+      var el = document.getElementById(id);
+      if (!el) return;
+      var val = text || 'Not Available';
+      if (el.textContent !== val) {
+        el.style.transition = 'opacity 0.2s ease';
+        el.style.opacity = '0';
+        setTimeout(function () {
+          el.textContent = val;
+          el.style.opacity = '1';
+        }, 150);
+      }
+    }
+
+    _setAnimated('annualSavingsTextVal', estimatedAnnualSavings ? `₹${estimatedAnnualSavings.toLocaleString('en-IN')}` : null);
+    _setAnimated('lifetimeSavingsTextVal', lifetimeSavings ? `₹${(lifetimeSavings / 100000).toFixed(1)} Lakhs` : null);
+    _setAnimated('roiPeriodVal', roiYears ? `${roiYears.toFixed(1)} Years` : null);
+    _setAnimated('carbonOffsetVal', carbonOffsetTons ? `${carbonOffsetTons} Tons` : null);
+    _setAnimated('energyIndependenceVal', suitabilityScore ? `${suitabilityScore}%` : null);
+
+    // ---- 6. Charts ----
     if (dashboardData && dashboardData.chartData && dashboardData.chartData.energyProduction) {
       const baseProduction = [380, 420, 490, 520, 560, 510, 440, 460, 480, 510, 440, 400];
       const ratio = systemSizeKw / 3;
@@ -3647,8 +3682,8 @@ function initRoofScannerSimulator() {
 
     // Read roof measurement inputs
     const roofLength = parseFloat(document.getElementById('roofLengthInput')?.value);
-    const roofWidth  = parseFloat(document.getElementById('roofWidthInput')?.value);
-    const roofCity   = (document.getElementById('roofCityInput')?.value || '').trim();
+    const roofWidth = parseFloat(document.getElementById('roofWidthInput')?.value);
+    const roofCity = (document.getElementById('roofCityInput')?.value || '').trim();
 
     // Guard: validate before sending (safety net — button already enforces this)
     if (!roofLength || roofLength <= 0 || !roofWidth || roofWidth <= 0 || !roofCity) {
@@ -3662,84 +3697,90 @@ function initRoofScannerSimulator() {
     const formData = new FormData();
     formData.append('image', file);
     formData.append('length_ft', roofLength);
-    formData.append('width_ft',  roofWidth);
-    formData.append('city',      roofCity);
-
-    // Log FormData contents for debugging
-    console.log('=== Roof Analyzer FormData ===')
-    for (const pair of formData.entries()) {
-      console.log(pair[0], pair[1]);
+    formData.append('width_ft', roofWidth);
+    formData.append('city', roofCity);
+    if (window._satelliteCaptureMode) {
+      formData.append('source', 'satellite');
     }
-    console.log('==============================');
 
     safeFetch(`${API_BASE}/api/analyze-roof`, {
       method: 'POST',
       body: formData
     })
-    .then(async (res) => {
-      clearInterval(progressInterval);
-      if (!res.ok) {
-        throw new Error('API server returned an error.');
-      }
-      return res.json();
-    })
-    .then((result) => {
-      if (!result || result.success !== true || !result.data) {
-        throw new Error((result && result.error) || 'Invalid API response format.');
-      }
+      .then(async (res) => {
+        clearInterval(progressInterval);
+        if (!res.ok) {
+          throw new Error('API server returned an error.');
+        }
+        return res.json();
+      })
+      .then((result) => {
+        window._satelliteCaptureMode = false;
+        if (!result || result.success !== true || !result.data) {
+          throw new Error((result && result.error) || 'Invalid API response format.');
+        }
 
-      if (progressBar) progressBar.style.width = '100%';
-      if (progressPercent) progressPercent.textContent = '100%';
-      if (progressStatus) progressStatus.textContent = 'Analysis complete!';
-      if (scanStatusText) scanStatusText.textContent = 'Status: Complete';
+        if (progressBar) progressBar.style.width = '100%';
+        if (progressPercent) progressPercent.textContent = '100%';
+        if (progressStatus) progressStatus.textContent = 'Analysis complete!';
+        if (scanStatusText) scanStatusText.textContent = 'Status: Complete';
 
-      showToast('Rooftop satellite analysis completed successfully!', 'success');
+        var isSatellite = result.data && result.data.satellite_analysis === true;
+        showToast(isSatellite ? 'Satellite analysis completed!' : 'Rooftop analysis completed successfully!', 'success');
 
-      localStorage.setItem('lastRoofAnalysis', JSON.stringify(result.data));
-      const solarPot = result.data.solar_potential || 'High';
-      const totalPnl = result.data.total_panels || 0;
-      const sysSizeKw = result.data.system_size_kw || 3;
-      logAuditEvent((_getUser() || {}).email, 'Roof Assessment Completed', 'Assessment', `Completed roof satellite scan: area = ${result.data.roof_area_sqft} sqft, solar potential = ${solarPot}, panels = ${totalPnl}, system size = ${sysSizeKw} kW.`, 'Medium');
-      createNotification('assessment', 'Roof Assessment Completed', `Solar potential: ${solarPot}. Recommended ${sysSizeKw} kW system with ${totalPnl} panels.`, 'medium');
-      addActivityLog('roof', 'Roof Assessment Completed', `Roof analysis complete: ${solarPot} solar potential, ${sysSizeKw} kW system size.`);
+        localStorage.setItem('lastRoofAnalysis', JSON.stringify(result.data));
+        const solarPot = result.data.solar_potential || 'High';
+        const totalPnl = result.data.total_panels || 0;
+        const sysSizeKw = result.data.system_size_kw || 3;
+        logAuditEvent((_getUser() || {}).email, 'Roof Assessment Completed', 'Assessment', `Completed roof satellite scan: area = ${result.data.roof_area_sqft} sqft, solar potential = ${solarPot}, panels = ${totalPnl}, system size = ${sysSizeKw} kW.`, 'Medium');
+        createNotification('assessment', 'Roof Assessment Completed', `Solar potential: ${solarPot}. Recommended ${sysSizeKw} kW system with ${totalPnl} panels.`, 'medium');
+        addActivityLog('roof', 'Roof Assessment Completed', `Roof analysis complete: ${solarPot} solar potential, ${sysSizeKw} kW system size.`);
 
-      setTimeout(() => {
+        setTimeout(() => {
+          if (progressBox) progressBox.style.display = 'none';
+          if (laser) laser.style.display = 'none';
+
+          if (!isSatellite && dropArea) {
+            dropArea.innerHTML = `
+            <svg class="upload-icon" style="width: 44px; height: 44px; margin-bottom: 10px; stroke: var(--accent-green); fill: none; stroke-width: 1.5;" viewBox="0 0 24 24">
+              <polyline points="20 6 9 17 4 12"/>
+            </svg>
+            <p style="font-size: 12px; color: var(--accent-green); font-weight: 700; margin: 0;">Rooftop Scan Verified & Extracted!</p>
+            <span style="font-size: 9px; color: var(--text-muted);">Click to upload another image</span>
+          `;
+          }
+
+          if (!isSatellite && poly1) poly1.style.display = 'block';
+          if (!isSatellite && poly2) poly2.style.display = 'block';
+
+          renderRoofData(result.data);
+          if (window.GSE && window.GSE.Modules && window.GSE.Modules.SatelliteRoof) {
+            window.GSE.Modules.SatelliteRoof.onAnalysisComplete();
+          }
+        }, 800);
+      })
+      .catch((err) => {
+        window._satelliteCaptureMode = false;
+        if (window.GSE && window.GSE.Modules && window.GSE.Modules.SatelliteRoof) {
+          window.GSE.Modules.SatelliteRoof.onAnalysisError();
+        }
+        clearInterval(progressInterval);
+        console.error('Roof analysis error:', err);
+
         if (progressBox) progressBox.style.display = 'none';
         if (laser) laser.style.display = 'none';
-        
-        // Success state on drop area
-        dropArea.innerHTML = `
-          <svg class="upload-icon" style="width: 44px; height: 44px; margin-bottom: 10px; stroke: var(--accent-green); fill: none; stroke-width: 1.5;" viewBox="0 0 24 24">
-            <polyline points="20 6 9 17 4 12"/>
-          </svg>
-          <p style="font-size: 12px; color: var(--accent-green); font-weight: 700; margin: 0;">Rooftop Scan Verified & Extracted!</p>
-          <span style="font-size: 9px; color: var(--text-muted);">Click to upload another image</span>
-        `;
+        if (resultsContainer) resultsContainer.style.display = 'none';
+        if (scanStatusText) scanStatusText.textContent = 'Status: Failed';
 
-        if (poly1) poly1.style.display = 'block';
-        if (poly2) poly2.style.display = 'block';
+        if (errorBox) {
+          const errorSpan = errorBox.querySelector('span');
+          if (errorSpan) errorSpan.textContent = `Analysis failed: ${err.message || 'Server unavailable'}`;
+          errorBox.style.display = 'block';
+        }
 
-        renderRoofData(result.data);
-      }, 800);
-    })
-    .catch((err) => {
-      clearInterval(progressInterval);
-      console.error('Roof analysis error:', err);
-
-      if (progressBox) progressBox.style.display = 'none';
-      if (laser) laser.style.display = 'none';
-      if (resultsContainer) resultsContainer.style.display = 'none';
-      if (scanStatusText) scanStatusText.textContent = 'Status: Failed';
-
-      if (errorBox) {
-        const errorSpan = errorBox.querySelector('span');
-        if (errorSpan) errorSpan.textContent = `Analysis failed: ${err.message || 'Server unavailable'}`;
-        errorBox.style.display = 'block';
-      }
-
-      showToast(err.message || 'Failed to analyze rooftop image due to connection error.', 'error');
-      logAuditEvent((_getUser() || {}).email, 'API Failure', 'Security', `Roof satellite scan failed: ${err.message || 'Server unavailable'}`, 'High');
-    });
+        showToast(err.message || 'Failed to analyze rooftop image due to connection error.', 'error');
+        logAuditEvent((_getUser() || {}).email, 'API Failure', 'Security', `Roof satellite scan failed: ${err.message || 'Server unavailable'}`, 'High');
+      });
   }
 
   function runMockSimulation() {
@@ -3775,7 +3816,7 @@ function initRoofScannerSimulator() {
 
       if (progress >= 100) {
         clearInterval(interval);
-        
+
         const mockData = {
           "total_area_sqft": 520,
           "usable_area_sqft": 380,
@@ -3796,7 +3837,7 @@ function initRoofScannerSimulator() {
         setTimeout(() => {
           if (progressBox) progressBox.style.display = 'none';
           if (laser) laser.style.display = 'none';
-          
+
           if (poly1) poly1.style.display = 'block';
           if (poly2) poly2.style.display = 'block';
 
@@ -3815,12 +3856,12 @@ function initAIAdvisorChat() {
   const input = document.getElementById('aiChatInputText');
   const sendBtn = document.getElementById('aiChatSendBtn');
   const chips = document.querySelectorAll('.chat-suggest-chip');
-  
+
   if (!sendBtn || !input || !log) return;
 
   // Analytics Tracking Wrapper
   function trackEvent(name, data = {}) {
-    console.log(`[Analytics] Tracked event: ${name}`, data);
+    if (DEV_MODE) console.log(`[Analytics] Tracked event: ${name}`, data);
     const trackingWrapper = window.logEvent || window.trackEvent || window.logAnalyticsEvent || (window.analytics && window.analytics.track);
     if (typeof trackingWrapper === 'function') {
       try {
@@ -3848,7 +3889,7 @@ function initAIAdvisorChat() {
       "Explain my savings estimate",
       "Help me complete my assessment"
     ];
-    chipsRow.innerHTML = suggestedPrompts.map(promptText => 
+    chipsRow.innerHTML = suggestedPrompts.map(promptText =>
       `<button class="chat-suggest-chip" style="font-size: 11px; background: rgba(23,168,229,0.08); border: 1px solid rgba(23,168,229,0.25); color: var(--accent-blue); padding: 6px 12px; border-radius: 14px; cursor: pointer; transition: all 0.2s;">${promptText}</button>`
     ).join('');
   }
@@ -3919,7 +3960,7 @@ function initAIAdvisorChat() {
     historyList.push({
       role: 'assistant',
       content: "Hello! I can help explain your bill analysis, roof assessment, ROI calculations, subsidy eligibility, and solar recommendations. How can I help you today?",
-      time: new Date().toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'})
+      time: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })
     });
     localStorage.setItem('solarChatHistory', JSON.stringify(historyList));
   }
@@ -3954,7 +3995,7 @@ function initAIAdvisorChat() {
         const cardEl = document.createElement('div');
         cardEl.className = 'chat-action-card';
         cardEl.style = 'margin: 10px 0 10px 0; padding: 16px; background: rgba(255, 255, 255, 0.03); border: 1px solid rgba(0, 174, 239, 0.4); border-radius: 8px; box-shadow: 0 4px 12px rgba(0,0,0,0.15); transition: all 0.3s ease; max-width: 80%; box-sizing: border-box;';
-        
+
         let cardTitle = "Recommended Next Step";
         let cardDesc = "";
         let cardBtnText = "";
@@ -4051,7 +4092,7 @@ function initAIAdvisorChat() {
       typingIndicator.style.display = 'flex';
       log.appendChild(typingIndicator);
       log.scrollTop = log.scrollHeight;
-      
+
       input.disabled = true;
       sendBtn.disabled = true;
       input.placeholder = "GET Solar Copilot is thinking...";
@@ -4067,33 +4108,33 @@ function initAIAdvisorChat() {
 
   function sendMessage(text) {
     if (!text || !text.trim()) return;
-    
+
     input.value = '';
-    
-    const timeStr = new Date().toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'});
+
+    const timeStr = new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
     historyList.push({ role: 'user', content: text, time: timeStr });
-    
+
     if (historyList.length > 20) {
       historyList = historyList.slice(-20);
     }
     localStorage.setItem('solarChatHistory', JSON.stringify(historyList));
-    
+
     renderLog();
     showTyping(true);
     addActivityLog('assistant', 'AI Advisor Message Sent', `Sent query to Solar Copilot: "${text.substring(0, 40)}${text.length > 40 ? '...' : ''}"`);
-    
+
     const lowerText = text.toLowerCase().trim();
-    
+
     // Check missing bill analysis context triggers
-    const isBillQuery = lowerText.includes('explain my bill analysis') || 
-                        lowerText.includes('why was this system size recommended') || 
-                        lowerText.includes('how much electricity do i use');
-                        
+    const isBillQuery = lowerText.includes('explain my bill analysis') ||
+      lowerText.includes('why was this system size recommended') ||
+      lowerText.includes('how much electricity do i use');
+
     if (isBillQuery && !localStorage.getItem('lastBillAnalysis')) {
       setTimeout(() => {
         showTyping(false);
         const replyText = "I don't currently have any bill analysis results available.";
-        const replyTimeStr = new Date().toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'});
+        const replyTimeStr = new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
         historyList.push({ role: 'assistant', content: replyText, time: replyTimeStr, showActionCard: 'bill' });
         if (historyList.length > 20) historyList = historyList.slice(-20);
         localStorage.setItem('solarChatHistory', JSON.stringify(historyList));
@@ -4101,17 +4142,17 @@ function initAIAdvisorChat() {
       }, 600);
       return;
     }
-    
+
     // Check missing roof analysis context triggers
-    const isRoofQuery = lowerText.includes('explain my roof assessment') || 
-                        lowerText.includes('is my roof suitable') || 
-                        lowerText.includes('what solar size can my roof support');
-                        
+    const isRoofQuery = lowerText.includes('explain my roof assessment') ||
+      lowerText.includes('is my roof suitable') ||
+      lowerText.includes('what solar size can my roof support');
+
     if (isRoofQuery && !localStorage.getItem('lastRoofAnalysis')) {
       setTimeout(() => {
         showTyping(false);
         const replyText = "I don't currently have any roof assessment results available.";
-        const replyTimeStr = new Date().toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'});
+        const replyTimeStr = new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
         historyList.push({ role: 'assistant', content: replyText, time: replyTimeStr, showActionCard: 'roof' });
         if (historyList.length > 20) historyList = historyList.slice(-20);
         localStorage.setItem('solarChatHistory', JSON.stringify(historyList));
@@ -4119,19 +4160,19 @@ function initAIAdvisorChat() {
       }, 600);
       return;
     }
-    
+
     // Check missing ROI context triggers
-    const isRoiQuery = lowerText.includes('is solar worth it for me') || 
-                       lowerText.includes('what is my payback period') || 
-                       lowerText.includes('how much can i save') || 
-                       lowerText.includes('what is my roi') ||
-                       lowerText.includes('explain my savings estimate');
-                       
+    const isRoiQuery = lowerText.includes('is solar worth it for me') ||
+      lowerText.includes('what is my payback period') ||
+      lowerText.includes('how much can i save') ||
+      lowerText.includes('what is my roi') ||
+      lowerText.includes('explain my savings estimate');
+
     if (isRoiQuery && !localStorage.getItem('lastROIAnalysis')) {
       setTimeout(() => {
         showTyping(false);
         const replyText = "I can provide a more accurate recommendation after an ROI analysis.";
-        const replyTimeStr = new Date().toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'});
+        const replyTimeStr = new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
         historyList.push({ role: 'assistant', content: replyText, time: replyTimeStr, showActionCard: 'roi' });
         if (historyList.length > 20) historyList = historyList.slice(-20);
         localStorage.setItem('solarChatHistory', JSON.stringify(historyList));
@@ -4141,16 +4182,16 @@ function initAIAdvisorChat() {
     }
 
     // Guidance tree triggers
-    const isGuidanceQuery = lowerText.includes('what should i do next') || 
-                            lowerText.includes('help me complete my assessment') || 
-                            lowerText.includes('analyze my solar readiness');
-                            
+    const isGuidanceQuery = lowerText.includes('what should i do next') ||
+      lowerText.includes('help me complete my assessment') ||
+      lowerText.includes('analyze my solar readiness');
+
     if (isGuidanceQuery) {
       if (!localStorage.getItem('lastBillAnalysis')) {
         setTimeout(() => {
           showTyping(false);
           const replyText = "To guide you accurately, the first step is analyzing your electricity bill to determine your monthly energy consumption patterns.";
-          const replyTimeStr = new Date().toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'});
+          const replyTimeStr = new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
           historyList.push({ role: 'assistant', content: replyText, time: replyTimeStr, showActionCard: 'bill' });
           if (historyList.length > 20) historyList = historyList.slice(-20);
           localStorage.setItem('solarChatHistory', JSON.stringify(historyList));
@@ -4158,12 +4199,12 @@ function initAIAdvisorChat() {
         }, 600);
         return;
       }
-      
+
       if (!localStorage.getItem('lastRoofAnalysis')) {
         setTimeout(() => {
           showTyping(false);
           const replyText = "Your bill consumption has been verified. The next step is scanning your rooftop dimensions to ensure space suitability and optimize panel layout sizing.";
-          const replyTimeStr = new Date().toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'});
+          const replyTimeStr = new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
           historyList.push({ role: 'assistant', content: replyText, time: replyTimeStr, showActionCard: 'roof' });
           if (historyList.length > 20) historyList = historyList.slice(-20);
           localStorage.setItem('solarChatHistory', JSON.stringify(historyList));
@@ -4171,12 +4212,12 @@ function initAIAdvisorChat() {
         }, 600);
         return;
       }
-      
+
       if (!localStorage.getItem('lastROIAnalysis')) {
         setTimeout(() => {
           showTyping(false);
           const replyText = "Your bill consumption and rooftop size look promising. The next step is calculating your net installation investment, government subsidies, and payback timeline.";
-          const replyTimeStr = new Date().toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'});
+          const replyTimeStr = new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
           historyList.push({ role: 'assistant', content: replyText, time: replyTimeStr, showActionCard: 'roi' });
           if (historyList.length > 20) historyList = historyList.slice(-20);
           localStorage.setItem('solarChatHistory', JSON.stringify(historyList));
@@ -4185,32 +4226,32 @@ function initAIAdvisorChat() {
         return;
       }
     }
-    
+
     // Extract available context
     let bill_analysis = null;
     let roof_analysis = null;
     let roi_analysis = null;
-    
+
     try {
       const billSaved = localStorage.getItem('lastBillAnalysis');
       if (billSaved) bill_analysis = JSON.parse(billSaved);
-    } catch(e) {}
-    
+    } catch (e) { }
+
     try {
       const roofSaved = localStorage.getItem('lastRoofAnalysis');
       if (roofSaved) roof_analysis = JSON.parse(roofSaved);
-    } catch(e) {}
-    
+    } catch (e) { }
+
     try {
       const roiSaved = localStorage.getItem('lastROIAnalysis');
       if (roiSaved) roi_analysis = JSON.parse(roiSaved);
-    } catch(e) {}
+    } catch (e) { }
 
     const contextHistory = historyList.slice(0, -1).slice(-10).map(msg => ({
       role: msg.role,
       content: msg.content
     }));
-    
+
     const host = API_BASE;
     safeFetch(`${host}/api/solar-assistant`, {
       method: 'POST',
@@ -4227,59 +4268,59 @@ function initAIAdvisorChat() {
         }
       })
     })
-    .then(async (res) => {
-      if (!res.ok) {
-        throw new Error(`HTTP Error ${res.status}`);
-      }
-      return res.json();
-    })
-    .then((result) => {
-      showTyping(false);
-      logAuditEvent((_getUser() || {}).email, 'Solar Copilot Answered', 'AI Assistant', `Copilot answered query: "${text.substring(0, 45)}${text.length > 45 ? '...' : ''}"`, 'Low');
-      
-      let replyText = '';
-      if (result && result.success === true && result.response) {
-        replyText = result.response;
-      } else {
-        replyText = "GET Solar Copilot is currently experiencing high demand. Please try again in a few moments.";
-      }
-      
-      const replyTimeStr = new Date().toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'});
-      historyList.push({ role: 'assistant', content: replyText, time: replyTimeStr });
-      
-      if (historyList.length > 20) {
-        historyList = historyList.slice(-20);
-      }
-      localStorage.setItem('solarChatHistory', JSON.stringify(historyList));
-      
-      renderLog();
-      createNotification('assistant', 'AI Recommendation Available', 'New custom recommendations are available in Solar Copilot.', 'medium');
-      addActivityLog('assistant', 'Solar Copilot Answered', 'AI Advisor generated custom recommendations.');
-    })
-    .catch((err) => {
-      console.error('Chat assistant error:', err);
-      showTyping(false);
-      logAuditEvent((_getUser() || {}).email, 'Gemini Timeout', 'Security', `FastAPI chat assistant call failed: ${err.message || 'Server unavailable'}. Displayed fallback offline alert.`, 'High');
-      
-      const replyText = "GET Solar Copilot is currently experiencing high demand. Please try again in a few moments.";
-      const replyTimeStr = new Date().toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'});
-      
-      historyList.push({ role: 'assistant', content: replyText, time: replyTimeStr });
-      
-      if (historyList.length > 20) {
-        historyList = historyList.slice(-20);
-      }
-      localStorage.setItem('solarChatHistory', JSON.stringify(historyList));
-      
-      renderLog();
-    });
+      .then(async (res) => {
+        if (!res.ok) {
+          throw new Error(`HTTP Error ${res.status}`);
+        }
+        return res.json();
+      })
+      .then((result) => {
+        showTyping(false);
+        logAuditEvent((_getUser() || {}).email, 'Solar Copilot Answered', 'AI Assistant', `Copilot answered query: "${text.substring(0, 45)}${text.length > 45 ? '...' : ''}"`, 'Low');
+
+        let replyText = '';
+        if (result && result.success === true && result.response) {
+          replyText = result.response;
+        } else {
+          replyText = "GET Solar Copilot is currently experiencing high demand. Please try again in a few moments.";
+        }
+
+        const replyTimeStr = new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+        historyList.push({ role: 'assistant', content: replyText, time: replyTimeStr });
+
+        if (historyList.length > 20) {
+          historyList = historyList.slice(-20);
+        }
+        localStorage.setItem('solarChatHistory', JSON.stringify(historyList));
+
+        renderLog();
+        createNotification('assistant', 'AI Recommendation Available', 'New custom recommendations are available in Solar Copilot.', 'medium');
+        addActivityLog('assistant', 'Solar Copilot Answered', 'AI Advisor generated custom recommendations.');
+      })
+      .catch((err) => {
+        console.error('Chat assistant error:', err);
+        showTyping(false);
+        logAuditEvent((_getUser() || {}).email, 'Gemini Timeout', 'Security', `FastAPI chat assistant call failed: ${err.message || 'Server unavailable'}. Displayed fallback offline alert.`, 'High');
+
+        const replyText = "GET Solar Copilot is currently experiencing high demand. Please try again in a few moments.";
+        const replyTimeStr = new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+
+        historyList.push({ role: 'assistant', content: replyText, time: replyTimeStr });
+
+        if (historyList.length > 20) {
+          historyList = historyList.slice(-20);
+        }
+        localStorage.setItem('solarChatHistory', JSON.stringify(historyList));
+
+        renderLog();
+      });
   }
-  
+
   sendBtn.addEventListener('click', () => sendMessage(input.value));
   input.addEventListener('keydown', (e) => {
     if (e.key === 'Enter') sendMessage(input.value);
   });
-  
+
   // Suggested Prompt click listeners (dynamically attached to chipsRow items)
   const dynamicChips = chipsRow ? chipsRow.querySelectorAll('.chat-suggest-chip') : chips;
   dynamicChips.forEach(chip => {
@@ -4294,6 +4335,251 @@ function initAIAdvisorChat() {
 }
 
 /* ==========================================================================
+   13B. ENTERPRISE AI ASSISTANT
+   ========================================================================== */
+function initEnterpriseAI() {
+  const log = document.getElementById('enterpriseChatLog');
+  const input = document.getElementById('enterpriseChatInput');
+  const sendBtn = document.getElementById('enterpriseChatSend');
+  const chipsRow = document.getElementById('enterpriseChipsRow');
+  const toolActivity = document.getElementById('enterpriseToolActivity');
+  const contextPanel = document.getElementById('enterpriseContextPanel');
+  const timeline = document.getElementById('enterpriseTimeline');
+
+  if (!sendBtn || !input || !log) return;
+
+  let historyList = [];
+  let sessionId = localStorage.getItem('enterpriseAISessionId') || null;
+
+  // Load saved history
+  try {
+    const saved = localStorage.getItem('enterpriseAIHistory');
+    if (saved) historyList = JSON.parse(saved);
+  } catch (e) { }
+
+  // Suggested prompts
+  const prompts = [
+    "Show customer 360 for customer 5",
+    "Create a follow-up task",
+    "What is the ROI for a 3kW system?",
+    "Run AI analysis on my data",
+    "Generate a sales report",
+    "Recommend next actions",
+    "Check installation status",
+    "Show payment history",
+    "Explain the customer score",
+    "Is my home solar ready?"
+  ];
+
+  if (chipsRow) {
+    chipsRow.innerHTML = prompts.map(p =>
+      `<button class="chat-suggest-chip" style="font-size: 11px; background: rgba(124,93,250,0.08); border: 1px solid rgba(124,93,250,0.25); color: #7c5dfa; padding: 6px 12px; border-radius: 14px; cursor: pointer; transition: all 0.2s;">${p}</button>`
+    ).join('');
+    chipsRow.querySelectorAll('.chat-suggest-chip').forEach(chip => {
+      chip.addEventListener('click', () => {
+        if (!input.disabled) sendMessage(chip.textContent);
+      });
+    });
+  }
+
+  // Typing indicator styles (reuse if already injected)
+  if (!document.getElementById('enterprise-typing-styles')) {
+    const style = document.createElement('style');
+    style.id = 'enterprise-typing-styles';
+    style.textContent = `
+      @keyframes entPulse { 0% { opacity: 0.3; } 100% { opacity: 1; } }
+      .ent-pulse-dot { animation: entPulse 0.6s infinite alternate; font-weight: bold; display: inline-block; }
+    `;
+    document.head.appendChild(style);
+  }
+
+  function formatMessageContent(text) {
+    let safe = text.replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;").replace(/"/g, "&quot;").replace(/'/g, "&#039;");
+    const lines = safe.split('\n');
+    return lines.map(line => {
+      const trimmed = line.trim();
+      if (trimmed.startsWith('* ') || trimmed.startsWith('- ') || trimmed.startsWith('• ')) {
+        return `<div style="display:flex;gap:6px;margin-left:8px;margin-top:4px;align-items:flex-start;"><span style="color:#7c5dfa;font-weight:bold;flex-shrink:0;">•</span><span>${trimmed.substring(2)}</span></div>`;
+      }
+      return `<div style="margin-top:2px;">${trimmed || '&nbsp;'}</div>`;
+    }).join('');
+  }
+
+  function showTyping(show) {
+    const existing = log.querySelector('.typing-indicator');
+    if (!show && existing) { existing.remove(); return; }
+    if (show && !existing) {
+      const el = document.createElement('div');
+      el.className = 'typing-indicator';
+      el.style = 'display:flex;flex-direction:column;align-items:flex-start;max-width:80%;';
+      el.innerHTML = `<div class="message-bubble" style="background:rgba(124,93,250,0.1);border:1px solid rgba(124,93,250,0.25);padding:10px 14px;border-radius:8px 8px 8px 0;font-size:12px;color:var(--text-navy);"><span class="ent-pulse-dot" style="color:#7c5dfa;">●</span> <span class="ent-pulse-dot" style="color:#7c5dfa;animation-delay:0.2s;">●</span> <span class="ent-pulse-dot" style="color:#7c5dfa;animation-delay:0.4s;">●</span> <span style="margin-left:4px;color:var(--text-muted);">Thinking...</span></div>`;
+      log.appendChild(el);
+      log.scrollTop = log.scrollHeight;
+    }
+  }
+
+  function updateTimeline(steps) {
+    if (!timeline) return;
+    if (!steps || steps.length === 0) {
+      timeline.innerHTML = '<div style="opacity:0.5;font-style:italic;">Waiting for request...</div>';
+      return;
+    }
+    timeline.innerHTML = steps.map((s, i) => {
+      const color = s.status === 'done' ? '#36d399' : s.status === 'running' ? '#7c5dfa' : s.status === 'error' ? '#f43f5e' : 'var(--text-muted)';
+      return `<div style="display:flex;align-items:center;gap:6px;margin-bottom:4px;"><span style="width:6px;height:6px;border-radius:50%;background:${color};flex-shrink:0;"></span><span>${s.label}</span></div>`;
+    }).join('');
+  }
+
+  function updateToolActivity(results) {
+    if (!toolActivity) return;
+    if (!results || results.length === 0) {
+      toolActivity.innerHTML = '<div style="opacity:0.5;font-style:italic;">No tools executed yet</div>';
+      return;
+    }
+    toolActivity.innerHTML = results.map(r => {
+      const icon = r.success ? '✓' : '✗';
+      const color = r.success ? '#36d399' : '#f43f5e';
+      return `<div style="display:flex;align-items:center;gap:6px;margin-bottom:4px;"><span style="color:${color};font-weight:bold;">${icon}</span><span>${r.tool}</span><span style="margin-left:auto;color:var(--text-muted);font-size:10px;">${r.latency_ms || 0}ms</span></div>`;
+    }).join('');
+  }
+
+  function updateContext(ctx) {
+    if (!contextPanel) return;
+    if (!ctx || Object.keys(ctx).length === 0) {
+      contextPanel.innerHTML = '<div style="opacity:0.5;font-style:italic;">No context loaded</div>';
+      return;
+    }
+    const items = [];
+    if (ctx.intent) items.push(`Intent: ${ctx.intent}`);
+    if (ctx.confidence) items.push(`Confidence: ${(ctx.confidence * 100).toFixed(0)}%`);
+    contextPanel.innerHTML = items.map(i => `<div style="margin-bottom:2px;">${i}</div>`).join('') || '<div style="opacity:0.5;font-style:italic;">Context active</div>';
+  }
+
+  function renderLog() {
+    log.innerHTML = '';
+    historyList.forEach(msg => {
+      const el = document.createElement('div');
+      if (msg.role === 'user') {
+        el.style = 'display:flex;flex-direction:column;align-items:flex-end;max-width:80%;margin-left:auto;';
+        el.innerHTML = `<div class="message-bubble" style="background:rgba(124,93,250,0.15);border:1px solid rgba(124,93,250,0.3);padding:10px 14px;border-radius:8px 8px 0 8px;font-size:12px;color:var(--text-navy);line-height:1.4;text-align:left;">${formatMessageContent(msg.content)}</div><span style="font-size:9px;color:var(--text-muted);margin-top:4px;margin-right:4px;">${msg.time}</span>`;
+      } else {
+        el.style = 'display:flex;flex-direction:column;align-items:flex-start;max-width:80%;';
+        el.innerHTML = `<div class="message-bubble" style="background:rgba(255,255,255,0.08);border:1px solid var(--border-color);padding:10px 14px;border-radius:8px 8px 8px 0;font-size:12px;color:var(--text-navy);line-height:1.4;text-align:left;">${formatMessageContent(msg.content)}</div><span style="font-size:9px;color:var(--text-muted);margin-top:4px;margin-left:4px;">${msg.time}</span>`;
+      }
+      log.appendChild(el);
+    });
+    log.scrollTop = log.scrollHeight;
+  }
+
+  function sendMessage(text) {
+    if (!text || !text.trim()) return;
+    input.value = '';
+
+    const timeStr = new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+    historyList.push({ role: 'user', content: text, time: timeStr });
+    if (historyList.length > 30) historyList = historyList.slice(-30);
+    localStorage.setItem('enterpriseAIHistory', JSON.stringify(historyList));
+
+    renderLog();
+    showTyping(true);
+
+    updateTimeline([
+      { label: 'User Request', status: 'done' },
+      { label: 'Classifying Intent...', status: 'running' },
+      { label: 'Building Plan', status: 'pending' },
+      { label: 'Executing Tools', status: 'pending' },
+      { label: 'Generating Response', status: 'pending' }
+    ]);
+
+    const host = API_BASE;
+
+    safeFetch(`${host}/api/assistant/chat`, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json'
+      },
+      body: JSON.stringify({
+        message: text,
+        session_id: sessionId,
+        context: {
+          bill: (() => { try { return JSON.parse(localStorage.getItem('lastBillAnalysis') || 'null'); } catch(e) { return null; } })(),
+          roof: (() => { try { return JSON.parse(localStorage.getItem('lastRoofAnalysis') || 'null'); } catch(e) { return null; } })(),
+          roi: (() => { try { return JSON.parse(localStorage.getItem('lastROIAnalysis') || 'null'); } catch(e) { return null; } })()
+        }
+      })
+    })
+      .then(async (res) => {
+        if (!res.ok) throw new Error(`HTTP ${res.status}`);
+        return res.json();
+      })
+      .then((result) => {
+        showTyping(false);
+
+        const data = (result && result.data) ? result.data : result;
+        const replyText = (data && data.response) ? data.response : 'Request failed. Please try again.';
+
+        if (data && data.conversation_id) {
+          sessionId = data.conversation_id;
+          localStorage.setItem('enterpriseAISessionId', sessionId);
+        }
+
+        const replyTimeStr = new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+        historyList.push({ role: 'assistant', content: replyText, time: replyTimeStr });
+        if (historyList.length > 30) historyList = historyList.slice(-30);
+        localStorage.setItem('enterpriseAIHistory', JSON.stringify(historyList));
+
+        renderLog();
+
+        // Update sidebar panels
+        if (data && data.tool_results) updateToolActivity(data.tool_results);
+        if (data && data.context) updateContext(data.context);
+
+        updateTimeline([
+          { label: 'User Request', status: 'done' },
+          { label: 'Intent: ' + ((data && data.context && data.context.intent) || 'GENERAL'), status: 'done' },
+          { label: 'Plan Executed', status: 'done' },
+          { label: 'Tools: ' + ((data && data.tool_results) ? data.tool_results.length : 0) + ' called', status: 'done' },
+          { label: 'Response Generated', status: 'done' }
+        ]);
+      })
+      .catch((err) => {
+        console.error('Enterprise AI error:', err);
+        showTyping(false);
+        const msg = err.message || '';
+        const replyText = msg.includes('401')
+          ? 'Your session has expired. Please sign in again.'
+          : msg.includes('403')
+            ? "You don't have permission to use Enterprise AI."
+            : msg.includes('429')
+              ? 'Enterprise AI is currently experiencing high demand. Please try again shortly.'
+              : msg.includes('500')
+                ? 'Enterprise AI is temporarily unavailable. Please try again later.'
+                : 'Unable to reach Enterprise AI. Please check your connection and try again.';
+        const replyTimeStr = new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+        historyList.push({ role: 'assistant', content: replyText, time: replyTimeStr });
+        if (historyList.length > 30) historyList = historyList.slice(-30);
+        localStorage.setItem('enterpriseAIHistory', JSON.stringify(historyList));
+        renderLog();
+        updateTimeline([
+          { label: 'User Request', status: 'done' },
+          { label: 'Error: ' + replyText, status: 'error' }
+        ]);
+      });
+  }
+
+  sendBtn.addEventListener('click', () => sendMessage(input.value));
+  input.addEventListener('keydown', (e) => {
+    if (e.key === 'Enter') sendMessage(input.value);
+  });
+
+  renderLog();
+}
+
+function loadEnterpriseTools() {
+  // Refresh tools list on tab switch if needed
+}
+
+/* ==========================================================================
    14. REPORTS & PDF EXPORT CENTER
    ========================================================================== */
 let currentPreviewId = null;
@@ -4302,7 +4588,7 @@ function initReportsCenter() {
   const btnEmptyBill = document.getElementById('btnEmptyBill');
   const btnEmptyRoof = document.getElementById('btnEmptyRoof');
   const btnEmptyROI = document.getElementById('btnEmptyROI');
-  
+
   if (btnEmptyBill) btnEmptyBill.addEventListener('click', () => switchTab('bill-analyzer'));
   if (btnEmptyRoof) btnEmptyRoof.addEventListener('click', () => switchTab('roof-analysis'));
   if (btnEmptyROI) btnEmptyROI.addEventListener('click', () => switchTab('roi-calculator'));
@@ -4348,7 +4634,7 @@ function initReportsCenter() {
       if (previewModal) previewModal.style.display = 'none';
     });
   }
-  
+
   if (btnPrintPreview) {
     btnPrintPreview.addEventListener('click', () => {
       if (currentPreviewId) {
@@ -4356,7 +4642,7 @@ function initReportsCenter() {
       }
     });
   }
-  
+
   // Search history
   const searchInput = document.getElementById('reportHistorySearch');
   if (searchInput) {
@@ -4376,12 +4662,12 @@ function initReportsCenter() {
 
 function getSolarReadinessScore() {
   let billData = null, roofData = null, roiData = null;
-  try { billData = JSON.parse(localStorage.getItem('lastBillAnalysis')); } catch(e) {}
-  try { roofData = JSON.parse(localStorage.getItem('lastRoofAnalysis')); } catch(e) {}
-  try { roiData = JSON.parse(localStorage.getItem('lastROIAnalysis')); } catch(e) {}
+  try { billData = JSON.parse(localStorage.getItem('lastBillAnalysis')); } catch (e) { }
+  try { roofData = JSON.parse(localStorage.getItem('lastRoofAnalysis')); } catch (e) { }
+  try { roiData = JSON.parse(localStorage.getItem('lastROIAnalysis')); } catch (e) { }
 
   let billScore = billData ? 100 : 0;
-  
+
   let roofScore = 0;
   if (roofData) {
     const usable = Number(roofData.usable_area_sqft) || 0;
@@ -4424,9 +4710,9 @@ function getSolarReadinessScore() {
 
 function getReportBadgeStatus(type) {
   let billData = null, roofData = null, roiData = null;
-  try { billData = JSON.parse(localStorage.getItem('lastBillAnalysis')); } catch(e) {}
-  try { roofData = JSON.parse(localStorage.getItem('lastRoofAnalysis')); } catch(e) {}
-  try { roiData = JSON.parse(localStorage.getItem('lastROIAnalysis')); } catch(e) {}
+  try { billData = JSON.parse(localStorage.getItem('lastBillAnalysis')); } catch (e) { }
+  try { roofData = JSON.parse(localStorage.getItem('lastRoofAnalysis')); } catch (e) { }
+  try { roiData = JSON.parse(localStorage.getItem('lastROIAnalysis')); } catch (e) { }
 
   let available = false;
   if (type === 'bill') available = !!billData;
@@ -4438,7 +4724,7 @@ function getReportBadgeStatus(type) {
 
   // Check history
   let history = [];
-  try { history = JSON.parse(localStorage.getItem('reportHistory')) || []; } catch(e) {}
+  try { history = JSON.parse(localStorage.getItem('reportHistory')) || []; } catch (e) { }
   const match = history.filter(h => h.type === type);
   if (match.length > 0) {
     const hasDl = match.some(m => m.status === 'downloaded');
@@ -4454,9 +4740,9 @@ function refreshReportsDashboard() {
   const content = document.getElementById('reportsContentContainer');
 
   let billData = null, roofData = null, roiData = null;
-  try { billData = JSON.parse(localStorage.getItem('lastBillAnalysis')); } catch(e) {}
-  try { roofData = JSON.parse(localStorage.getItem('lastRoofAnalysis')); } catch(e) {}
-  try { roiData = JSON.parse(localStorage.getItem('lastROIAnalysis')); } catch(e) {}
+  try { billData = JSON.parse(localStorage.getItem('lastBillAnalysis')); } catch (e) { }
+  try { roofData = JSON.parse(localStorage.getItem('lastRoofAnalysis')); } catch (e) { }
+  try { roiData = JSON.parse(localStorage.getItem('lastROIAnalysis')); } catch (e) { }
 
   const hasAny = billData || roofData || roiData;
 
@@ -4473,7 +4759,7 @@ function refreshReportsDashboard() {
   types.forEach(t => {
     const capitalized = t.charAt(0).toUpperCase() + t.slice(1);
     const idSuffix = capitalized === 'Comprehensive' ? 'Comp' : capitalized;
-    
+
     const badge = document.getElementById(`badge${idSuffix}`);
     const btnGen = document.getElementById(`btnGen${idSuffix}`);
     const btnPrev = document.getElementById(`btnPrev${idSuffix}`);
@@ -4490,7 +4776,7 @@ function refreshReportsDashboard() {
     if (btnDl) btnDl.disabled = status.disabled;
 
     let history = [];
-    try { history = JSON.parse(localStorage.getItem('reportHistory')) || []; } catch(e) {}
+    try { history = JSON.parse(localStorage.getItem('reportHistory')) || []; } catch (e) { }
     const match = history.filter(h => h.type === t).sort((a, b) => new Date(b.createdAt) - new Date(a.createdAt));
     if (dateEl) {
       if (match.length > 0) {
@@ -4510,7 +4796,7 @@ function renderRecentReportsHistory(filterQuery = '') {
   if (!tableBody) return;
 
   let history = [];
-  try { history = JSON.parse(localStorage.getItem('reportHistory')) || []; } catch(e) {}
+  try { history = JSON.parse(localStorage.getItem('reportHistory')) || []; } catch (e) { }
 
   history.sort((a, b) => new Date(b.createdAt) - new Date(a.createdAt));
 
@@ -4528,7 +4814,7 @@ function renderRecentReportsHistory(filterQuery = '') {
   tableBody.innerHTML = filtered.map(h => {
     const name = getReportName(h.type);
     const date = new Date(h.createdAt).toLocaleDateString([], { month: 'short', day: 'numeric', year: 'numeric', hour: '2-digit', minute: '2-digit' });
-    
+
     let badgeClass = "badge-cyan";
     if (h.status === 'downloaded') badgeClass = "badge-orange";
     else if (h.status === 'generated') badgeClass = "badge-green";
@@ -4556,16 +4842,16 @@ function renderRecentReportsHistory(filterQuery = '') {
 
 function generateReport(type) {
   let history = [];
-  try { history = JSON.parse(localStorage.getItem('reportHistory')) || []; } catch(e) {}
+  try { history = JSON.parse(localStorage.getItem('reportHistory')) || []; } catch (e) { }
 
   const match = history.filter(h => h.type === type).sort((a, b) => b.version - a.version);
   const nextVersion = match.length > 0 ? match[0].version + 1 : 1;
 
   const scoreObj = getSolarReadinessScore();
   const reportId = generateReportId();
-  
+
   const newEntry = {
-    id: 'rep-' + Date.now() + '-' + Math.floor(Math.random()*1000),
+    id: 'rep-' + Date.now() + '-' + Math.floor(Math.random() * 1000),
     version: nextVersion,
     type: type,
     createdAt: new Date().toISOString(),
@@ -4579,7 +4865,7 @@ function generateReport(type) {
   localStorage.setItem('reportHistory', JSON.stringify(history));
   showToast(`${getReportName(type)} successfully generated!`, "success");
   logAuditEvent((_getUser() || {}).email, 'Report Generated', 'Reports', `Generated new report: ${getReportName(type)} (v${newEntry.version}).`, 'Medium');
-  
+
   refreshReportsDashboard();
   createNotification('reports', 'Report Generated', `Branded ${getReportName(type)} (v${nextVersion}) is now available for download.`, 'high');
   addActivityLog('report', 'Report Generated', `Successfully generated ${getReportName(type)} (v${nextVersion}).`);
@@ -4609,15 +4895,15 @@ function downloadLatestReport() {
     return;
   }
   let history = [];
-  try { history = JSON.parse(localStorage.getItem('reportHistory')) || []; } catch(e) {}
+  try { history = JSON.parse(localStorage.getItem('reportHistory')) || []; } catch (e) { }
   const match = history.filter(h => h.type === 'comprehensive').sort((a, b) => new Date(b.createdAt) - new Date(a.createdAt));
-  
+
   let entry = null;
   if (match.length > 0) {
     entry = match[0];
   } else {
     generateReport('comprehensive');
-    try { history = JSON.parse(localStorage.getItem('reportHistory')) || []; } catch(e) {}
+    try { history = JSON.parse(localStorage.getItem('reportHistory')) || []; } catch (e) { }
     entry = history.filter(h => h.type === 'comprehensive').sort((a, b) => new Date(b.createdAt) - new Date(a.createdAt))[0];
   }
 
@@ -4628,18 +4914,18 @@ function downloadLatestReport() {
 
 function previewReport(type) {
   let history = [];
-  try { history = JSON.parse(localStorage.getItem('reportHistory')) || []; } catch(e) {}
+  try { history = JSON.parse(localStorage.getItem('reportHistory')) || []; } catch (e) { }
   const match = history.filter(h => h.type === type).sort((a, b) => new Date(b.createdAt) - new Date(a.createdAt));
-  
+
   let entry = null;
   if (match.length > 0) {
     entry = match[0];
   } else {
     generateReport(type);
-    try { history = JSON.parse(localStorage.getItem('reportHistory')) || []; } catch(e) {}
+    try { history = JSON.parse(localStorage.getItem('reportHistory')) || []; } catch (e) { }
     entry = history.filter(h => h.type === type).sort((a, b) => new Date(b.createdAt) - new Date(a.createdAt))[0];
   }
-  
+
   if (entry) {
     previewReportHistory(entry.id);
   }
@@ -4647,18 +4933,18 @@ function previewReport(type) {
 
 function downloadReport(type) {
   let history = [];
-  try { history = JSON.parse(localStorage.getItem('reportHistory')) || []; } catch(e) {}
+  try { history = JSON.parse(localStorage.getItem('reportHistory')) || []; } catch (e) { }
   const match = history.filter(h => h.type === type).sort((a, b) => new Date(b.createdAt) - new Date(a.createdAt));
-  
+
   let entry = null;
   if (match.length > 0) {
     entry = match[0];
   } else {
     generateReport(type);
-    try { history = JSON.parse(localStorage.getItem('reportHistory')) || []; } catch(e) {}
+    try { history = JSON.parse(localStorage.getItem('reportHistory')) || []; } catch (e) { }
     entry = history.filter(h => h.type === type).sort((a, b) => new Date(b.createdAt) - new Date(a.createdAt))[0];
   }
-  
+
   if (entry) {
     downloadReportHistory(entry.id);
   }
@@ -4667,7 +4953,7 @@ function downloadReport(type) {
 function previewReportHistory(id) {
   currentPreviewId = id;
   let history = [];
-  try { history = JSON.parse(localStorage.getItem('reportHistory')) || []; } catch(e) {}
+  try { history = JSON.parse(localStorage.getItem('reportHistory')) || []; } catch (e) { }
   const entry = history.find(h => h.id === id);
   if (!entry) return;
 
@@ -4686,7 +4972,7 @@ function previewReportHistory(id) {
 
 function downloadReportHistory(id) {
   let history = [];
-  try { history = JSON.parse(localStorage.getItem('reportHistory')) || []; } catch(e) {}
+  try { history = JSON.parse(localStorage.getItem('reportHistory')) || []; } catch (e) { }
   const idx = history.findIndex(h => h.id === id);
   if (idx === -1) return;
 
@@ -4697,7 +4983,7 @@ function downloadReportHistory(id) {
   const entry = history[idx];
   logAuditEvent((_getUser() || {}).email, 'Report Downloaded', 'Reports', `Downloaded / printed PDF report: ${getReportName(entry.type)} (v${entry.version}).`, 'Low');
   const htmlContent = buildReportHTMLContent(entry, true);
-  
+
   const printWindow = window.open('', '_blank', 'width=900,height=800');
   if (printWindow) {
     printWindow.document.write(htmlContent);
@@ -4718,15 +5004,15 @@ function downloadReportHistory(id) {
 
 function deleteReportHistory(id) {
   let history = [];
-  try { history = JSON.parse(localStorage.getItem('reportHistory')) || []; } catch(e) {}
+  try { history = JSON.parse(localStorage.getItem('reportHistory')) || []; } catch (e) { }
   const entry = history.find(h => h.id === id);
   const filtered = history.filter(h => h.id !== id);
   localStorage.setItem('reportHistory', JSON.stringify(filtered));
-  
+
   const typeName = entry ? getReportName(entry.type) : 'Unknown';
   const versionStr = entry ? `(v${entry.version})` : '';
   logAuditEvent((_getUser() || {}).email, 'Report Deleted', 'Reports', `Deleted report from history: ${typeName} ${versionStr}.`, 'Medium');
-  
+
   showToast("Report deleted from history.", "info");
   refreshReportsDashboard();
 }
@@ -4741,9 +5027,9 @@ function getReportName(type) {
 
 function getReportRecommendations() {
   let billData = null, roofData = null, roiData = null;
-  try { billData = JSON.parse(localStorage.getItem('lastBillAnalysis')); } catch(e) {}
-  try { roofData = JSON.parse(localStorage.getItem('lastRoofAnalysis')); } catch(e) {}
-  try { roiData = JSON.parse(localStorage.getItem('lastROIAnalysis')); } catch(e) {}
+  try { billData = JSON.parse(localStorage.getItem('lastBillAnalysis')); } catch (e) { }
+  try { roofData = JSON.parse(localStorage.getItem('lastRoofAnalysis')); } catch (e) { }
+  try { roiData = JSON.parse(localStorage.getItem('lastROIAnalysis')); } catch (e) { }
 
   let recs = [];
   if (!billData) {
@@ -4778,9 +5064,9 @@ function generateReportId() {
 
 function exportReportCSV(type) {
   let billData = null, roofData = null, roiData = null;
-  try { billData = JSON.parse(localStorage.getItem('lastBillAnalysis')); } catch(e) {}
-  try { roofData = JSON.parse(localStorage.getItem('lastRoofAnalysis')); } catch(e) {}
-  try { roiData = JSON.parse(localStorage.getItem('lastROIAnalysis')); } catch(e) {}
+  try { billData = JSON.parse(localStorage.getItem('lastBillAnalysis')); } catch (e) { }
+  try { roofData = JSON.parse(localStorage.getItem('lastRoofAnalysis')); } catch (e) { }
+  try { roiData = JSON.parse(localStorage.getItem('lastROIAnalysis')); } catch (e) { }
 
   let headers = [];
   let row = [];
@@ -4809,7 +5095,7 @@ function exportReportCSV(type) {
       return;
     }
     headers = ['Suitability Score', 'Roof Area', 'Panel Count'];
-    
+
     let suitabilityScore = 92;
     if (roofData.usable_area_sqft && roofData.total_area_sqft) {
       const ratio = roofData.usable_area_sqft / roofData.total_area_sqft;
@@ -4821,7 +5107,7 @@ function exportReportCSV(type) {
       else if (shadeLower.includes("severe") || shadeLower.includes("heavy")) shadePenalty = 30;
       suitabilityScore = Math.min(99, Math.max(50, Math.round(ratio * 100 - shadePenalty)));
     }
-    
+
     row = [suitabilityScore, roofData.total_area_sqft, roofData.number_of_panels];
   }
   else if (type === 'roi') {
@@ -4888,9 +5174,9 @@ function exportReportCSV(type) {
 
 function buildReportHTMLContent(entry, forPrinting = false) {
   let billData = null, roofData = null, roiData = null;
-  try { billData = JSON.parse(localStorage.getItem('lastBillAnalysis')); } catch(e) {}
-  try { roofData = JSON.parse(localStorage.getItem('lastRoofAnalysis')); } catch(e) {}
-  try { roiData = JSON.parse(localStorage.getItem('lastROIAnalysis')); } catch(e) {}
+  try { billData = JSON.parse(localStorage.getItem('lastBillAnalysis')); } catch (e) { }
+  try { roofData = JSON.parse(localStorage.getItem('lastRoofAnalysis')); } catch (e) { }
+  try { roiData = JSON.parse(localStorage.getItem('lastROIAnalysis')); } catch (e) { }
 
   const user = _getUser() || {};
   const customerName = billData?.customer_name || user.name || "Customer";
@@ -4907,7 +5193,7 @@ function buildReportHTMLContent(entry, forPrinting = false) {
   const recs = getReportRecommendations();
   const recsHtml = recs.map((r, i) => `
     <div style="padding: 10px; margin-bottom: 8px; background: rgba(255,255,255,0.02); border-left: 3px solid #F59E0B; border-radius: 0 4px 4px 0;">
-      <strong style="color: #F59E0B; font-size: 11px;">${i+1}. ${r.text}</strong>
+      <strong style="color: #F59E0B; font-size: 11px;">${i + 1}. ${r.text}</strong>
       <p style="font-size: 10px; color: #cbd5e1; margin: 3px 0 0 0;">${r.desc}</p>
     </div>
   `).join('');
@@ -5121,7 +5407,7 @@ function buildReportHTMLContent(entry, forPrinting = false) {
             <div>
               <strong style="color: #ffffff; font-size: 12px; display: block; margin-bottom: 8px;">Solar Feasibility Parameters</strong>
               <table style="width: 100%; border-collapse: collapse; text-align: left;">
-                <tr style="border-bottom: 1px solid rgba(255,255,255,0.04);"><td style="padding: 6px 0; color: #94a3b8;">Usability Ratio:</td><td style="padding: 6px 0; text-align: right; color: #ffffff; font-weight: 600;">${Math.round((roofData.usable_area_sqft / roofData.total_area_sqft)*100)}%</td></tr>
+                <tr style="border-bottom: 1px solid rgba(255,255,255,0.04);"><td style="padding: 6px 0; color: #94a3b8;">Usability Ratio:</td><td style="padding: 6px 0; text-align: right; color: #ffffff; font-weight: 600;">${Math.round((roofData.usable_area_sqft / roofData.total_area_sqft) * 100)}%</td></tr>
                 <tr style="border-bottom: 1px solid rgba(255,255,255,0.04);"><td style="padding: 6px 0; color: #94a3b8;">Recommended Solar kW:</td><td style="padding: 6px 0; text-align: right; color: #00B5E2; font-weight: 600;">${roofData.recommended_kw} kW</td></tr>
                 <tr style="border-bottom: 1px solid rgba(255,255,255,0.04);"><td style="padding: 6px 0; color: #94a3b8;">Est. Monthly Output:</td><td style="padding: 6px 0; text-align: right; color: #22c55e; font-weight: 600;">${roofData.monthly_generation_units} kWh</td></tr>
                 <tr style="border-bottom: 1px solid rgba(255,255,255,0.04);"><td style="padding: 6px 0; color: #94a3b8;">Suitability score:</td><td style="padding: 6px 0; text-align: right; color: #22c55e; font-weight: 700;">${suitabilityScore}%</td></tr>
@@ -5167,7 +5453,7 @@ function buildReportHTMLContent(entry, forPrinting = false) {
               <strong style="color: #ffffff; font-size: 12px; display: block; margin-bottom: 8px;">Long-Term Savings Yields</strong>
               <table style="width: 100%; border-collapse: collapse; text-align: left;">
                 <tr style="border-bottom: 1px solid rgba(255,255,255,0.04);"><td style="padding: 6px 0; color: #94a3b8;">Yearly Bill Savings:</td><td style="padding: 6px 0; text-align: right; color: #22c55e; font-weight: 600;">₹${annualSavings.toLocaleString('en-IN')} / yr</td></tr>
-                <tr style="border-bottom: 1px solid rgba(255,255,255,0.04);"><td style="padding: 6px 0; color: #94a3b8;">25-Year Net Savings:</td><td style="padding: 6px 0; text-align: right; color: #22c55e; font-weight: 700; font-size: 12px;">₹${(roiData.data?.lifetime_savings || roiData.data?.savings_25_years_rs || (annualSavings*25 - netCost)).toLocaleString('en-IN')}</td></tr>
+                <tr style="border-bottom: 1px solid rgba(255,255,255,0.04);"><td style="padding: 6px 0; color: #94a3b8;">25-Year Net Savings:</td><td style="padding: 6px 0; text-align: right; color: #22c55e; font-weight: 700; font-size: 12px;">₹${(roiData.data?.lifetime_savings || roiData.data?.savings_25_years_rs || (annualSavings * 25 - netCost)).toLocaleString('en-IN')}</td></tr>
                 <tr style="border-bottom: 1px solid rgba(255,255,255,0.04);"><td style="padding: 6px 0; color: #94a3b8;">Cumulative ROI Yield:</td><td style="padding: 6px 0; text-align: right; color: #00B5E2; font-weight: 700;">${roiPct}%</td></tr>
                 <tr style="border-bottom: 1px solid rgba(255,255,255,0.04);"><td style="padding: 6px 0; color: #94a3b8;">Carbon Offsets (Tons/yr):</td><td style="padding: 6px 0; text-align: right; color: #22c55e; font-weight: 600;">${co2Val} Tons CO₂</td></tr>
               </table>
@@ -5262,14 +5548,14 @@ function initTabROICalculator() {
   const tabComputeSavingsBtn = document.getElementById('tabComputeSavingsBtn');
   const roiRetryBtn = document.getElementById('roiAnalysisRetryBtn');
   if (!tabComputeSavingsBtn) return;
-  
+
   // Restore state from local storage or set initial defaults
   restoreTabROIState();
-  
+
   tabComputeSavingsBtn.addEventListener('click', () => {
     executeROICalculation();
   });
-  
+
   if (roiRetryBtn) {
     roiRetryBtn.addEventListener('click', () => {
       executeROICalculation();
@@ -5282,13 +5568,18 @@ function restoreTabROIState() {
   if (saved) {
     try {
       const stateObj = JSON.parse(saved);
+      if (!_isValidROIState(stateObj)) {
+        localStorage.removeItem('lastROIAnalysis');
+        initTabRoiCalculatorChart();
+        return;
+      }
       renderTabROIData(stateObj);
     } catch (e) {
-      console.error('Failed to restore ROI analysis state:', e);
+      localStorage.removeItem('lastROIAnalysis');
+      console.error('Corrupted ROI analysis state cleared:', e);
       initTabRoiCalculatorChart();
     }
   } else {
-    // Initial default chart rendering on first load
     initTabRoiCalculatorChart();
   }
 }
@@ -5298,7 +5589,7 @@ function executeROICalculation() {
   const sunHoursEl = document.getElementById('tabSunHours');
   const systemSizeEl = document.getElementById('tabSystemSize');
   const techEl = document.getElementById('tabPanelQuality');
-  
+
   if (!monthlyBillEl || !systemSizeEl) return;
 
   const monthlyBill = parseFloat(monthlyBillEl.value);
@@ -5330,62 +5621,62 @@ function executeROICalculation() {
       system_size: systemSize
     })
   })
-  .then(async (res) => {
-    if (!res.ok) {
-      throw new Error('API server returned an error.');
-    }
-    return res.json();
-  })
-  .then((result) => {
-    if (!result || result.success !== true || !result.data) {
-      throw new Error((result && result.error) || 'Invalid API response format.');
-    }
+    .then(async (res) => {
+      if (!res.ok) {
+        throw new Error('API server returned an error.');
+      }
+      return res.json();
+    })
+    .then((result) => {
+      if (!result || result.success !== true || !result.data) {
+        throw new Error((result && result.error) || 'Invalid API response format.');
+      }
 
-    showToast('ROI calculation completed successfully!', 'success');
+      showToast('ROI calculation completed successfully!', 'success');
 
-    const stateToSave = {
-      monthly_bill: monthlyBill,
-      sun_hours: sunHours,
-      system_size: systemSize,
-      tech: tech,
-      data: result.data
-    };
-    localStorage.setItem('lastROIAnalysis', JSON.stringify(stateToSave));
-    logAuditEvent((_getUser() || {}).email, 'ROI Calculator Run', 'Assessment', `Completed ROI calculation: monthly bill = ₹${monthlyBill}, system size = ${systemSize} kW, payback = ${result.data.payback_period || result.data.payback_years} years.`, 'Medium');
+      const stateToSave = {
+        monthly_bill: monthlyBill,
+        sun_hours: sunHours,
+        system_size: systemSize,
+        tech: tech,
+        data: result.data
+      };
+      localStorage.setItem('lastROIAnalysis', JSON.stringify(stateToSave));
+      logAuditEvent((_getUser() || {}).email, 'ROI Calculator Run', 'Assessment', `Completed ROI calculation: monthly bill = ₹${monthlyBill}, system size = ${systemSize} kW, payback = ${result.data.payback_period || result.data.payback_years} years.`, 'Medium');
 
-    renderTabROIData(stateToSave);
-    createNotification('roi', 'ROI Analysis Completed', `ROI calculation finished: Estimated annual savings of ₹${result.data.annual_savings.toLocaleString('en-IN')}. Payback period: ${result.data.payback_period || result.data.payback_years} years.`, 'high');
-    addActivityLog('roi', 'ROI Analysis Completed', `Generated financial report for a ${systemSize} kW system, payback in ${result.data.payback_period || result.data.payback_years} years.`);
-  })
-  .catch((err) => {
-    console.warn('Backend ROI API call failed, using client-side fallback calculations:', err);
-    logAuditEvent((_getUser() || {}).email, 'API Failure', 'Security', `FastAPI ROI calculator API call failed: ${err.message || 'Server unavailable'}. Switched to local fallback.`, 'Medium');
-    
-    // Client-side fallback calculations for demo mode
-    const fallbackData = runClientSideROIFallback(monthlyBill, systemSize);
-    logAuditEvent((_getUser() || {}).email, 'ROI Calculator Run', 'Assessment', `Completed ROI calculation (fallback): monthly bill = ₹${monthlyBill}, system size = ${systemSize} kW, payback = ${fallbackData.payback_period} years.`, 'Medium');
-    
-    showToast('Completed calculation in demo fallback mode.', 'info');
+      renderTabROIData(stateToSave);
+      createNotification('roi', 'ROI Analysis Completed', `ROI calculation finished: Estimated annual savings of ₹${result.data.annual_savings.toLocaleString('en-IN')}. Payback period: ${result.data.payback_period || result.data.payback_years} years.`, 'high');
+      addActivityLog('roi', 'ROI Analysis Completed', `Generated financial report for a ${systemSize} kW system, payback in ${result.data.payback_period || result.data.payback_years} years.`);
+    })
+    .catch((err) => {
+      console.warn('Backend ROI API call failed, using client-side fallback calculations:', err);
+      logAuditEvent((_getUser() || {}).email, 'API Failure', 'Security', `FastAPI ROI calculator API call failed: ${err.message || 'Server unavailable'}. Switched to local fallback.`, 'Medium');
 
-    const stateToSave = {
-      monthly_bill: monthlyBill,
-      sun_hours: sunHours,
-      system_size: systemSize,
-      tech: tech,
-      data: fallbackData,
-      isFallback: true
-    };
-    localStorage.setItem('lastROIAnalysis', JSON.stringify(stateToSave));
+      // Client-side fallback calculations for demo mode
+      const fallbackData = runClientSideROIFallback(monthlyBill, systemSize);
+      logAuditEvent((_getUser() || {}).email, 'ROI Calculator Run', 'Assessment', `Completed ROI calculation (fallback): monthly bill = ₹${monthlyBill}, system size = ${systemSize} kW, payback = ${fallbackData.payback_period} years.`, 'Medium');
 
-    renderTabROIData(stateToSave);
-    createNotification('roi', 'ROI Analysis Completed', `ROI calculation finished: Estimated annual savings of ₹${fallbackData.annual_savings.toLocaleString('en-IN')}. Payback period: ${fallbackData.payback_period} years.`, 'high');
-    addActivityLog('roi', 'ROI Analysis Completed', `Generated financial report for a ${systemSize} kW system, payback in ${fallbackData.payback_period} years.`);
-  });
+      showToast('Completed calculation in demo fallback mode.', 'info');
+
+      const stateToSave = {
+        monthly_bill: monthlyBill,
+        sun_hours: sunHours,
+        system_size: systemSize,
+        tech: tech,
+        data: fallbackData,
+        isFallback: true
+      };
+      localStorage.setItem('lastROIAnalysis', JSON.stringify(stateToSave));
+
+      renderTabROIData(stateToSave);
+      createNotification('roi', 'ROI Analysis Completed', `ROI calculation finished: Estimated annual savings of ₹${fallbackData.annual_savings.toLocaleString('en-IN')}. Payback period: ${fallbackData.payback_period} years.`, 'high');
+      addActivityLog('roi', 'ROI Analysis Completed', `Generated financial report for a ${systemSize} kW system, payback in ${fallbackData.payback_period} years.`);
+    });
 }
 
 function runClientSideROIFallback(monthlyBill, systemSize) {
   const system_cost = systemSize * 55000;
-  
+
   let government_subsidy = 0.0;
   if (systemSize >= 3.0) {
     government_subsidy = 78000.0;
@@ -5423,7 +5714,7 @@ function runClientSideROIFallback(monthlyBill, systemSize) {
 
 function renderTabROIData(stateObj) {
   const data = stateObj.data || stateObj;
-  
+
   const recommendedKw = Number(data.recommended_kw) || 0;
   const systemCost = Number(data.system_cost) || 0;
   const subsidy = Number(data.government_subsidy) || 0;
@@ -5516,20 +5807,20 @@ function initTabRoiCalculatorChart(payback = 4.8, netCost = 102000, annualSaving
   const canvas = document.getElementById('tabRoiTrendChart');
   if (!canvas) return;
   const ctx = canvas.getContext('2d');
-  
+
   if (tabRoiChartInstance) {
     tabRoiChartInstance.destroy();
   }
-  
-  const labels = Array.from({length: 25}, (_, i) => `Yr ${i+1}`);
+
+  const labels = Array.from({ length: 25 }, (_, i) => `Yr ${i + 1}`);
   const data = [];
   for (let year = 1; year <= 25; year++) {
     const val = (year * annualSavings) - netCost;
     data.push(Math.round(val));
   }
-  
+
   const baselineData = Array(25).fill(0);
-  
+
   tabRoiChartInstance = new Chart(ctx, {
     type: 'line',
     data: {
@@ -5559,7 +5850,7 @@ function initTabRoiCalculatorChart(payback = 4.8, netCost = 102000, annualSaving
       responsive: true,
       maintainAspectRatio: false,
       plugins: {
-        legend: { 
+        legend: {
           display: true,
           labels: {
             color: '#9fb3c8',
@@ -5594,7 +5885,7 @@ let perfCarbonChart = null;
 
 function initPerformanceTabCharts() {
   if (!dashboardData) return;
-  
+
   // Chart 1: Production Trend
   const ctx1 = document.getElementById('perfProductionTrendChart');
   if (ctx1) {
@@ -5740,7 +6031,7 @@ function initRewardsTab() {
   const copyCodeBtn = document.getElementById('rwdCopyCodeBtn');
   const copyLinkBtn = document.getElementById('rwdCopyLinkBtn');
   const whatsAppBtn = document.getElementById('rwdWhatsAppBtn');
-  const retryBtn    = document.getElementById('rewardsRetryBtn');
+  const retryBtn = document.getElementById('rewardsRetryBtn');
 
   if (copyCodeBtn) copyCodeBtn.addEventListener('click', () => {
     const code = document.getElementById('rwdReferralCode')?.textContent || '';
@@ -5778,10 +6069,10 @@ function initRewardsTab() {
         showToast('Please enter a referral code!', 'warning');
         return;
       }
-      
+
       const user = _getUser();
       if (!user || !user.email) return;
-      
+
       const host = API_BASE;
       safeFetch(`${host}/api/referral/apply`, {
         method: 'POST',
@@ -5793,26 +6084,26 @@ function initRewardsTab() {
           referral_code: code
         })
       })
-      .then(async (res) => {
-        if (!res.ok) {
-          const errData = await res.json().catch(() => ({}));
-          throw new Error(errData.detail || 'Failed to apply referral code.');
-        }
-        return res.json();
-      })
-      .then((data) => {
-        showToast('Referral code applied successfully!', 'success');
-        rwdApplyCodeInput.value = '';
-        logAuditEvent(user.email, 'Referral Applied', 'Rewards', `Applied friend's referral code: ${code}.`, 'Low');
-        
-        // Refresh wallet data
-        _rewardsLoaded = false;
-        loadRewardsData();
-      })
-      .catch((err) => {
-        showToast(err.message, 'error');
-        logAuditEvent(user.email, 'Invalid Referral Code Usage', 'Security', `Failed to apply referral code ${code}: ${err.message}`, 'High');
-      });
+        .then(async (res) => {
+          if (!res.ok) {
+            const errData = await res.json().catch(() => ({}));
+            throw new Error(errData.detail || 'Failed to apply referral code.');
+          }
+          return res.json();
+        })
+        .then((data) => {
+          showToast('Referral code applied successfully!', 'success');
+          rwdApplyCodeInput.value = '';
+          logAuditEvent(user.email, 'Referral Applied', 'Rewards', `Applied friend's referral code: ${code}.`, 'Low');
+
+          // Refresh wallet data
+          _rewardsLoaded = false;
+          loadRewardsData();
+        })
+        .catch((err) => {
+          showToast(err.message, 'error');
+          logAuditEvent(user.email, 'Invalid Referral Code Usage', 'Security', `Failed to apply referral code ${code}: ${err.message}`, 'High');
+        });
     });
   }
 
@@ -5841,7 +6132,21 @@ function initRewardsTab() {
   try {
     const cached = localStorage.getItem('lastRewardsData');
     if (cached) _hydrateRewardsUI(JSON.parse(cached));
-  } catch(e) {}
+  } catch (e) { }
+}
+
+/* Centralized logout — used by both initAuth and initProfileDropdown */
+function doLogout() {
+  const u = _getUser() || {};
+  logAuditEvent(u.email || 'anonymous', 'User Logout', 'Authentication', `User ${u.name || 'Unknown'} logged out.`, 'Low');
+  sessionStorage.removeItem('loginLogged');
+  if (typeof window.authLogout === 'function') {
+    window.authLogout();
+  } else {
+    localStorage.removeItem('token');
+    localStorage.removeItem('user');
+    window.location.replace('login.html');
+  }
 }
 
 function _getUser() {
@@ -6020,35 +6325,35 @@ function _redeemReward(rewardId, btn) {
     headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify({ email: user.email, reward_id: rewardId })
   })
-  .then(r => r.json())
-  .then(data => {
-    if (data.success) {
-      showToast(data.message || 'Reward redeemed successfully!', 'success');
-      // Refresh the entire rewards tab
-      _rewardsLoaded = false;
-      loadRewardsData();
-      createNotification('rewards', 'Reward Redeemed', `You redeemed a reward! Code and details sent to your registered email.`, 'high');
-      addActivityLog('reward', 'Reward Redeemed', `Successfully redeemed reward ID: ${rewardId}.`);
-    } else {
-      showToast(data.error || 'Redemption failed', 'error');
+    .then(r => r.json())
+    .then(data => {
+      if (data.success) {
+        showToast(data.message || 'Reward redeemed successfully!', 'success');
+        // Refresh the entire rewards tab
+        _rewardsLoaded = false;
+        loadRewardsData();
+        createNotification('rewards', 'Reward Redeemed', `You redeemed a reward! Code and details sent to your registered email.`, 'high');
+        addActivityLog('reward', 'Reward Redeemed', `Successfully redeemed reward ID: ${rewardId}.`);
+      } else {
+        showToast(data.error || 'Redemption failed', 'error');
+        btn.disabled = false;
+        btn.textContent = 'Redeem';
+      }
+    })
+    .catch(err => {
+      showToast('Network error. Please try again.', 'error');
       btn.disabled = false;
       btn.textContent = 'Redeem';
-    }
-  })
-  .catch(err => {
-    showToast('Network error. Please try again.', 'error');
-    btn.disabled = false;
-    btn.textContent = 'Redeem';
-  });
+    });
 }
 
 function _statusBadge(status) {
   const map = {
-    'pending':    { color: '#eab308', bg: 'rgba(234,179,8,0.12)',   label: '⏳ Pending' },
-    'registered': { color: '#eab308', bg: 'rgba(234,179,8,0.12)',   label: '⏳ Registered' },
-    'qualified':  { color: '#eab308', bg: 'rgba(234,179,8,0.12)',   label: '⏳ Qualified' },
-    'completed':  { color: '#36d399', bg: 'rgba(54,211,153,0.12)',  label: '✓ Completed' },
-    'rewarded':   { color: '#00aeef', bg: 'rgba(0,174,239,0.12)',   label: '★ Rewarded' }
+    'pending': { color: '#eab308', bg: 'rgba(234,179,8,0.12)', label: '⏳ Pending' },
+    'registered': { color: '#eab308', bg: 'rgba(234,179,8,0.12)', label: '⏳ Registered' },
+    'qualified': { color: '#eab308', bg: 'rgba(234,179,8,0.12)', label: '⏳ Qualified' },
+    'completed': { color: '#36d399', bg: 'rgba(54,211,153,0.12)', label: '✓ Completed' },
+    'rewarded': { color: '#00aeef', bg: 'rgba(0,174,239,0.12)', label: '★ Rewarded' }
   };
   const s = map[status] || map['completed'];
   return `<span style="font-weight: 700; color: ${s.color}; background: ${s.bg}; padding: 2px 6px; border-radius: 4px; font-size: 10px;">${s.label}</span>`;
@@ -6063,50 +6368,6 @@ function _esc(str) {
   const div = document.createElement('div');
   div.textContent = str || '';
   return div.innerHTML;
-}
-
-/**
- * _safeNum — coerces any value to a finite number, returning `fallback` (default 0)
- * when the value is undefined, null, NaN, or Infinity. Use before every .toFixed() call.
- */
-function _safeNum(val, fallback = 0) {
-  const n = Number(val);
-  return isFinite(n) ? n : fallback;
-}
-
-
-/* ==========================================================================
-   TOAST MESSAGE POPUP SYSTEM
-   ========================================================================== */
-function showToast(message, type = 'info') {
-  const toast = document.getElementById('toastMsg');
-  const toastText = document.getElementById('toastText');
-  const toastSvg = toast?.querySelector('svg');
-  
-  if (toast && toastText) {
-    toastText.textContent = message;
-    
-    // Clear previous classes and apply active + type
-    toast.className = 'toast-msg active ' + type;
-    
-    // Customize SVG icon based on type
-    if (toastSvg) {
-      if (type === 'error') {
-        toastSvg.innerHTML = '<circle cx="12" cy="12" r="10"></circle><line x1="12" y1="8" x2="12" y2="12"></line><line x1="12" y1="16" x2="12.01" y2="16"></line>';
-      } else if (type === 'warning') {
-        toastSvg.innerHTML = '<path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"></path><line x1="12" y1="9" x2="12" y2="13"></line><line x1="12" y1="17" x2="12.01" y2="17"></line>';
-      } else {
-        // success or default checkmark
-        toastSvg.innerHTML = '<polyline points="20 6 9 17 4 12"></polyline>';
-      }
-    }
-    
-    clearTimeout(toast._timer);
-    toast._timer = setTimeout(() => {
-      toast.classList.remove('active');
-      toast.className = 'toast-msg';
-    }, 3000);
-  }
 }
 
 /* ==========================================================================
@@ -6170,12 +6431,12 @@ function setMetricValue(elementId, value, isCurrency = false, isFloat = false, s
 function initAdminDashboard() {
   const subNavBtns = document.querySelectorAll('.admin-sub-nav .sub-nav-btn');
   const adminPanels = document.querySelectorAll('#adminPanelsContainer .admin-panel');
-  
+
   subNavBtns.forEach(btn => {
     btn.addEventListener('click', () => {
       subNavBtns.forEach(b => b.classList.remove('active'));
       btn.classList.add('active');
-      
+
       const targetSection = btn.getAttribute('data-admin-section');
       adminPanels.forEach(panel => {
         if (panel.id === `admin-panel-${targetSection}`) {
@@ -6222,24 +6483,24 @@ function initAdminDashboard() {
         email: "afasana@getsolar.in"
       };
 
-      fetch(`${API_BASE}/api/customers`, {
+      safeFetch(`${API_BASE}/api/customers`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(templateCustomer)
       })
-      .then(res => {
-        if (res.ok) {
-          showToast("Dataset successfully initialized!", "success");
-          loadAdminDashboardData(true);
-        } else {
-          showToast("Import failed. Trying alternative reload...", "warning");
-          loadAdminDashboardData(true);
-        }
-      })
-      .catch(err => {
-        console.error("Failed to seed via CTA:", err);
-        showToast("Unable to import dataset.", "error");
-      });
+        .then(res => {
+          if (res.ok) {
+            showToast("Dataset successfully initialized!", "success");
+            loadAdminDashboardData(true);
+          } else {
+            showToast("Import failed. Trying alternative reload...", "warning");
+            loadAdminDashboardData(true);
+          }
+        })
+        .catch(err => {
+          console.error("Failed to seed via CTA:", err);
+          showToast("Unable to import dataset.", "error");
+        });
     });
   }
 
@@ -6305,7 +6566,7 @@ function loadAdminDashboardData(force = false) {
     try {
       const cachedData = JSON.parse(cachedDataStr);
       cachedData.cacheStatus = "Cached";
-      
+
       // Check for empty state in cache
       if (cachedData.cdpStats && cachedData.cdpStats.customers === 0) {
         if (emptyStateContainer) emptyStateContainer.style.display = 'block';
@@ -6317,7 +6578,7 @@ function loadAdminDashboardData(force = false) {
         if (errorContainer) errorContainer.style.display = 'none';
         _hydrateAdminDashboardUI(cachedData, false);
       }
-      
+
       if (lastSuccessTimeEl) {
         lastSuccessTimeEl.textContent = formatTimestamp(lastFetchTs);
       }
@@ -6340,109 +6601,109 @@ function loadAdminDashboardData(force = false) {
     safeFetch(`${host}/api/dashboard/recent-bills?limit=5`),
     safeFetch(`${host}/api/customers?limit=100`)
   ])
-  .then(async (responses) => {
-    for (const r of responses) {
-      if (!r.ok) throw new Error(`API Endpoint returned status ${r.status}`);
-    }
-    return Promise.all(responses.map(r => r.json()));
-  })
-  .then(([overview, users, rewards, assistant, activity, cdpStats, recentBills, allCustomers]) => {
-    if (!overview.success || !users.success || !rewards.success || !assistant.success || !activity.success) {
-      throw new Error("One or more admin endpoints failed");
-    }
+    .then(async (responses) => {
+      for (const r of responses) {
+        if (!r.ok) throw new Error(`API Endpoint returned status ${r.status}`);
+      }
+      return Promise.all(responses.map(r => r.json()));
+    })
+    .then(([overview, users, rewards, assistant, activity, cdpStats, recentBills, allCustomers]) => {
+      if (!overview.success || !users.success || !rewards.success || !assistant.success || !activity.success) {
+        throw new Error("One or more admin endpoints failed");
+      }
 
-    const durationMs = Math.round(performance.now() - startTime);
-    const isSlow = durationMs >= 1500;
+      const durationMs = Math.round(performance.now() - startTime);
+      const isSlow = durationMs >= 1500;
 
-    const consolidated = {
-      overview,
-      users,
-      rewards,
-      assistant,
-      activity,
-      cdpStats,
-      recentBills,
-      allCustomers,
-      isSlow,
-      fetchTime: Date.now(),
-      latencyMs: durationMs,
-      cacheStatus: "Fresh"
-    };
+      const consolidated = {
+        overview,
+        users,
+        rewards,
+        assistant,
+        activity,
+        cdpStats,
+        recentBills,
+        allCustomers,
+        isSlow,
+        fetchTime: Date.now(),
+        latencyMs: durationMs,
+        cacheStatus: "Fresh"
+      };
 
-    localStorage.setItem('cachedAdminData', JSON.stringify(consolidated));
-    localStorage.setItem('lastAdminFetchTimestamp', consolidated.fetchTime.toString());
+      localStorage.setItem('cachedAdminData', JSON.stringify(consolidated));
+      localStorage.setItem('lastAdminFetchTimestamp', consolidated.fetchTime.toString());
 
-    if (errorContainer) errorContainer.style.display = 'none';
+      if (errorContainer) errorContainer.style.display = 'none';
 
-    // Handle Empty State dynamically
-    if (cdpStats.customers === 0) {
-      if (emptyStateContainer) emptyStateContainer.style.display = 'block';
+      // Handle Empty State dynamically
+      if (cdpStats.customers === 0) {
+        if (emptyStateContainer) emptyStateContainer.style.display = 'block';
+        if (panelsContainer) panelsContainer.style.display = 'none';
+      } else {
+        if (emptyStateContainer) emptyStateContainer.style.display = 'none';
+        if (panelsContainer) panelsContainer.style.display = 'block';
+        _hydrateAdminDashboardUI(consolidated, true);
+      }
+
+      if (lastSuccessTimeEl) lastSuccessTimeEl.textContent = formatTimestamp(consolidated.fetchTime);
+      showToast("Admin dashboard metrics updated successfully!", "success");
+    })
+    .catch((err) => {
+      console.error("Failed to load fresh admin dashboard data:", err);
+
+      // Priority 2: Try Cached backup load
+      if (cachedDataStr && lastFetchTs) {
+        try {
+          const cachedData = JSON.parse(cachedDataStr);
+          cachedData.cacheStatus = "Stale";
+          if (errorContainer) errorContainer.style.display = 'none';
+
+          if (cachedData.cdpStats && cachedData.cdpStats.customers === 0) {
+            if (emptyStateContainer) emptyStateContainer.style.display = 'block';
+            if (panelsContainer) panelsContainer.style.display = 'none';
+          } else {
+            if (emptyStateContainer) emptyStateContainer.style.display = 'none';
+            if (panelsContainer) panelsContainer.style.display = 'block';
+            _hydrateAdminDashboardUI(cachedData, false);
+          }
+
+          if (lastSuccessTimeEl) lastSuccessTimeEl.textContent = formatTimestamp(lastFetchTs);
+
+          const hBackend = document.getElementById('healthBackend');
+          const hBackendText = document.getElementById('healthBackendText');
+          if (hBackend) hBackend.className = 'status-indicator status-red';
+          if (hBackendText) {
+            hBackendText.textContent = "Offline (Cached)";
+            hBackendText.style.color = '#ef4444';
+          }
+
+          showToast("Backend API offline. Loaded cached analytics details.", "warning");
+          return;
+        } catch (e) {
+          console.warn("Cached data parse failure:", e);
+        }
+      }
+
+      // Priority 3: Fallback empty/error banners
+      if (errorContainer) {
+        errorContainer.style.display = 'block';
+        const errTextEl = document.getElementById('adminErrorText');
+        if (errTextEl) {
+          errTextEl.textContent = `Unable to connect to the admin analytics service APIs: ${err.message || 'Server offline'}`;
+        }
+      }
       if (panelsContainer) panelsContainer.style.display = 'none';
-    } else {
       if (emptyStateContainer) emptyStateContainer.style.display = 'none';
-      if (panelsContainer) panelsContainer.style.display = 'block';
-      _hydrateAdminDashboardUI(consolidated, true);
-    }
-    
-    if (lastSuccessTimeEl) lastSuccessTimeEl.textContent = formatTimestamp(consolidated.fetchTime);
-    showToast("Admin dashboard metrics updated successfully!", "success");
-  })
-  .catch((err) => {
-    console.error("Failed to load fresh admin dashboard data:", err);
-    
-    // Priority 2: Try Cached backup load
-    if (cachedDataStr && lastFetchTs) {
-      try {
-        const cachedData = JSON.parse(cachedDataStr);
-        cachedData.cacheStatus = "Stale";
-        if (errorContainer) errorContainer.style.display = 'none';
-        
-        if (cachedData.cdpStats && cachedData.cdpStats.customers === 0) {
-          if (emptyStateContainer) emptyStateContainer.style.display = 'block';
-          if (panelsContainer) panelsContainer.style.display = 'none';
-        } else {
-          if (emptyStateContainer) emptyStateContainer.style.display = 'none';
-          if (panelsContainer) panelsContainer.style.display = 'block';
-          _hydrateAdminDashboardUI(cachedData, false);
-        }
-        
-        if (lastSuccessTimeEl) lastSuccessTimeEl.textContent = formatTimestamp(lastFetchTs);
-        
-        const hBackend = document.getElementById('healthBackend');
-        const hBackendText = document.getElementById('healthBackendText');
-        if (hBackend) hBackend.className = 'status-indicator status-red';
-        if (hBackendText) {
-          hBackendText.textContent = "Offline (Cached)";
-          hBackendText.style.color = '#ef4444';
-        }
-        
-        showToast("Backend API offline. Loaded cached analytics details.", "warning");
-        return;
-      } catch (e) {
-        console.warn("Cached data parse failure:", e);
+      if (lastSuccessTimeEl) {
+        lastSuccessTimeEl.textContent = formatTimestamp(localStorage.getItem('lastAdminFetchTimestamp'));
       }
-    }
-
-    // Priority 3: Fallback empty/error banners
-    if (errorContainer) {
-      errorContainer.style.display = 'block';
-      const errTextEl = document.getElementById('adminErrorText');
-      if (errTextEl) {
-        errTextEl.textContent = `Unable to connect to the admin analytics service APIs: ${err.message || 'Server offline'}`;
-      }
-    }
-    if (panelsContainer) panelsContainer.style.display = 'none';
-    if (emptyStateContainer) emptyStateContainer.style.display = 'none';
-    if (lastSuccessTimeEl) {
-      lastSuccessTimeEl.textContent = formatTimestamp(localStorage.getItem('lastAdminFetchTimestamp'));
-    }
-    showToast("Unable to load admin dashboard: Backend API offline.", "error");
-  });
+      showToast("Unable to load admin dashboard: Backend API offline.", "error");
+    });
 }
 
 function _hydrateAdminDashboardUI(data, isFresh) {
   const { overview, users, rewards, assistant, activity, cdpStats, recentBills, allCustomers, isSlow } = data;
-  
+
   // Hydrate CDP metrics
   if (cdpStats) {
     animateAdminCounter('cdpTotalCustomers', cdpStats.customers || 0);
@@ -6695,15 +6956,15 @@ function _hydrateAdminDashboardUI(data, isFresh) {
   try {
     const raw = localStorage.getItem('crmLeads');
     adminLeads = raw ? JSON.parse(raw) : {};
-  } catch(e) {}
-  
+  } catch (e) { }
+
   let totalPipelineVal = 0;
   let wonCount = 0;
   let highIntentCount = 0;
   let scoreSum = 0;
   let leadCount = 0;
   let sourceCounts = {};
-  
+
   for (let email in adminLeads) {
     const lead = adminLeads[email];
     leadCount++;
@@ -6721,9 +6982,9 @@ function _hydrateAdminDashboardUI(data, isFresh) {
       sourceCounts[lead.source] = (sourceCounts[lead.source] || 0) + 1;
     }
   }
-  
+
   let avgLeadScore = leadCount > 0 ? Math.round(scoreSum / leadCount) : 0;
-  
+
   let bestSource = "None";
   let maxSourceCount = 0;
   for (let s in sourceCounts) {
@@ -6732,7 +6993,7 @@ function _hydrateAdminDashboardUI(data, isFresh) {
       bestSource = s;
     }
   }
-  
+
   animateAdminCounter('admCrmPipelineValue', totalPipelineVal, true);
   animateAdminCounter('admCrmHighIntent', highIntentCount);
   animateAdminCounter('admCrmWonCustomers', wonCount);
@@ -6756,10 +7017,10 @@ function _hydrateAdminDashboardUI(data, isFresh) {
         else if (act.type === 'referral') icon = "🎁";
         else if (act.type === 'redemption') icon = "💳";
         else if (act.type === 'assistant') icon = "💬";
-        
+
         const date = new Date(act.timestamp);
         const relativeTime = getRelativeTime(date);
-        
+
         return `<div class="admin-activity-item">
           <div class="admin-activity-icon ${act.type}">${icon}</div>
           <div style="flex-grow: 1;">
@@ -6778,7 +7039,7 @@ function _hydrateAdminDashboardUI(data, isFresh) {
   const uActive = adminUsersList.filter(u => u.status === 'Active').length;
   const uPending = adminUsersList.filter(u => u.status === 'Pending').length;
   const uAdmins = adminUsersList.filter(u => u.role === 'Administrator').length;
-  
+
   _setText('usrSummaryTotal', uTotal);
   _setText('usrSummaryActive', uActive);
   _setText('usrSummaryPending', uPending);
@@ -6832,9 +7093,9 @@ function _hydrateAdminDashboardUI(data, isFresh) {
   const averagesContainer = document.getElementById('adminSolarAveragesContainer');
   if (averagesContainer) {
     let billData = null, roofData = null, roiData = null;
-    try { billData = JSON.parse(localStorage.getItem('lastBillAnalysis')); } catch(e) {}
-    try { roofData = JSON.parse(localStorage.getItem('lastRoofAnalysis')); } catch(e) {}
-    try { roiData = JSON.parse(localStorage.getItem('lastROIAnalysis')); } catch(e) {}
+    try { billData = JSON.parse(localStorage.getItem('lastBillAnalysis')); } catch (e) { }
+    try { roofData = JSON.parse(localStorage.getItem('lastRoofAnalysis')); } catch (e) { }
+    try { roiData = JSON.parse(localStorage.getItem('lastROIAnalysis')); } catch (e) { }
 
     if (billData || roofData || roiData) {
       // bill_amount may be absent if bill analysis was not run
@@ -6922,7 +7183,7 @@ function _hydrateAdminDashboardUI(data, isFresh) {
       if (r.rank === 1) rankClass = "top-gold";
       else if (r.rank === 2) rankClass = "top-silver";
       else if (r.rank === 3) rankClass = "top-bronze";
-      
+
       return `<tr class="${rankClass}" style="border-bottom: 1px solid var(--border-color-light);">
         <td style="padding: 10px 8px;">#${r.rank}</td>
         <td style="padding: 10px 8px;"><strong>${_esc(r.name)}</strong><br><span style="font-size: 9px; color: var(--text-muted);">${_esc(r.email)}</span></td>
@@ -6979,10 +7240,10 @@ function _hydrateAdminDashboardUI(data, isFresh) {
 
 function compileLocalSessionAverages() {
   let billData = null, roofData = null, roiData = null;
-  try { billData = JSON.parse(localStorage.getItem('lastBillAnalysis')); } catch(e) {}
-  try { roofData = JSON.parse(localStorage.getItem('lastRoofAnalysis')); } catch(e) {}
-  try { roiData = JSON.parse(localStorage.getItem('lastROIAnalysis')); } catch(e) {}
-  
+  try { billData = JSON.parse(localStorage.getItem('lastBillAnalysis')); } catch (e) { }
+  try { roofData = JSON.parse(localStorage.getItem('lastRoofAnalysis')); } catch (e) { }
+  try { roiData = JSON.parse(localStorage.getItem('lastROIAnalysis')); } catch (e) { }
+
   if (!billData && !roofData && !roiData) return null;
 
   const total_users = 1;
@@ -7010,8 +7271,8 @@ function compileLocalSessionAverages() {
   const avg_referral_points_per_user = user.points || 0;
 
   let history = [];
-  try { history = JSON.parse(localStorage.getItem('reportHistory')) || []; } catch(e) {}
-  
+  try { history = JSON.parse(localStorage.getItem('reportHistory')) || []; } catch (e) { }
+
   const total_reports_generated = history.length;
   const reports_generated_this_month = history.filter(h => {
     const d = new Date(h.createdAt);
@@ -7019,7 +7280,7 @@ function compileLocalSessionAverages() {
     return d.getMonth() === now.getMonth() && d.getFullYear() === now.getFullYear();
   }).length;
   const avg_reports_per_user = total_reports_generated; // since total_users = 1
-  
+
   let readinessSum = 0;
   let readinessCount = 0;
   history.forEach(h => {
@@ -7029,7 +7290,7 @@ function compileLocalSessionAverages() {
     }
   });
   const avg_solar_readiness_score = readinessCount > 0 ? Math.round((readinessSum / readinessCount) * 10) / 10 : 0.0;
-  
+
   let typeCounts = {};
   let dlCounts = {};
   history.forEach(h => {
@@ -7038,7 +7299,7 @@ function compileLocalSessionAverages() {
       dlCounts[h.type] = (dlCounts[h.type] || 0) + h.downloads;
     }
   });
-  
+
   let most_common_report_generated = "None";
   let maxGen = 0;
   for (let t in typeCounts) {
@@ -7047,7 +7308,7 @@ function compileLocalSessionAverages() {
       most_common_report_generated = getReportName(t);
     }
   }
-  
+
   let most_downloaded_report_type = "None";
   let maxDl = 0;
   for (let t in dlCounts) {
@@ -7142,26 +7403,26 @@ function renderAdminUsersTable() {
   const tableBody = document.getElementById('adminUsersTableBody');
   const searchVal = (document.getElementById('adminUserSearch')?.value || '').toLowerCase().trim();
   const roleVal = document.getElementById('adminUserRoleFilter')?.value || '';
-  
+
   if (!tableBody) return;
-  
+
   const filtered = adminUsersList.filter(u => {
-    const matchesSearch = (u.name || '').toLowerCase().includes(searchVal) || 
-                          (u.email || '').toLowerCase().includes(searchVal);
+    const matchesSearch = (u.name || '').toLowerCase().includes(searchVal) ||
+      (u.email || '').toLowerCase().includes(searchVal);
     const matchesRole = roleVal === '' || u.role === roleVal;
     return matchesSearch && matchesRole;
   });
-  
+
   if (filtered.length === 0) {
     tableBody.innerHTML = '<tr><td colspan="5" style="padding: 20px; text-align: center; color: var(--text-muted); font-size: 12px;">No matching users found.</td></tr>';
     return;
   }
-  
+
   tableBody.innerHTML = filtered.map(u => {
     const statusColor = u.status === 'Active' ? '#22c55e' : '#eab308';
     const statusBg = u.status === 'Active' ? 'rgba(34,197,94,0.1)' : 'rgba(234,179,8,0.1)';
     const statusBadge = `<span style="font-weight: 700; color: ${statusColor}; background: ${statusBg}; padding: 2px 6px; border-radius: 4px; font-size: 10px;">${u.status}</span>`;
-    
+
     return `<tr style="border-bottom: 1px solid var(--border-color-light);">
       <td style="padding: 10px 8px;"><strong>${_esc(u.name)}</strong></td>
       <td style="padding: 10px 8px;">${_esc(u.email)}</td>
@@ -7176,27 +7437,27 @@ function renderAdminTrendChart(totalUsers) {
   const canvas = document.getElementById('adminActivityTrendChart');
   if (!canvas) return;
   const ctx = canvas.getContext('2d');
-  
+
   if (adminTrendChartInstance) {
     adminTrendChartInstance.destroy();
   }
-  
+
   const labels = [];
   const regData = [];
   const activeData = [];
   const chatData = [];
-  
+
   const now = new Date();
   for (let i = 29; i >= 0; i--) {
     const d = new Date(now - i * 24 * 3600 * 1000);
     labels.push(d.toLocaleDateString([], { month: 'short', day: 'numeric' }));
-    
+
     const seed = (d.getDate() + d.getMonth()) % 7;
     regData.push(Math.round(1 + seed * (totalUsers / 10)));
     activeData.push(Math.round(5 + seed * 2.5 * (totalUsers / 5)));
     chatData.push(Math.round(2 + seed * 1.5 * (totalUsers / 6)));
   }
-  
+
   adminTrendChartInstance = new Chart(ctx, {
     type: 'line',
     data: {
@@ -7250,29 +7511,29 @@ function renderAdminTrendChart(totalUsers) {
 function animateAdminCounter(elementId, endValue, isCurrency = false, isFloat = false, suffix = '') {
   const el = document.getElementById(elementId);
   if (!el) return;
-  
+
   endValue = _safeNum(endValue);
   const duration = 1000;
   const start = 0;
   const range = endValue - start;
   let startTime = null;
-  
+
   function step(timestamp) {
     if (!startTime) startTime = timestamp;
     const progress = Math.min((timestamp - startTime) / duration, 1);
     const easeProgress = progress * (2 - progress);
     const currentValue = start + (range * easeProgress);
-    
+
     let displayValue = "";
     if (isFloat) {
       displayValue = _safeNum(currentValue).toFixed(1);
     } else {
       displayValue = Math.floor(_safeNum(currentValue)).toLocaleString('en-IN');
     }
-    
+
     let prefix = isCurrency ? "₹" : "";
     el.textContent = `${prefix}${displayValue}${suffix}`;
-    
+
     if (progress < 1) {
       requestAnimationFrame(step);
     } else {
@@ -7347,17 +7608,17 @@ function createNotification(type, title, message, priority = 'low') {
     createdAt: new Date().toISOString(),
     read: false
   };
-  
+
   notifs.unshift(newNotif);
   saveNotifications(notifs);
-  
+
   const bellBtn = document.getElementById('notificationBellBtn');
   if (bellBtn) {
     bellBtn.classList.remove('bell-shake');
     void bellBtn.offsetWidth;
     bellBtn.classList.add('bell-shake');
   }
-  
+
   updateNotificationBadge();
   refreshNotificationsUI();
   refreshAdminDashboardTelemetry();
@@ -7372,10 +7633,10 @@ function addActivityLog(type, title, description) {
     description: description,
     createdAt: new Date().toISOString()
   };
-  
+
   logs.unshift(newLog);
   saveActivityLog(logs);
-  
+
   refreshActivityCenterUI();
   refreshAdminDashboardTelemetry();
 }
@@ -7399,24 +7660,24 @@ function getRelativeTimeStr(dateStr) {
   const date = new Date(dateStr);
   const diffMs = new Date() - date;
   const diffMin = Math.floor(diffMs / 60000);
-  
+
   if (diffMin < 1) return "Just now";
   if (diffMin < 60) return `${diffMin} min ago`;
-  
+
   const diffHrs = Math.floor(diffMin / 60);
   if (diffHrs < 24) return `${diffHrs} hour${diffHrs > 1 ? 's' : ''} ago`;
-  
+
   const diffDays = Math.floor(diffHrs / 24);
   if (diffDays === 1) return "Yesterday";
   if (diffDays < 7) return `${diffDays} days ago`;
-  
+
   return date.toLocaleDateString([], { month: 'short', day: 'numeric' });
 }
 
 function getNotifCTA(notif) {
   const type = (notif.type || '').toLowerCase();
   const title = (notif.title || '').toLowerCase();
-  
+
   if (type === 'rewards' || type === 'reward' || title.includes('reward') || title.includes('referral')) {
     return { label: "Go to Rewards", target: "rewards" };
   }
@@ -7441,10 +7702,10 @@ function getNotifCTA(notif) {
 function escapeHtml(str) {
   if (!str) return '';
   return str.replace(/&/g, '&amp;')
-            .replace(/</g, '&lt;')
-            .replace(/>/g, '&gt;')
-            .replace(/"/g, '&quot;')
-            .replace(/'/g, '&#039;');
+    .replace(/</g, '&lt;')
+    .replace(/>/g, '&gt;')
+    .replace(/"/g, '&quot;')
+    .replace(/'/g, '&#039;');
 }
 
 function refreshNotificationsUI() {
@@ -7459,8 +7720,8 @@ function refreshNotificationsUI() {
   const activeFilter = activeFilterEl ? activeFilterEl.getAttribute('data-filter') : 'all';
 
   let filtered = notifs.filter(n => {
-    const matchesSearch = searchQuery === '' || 
-      n.title.toLowerCase().includes(searchQuery) || 
+    const matchesSearch = searchQuery === '' ||
+      n.title.toLowerCase().includes(searchQuery) ||
       n.message.toLowerCase().includes(searchQuery);
 
     if (!matchesSearch) return false;
@@ -7484,10 +7745,10 @@ function refreshNotificationsUI() {
   filtered.forEach(n => {
     const item = document.createElement('div');
     item.className = `notification-item priority-${n.priority} ${n.read ? '' : 'unread'}`;
-    
+
     const relativeTime = getRelativeTimeStr(n.createdAt);
     const cta = getNotifCTA(n);
-    
+
     let ctaBtnHtml = '';
     if (cta) {
       ctaBtnHtml = `<button class="notif-cta-btn" data-target="${cta.target}">${cta.label}</button>`;
@@ -7520,7 +7781,7 @@ function refreshNotificationsUI() {
           switchTab(targetTab);
         }
       }
-      
+
       if (!n.read) {
         n.read = true;
         const allNotifs = getNotifications();
@@ -7541,10 +7802,10 @@ function refreshNotificationsUI() {
 function getActivityPriority(item) {
   const type = item.type;
   const title = item.title.toLowerCase();
-  
+
   if (type === 'reward' || title.includes('reward') || title.includes('referral') ||
-      type === 'report' || title.includes('report') ||
-      (type === 'roi' && title.includes('completed'))) {
+    type === 'report' || title.includes('report') ||
+    (type === 'roi' && title.includes('completed'))) {
     return 'high';
   }
   if (type === 'bill' || type === 'roof' || title.includes('recommendation') || title.includes('analysis completed') || title.includes('assessment completed')) {
@@ -7569,7 +7830,7 @@ function getActivityIcon(type) {
 
 function refreshActivityCenterUI(filterType = 'all') {
   const logs = getActivityLog();
-  
+
   // Calculate summaries today
   const todayStr = new Date().toDateString();
   let dailyAssessments = 0;
@@ -7633,17 +7894,17 @@ function refreshActivityCenterUI(filterType = 'all') {
   } else {
     if (emptyState) emptyState.style.display = 'none';
     if (timelineBox) timelineBox.style.display = 'block';
-    
+
     if (timelineContainer) {
       timelineContainer.innerHTML = '';
       filtered.forEach(item => {
         const eventEl = document.createElement('div');
         const priority = getActivityPriority(item);
         eventEl.className = `timeline-event priority-${priority}`;
-        
+
         const icon = getActivityIcon(item.type);
         const relativeTime = getRelativeTimeStr(item.createdAt);
-        
+
         eventEl.innerHTML = `
           <div class="timeline-event-header">
             <div class="timeline-event-title-group">
@@ -7790,24 +8051,24 @@ function initSettingsPreferences() {
   if (saveBtn) {
     saveBtn.addEventListener('click', (e) => {
       e.preventDefault();
-      
+
       const discom = document.getElementById('settingsDiscom')?.value || 'dvvnl';
       const tariff = document.getElementById('settingsTariff')?.value || '7.50';
       const netMetering = document.getElementById('settingsNetMetering')?.value || 'net';
-      
+
       const prefs = { discom, tariff, netMetering };
       localStorage.setItem('userPreferences', JSON.stringify(prefs));
-      
+
       showToast('Preferences saved successfully!', 'success');
-      
+
       createNotification('system', 'Settings Saved', 'Utility configurations and custom tariff rates successfully updated.', 'low');
       addActivityLog('settings', 'Settings Saved', `Updated Utility to ${discom.toUpperCase()}, Tariff to ₹${tariff}/kWh, and Metering to ${netMetering.toUpperCase()}.`);
-      
+
       createNotification('system', 'Profile Updated', 'User profile configurations synced with platform registry.', 'low');
       addActivityLog('settings', 'Profile Updated', 'Profile details updated and synced.');
     });
   }
-  
+
   const saved = localStorage.getItem('userPreferences');
   if (saved) {
     try {
@@ -7815,11 +8076,11 @@ function initSettingsPreferences() {
       const discomEl = document.getElementById('settingsDiscom');
       const tariffEl = document.getElementById('settingsTariff');
       const netMeteringEl = document.getElementById('settingsNetMetering');
-      
+
       if (discomEl && prefs.discom) discomEl.value = prefs.discom;
       if (tariffEl && prefs.tariff) tariffEl.value = prefs.tariff;
       if (netMeteringEl && prefs.netMetering) netMeteringEl.value = prefs.netMetering;
-    } catch(e) {}
+    } catch (e) { }
   }
 }
 
@@ -7832,8 +8093,28 @@ function refreshAdminDashboardTelemetry() {
   }
 }
 
+function checkFollowUpReminders() {
+  const host = API_BASE;
+  const user = _getUser();
+  if (!user) return;
+
+  safeFetch(`${host}/api/crm/followups`)
+    .then(r => r.json())
+    .then(envelope => {
+      const list = envelope.data || envelope;
+      if (!Array.isArray(list)) return;
+      const now = new Date();
+      list.forEach(f => {
+        if (f.status === 'Pending' && new Date(f.due_date) <= now) {
+          createNotification('system', 'Follow-up Due', `Follow-up '${f.title}' is due now.`, 'medium');
+        }
+      });
+    })
+    .catch(() => {});
+}
+
 // Global relative time loop
-setInterval(() => {
+window._globalRefreshInterval = setInterval(() => {
   refreshNotificationsUI();
   refreshActivityCenterUI();
   checkFollowUpReminders();
@@ -7918,7 +8199,7 @@ function addCrmActivity(type, leadName, description) {
 function enforceNotesLimit() {
   const notesMap = getCrmNotes();
   let allNotes = [];
-  
+
   for (let email in notesMap) {
     const notes = notesMap[email] || [];
     notes.forEach(note => {
@@ -7929,20 +8210,20 @@ function enforceNotesLimit() {
       });
     });
   }
-  
+
   if (allNotes.length > 1000) {
     // Sort oldest first
     allNotes.sort((a, b) => new Date(a.createdAt) - new Date(b.createdAt));
     const excessCount = allNotes.length - 1000;
     const toDelete = allNotes.slice(0, excessCount);
-    
+
     // Delete from notesMap
     toDelete.forEach(item => {
       if (notesMap[item.email]) {
         notesMap[item.email] = notesMap[item.email].filter(n => n.id !== item.id);
       }
     });
-    
+
     saveCrmNotes(notesMap);
   }
 }
@@ -7978,12 +8259,12 @@ function initCrmDashboard() {
   // Toggle CRM Subsections navigation
   const subNavBtns = document.querySelectorAll('.crm-sub-nav .sub-nav-btn');
   const crmSections = document.querySelectorAll('#tab-crm-dashboard .crm-section');
-  
+
   subNavBtns.forEach(btn => {
     btn.addEventListener('click', () => {
       subNavBtns.forEach(b => b.classList.remove('active'));
       btn.classList.add('active');
-      
+
       const targetSection = btn.getAttribute('data-crm-section');
       crmSections.forEach(section => {
         if (section.id === `crm-section-${targetSection}`) {
@@ -7992,9 +8273,22 @@ function initCrmDashboard() {
           section.style.display = 'none';
         }
       });
-      
-      if (targetSection === 'activity') {
-        refreshCrmActivityFeedUI();
+
+      // Load corresponding section data
+      if (targetSection === 'kanban') {
+        fetchAndPopulateCrm();
+      } else if (targetSection === 'directory') {
+        renderCrmLeadsTable();
+      } else if (targetSection === 'followup') {
+        loadFollowupsCenter();
+      } else if (targetSection === 'tasks') {
+        loadTasksCenter();
+      } else if (targetSection === 'meetings') {
+        loadMeetingsCenter();
+      } else if (targetSection === 'alerts') {
+        loadAlertsCenter();
+      } else if (targetSection === 'activity') {
+        loadActivityFeedCenter();
       }
     });
   });
@@ -8018,34 +8312,70 @@ function initCrmDashboard() {
     btnCloseCrmDrawer.addEventListener('click', () => {
       crmLeadProfileDrawer.classList.remove('active');
       setTimeout(() => crmLeadProfileDrawer.style.display = 'none', 300);
+      if (window.crmDrawerSavingsChartInstance) {
+        window.crmDrawerSavingsChartInstance.destroy();
+        window.crmDrawerSavingsChartInstance = null;
+      }
     });
     crmLeadProfileDrawer.addEventListener('click', (e) => {
       if (e.target === crmLeadProfileDrawer) {
         crmLeadProfileDrawer.classList.remove('active');
         setTimeout(() => crmLeadProfileDrawer.style.display = 'none', 300);
+        if (window.crmDrawerSavingsChartInstance) {
+          window.crmDrawerSavingsChartInstance.destroy();
+          window.crmDrawerSavingsChartInstance = null;
+        }
       }
     });
   }
 
-  // Wires note saving inside drawer
-  const btnSaveCrmNote = document.getElementById('btnSaveCrmNote');
-  if (btnSaveCrmNote) {
-    btnSaveCrmNote.addEventListener('click', saveLeadNote);
+  // Bind Follow-up Creation Form
+  const btnCreateFollowup = document.getElementById('crmBtnCreateFollowup');
+  if (btnCreateFollowup) {
+    btnCreateFollowup.addEventListener('click', createCrmFollowupAction);
   }
 
-  // Wires follow-up scheduling inside drawer
-  const btnScheduleFollowUp = document.getElementById('btnScheduleFollowUp');
-  if (btnScheduleFollowUp) {
-    btnScheduleFollowUp.addEventListener('click', scheduleLeadFollowUp);
+  // Bind Task Creation Form
+  const btnCreateTask = document.getElementById('crmBtnCreateTask');
+  if (btnCreateTask) {
+    btnCreateTask.addEventListener('click', createCrmTaskAction);
   }
 
-  // Wires CSV export button
-  const btnExportCrmCSV = document.getElementById('btnExportCrmCSV');
-  if (btnExportCrmCSV) {
-    btnExportCrmCSV.addEventListener('click', exportCrmLeadsCSV);
+  // Bind Meeting Creation Form
+  const btnCreateMeeting = document.getElementById('crmBtnCreateMeeting');
+  if (btnCreateMeeting) {
+    btnCreateMeeting.addEventListener('click', createCrmMeetingAction);
   }
 
-  // Drag and drop setup for Kanban columns
+  // Bind Global Search Input with keyboard navigation
+  const crmGlobalSearch = document.getElementById('crmGlobalSearch');
+  if (crmGlobalSearch) {
+    crmGlobalSearch.addEventListener('input', debounce(triggerGlobalCrmSearch, 300));
+    crmGlobalSearch.addEventListener('focus', showCrmRecentSearches);
+  }
+  initCrmSearchKeyboard();
+
+  // Bind Alerts Filters
+  const alertFilters = document.querySelectorAll('#crmAlertSeverityFilters button');
+  alertFilters.forEach(btn => {
+    btn.addEventListener('click', () => {
+      alertFilters.forEach(b => b.classList.remove('active'));
+      btn.classList.add('active');
+      loadAlertsCenter(btn.getAttribute('data-severity'));
+    });
+  });
+
+  // Bind Follow-up Filters
+  const followupFilters = document.querySelectorAll('#crmFollowupViewFilters button');
+  followupFilters.forEach(btn => {
+    btn.addEventListener('click', () => {
+      followupFilters.forEach(b => b.classList.remove('active'));
+      btn.classList.add('active');
+      loadFollowupsCenter(btn.getAttribute('data-filter'));
+    });
+  });
+
+  // Drag and drop setup for 10 Kanban columns
   const kanbanColumns = document.querySelectorAll('.kanban-column');
   kanbanColumns.forEach(column => {
     const container = column.querySelector('.kanban-cards-container');
@@ -8060,74 +8390,207 @@ function initCrmDashboard() {
       container.addEventListener('drop', (e) => {
         e.preventDefault();
         container.classList.remove('drag-over');
-        const email = e.dataTransfer.getData('text/plain');
+        const customerId = e.dataTransfer.getData('text/plain');
         const newStatus = column.getAttribute('data-status');
-        
-        if (email && newStatus) {
-          updateLeadStatus(email, newStatus);
+
+        if (customerId && newStatus) {
+          updateLeadStatus(customerId, newStatus);
         }
       });
     }
   });
 
-  // Wires initial check for follow-up reminders
-  checkFollowUpReminders();
+  // Print workspace report button
+  const crmBtnPrintReport = document.getElementById('crmBtnPrintReport');
+  if (crmBtnPrintReport) {
+    crmBtnPrintReport.addEventListener('click', () => {
+      window.print();
+    });
+  }
+
+  // Load Initial Data
+  fetchAndPopulateCrm();
 }
 
-function checkFollowUpReminders() {
-  const followUps = getCrmFollowUps();
-  const leads = getCrmLeads();
-  let updated = false;
-  const now = new Date();
+// ─── Global Search with keyboard nav, recent searches, abort ─────────────────
+let _crmSearchController = null;
+const CRM_RECENT_KEY = 'crm_recent_searches';
 
-  followUps.forEach(item => {
-    if (item.status === 'Scheduled' && new Date(item.time) < now) {
-      item.status = 'Missed';
-      updated = true;
-      const lead = leads[item.leadEmail] || {};
-      const leadName = lead.name || item.leadEmail;
-      
-      // Notify center trigger
-      createNotification('system', 'Follow-up Missed', `Missed scheduled follow-up ${item.type} with ${leadName}.`, 'high');
-      addCrmActivity('missed', leadName, `Missed follow-up: ${item.type}`);
+function crmGetRecentSearches() {
+  try { return JSON.parse(localStorage.getItem(CRM_RECENT_KEY) || '[]'); } catch { return []; }
+}
+function crmSaveRecentSearch(q) {
+  const list = [q, ...crmGetRecentSearches().filter(r => r !== q)].slice(0, 5);
+  try { localStorage.setItem(CRM_RECENT_KEY, JSON.stringify(list)); } catch { }
+}
+
+// Keyboard navigation state for search results
+let _crmSearchFocusIdx = -1;
+function _crmSearchNavigate(dir) {
+  const items = document.querySelectorAll('.crm-search-item');
+  if (!items.length) return;
+  _crmSearchFocusIdx = Math.max(0, Math.min(items.length - 1, _crmSearchFocusIdx + dir));
+  items.forEach((el, i) => el.classList.toggle('crm-search-focused', i === _crmSearchFocusIdx));
+  items[_crmSearchFocusIdx]?.scrollIntoView({ block: 'nearest' });
+}
+
+// Attach keyboard handler to search input
+function initCrmSearchKeyboard() {
+  const inp = document.getElementById('crmGlobalSearch');
+  if (!inp) return;
+  inp.addEventListener('keydown', (e) => {
+    if (e.key === 'ArrowDown') { e.preventDefault(); _crmSearchNavigate(1); }
+    if (e.key === 'ArrowUp') { e.preventDefault(); _crmSearchNavigate(-1); }
+    if (e.key === 'Enter') {
+      const focused = document.querySelector('.crm-search-focused');
+      if (focused) focused.click();
+    }
+    if (e.key === 'Escape') {
+      const box = document.getElementById('crmGlobalSearchResults');
+      if (box) box.style.display = 'none';
+      _crmSearchFocusIdx = -1;
     }
   });
-
-  if (updated) {
-    saveCrmFollowUps(followUps);
-    if (document.getElementById('crmLeadProfileDrawer')?.style.display === 'block') {
-      const activeEmail = document.getElementById('crmDrawerLeadEmail')?.textContent;
-      if (activeEmail) renderDrawerFollowUps(activeEmail);
-    }
-  }
 }
 
-function updateLeadStatus(email, newStatus) {
-  const leads = getCrmLeads();
-  if (leads[email]) {
-    const oldStatus = leads[email].status;
-    if (oldStatus !== newStatus) {
-      leads[email].status = newStatus;
-      saveCrmLeads(leads);
-      
-      addCrmActivity('pipeline', leads[email].name, `Moved from ${oldStatus} to ${newStatus}`);
-      createNotification('system', 'Lead Pipeline Updated', `${leads[email].name} has been moved to ${newStatus}.`, 'medium');
-      logAuditEvent((_getUser() || {}).email, 'CRM Updated', 'Admin', `Updated lead status for ${leads[email].name} (${email}): Moved from "${oldStatus}" to "${newStatus}".`, 'Critical');
-      
-      refreshCrmDashboardUI();
-      
-      // If drawer is open, keep dropdown in sync
-      const activeEmail = document.getElementById('crmDrawerLeadEmail')?.textContent;
-      if (activeEmail === email) {
-        const select = document.getElementById('crmDrawerStatusSelect');
-        if (select) select.value = newStatus;
+// Show recent searches in empty state
+function showCrmRecentSearches() {
+  const resultsBox = document.getElementById('crmGlobalSearchResults');
+  if (!resultsBox) return;
+  const recents = crmGetRecentSearches();
+  if (!recents.length) { resultsBox.style.display = 'none'; return; }
+  resultsBox.style.display = 'block';
+  resultsBox.innerHTML = `
+    <div style="font-size:9px; font-weight:800; color:var(--text-muted); padding-bottom:6px; border-bottom:1px solid var(--border-color-light); margin-bottom:6px;">Recent Searches</div>
+    ${recents.map(r => `<div class="crm-search-item" tabindex="0" style="font-size:10px; padding:5px 6px; cursor:pointer; border-radius:4px;" onclick="document.getElementById('crmGlobalSearch').value='${escapeHtml(r)}'; triggerGlobalCrmSearch();">${escapeHtml(r)}</div>`).join('')}`;
+}
+
+// Global search execution
+function triggerGlobalCrmSearch() {
+  const query = document.getElementById('crmGlobalSearch')?.value.trim();
+  const resultsBox = document.getElementById('crmGlobalSearchResults');
+  if (!resultsBox) return;
+
+  if (!query || query.length < 2) {
+    showCrmRecentSearches();
+    _crmSearchFocusIdx = -1;
+    return;
+  }
+
+  // Reset keyboard navigation focus before new search
+  _crmSearchFocusIdx = -1;
+
+  // Abort any in-flight request
+  if (_crmSearchController) _crmSearchController.abort();
+  _crmSearchController = new AbortController();
+
+  safeFetch(`${API_BASE}/api/crm/global-search?q=${encodeURIComponent(query)}`, { signal: _crmSearchController.signal })
+    .then(res => res.json())
+    .then(envelope => {
+      const data = envelope.data || envelope; // handle both old & new response format
+      crmSaveRecentSearch(query);
+      _crmSearchFocusIdx = -1;
+      resultsBox.innerHTML = '';
+      resultsBox.style.display = 'block';
+
+      const esc = (t) => !t ? '—' : String(t).replace(/</g, '&lt;').replace(/>/g, '&gt;');
+      const highlight = (text) => {
+        if (!text) return '—';
+        try {
+          return String(text).replace(new RegExp(`(${query.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')})`, 'gi'),
+            '<mark class="crm-search-highlight">$1</mark>');
+        } catch { return esc(text); }
+      };
+
+      const total = (data.total) || ((data.customers || []).length + (data.tasks || []).length + (data.meetings || []).length + (data.timeline || []).length);
+
+      let html = `<div style="font-size:10px; font-weight:800; border-bottom:1px solid var(--border-color-light); padding-bottom:5px; margin-bottom:8px; display:flex; justify-content:space-between; align-items:center;">
+        <span>Search Results <span style="font-weight:400;color:var(--text-muted);">(${total})</span></span>
+        <a href="javascript:void(0)" onclick="document.getElementById('crmGlobalSearchResults').style.display='none';" style="color:var(--accent-orange); font-size:9px;">✕ Close</a>
+      </div>`;
+
+      // ── Customers ──────────────────────────────────────────────────────────
+      if (data.customers?.length > 0) {
+        html += `<div class="crm-search-group-label" style="font-weight:700; color:var(--accent-blue); font-size:9px; margin-top:8px; text-transform:uppercase; letter-spacing:.5px;">Customers (${data.customers.length})</div>`;
+        data.customers.forEach(c => {
+          html += `<div class="crm-search-item" tabindex="0" role="button" aria-label="Open profile for ${esc(c.name)}"
+            style="padding:7px 6px; background:rgba(59,130,246,.04); border:1px solid var(--border-color-light); border-radius:5px; margin-top:3px; font-size:10px; cursor:pointer;"
+            onclick="openLeadProfileDrawer('${c.id}'); document.getElementById('crmGlobalSearchResults').style.display='none';">
+            <strong>${highlight(c.name)}</strong> <span style="font-size:8px;color:var(--text-muted);">#${highlight(c.consumer_number)}</span>
+            <div style="font-size:8px;color:var(--text-secondary);margin-top:2px;">📞 ${highlight(c.phone)} &nbsp;·&nbsp; Stage: ${esc(c.status)}</div>
+          </div>`;
+        });
       }
-    }
-  }
+
+      // ── Tasks ──────────────────────────────────────────────────────────────
+      if (data.tasks?.length > 0) {
+        html += `<div class="crm-search-group-label" style="font-weight:700; color:var(--accent-orange); font-size:9px; margin-top:8px; text-transform:uppercase; letter-spacing:.5px;">Tasks (${data.tasks.length})</div>`;
+        data.tasks.forEach(t => {
+          html += `<div class="crm-search-item" tabindex="0" style="padding:6px; border:1px solid var(--border-color-light); border-radius:5px; margin-top:3px; font-size:10px;">
+            <strong>${highlight(t.title)}</strong> <span style="font-size:8px;color:var(--text-muted);">[${t.status}]</span>
+            <div style="font-size:8px;color:var(--text-secondary);margin-top:2px;">Assignee: ${esc(t.assigned_to)} &nbsp;·&nbsp; Priority: ${esc(t.priority)}</div>
+          </div>`;
+        });
+      }
+
+      // ── Meetings ───────────────────────────────────────────────────────────
+      if (data.meetings?.length > 0) {
+        html += `<div class="crm-search-group-label" style="font-weight:700; color:var(--accent-green); font-size:9px; margin-top:8px; text-transform:uppercase; letter-spacing:.5px;">Meetings (${data.meetings.length})</div>`;
+        data.meetings.forEach(m => {
+          html += `<div class="crm-search-item" tabindex="0" style="padding:6px; border:1px solid var(--border-color-light); border-radius:5px; margin-top:3px; font-size:10px;">
+            <strong>${highlight(m.title)}</strong> <span style="font-size:8px;color:var(--text-muted);">(${esc(m.type)})</span>
+            <div style="font-size:8px;color:var(--text-secondary);margin-top:2px;">Scheduled: ${esc(m.scheduled)} &nbsp;·&nbsp; ${highlight(m.outcome)}</div>
+          </div>`;
+        });
+      }
+
+      // ── Timeline ───────────────────────────────────────────────────────────
+      if (data.timeline?.length > 0) {
+        html += `<div class="crm-search-group-label" style="font-weight:700; color:var(--text-muted); font-size:9px; margin-top:8px; text-transform:uppercase; letter-spacing:.5px;">Timeline (${data.timeline.length})</div>`;
+        data.timeline.forEach(tl => {
+          html += `<div class="crm-search-item" tabindex="0" style="padding:6px; border:1px solid var(--border-color-light); border-radius:5px; margin-top:3px; font-size:10px;">
+            <strong>${highlight(tl.event_type)}</strong> <span style="font-size:8px;color:var(--text-muted);float:right;">${esc(tl.date)}</span>
+            <div style="font-size:8px;color:var(--text-secondary);margin-top:2px;">${highlight(tl.notes)}</div>
+          </div>`;
+        });
+      }
+
+      if (total === 0) {
+        html += `<div style="text-align:center; padding:20px 10px; font-size:10px; color:var(--text-muted);">
+          No results found for <strong>"${esc(query)}"</strong><br>
+          <span style="font-size:9px;">Try searching by name, phone, consumer number, or city</span>
+        </div>`;
+      }
+
+      resultsBox.innerHTML = html;
+    })
+    .catch(err => { if (err.name !== 'AbortError') console.warn('CRM search error:', err); });
 }
 
+// Fetch master list and refresh telemetry metrics
 function fetchAndPopulateCrm(query = '') {
   const host = API_BASE;
+
+  // 1. Fetch Metrics Projections
+  safeFetch(`${host}/api/crm/pipeline-metrics`)
+    .then(res => res.json())
+    .then(envelope => {
+      const metrics = envelope.data || envelope;
+      animateAdminCounter('crmKpiTotalLeads', metrics.total_leads || 0);
+      animateAdminCounter('crmKpiPipelineValue', metrics.pipeline_value || 0, true);
+      animateAdminCounter('crmKpiExpectedRevenue', metrics.expected_revenue || 0, true);
+      animateAdminCounter('crmKpiWonDeals', (metrics.stage_counts?.["Won"] || 0) + (metrics.stage_counts?.["Closed"] || 0));
+      animateAdminCounter('crmKpiLostDeals', metrics.stage_counts?.["Lost"] || 0);
+      animateAdminCounter('crmKpiAvgDealSize', metrics.avg_deal_size || 0, true);
+
+      const conv = metrics.total_leads > 0 ? Math.round((((metrics.stage_counts?.["Won"] || 0) + (metrics.stage_counts?.["Closed"] || 0)) / metrics.total_leads) * 100) : 0;
+      animateAdminCounter('crmKpiProposalConversion', conv, false, false, '%');
+
+      animateAdminCounter('crmKpiAvgLeadScore', metrics.total_leads > 0 ? metrics.avg_lead_score || 72 : 0);
+      animateAdminCounter('crmKpiAvgHealthScore', metrics.total_leads > 0 ? metrics.avg_health_score || 85 : 0, false, false, '%');
+    });
+
+  // 2. Fetch Customer Leads List
   const url = query.trim()
     ? `${host}/api/customers/search?q=${encodeURIComponent(query)}`
     : `${host}/api/customers?limit=100`;
@@ -8135,86 +8598,60 @@ function fetchAndPopulateCrm(query = '') {
   safeFetch(url)
     .then(res => res.json())
     .then(customers => {
-      crmLeadsList = customers.map(c => {
-        let recKw = 0;
-        let billAmt = 0;
-        let payback = 0;
-        let savings25 = 0;
-        let units = 0;
-        let period = '—';
-        let rate = 0;
-        let sysCost = 0;
-        if (c.bills && c.bills.length > 0) {
-          const sorted = [...c.bills].sort((a,b) => new Date(b.created_at) - new Date(a.created_at));
-          const latest = sorted[0];
-          recKw = latest.recommended_kw;
-          billAmt = latest.bill_amount;
-          payback = latest.payback_years;
-          savings25 = latest.savings_25yr;
-          units = latest.monthly_units;
-          period = latest.billing_period;
-          rate = latest.per_unit_rate;
-          sysCost = latest.system_cost;
-        }
-        return {
-          id: c.id,
-          email: c.email || `${c.consumer_number}@getsolar.in`,
-          name: c.customer_name,
-          status: recKw > 0 ? 'Qualified' : 'New Lead',
-          source: c.discom,
-          lead_score: recKw > 0 ? 85 : 40,
-          intent_level: recKw > 0 ? 'High Intent' : 'Low Intent',
-          health_category: recKw > 0 ? 'Healthy' : 'Warm',
-          health_score: recKw > 0 ? 90 : 60,
-          revenue_potential: billAmt,
-          city: c.city,
-          consumer_number: c.consumer_number,
-          bills: c.bills || []
-        };
-      });
+      crmLeadsList = customers;
 
-      // Render the tables
-      renderCrmLeadsTable();
+      // Populate Kanban columns
       renderKanbanColumns();
-      
-      // Update CRM summary telemetry numbers
-      let totalPipelineVal = 0;
-      let wonRevenue = 0;
-      let highIntentCount = 0;
-      let wonCount = 0;
-      let scoreSum = 0;
+      // Populate Leads Table Directory
+      renderCrmLeadsTable();
+      // Populate dropdown selections
+      populateCustomerDropdowns();
 
-      crmLeadsList.forEach(lead => {
-        totalPipelineVal += lead.revenue_potential || 0;
-        if (lead.lead_score >= 70) {
-          highIntentCount++;
-        }
-        scoreSum += lead.lead_score || 0;
-      });
+      // Update follow-up count badge and open tasks counts
+      safeFetch(`${host}/api/crm/followups`)
+        .then(r => r.json())
+        .then(envelope => {
+          const fups = envelope.data || envelope;
+          if (Array.isArray(fups)) {
+            const todayStr = new Date().toISOString().split('T')[0];
+            const todayFups = fups.filter(f => f.status === 'Pending' && f.due_date.startsWith(todayStr)).length;
+            animateAdminCounter('crmKpiFollowUps', todayFups);
+          }
+        });
 
-      const avgLeadScore = crmLeadsList.length > 0 ? Math.round(scoreSum / crmLeadsList.length) : 0;
-      
-      animateAdminCounter('crmKpiTotalLeads', crmLeadsList.length);
-      animateAdminCounter('crmKpiPipelineValue', totalPipelineVal, true);
-      animateAdminCounter('crmKpiWonRevenue', wonRevenue, true);
-      animateAdminCounter('crmKpiHighIntent', highIntentCount);
-      animateAdminCounter('crmKpiConversionRate', 0, false, false, '%');
-      
-      const bestSourceEl = document.getElementById('crmKpiBestSource');
-      if (bestSourceEl) {
-        bestSourceEl.textContent = crmLeadsList.length > 0 ? crmLeadsList[0].source : 'None';
-      }
-    })
-    .catch(err => {
-      console.error("Failed to load customer list for CRM:", err);
+      safeFetch(`${host}/api/crm/tasks`)
+        .then(r => r.json())
+        .then(envelope => {
+          const tasks = envelope.data || envelope;
+          if (Array.isArray(tasks)) {
+            const openT = tasks.filter(t => t.status !== 'Completed' && t.status !== 'Cancelled').length;
+            animateAdminCounter('crmKpiOpenTasks', openT);
+          }
+        });
+
+      safeFetch(`${host}/api/crm/meetings`)
+        .then(r => r.json())
+        .then(envelope => {
+          const meets = envelope.data || envelope;
+          if (Array.isArray(meets)) {
+            const todayStr = new Date().toISOString().split('T')[0];
+            const upMeets = meets.filter(m => m.scheduled_date >= todayStr).length;
+            animateAdminCounter('crmKpiUpcomingMeetings', upMeets);
+          }
+        });
+
+      safeFetch(`${host}/api/crm/alerts`)
+        .then(r => r.json())
+        .then(envelope => {
+          const alerts = envelope.data || envelope;
+          if (Array.isArray(alerts)) {
+            animateAdminCounter('crmKpiOverdue', alerts.length);
+          }
+        });
     });
 }
 
 function refreshCrmDashboardUI() {
-  fetchAndPopulateCrm();
-}
-
-function useFallbackLeads() {
   fetchAndPopulateCrm();
 }
 
@@ -8267,7 +8704,8 @@ function processAndRenderLeads(users) {
     const notesMap = getCrmNotes();
     const leadNotes = notesMap[u.email] || [];
     const notesCount = leadNotes.length;
-    const hasTimelineActivity = (u.reports_count > 0 || u.copilot_messages > 0 || u.points > 0 || notesCount > 0 || analyses.bill || analyses.roof || analyses.roi);
+    const hasTimelineActivity = (u.reports_count > 0 || u.copilot_messages > 0 || u.points > 0 || notesCount > 0 || 
+      analyses.bill || analyses.roof || analyses.roi);
     if (hasTimelineActivity) healthScore += 20; // Recent activity
     if (u.reports_count > 0) healthScore += 20; // Report generated
     if (analyses.roi) healthScore += 20; // ROI Completed
@@ -8360,78 +8798,199 @@ function renderCrmTelemetry() {
   _setText('admCrmBestSource', bestSource);
 }
 
-function renderKanbanColumns() {
-  const columns = ['New Lead', 'Contacted', 'Qualified', 'Proposal Sent', 'Won', 'Lost'];
-  const followUps = getCrmFollowUps();
+// Populate customer selection lists in CRM scheduler forms
+function populateCustomerDropdowns() {
+  const cSelects = [
+    document.getElementById('crmFollowupCustomerSelect'),
+    document.getElementById('crmTaskCustomerSelect'),
+    document.getElementById('crmMeetingCustomerSelect')
+  ];
 
-  columns.forEach(colStatus => {
-    const safeId = colStatus.toLowerCase().replace(/ /g, '-');
+  cSelects.forEach(sel => {
+    if (!sel) return;
+    sel.innerHTML = crmLeadsList.map(c => `
+      <option value="${c.id}">${escapeHtml(c.customer_name)} (${escapeHtml(c.consumer_number)})</option>
+    `).join('');
+  });
+}
+
+// ─── CRM Helpers ──────────────────────────────────────────────────────────────
+
+/** Deterministic HSL avatar colour derived from the customer name string. */
+function crmAvatarColor(name) {
+  let hash = 0;
+  for (let i = 0; i < name.length; i++) hash = name.charCodeAt(i) + ((hash << 5) - hash);
+  return `hsl(${Math.abs(hash) % 360}, 52%, 38%)`;
+}
+
+/** Format a date string as "X days away" or "Today" or "Overdue" */
+function crmCountdown(dateStr) {
+  if (!dateStr) return 'None';
+  const d = new Date(dateStr);
+  if (isNaN(d)) return dateStr;
+  const today = new Date(); today.setHours(0, 0, 0, 0); d.setHours(0, 0, 0, 0);
+  const diff = Math.round((d - today) / 86400000);
+  if (diff === 0) return 'Today';
+  if (diff < 0) return `Overdue (${Math.abs(diff)}d)`;
+  return `${diff}d away`;
+}
+
+/** Build an SVG score ring (radius 18, stroke 3). */
+function crmScoreRing(score, color, label) {
+  const r = 18, circ = Math.round(2 * Math.PI * r);
+  const fill = Math.round(circ * Math.max(0, Math.min(100, score)) / 100);
+  return `<svg width="44" height="44" viewBox="0 0 44 44" role="img" aria-label="${label}: ${score}" style="display:block;">
+    <circle cx="22" cy="22" r="${r}" fill="none" stroke="rgba(255,255,255,0.07)" stroke-width="3"/>
+    <circle cx="22" cy="22" r="${r}" fill="none" stroke="${color}" stroke-width="3"
+      stroke-dasharray="${fill} ${circ - fill}"
+      stroke-linecap="round"
+      transform="rotate(-90 22 22)"/>
+    <text x="22" y="26" text-anchor="middle" font-size="9" fill="#fff" font-weight="700">${score}</text>
+  </svg>`;
+}
+
+/** Pipeline stages for progress bar */
+const CRM_STAGES = [
+  'New Lead', 'Qualified', 'Site Survey Scheduled', 'Survey Completed',
+  'Proposal Generated', 'Proposal Sent', 'Negotiation', 'Won'
+];
+
+// Render Kanban Column Cards (10 columns)
+function renderKanbanColumns() {
+  const stages = [
+    "New Lead", "Qualified", "Site Survey Scheduled", "Survey Completed",
+    "Proposal Generated", "Proposal Sent", "Negotiation", "Won", "Closed", "Lost"
+  ];
+
+  stages.forEach(stage => {
+    const safeId = stage.toLowerCase().replace(/ /g, '-');
     const container = document.getElementById(`container-${safeId}`);
     const badge = document.getElementById(`count-${safeId}`);
-    
+    const valEl = document.getElementById(`value-${safeId}`);
+    const expEl = document.getElementById(`expected-${safeId}`);
+
     if (!container) return;
-    
+
     container.innerHTML = '';
-    const columnLeads = crmLeadsList.filter(l => l.status === colStatus);
-    
+    const columnLeads = crmLeadsList.filter(l => l.status === stage);
+
     if (badge) badge.textContent = columnLeads.length;
+
+    // Calculate stage sums
+    let pipelineValueSum = 0;
+    columnLeads.forEach(lead => {
+      // Fallback lead value using latest bill if none exists
+      let val = lead.pipeline_value || 0.0;
+      if (val === 0.0 && lead.bills && lead.bills.length > 0) {
+        val = lead.bills[0].system_cost || 0.0;
+      }
+      pipelineValueSum += val;
+    });
+
+    // Assign projection multipliers
+    const probabilities = {
+      "New Lead": 0.10,
+      "Qualified": 0.25,
+      "Site Survey Scheduled": 0.40,
+      "Survey Completed": 0.50,
+      "Proposal Generated": 0.65,
+      "Proposal Sent": 0.75,
+      "Negotiation": 0.85,
+      "Won": 1.00,
+      "Closed": 1.00,
+      "Lost": 0.00
+    };
+    const expectedValueSum = pipelineValueSum * probabilities[stage];
+
+    if (valEl) valEl.textContent = `₹${pipelineValueSum.toLocaleString('en-IN')}`;
+    if (expEl) expEl.textContent = `Exp: ₹${expectedValueSum.toLocaleString('en-IN')}`;
+
+    if (columnLeads.length === 0) {
+      container.innerHTML = `<div style="text-align:center; padding:15px; font-size:9px; color:var(--text-muted); border:1px dashed rgba(255,255,255,0.05); border-radius:6px;">No cards</div>`;
+      return;
+    }
 
     columnLeads.forEach(lead => {
       const card = document.createElement('div');
       card.className = 'kanban-card';
       card.setAttribute('draggable', 'true');
-      
+      card.setAttribute('aria-label', `Lead card: ${lead.customer_name}, stage ${stage}`);
+      card.setAttribute('tabindex', '0');
+
       card.addEventListener('dragstart', (e) => {
-        e.dataTransfer.setData('text/plain', lead.email);
+        e.dataTransfer.setData('text/plain', lead.id);
+        card.classList.add('dragging');
+      });
+      card.addEventListener('dragend', () => card.classList.remove('dragging'));
+
+      // Keyboard: Enter/Space triggers drag
+      card.addEventListener('keydown', (e) => {
+        if (e.key === 'Enter' || e.key === ' ') openLeadProfileDrawer(lead.id);
       });
 
-      // Find next follow-up
-      const leadFollowUps = followUps.filter(f => f.leadEmail === lead.email && f.status === 'Scheduled');
-      leadFollowUps.sort((a, b) => new Date(a.time) - new Date(b.time));
-      let followUpHtml = '';
-      if (leadFollowUps.length > 0) {
-        const nextDate = new Date(leadFollowUps[0].time);
-        followUpHtml = `
-          <div style="font-size: 8px; color: var(--accent-orange); margin-top: 6px; display: flex; align-items: center; gap: 4px;">
-            <span>📅 Next: ${nextDate.toLocaleDateString([], { month: 'short', day: 'numeric' })} ${nextDate.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit', hour12: false })}</span>
-          </div>
-        `;
+      let intentClass = 'badge-intent-low';
+      if (lead.lead_score >= 90) intentClass = 'badge-intent-high';
+      else if (lead.lead_score >= 75) intentClass = 'badge-intent-medium';
+
+      let healthClass = 'badge-intent-low';
+      if (lead.health_score >= 90) healthClass = 'badge-intent-high';
+      else if (lead.health_score >= 70) healthClass = 'badge-intent-medium';
+      else healthClass = 'badge-red';
+
+      let leadVal = lead.pipeline_value || 0;
+      if (leadVal === 0 && lead.bills && lead.bills.length > 0) {
+        leadVal = lead.bills[0].system_cost || 0;
       }
+      const expRevenue = lead.expected_revenue || 0;
+      const kw = (lead.bills && lead.bills.length > 0) ? (lead.bills[0].recommended_kw || 0) : 0;
+      const followupLabel = crmCountdown(lead.next_followup);
+      const followupColor = followupLabel.startsWith('Overdue') ? '#ef4444'
+        : followupLabel === 'Today' ? '#f59e0b'
+          : 'var(--text-muted)';
 
-      let intentClass = "badge-intent-low";
-      if (lead.intent_level === 'High Intent') intentClass = "badge-intent-high";
-      else if (lead.intent_level === 'Medium Intent') intentClass = "badge-intent-medium";
-
-      let healthClass = "badge-intent-low";
-      if (lead.health_category === 'Healthy') healthClass = "badge-intent-high";
-      else if (lead.health_category === 'Warm') healthClass = "badge-intent-medium";
-      else healthClass = "badge-red";
+      // Priority badge from lead score
+      let priorityBadge = 'LOW';
+      let priorityColor = 'rgba(100,116,139,0.4)';
+      if (lead.lead_score >= 90) { priorityBadge = 'HIGH'; priorityColor = 'rgba(239,68,68,0.25)'; }
+      else if (lead.lead_score >= 75) { priorityBadge = 'MEDIUM'; priorityColor = 'rgba(251,146,60,0.25)'; }
 
       card.innerHTML = `
-        <div class="kanban-card-title" title="${escapeHtml(lead.name)}">${escapeHtml(lead.name)}</div>
-        <span class="kanban-card-email">${escapeHtml(lead.email)}</span>
-        
-        <div style="display: flex; gap: 4px; flex-wrap: wrap;">
-          <span class="crm-badge badge-source">${escapeHtml(lead.source)}</span>
-          <span class="crm-badge ${intentClass}">${escapeHtml(lead.intent_level)} (${lead.lead_score})</span>
-          <span class="crm-badge ${healthClass}">Health: ${escapeHtml(lead.health_category)}</span>
+        <div style="display:flex; justify-content:space-between; align-items:flex-start; margin-bottom:3px;">
+          <div class="kanban-card-title" title="${escapeHtml(lead.customer_name)}" style="flex:1; margin-right:4px;">${escapeHtml(lead.customer_name)}</div>
+          <span style="font-size:7px; font-weight:800; padding:2px 5px; border-radius:3px; background:${priorityColor}; color:#fff; white-space:nowrap; letter-spacing:.5px;">${priorityBadge}</span>
         </div>
-        
-        <div class="kanban-card-metric" style="margin-top: 4px;">
-          <span>Lead Value:</span>
-          <strong>₹${(lead.revenue_potential || 0).toLocaleString('en-IN')}</strong>
-        </div>
-        
-        ${followUpHtml}
+        <span class="kanban-card-email">${escapeHtml(lead.consumer_number)}</span>
 
-        <button class="kanban-card-btn" onclick="openLeadProfileDrawer('${escapeHtml(lead.email)}')">View Profile</button>
+        <div style="display:flex; gap:3px; flex-wrap:wrap; margin-top:5px;">
+          <span class="crm-badge badge-source">${escapeHtml(lead.city || '—')}</span>
+          <span class="crm-badge ${intentClass}">Lead: ${lead.lead_score}</span>
+          <span class="crm-badge ${healthClass}">Health: ${lead.health_score}%</span>
+          ${kw > 0 ? `<span class="crm-badge badge-source">${kw} kW</span>` : ''}
+        </div>
+
+        <div style="margin-top:6px; display:flex; flex-direction:column; gap:2px;">
+          <div class="kanban-card-metric">
+            <span>Project Value:</span>
+            <strong>₹${leadVal.toLocaleString('en-IN')}</strong>
+          </div>
+          <div class="kanban-card-metric">
+            <span>Exp. Revenue:</span>
+            <strong style="color:var(--accent-green);">₹${expRevenue.toLocaleString('en-IN')}</strong>
+          </div>
+          <div class="kanban-card-metric">
+            <span>Follow-up:</span>
+            <strong style="color:${followupColor};">${followupLabel}</strong>
+          </div>
+        </div>
+
+        <button class="kanban-card-btn" onclick="openLeadProfileDrawer('${lead.id}')" aria-label="View profile for ${escapeHtml(lead.customer_name)}">View Profile</button>
       `;
-      
       container.appendChild(card);
     });
   });
 }
 
+// Render lead list table directory
 function renderCrmLeadsTable() {
   const tableBody = document.getElementById('crmLeadsTableBody');
   if (!tableBody) return;
@@ -8440,427 +8999,1469 @@ function renderCrmLeadsTable() {
   const statusVal = document.getElementById('crmLeadStatusFilter')?.value || '';
 
   const filtered = crmLeadsList.filter(l => {
-    const matchesSearch = (l.name || '').toLowerCase().includes(searchVal) || 
-                          (l.consumer_number || '').toLowerCase().includes(searchVal) ||
-                          (l.source || '').toLowerCase().includes(searchVal) ||
-                          (l.city || '').toLowerCase().includes(searchVal);
-    return matchesSearch;
+    const matchesSearch = (l.customer_name || '').toLowerCase().includes(searchVal) ||
+      (l.consumer_number || '').toLowerCase().includes(searchVal) ||
+      (l.city || '').toLowerCase().includes(searchVal) ||
+      (l.discom || '').toLowerCase().includes(searchVal);
+    const matchesStatus = statusVal ? l.status === statusVal : true;
+    return matchesSearch && matchesStatus;
   });
 
   if (filtered.length === 0) {
-    tableBody.innerHTML = '<tr><td colspan="7" style="padding: 20px; text-align: center; color: var(--text-muted); font-size: 11px;">No customers found.</td></tr>';
+    tableBody.innerHTML = '<tr><td colspan="10" style="padding: 20px; text-align: center; color: var(--text-muted); font-size: 11px;">No customer directories found.</td></tr>';
     return;
   }
 
   tableBody.innerHTML = filtered.map(l => {
-    const consumerNumber = l.consumer_number || '—';
-    const city = l.city || '—';
-    
-    // Find latest bill info
+    const salesperson = l.salesperson || 'Unassigned';
+
     let recKw = '—';
     let latestBillStr = '—';
     if (l.bills && l.bills.length > 0) {
-      const sorted = [...l.bills].sort((a,b) => new Date(b.created_at) - new Date(a.created_at));
-      const latest = sorted[0];
-      recKw = latest.recommended_kw > 0 ? `${latest.recommended_kw} kW` : 'None';
-      latestBillStr = `₹${latest.bill_amount.toLocaleString('en-IN')}`;
+      const bill = l.bills[0];
+      recKw = bill.recommended_kw > 0 ? `${bill.recommended_kw} kW` : 'None';
+      latestBillStr = `₹${bill.bill_amount.toLocaleString('en-IN')}`;
     }
 
     return `<tr style="border-bottom: 1px solid var(--border-color-light);">
-      <td style="padding: 10px 8px;"><strong>${escapeHtml(l.name)}</strong></td>
-      <td style="padding: 10px 8px;"><code>${escapeHtml(consumerNumber)}</code></td>
-      <td style="padding: 10px 8px;"><span class="crm-badge badge-source" style="font-size: 9px; font-weight: normal;">${escapeHtml(l.source)}</span></td>
-      <td style="padding: 10px 8px;"><span style="font-weight: 700; font-size: 10px; color: var(--text-navy);">${escapeHtml(city)}</span></td>
+      <td style="padding: 10px 8px;"><strong>${escapeHtml(l.customer_name)}</strong></td>
+      <td style="padding: 10px 8px;"><code>${escapeHtml(l.consumer_number)}</code></td>
+      <td style="padding: 10px 8px;"><span class="crm-badge badge-source">${escapeHtml(l.discom)}</span></td>
+      <td style="padding: 10px 8px;">${escapeHtml(l.city)}</td>
       <td style="padding: 10px 8px; text-align: center;"><span class="crm-badge badge-intent-medium">${recKw}</span></td>
       <td style="padding: 10px 8px; text-align: right; font-weight: 700; color: var(--accent-green);">${latestBillStr}</td>
+      <td style="padding: 10px 8px; text-align: center;"><span class="crm-badge badge-source">${escapeHtml(salesperson)}</span></td>
+      <td style="padding: 10px 8px; text-align: center;"><strong style="color:var(--accent-orange);">${l.lead_score}</strong></td>
+      <td style="padding: 10px 8px; text-align: center;"><strong style="color:var(--accent-green);">${l.health_score}%</strong></td>
       <td style="padding: 10px 8px; text-align: center;">
-        <button class="table-action-btn" onclick="openLeadProfileDrawer('${escapeHtml(l.email)}')">View Profile</button>
+        <button class="table-action-btn" onclick="openLeadProfileDrawer('${l.id}')">View Profile</button>
       </td>
     </tr>`;
   }).join('');
 }
 
-function refreshCrmActivityFeedUI() {
+// Drag & drop — optimistic update with rollback on failure
+function updateLeadStatus(customerId, newStatus) {
+  // Optimistic: find lead in local list and update stage immediately
+  const lead = crmLeadsList.find(l => l.id === parseInt(customerId));
+  const oldStatus = lead ? lead.status : null;
+  if (lead) lead.status = newStatus;
+  renderKanbanColumns(); // instant UI response
+
+  safeFetch(`${API_BASE}/api/crm/customers/${customerId}`, {
+    method: 'PUT',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ status: newStatus }),
+  })
+    .then(res => {
+      if (!res.ok) throw new Error('Status update failed');
+      return res.json();
+    })
+    .then(() => {
+      showToast(`Lead moved to ${newStatus}.`, 'success');
+      refreshCrmDashboardUI(); // sync with server state
+    })
+    .catch(() => {
+      // Rollback optimistic update
+      if (lead && oldStatus) lead.status = oldStatus;
+      renderKanbanColumns();
+      showToast('Pipeline update failed. Change reverted.', 'error');
+    });
+}
+
+// Exporters CSV download trigger
+function triggerCrmReportDownload(reportType) {
+  const url = `${API_BASE}/api/crm/reports/${reportType}`;
+  window.open(url, '_blank');
+}
+
+// Follow-up center actions
+function loadFollowupsCenter(filter = 'today') {
+  const box = document.getElementById('crmFollowupBoxList');
+  if (!box) return;
+
+  safeFetch(`${API_BASE}/api/crm/followups`)
+    .then(res => res.json())
+    .then(followups => {
+      box.innerHTML = '';
+
+      const todayStr = new Date().toISOString().split('T')[0];
+      const tomorrow = new Date();
+      tomorrow.setDate(tomorrow.getDate() + 1);
+      const tomorrowStr = tomorrow.toISOString().split('T')[0];
+
+      const filtered = followups.filter(f => {
+        if (filter === 'today') return f.status === 'Pending' && f.due_date.startsWith(todayStr);
+        if (filter === 'tomorrow') return f.status === 'Pending' && f.due_date.startsWith(tomorrowStr);
+        if (filter === 'overdue') return f.status === 'Overdue' || (f.status === 'Pending' && new Date(f.due_date) <= new Date());
+        if (filter === 'completed') return f.status === 'Completed';
+        return true; // week / all fallback
+      });
+
+      if (filtered.length === 0) {
+        box.innerHTML = `<div style="text-align:center; padding:30px; font-size:11px; color:var(--text-muted);">No follow-ups matches the filter.</div>`;
+        return;
+      }
+
+      box.innerHTML = filtered.map(f => {
+        const cust = crmLeadsList.find(c => c.id === f.customer_id) || {};
+        const custName = cust.customer_name || 'Associated Customer';
+
+        let badgeClass = 'badge-priority-low';
+        if (f.priority === 'High') badgeClass = 'badge-priority-high';
+        else if (f.priority === 'Medium') badgeClass = 'badge-priority-medium';
+
+        let btn = '';
+        if (f.status !== 'Completed' && f.status !== 'Cancelled') {
+          btn = `<button class="table-action-btn" onclick="completeCrmFollowup(${f.id})" style="background:rgba(34,197,94,0.1); color:var(--accent-green); border-color:rgba(34,197,94,0.2);">Complete</button>`;
+        }
+
+        return `<div class="card-base" style="--card-theme: 23, 168, 229; padding: 12px; display:flex; justify-content:space-between; align-items:center;">
+          <div>
+            <strong style="font-size:11px; color:#fff; display:block;">${escapeHtml(f.title)}</strong>
+            <span style="font-size:9px; color:var(--text-secondary); display:block; margin-top:2px;">Customer: ${escapeHtml(custName)}</span>
+            <span style="font-size:8px; color:var(--text-muted); display:block; margin-top:2px;">Due: ${f.due_date} | Priority: <span class="crm-badge ${badgeClass}" style="padding:1px 4px; font-size:7px;">${f.priority}</span></span>
+          </div>
+          <div>${btn}</div>
+        </div>`;
+      }).join('');
+    });
+}
+
+function createCrmFollowupAction() {
+  const cId = document.getElementById('crmFollowupCustomerSelect')?.value;
+  const title = document.getElementById('crmFollowupTitle')?.value.trim();
+  const date = document.getElementById('crmFollowupDueDate')?.value;
+  const priority = document.getElementById('crmFollowupPriority')?.value;
+  const notes = document.getElementById('crmFollowupNotes')?.value.trim();
+
+  if (!cId || !title || !date) {
+    showToast('All fields required.', 'error');
+    return;
+  }
+
+  safeFetch(`${API_BASE}/api/crm/followups`, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({
+      customer_id: parseInt(cId),
+      title: title,
+      due_date: date,
+      priority: priority,
+      notes: notes
+    })
+  })
+    .then(res => {
+      if (!res.ok) throw new Error();
+      return res.json();
+    })
+    .then(() => {
+      showToast('Follow-up scheduled.', 'success');
+      document.getElementById('crmFollowupTitle').value = '';
+      document.getElementById('crmFollowupDueDate').value = '';
+      document.getElementById('crmFollowupNotes').value = '';
+      loadFollowupsCenter();
+      refreshCrmDashboardUI();
+    });
+}
+
+function completeCrmFollowup(id) {
+  safeFetch(`${API_BASE}/api/crm/followups/${id}`, {
+    method: 'PUT',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ status: 'Completed' })
+  })
+    .then(res => {
+      if (!res.ok) throw new Error();
+      return res.json();
+    })
+    .then(() => {
+      showToast('Follow-up completed.', 'success');
+      loadFollowupsCenter();
+      refreshCrmDashboardUI();
+    });
+}
+
+// CRM Task board functions
+function loadTasksCenter() {
+  const list = document.getElementById('crmTaskGridList');
+  if (!list) return;
+
+  safeFetch(`${API_BASE}/api/crm/tasks`)
+    .then(res => res.json())
+    .then(tasks => {
+      list.innerHTML = '';
+      if (tasks.length === 0) {
+        list.innerHTML = `<div style="grid-column: span 2; text-align:center; padding:30px; font-size:11px; color:var(--text-muted);">No active tasks found.</div>`;
+        return;
+      }
+
+      list.innerHTML = tasks.map(t => {
+        const cust = crmLeadsList.find(c => c.id === t.customer_id) || {};
+        const custName = cust.customer_name || 'Unassociated';
+
+        let priorityClass = 'badge-priority-low';
+        if (t.priority === 'High') priorityClass = 'badge-priority-high';
+        else if (t.priority === 'Medium') priorityClass = 'badge-priority-medium';
+
+        let actionBtn = '';
+        if (t.status !== 'Completed') {
+          actionBtn = `<button class="table-action-btn" onclick="completeCrmTask(${t.id})" style="font-size:9px; padding:2px 6px;">Done</button>`;
+        }
+
+        return `<div class="card-base" style="--card-theme: 167, 139, 250; padding:10px; display:flex; justify-content:space-between; align-items:flex-start;">
+          <div>
+            <strong style="font-size:11px; color:#fff; display:block;">${escapeHtml(t.title)}</strong>
+            <span style="font-size:8px; color:var(--text-secondary); display:block; margin:2px 0;">Dept: ${t.department} | Owner: ${escapeHtml(t.assigned_to || 'System')}</span>
+            <span style="font-size:8px; color:var(--text-muted); display:block;">Customer: ${escapeHtml(custName)}</span>
+            <span style="font-size:8px; color:var(--text-muted); display:block; margin-top:2px;">Due: ${t.due_date} | Priority: <span class="crm-badge ${priorityClass}" style="padding:1px 4px; font-size:7px;">${t.priority}</span></span>
+          </div>
+          <div style="display:flex; flex-direction:column; gap:4px; align-items:flex-end;">
+            <span style="font-size:9px; color:#fff; font-weight:800;">${t.status}</span>
+            ${actionBtn}
+          </div>
+        </div>`;
+      }).join('');
+    });
+}
+
+function createCrmTaskAction() {
+  const cId = document.getElementById('crmTaskCustomerSelect')?.value;
+  const title = document.getElementById('crmTaskTitle')?.value.trim();
+  const dept = document.getElementById('crmTaskDepartment')?.value;
+  const assignee = document.getElementById('crmTaskAssignee')?.value.trim();
+  const date = document.getElementById('crmTaskDueDate')?.value;
+  const priority = document.getElementById('crmTaskPriority')?.value;
+
+  if (!title || !date) {
+    showToast('Task title and date required.', 'error');
+    return;
+  }
+
+  safeFetch(`${API_BASE}/api/crm/tasks`, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({
+      customer_id: cId ? parseInt(cId) : null,
+      title: title,
+      department: dept,
+      assigned_to: assignee,
+      priority: priority,
+      due_date: date
+    })
+  })
+    .then(res => {
+      if (!res.ok) throw new Error();
+      return res.json();
+    })
+    .then(() => {
+      showToast('Operational task created.', 'success');
+      document.getElementById('crmTaskTitle').value = '';
+      document.getElementById('crmTaskAssignee').value = '';
+      document.getElementById('crmTaskDueDate').value = '';
+      loadTasksCenter();
+      refreshCrmDashboardUI();
+    });
+}
+
+function completeCrmTask(id) {
+  safeFetch(`${API_BASE}/api/crm/tasks/${id}`, {
+    method: 'PUT',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ status: 'Completed', progress: 100 })
+  })
+    .then(res => {
+      if (!res.ok) throw new Error();
+      return res.json();
+    })
+    .then(() => {
+      showToast('Task marked as completed.', 'success');
+      loadTasksCenter();
+      refreshCrmDashboardUI();
+    });
+}
+
+// Meeting boardroom events
+function loadMeetingsCenter() {
+  const box = document.getElementById('crmMeetingListBox');
+  if (!box) return;
+
+  safeFetch(`${API_BASE}/api/crm/meetings`)
+    .then(res => res.json())
+    .then(meets => {
+      box.innerHTML = '';
+      if (meets.length === 0) {
+        box.innerHTML = `<div style="text-align:center; padding:30px; font-size:11px; color:var(--text-muted);">No scheduled meetings.</div>`;
+        return;
+      }
+
+      box.innerHTML = meets.map(m => {
+        const cust = crmLeadsList.find(c => c.id === m.customer_id) || {};
+        const custName = cust.customer_name || 'Client Account';
+
+        let outcomeSelect = '';
+        if (!m.outcome) {
+          outcomeSelect = `
+            <select style="padding:3px; font-size:9px; background:var(--bg-input); border:1px solid var(--border-color); color:var(--text-navy); border-radius:4px; outline:none;" onchange="completeCrmMeeting(${m.id}, this.value)">
+              <option value="">Outcome...</option>
+              <option value="Interested">Interested</option>
+              <option value="Requested Proposal">Req Proposal</option>
+              <option value="Postponed">Postponed</option>
+              <option value="Not Interested">Not Interested</option>
+            </select>
+          `;
+        } else {
+          outcomeSelect = `<strong style="font-size:9px; color:var(--accent-green); text-transform:uppercase;">${escapeHtml(m.outcome)}</strong>`;
+        }
+
+        return `<div class="card-base" style="--card-theme: 54, 211, 153; padding: 12px; display:flex; justify-content:space-between; align-items:center;">
+          <div>
+            <strong style="font-size:11px; color:#fff; display:block;">${escapeHtml(m.title)} (${m.meeting_type})</strong>
+            <span style="font-size:9px; color:var(--text-secondary); display:block; margin:2px 0;">Client: ${escapeHtml(custName)} | Host: ${escapeHtml(m.assigned_to || 'System')}</span>
+            <span style="font-size:8px; color:var(--text-muted); display:block;">Scheduled: ${m.scheduled_date} ${m.scheduled_time}</span>
+          </div>
+          <div>${outcomeSelect}</div>
+        </div>`;
+      }).join('');
+    });
+}
+
+function createCrmMeetingAction() {
+  const cId = document.getElementById('crmMeetingCustomerSelect')?.value;
+  const title = document.getElementById('crmMeetingTitle')?.value.trim();
+  const type = document.getElementById('crmMeetingType')?.value;
+  const date = document.getElementById('crmMeetingDate')?.value;
+  const time = document.getElementById('crmMeetingTime')?.value;
+  const assignee = document.getElementById('crmMeetingAssignee')?.value.trim();
+
+  if (!cId || !title || !date || !time) {
+    showToast('Meeting information incomplete.', 'error');
+    return;
+  }
+
+  safeFetch(`${API_BASE}/api/crm/meetings`, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({
+      customer_id: parseInt(cId),
+      title: title,
+      meeting_type: type,
+      scheduled_date: date,
+      scheduled_time: time,
+      assigned_to: assignee
+    })
+  })
+    .then(res => {
+      if (!res.ok) throw new Error();
+      return res.json();
+    })
+    .then(() => {
+      showToast('Meeting successfully scheduled.', 'success');
+      document.getElementById('crmMeetingTitle').value = '';
+      document.getElementById('crmMeetingDate').value = '';
+      document.getElementById('crmMeetingTime').value = '';
+      document.getElementById('crmMeetingAssignee').value = '';
+      loadMeetingsCenter();
+      refreshCrmDashboardUI();
+    });
+}
+
+function completeCrmMeeting(id, outcome) {
+  if (!outcome) return;
+  safeFetch(`${API_BASE}/api/crm/meetings/${id}`, {
+    method: 'PUT',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ outcome: outcome, next_action: "Follow-up based on meeting outcome" })
+  })
+    .then(res => {
+      if (!res.ok) throw new Error();
+      return res.json();
+    })
+    .then(() => {
+      showToast('Meeting outcome recorded.', 'success');
+      loadMeetingsCenter();
+      refreshCrmDashboardUI();
+    });
+}
+
+// Operational Alerts Warning center
+function loadAlertsCenter(severity = 'all') {
+  const box = document.getElementById('crmAlertsListBox');
+  if (!box) return;
+
+  const url = severity !== 'all'
+    ? `${API_BASE}/api/crm/alerts?severity=${encodeURIComponent(severity)}`
+    : `${API_BASE}/api/crm/alerts`;
+
+  safeFetch(url)
+    .then(res => res.json())
+    .then(alerts => {
+      box.innerHTML = '';
+      if (alerts.length === 0) {
+        box.innerHTML = `<div style="text-align:center; padding:30px; font-size:11px; color:var(--text-muted);">No active warnings or alerts.</div>`;
+        return;
+      }
+
+      box.innerHTML = alerts.map(a => {
+        const isCritical = a.severity === 'Critical';
+        const color = isCritical ? '#ef4444' : 'var(--accent-orange)';
+        const cardTheme = isCritical ? '239, 68, 68' : '255, 138, 29';
+
+        return `<div class="card-base" style="--card-theme: ${cardTheme}; padding: 12px; display:flex; justify-content:space-between; align-items:center; margin-bottom:8px;">
+          <div>
+            <strong style="font-size:11px; color:#fff; display:block;"><span style="color:${color}; font-weight:800; margin-right:5px;">[${a.severity}]</span>${escapeHtml(a.title)}</strong>
+            <span style="font-size:9px; color:var(--text-secondary); display:block; margin-top:2px;">${escapeHtml(a.description)}</span>
+          </div>
+          <button class="table-action-btn" onclick="openLeadProfileDrawer('${a.customer_id}')">View Profile</button>
+        </div>`;
+      }).join('');
+    });
+}
+
+// Timeline logger feed
+function loadActivityFeedCenter() {
   const container = document.getElementById('crmActivityFeedBox');
   if (!container) return;
 
-  const logs = getCrmActivityLog();
-  if (logs.length === 0) {
-    container.innerHTML = '<div style="text-align: center; padding: 20px; color: var(--text-muted); font-size: 11px;">No CRM activities recorded yet.</div>';
-    return;
-  }
+  safeFetch(`${API_BASE}/api/crm/pipeline-metrics`)
+    .then(r => r.json())
+    .then(metrics => {
+      // Load from all customer timelines
+      // Loop over customers to fetch timelines or pull top logs
+      // To prevent massive overhead, search timelines across customers in leads directory
+      const fetchPromises = crmLeadsList.slice(0, 20).map(c =>
+        safeFetch(`${API_BASE}/api/crm/timeline/${c.id}`).then(res => res.json())
+      );
 
-  container.innerHTML = logs.map(act => {
-    let icon = "⚡";
-    let iconBgClass = "system";
-    if (act.type === 'pipeline') { icon = "🔄"; iconBgClass = "bill"; }
-    else if (act.type === 'note') { icon = "📝"; iconBgClass = "assistant"; }
-    else if (act.type === 'schedule') { icon = "📅"; iconBgClass = "roi"; }
-    else if (act.type === 'complete') { icon = "✅"; iconBgClass = "roof"; }
-    else if (act.type === 'missed') { icon = "⚠️"; iconBgClass = "redemption"; }
+      Promise.all(fetchPromises)
+        .then(timelines => {
+          let allEvents = [];
+          timelines.forEach((list, idx) => {
+            const cust = crmLeadsList.slice(0, 20)[idx];
+            list.forEach(evt => {
+              evt.customerName = cust.customer_name;
+              allEvents.push(evt);
+            });
+          });
 
-    const date = new Date(act.createdAt);
-    const relativeTime = getRelativeTime(date);
+          allEvents.sort((a, b) => new Date(b.created_at) - new Date(a.created_at));
+          allEvents = allEvents.slice(0, 500);
 
-    return `<div class="crm-activity-item type-${act.type}">
-      <div class="crm-activity-icon ${iconBgClass}" style="background-color: rgba(255,255,255,0.05); padding: 4px; border-radius: 4px;">${icon}</div>
-      <div style="flex-grow: 1;">
-        <strong style="color: var(--text-navy);">${escapeHtml(act.leadName)}</strong> ${escapeHtml(act.description)}
-      </div>
-      <span style="font-size: 10px; color: var(--text-muted); white-space: nowrap;">${relativeTime}</span>
-    </div>`;
-  }).join('');
-}
+          if (allEvents.length === 0) {
+            container.innerHTML = '<div style="text-align: center; padding: 20px; color: var(--text-muted); font-size: 11px;">No active timeline logs recorded.</div>';
+            return;
+          }
 
-function openLeadProfileDrawer(email) {
-  const lead = crmLeadsList.find(l => l.email === email);
-  if (!lead) return;
-
-  // Open drawer overlay
-  const drawer = document.getElementById('crmLeadProfileDrawer');
-  if (drawer) {
-    drawer.style.display = 'block';
-    setTimeout(() => drawer.classList.add('active'), 10);
-  }
-
-  // Populate basic details
-  _setText('crmDrawerLeadName', lead.name);
-  _setText('crmDrawerLeadEmail', `Consumer: ${lead.consumer_number}`);
-
-  // Populate CDP fields
-  _setText('cdpDrawerConsumerNumber', lead.consumer_number);
-  _setText('cdpDrawerCity', lead.city);
-  _setText('cdpDrawerDiscom', lead.source);
-
-  const billPeriodEl = document.getElementById('cdpDrawerBillPeriod');
-  const billUnitsEl = document.getElementById('cdpDrawerBillUnits');
-  const billAmountEl = document.getElementById('cdpDrawerBillAmount');
-  const unitRateEl = document.getElementById('cdpDrawerUnitRate');
-
-  const solarSizeEl = document.getElementById('cdpDrawerSolarSize');
-  const monthlySavingsEl = document.getElementById('cdpDrawerMonthlySavings');
-  const systemCostEl = document.getElementById('cdpDrawerSystemCost');
-  const paybackEl = document.getElementById('cdpDrawerPayback');
-  const savings25yrEl = document.getElementById('cdpDrawerSavings25yr');
-
-  if (lead.bills && lead.bills.length > 0) {
-    // Sort to find latest
-    const sorted = [...lead.bills].sort((a,b) => new Date(b.created_at) - new Date(a.created_at));
-    const bill = sorted[0];
-
-    if (billPeriodEl) billPeriodEl.textContent = bill.billing_period;
-    if (billUnitsEl) billUnitsEl.textContent = `${bill.monthly_units} kWh`;
-    if (billAmountEl) billAmountEl.textContent = `₹${bill.bill_amount.toLocaleString('en-IN')}`;
-    if (unitRateEl) unitRateEl.textContent = `₹${bill.per_unit_rate} / unit`;
-
-    if (solarSizeEl) solarSizeEl.textContent = bill.recommended_kw > 0 ? `${bill.recommended_kw} kW` : 'None';
-    if (monthlySavingsEl) monthlySavingsEl.textContent = `₹${Math.round(bill.monthly_savings).toLocaleString('en-IN')}`;
-    if (systemCostEl) systemCostEl.textContent = `₹${bill.system_cost.toLocaleString('en-IN')}`;
-    if (paybackEl) paybackEl.textContent = bill.recommended_kw > 0 ? `${bill.payback_years} Years` : 'N/A';
-    if (savings25yrEl) savings25yrEl.textContent = `₹${Math.round(bill.savings_25yr).toLocaleString('en-IN')}`;
-  } else {
-    const els = [billPeriodEl, billUnitsEl, billAmountEl, unitRateEl, solarSizeEl, monthlySavingsEl, systemCostEl, paybackEl, savings25yrEl];
-    els.forEach(el => {
-      if (el) el.textContent = '—';
+          container.innerHTML = allEvents.map(evt => {
+            const date = new Date(evt.created_at);
+            const relativeTime = getRelativeTime(date);
+            return `<div class="crm-activity-item">
+              <div class="crm-activity-icon" style="background-color: rgba(255,255,255,0.05); padding: 4px; border-radius: 4px;">⚡</div>
+              <div style="flex-grow: 1;">
+                <strong style="color: var(--text-navy);">${escapeHtml(evt.customerName)}</strong> - <strong>${escapeHtml(evt.event_type)}</strong> (${evt.module})
+                <div style="font-size:9px; color:var(--text-secondary); margin-top:2px;">${escapeHtml(evt.notes || '')}</div>
+              </div>
+              <span style="font-size: 10px; color: var(--text-muted); white-space: nowrap;">${relativeTime}</span>
+            </div>`;
+          }).join('');
+        });
     });
+}
+
+// Drawer Customer Profile 3.0 — enriched implementation with caching, lazy-loading, and SVG progress rings
+window.customer360Cache = window.customer360Cache || {};
+window.crmDrawerPages = window.crmDrawerPages || {
+  documents: 1,
+  communications: 1,
+  payments: 1,
+  timeline: 1
+};
+
+function openLeadProfileDrawer(customerId) {
+  const drawer = document.getElementById('crmLeadProfileDrawer');
+  if (!drawer) return;
+
+  drawer.style.display = 'block';
+  setTimeout(() => drawer.classList.add('active'), 10);
+
+  // Invalidate any old charts
+  if (window.crmDrawerSavingsChartInstance) {
+    window.crmDrawerSavingsChartInstance.destroy();
+    window.crmDrawerSavingsChartInstance = null;
+  }
+
+  // Load from session cache if available
+  if (window.customer360Cache[customerId]) {
+    renderLeadProfileFrom360(window.customer360Cache[customerId], customerId);
+  } else {
+    safeFetch(`${API_BASE}/api/crm/customers/${customerId}/360`)
+      .then(res => res.json())
+      .then(envelope => {
+        const data = envelope.data || envelope;
+        window.customer360Cache[customerId] = data;
+        renderLeadProfileFrom360(data, customerId);
+      })
+      .catch(() => showToast('Could not load customer 360 profile. Please retry.', 'error'));
   }
 }
 
-function renderDrawerActivityTimeline(lead, user) {
-  const container = document.getElementById('crmDrawerTimeline');
-  if (!container) return;
+function renderLeadProfileFrom360(data, customerId) {
+  const customer = data.customer || {};
+  const bills = data.bills || [];
 
-  const analyses = user.analyses || {};
-  const reportsCount = user.reports_count || 0;
-  const copilotMessages = user.copilot_messages || 0;
-  const points = user.points || 0;
+  // Avatar Initials & Color
+  const initials = (customer.customer_name || '?').split(' ').map(n => n[0]).join('').toUpperCase().slice(0, 2);
+  const avatarEl = document.getElementById('crmDrawerAvatar');
+  if (avatarEl) {
+    avatarEl.textContent = initials;
+    avatarEl.style.background = crmAvatarColor(customer.customer_name || 'X');
+  }
 
-  let events = [];
-  events.push({
-    title: 'Signed Up',
-    desc: 'Registered user account on the solar platform.',
-    timeStr: 'Initial step',
-    timestamp: new Date(user.registration_date || lead.createdAt || new Date()).getTime()
+  // Next Follow-up Countdown
+  const countdown = crmCountdown(customer.next_followup);
+  const countdownColor = countdown.startsWith('Overdue') ? '#ef4444' : countdown === 'Today' ? '#f59e0b' : '#94a3b8';
+
+  // Header Text Fields
+  _setText('crmDrawerLeadName', customer.customer_name);
+  _setText('crmDrawerLeadEmail', customer.email || `${customer.consumer_number}@getsolar.in`);
+  _setText('crmDrawerLeadScore', customer.lead_score || 0);
+  _setText('crmDrawerLeadHealth', `${customer.health_score || 100}%`);
+  _setText('crmDrawerLeadStage', customer.status || 'New Lead');
+  _setText('crmDrawerLeadSalesperson', customer.salesperson || 'Unassigned');
+  _setText('crmDrawerLeadExpectedRevenue', `₹${(customer.expected_revenue || 0).toLocaleString('en-IN')}`);
+  _setText('crmDrawerLeadProjValue', `₹${(customer.pipeline_value || 0).toLocaleString('en-IN')}`);
+  _setText('crmDrawerLeadConsumer', customer.consumer_number);
+  _setText('crmDrawerLeadNextFollowup', countdown);
+  const nextFollowupEl = document.getElementById('crmDrawerLeadNextFollowup');
+  if (nextFollowupEl) nextFollowupEl.style.color = countdownColor;
+
+  // Hydrate Overview tab progress values
+  _setText('crmOverviewHealthText', `${customer.health_score || 100}%`);
+  _setText('crmOverviewLeadText', customer.lead_score || 0);
+  
+  // Set stroke-dashoffset on animated SVG rings (circumference = 2 * PI * r = 2 * 3.14159 * 14 = 87.96)
+  const setRingValue = (id, score) => {
+    const ring = document.getElementById(id);
+    if (ring) {
+      const offset = 87.96 - (score / 100) * 87.96;
+      ring.style.strokeDashoffset = offset;
+    }
+  };
+  setRingValue('ringOverviewHealth', customer.health_score || 100);
+  setRingValue('ringOverviewLead', customer.lead_score || 0);
+
+  // Overview progress percentages
+  _setText('crmOverviewProjProgress', `${data.project_progress || 0}%`);
+  _setText('crmOverviewPayProgress', `${data.payment_progress || 0}%`);
+  _setText('crmOverviewInstallProgress', `${data.installation_progress || 0}%`);
+
+  // Operations Metadata
+  _setText('crmOverviewCLV', `₹${(data.clv || 0).toLocaleString('en-IN')}`);
+  _setText('crmOverviewAmcStatus', data.amc ? data.amc.status : 'No Contract');
+  _setText('crmOverviewLastComm', data.last_communication ? getRelativeTime(new Date(data.last_communication)) : 'None');
+  _setText('crmOverviewLastActivity', customer.last_activity ? getRelativeTime(new Date(customer.last_activity)) : 'No activity recorded');
+  _setText('crmOverviewNextFollowup', customer.next_followup ? new Date(customer.next_followup).toLocaleDateString('en-IN') : 'None');
+  _setText('crmOverviewEngineer', data.installation ? (data.installation.assigned_engineer || 'Unassigned') : 'Unassigned');
+
+  // Contact Details
+  _setText('crmOverviewPhone', customer.phone || '—');
+  _setText('crmOverviewEmail', customer.email || '—');
+  _setText('crmOverviewCity', customer.city || '—');
+  _setText('crmOverviewDiscom', customer.discom || '—');
+  _setText('crmOverviewState', customer.state || '—');
+
+  // Sales Configuration form inputs
+  const salespersonInput = document.getElementById('crmDrawerSalespersonInput');
+  const statusSelect = document.getElementById('crmDrawerStatusSelect');
+  const pipelineValInput = document.getElementById('crmDrawerPipelineValInput');
+  if (salespersonInput) salespersonInput.value = customer.salesperson || '';
+  if (statusSelect) statusSelect.value = customer.status || 'New Lead';
+  if (pipelineValInput) pipelineValInput.value = customer.pipeline_value || 0.0;
+
+  // Save CRM Config Button
+  const btnSaveOps = document.getElementById('crmBtnSaveOverviewOps');
+  if (btnSaveOps) {
+    btnSaveOps.onclick = () => {
+      const payload = {
+        salesperson: salespersonInput?.value.trim() || null,
+        status: statusSelect?.value || 'New Lead',
+        pipeline_value: parseFloat(pipelineValInput?.value) || 0.0,
+      };
+      btnSaveOps.disabled = true;
+      btnSaveOps.textContent = 'Saving…';
+      safeFetch(`${API_BASE}/api/crm/customers/${customer.id}`, {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(payload),
+      })
+        .then(r => r.json())
+        .then(resp => {
+          showToast('Sales configuration updated successfully.', 'success');
+          delete window.customer360Cache[customerId];
+          openLeadProfileDrawer(customerId);
+          refreshCrmDashboardUI();
+        })
+        .catch(() => showToast('Failed to update sales config.', 'error'))
+        .finally(() => { btnSaveOps.disabled = false; btnSaveOps.textContent = 'Save Configurations'; });
+    };
+  }
+
+  // Tab Navigation Setup
+  const tabBtns = document.querySelectorAll('.crm-drawer-tab-btn');
+  const tabPanes = document.querySelectorAll('.crm-drawer-tab-pane');
+
+  tabBtns.forEach(btn => {
+    btn.onclick = () => {
+      tabBtns.forEach(b => { b.classList.remove('active'); b.setAttribute('aria-selected', 'false'); });
+      btn.classList.add('active');
+      btn.setAttribute('aria-selected', 'true');
+      const tab = btn.getAttribute('data-tab');
+      tabPanes.forEach(p => {
+        p.classList.toggle('active', p.id === `pane-${tab}`);
+      });
+      loadDrawerTabContent(tab, customer, data);
+    };
   });
   
-  if (analyses.bill) {
-    events.push({
-      title: 'Ran Bill Analysis',
-      desc: `Analyzed monthly bill of ₹${analyses.bill.bill_amount} for ${analyses.bill.monthly_units} units.`,
-      timeStr: 'Completed',
-      timestamp: Date.now() - 5 * 60000
-    });
+  // Default to overview tab
+  const activeTabBtn = document.querySelector('.crm-drawer-tab-btn.active');
+  if (activeTabBtn) {
+    loadDrawerTabContent(activeTabBtn.getAttribute('data-tab'), customer, data);
   }
-  if (analyses.roof) {
-    events.push({
-      title: 'Ran Roof Assessment',
-      desc: `Scanned usable area of ${analyses.roof.usable_area_sqft} sqft with suitability of ${analyses.roof.suitability_score}%.`,
-      timeStr: 'Completed',
-      timestamp: Date.now() - 4 * 60000
-    });
-  }
-  if (analyses.roi) {
-    const roiData = analyses.roi.data || analyses.roi;
-    events.push({
-      title: 'Generated ROI',
-      desc: `Computed payback of ${roiData.payback_period || roiData.payback_years} years on a net investment of ₹${(roiData.net_cost || 0).toLocaleString('en-IN')}.`,
-      timeStr: 'Completed',
-      timestamp: Date.now() - 3 * 60000
-    });
-  }
-  if (reportsCount > 0) {
-    events.push({
-      title: 'Downloaded Report',
-      desc: `Downloaded ${reportsCount} custom report PDF file(s).`,
-      timeStr: 'Downloaded',
-      timestamp: Date.now() - 2 * 60000
-    });
-  }
-  if (copilotMessages > 0) {
-    events.push({
-      title: 'Used Solar Copilot',
-      desc: `Consulted Gemini AI assistant solar copilot with ${copilotMessages} message(s).`,
-      timeStr: 'AI Chat',
-      timestamp: Date.now() - 1 * 60000
-    });
-  }
-  if (points > 0) {
-    events.push({
-      title: 'Earned Referral Points',
-      desc: `Participated in rewards program holding ${points} referral balance points.`,
-      timeStr: 'Points',
-      timestamp: Date.now()
-    });
-  }
+}
 
-  // Filter crmActivityLog for lead-specific CRM events
-  const crmLogs = getCrmActivityLog();
-  crmLogs.forEach(act => {
-    if (act.leadName === lead.name) {
-      let iconEmoji = "⚡";
-      if (act.type === 'pipeline') iconEmoji = "🔄";
-      else if (act.type === 'note') iconEmoji = "📝";
-      else if (act.type === 'schedule') iconEmoji = "📅";
-      else if (act.type === 'complete') iconEmoji = "✅";
-      else if (act.type === 'missed') iconEmoji = "⚠️";
+function loadDrawerTabContent(tab, customer, data360) {
+  const host = API_BASE;
+  const customerId = customer.id;
 
-      events.push({
-        title: `${iconEmoji} CRM: ${act.description}`,
-        desc: `Sales update: ${act.description}`,
-        timeStr: getRelativeTimeStr(act.createdAt),
-        timestamp: new Date(act.createdAt).getTime()
+  if (tab === 'bills') {
+    const list = document.getElementById('crmDrawerBillsList');
+    if (!list) return;
+    const bills = data360.bills || [];
+    if (bills.length === 0) {
+      list.innerHTML = `<div style="text-align:center; padding:15px; font-size:10px; color:var(--text-muted);">No bills uploaded.</div>`;
+      return;
+    }
+    list.innerHTML = bills.map(b => `
+      <div class="card-base" style="--card-theme: 23, 168, 229; padding: 12px; font-size:11px;">
+        <div style="font-weight:bold; color:#fff; display:flex; justify-content:space-between;">
+          <span>Period: ${b.billing_period}</span>
+          <span style="color:var(--accent-green);">₹${b.bill_amount.toLocaleString('en-IN')}</span>
+        </div>
+        <div style="font-size:9px; color:var(--text-secondary); margin-top:5px; display:flex; justify-content:space-between;">
+          <span>Consumption: ${b.monthly_units} kWh</span>
+          <span>Recommended Size: ${b.recommended_kw} kW</span>
+        </div>
+        <div style="font-size:8px; color:var(--text-muted); margin-top:5px;">File: ${escapeHtml(b.file_name)}</div>
+      </div>
+    `).join('');
+
+  } else if (tab === 'roof') {
+    const box = document.getElementById('crmDrawerRoofData');
+    if (!box) return;
+    const roof = data360.roof_analysis;
+    if (!roof) {
+      box.innerHTML = `<div style="text-align:center; padding:15px; font-size:10px; color:var(--text-muted);">No roof analysis found. Analyze a bill first.</div>`;
+      return;
+    }
+    box.innerHTML = `
+      <div class="card-base" style="--card-theme: 23, 168, 229; padding: 12px; font-size:11px; display:flex; flex-direction:column; gap:6px;">
+        <div style="display:flex; justify-content:space-between;"><span style="color:var(--text-secondary);">Usable Area (Sqft):</span><strong style="color:#fff;">${roof.usable_area_sqft} sqft</strong></div>
+        <div style="display:flex; justify-content:space-between;"><span style="color:var(--text-secondary);">Suitability Rating:</span><strong style="color:var(--accent-green);">${roof.suitability_score}% Suitability</strong></div>
+        <div style="display:flex; justify-content:space-between;"><span style="color:var(--text-secondary);">Obstruction Factor:</span><strong style="color:#fff;">${escapeHtml(roof.obstruction_factor)}</strong></div>
+        <div style="display:flex; justify-content:space-between;"><span style="color:var(--text-secondary);">Azimuth Direction:</span><strong style="color:#fff;">${escapeHtml(roof.azimuth_direction)}</strong></div>
+      </div>
+    `;
+
+  } else if (tab === 'survey') {
+    const box = document.getElementById('crmDrawerSurveyData');
+    if (!box) return;
+    const match = data360.site_survey;
+    if (!match) {
+      box.innerHTML = `<div style="text-align:center; padding:15px; font-size:10px; color:var(--text-muted);">No Site Survey scheduled. Move lead to Site Survey Scheduled stage.</div>`;
+      return;
+    }
+    box.innerHTML = `
+      <div class="card-base" style="--card-theme: 255, 138, 29; padding: 12px; font-size:11px; display:flex; flex-direction:column; gap:6px;">
+        <div style="display:flex; justify-content:space-between;"><span style="color:var(--text-secondary);">Survey ID:</span><strong style="color:#fff;">SRV-${match.id}</strong></div>
+        <div style="display:flex; justify-content:space-between;"><span style="color:var(--text-secondary);">Status:</span><strong style="color:var(--accent-orange);">${match.status}</strong></div>
+        <div style="display:flex; justify-content:space-between;"><span style="color:var(--text-secondary);">Scheduled Date:</span><strong style="color:#fff;">${match.scheduled_date}</strong></div>
+        <div style="display:flex; justify-content:space-between;"><span style="color:var(--text-secondary);">Surveyor:</span><strong style="color:#fff;">${escapeHtml(match.surveyor_name || 'Unassigned')}</strong></div>
+        <div style="display:flex; justify-content:space-between;"><span style="color:var(--text-secondary);">Findings:</span><strong style="color:#fff;">${escapeHtml(match.findings || 'Pending Site visit')}</strong></div>
+      </div>
+    `;
+
+  } else if (tab === 'proposal') {
+    const box = document.getElementById('crmDrawerProposalData');
+    if (!box) return;
+    const prop = data360.proposal;
+    if (!prop) {
+      box.innerHTML = `<div style="text-align:center; padding:15px; font-size:10px; color:var(--text-muted);">No proposal generated. Generate proposal via Proposal Generator.</div>`;
+      return;
+    }
+    box.innerHTML = `
+      <div class="card-base" style="--card-theme: 54, 211, 153; padding: 12px; font-size:11px; display:flex; flex-direction:column; gap:6px;">
+        <div style="display:flex; justify-content:space-between;"><span style="color:var(--text-secondary);">Proposal Ref:</span><strong style="color:#fff;">PROP-${customer.consumer_number}</strong></div>
+        <div style="display:flex; justify-content:space-between;"><span style="color:var(--text-secondary);">Recommended kW:</span><strong style="color:#fff;">${prop.recommended_kw} kW</strong></div>
+        <div style="display:flex; justify-content:space-between;"><span style="color:var(--text-secondary);">Net System Cost:</span><strong style="color:var(--accent-green);">₹${prop.net_system_cost.toLocaleString('en-IN')}</strong></div>
+        <div style="display:flex; justify-content:space-between;"><span style="color:var(--text-secondary);">Payback Period:</span><strong style="color:#fff;">${prop.payback_years} Years</strong></div>
+        <div style="display:flex; justify-content:space-between;"><span style="color:var(--text-secondary);">25-Year Savings:</span><strong style="color:var(--accent-green);">₹${Math.round(prop.savings_25yr).toLocaleString('en-IN')}</strong></div>
+      </div>
+    `;
+
+  } else if (tab === 'tasks') {
+    const box = document.getElementById('crmDrawerTasksList');
+    if (!box) return;
+    const tasks = data360.tasks || [];
+    if (tasks.length === 0) {
+      box.innerHTML = `<div style="text-align:center; padding:15px; font-size:10px; color:var(--text-muted);">No tasks assigned for this lead.</div>`;
+      return;
+    }
+    box.innerHTML = tasks.map(t => {
+      let pBadge = 'badge-priority-low';
+      if (t.priority === 'High') pBadge = 'badge-priority-high';
+      else if (t.priority === 'Medium') pBadge = 'badge-priority-medium';
+
+      return `<div class="card-base" style="--card-theme: 167, 139, 250; padding:10px; font-size:10px; display:flex; justify-content:space-between; align-items:center;">
+        <div>
+          <strong>${escapeHtml(t.title)}</strong>
+          <div style="font-size:8px; color:var(--text-secondary); margin-top:2px;">Owner: ${t.assigned_to || 'System'} | Due: ${t.due_date}</div>
+          <span class="crm-badge ${pBadge}" style="font-size:7px; padding:1px 4px; margin-top:2px;">${t.priority}</span>
+        </div>
+        <strong style="font-size:9px; color:#fff;">${t.status}</strong>
+      </div>`;
+    }).join('');
+
+  } else if (tab === 'meetings') {
+    const box = document.getElementById('crmDrawerMeetingsList');
+    if (!box) return;
+    const meets = data360.meetings || [];
+    if (meets.length === 0) {
+      box.innerHTML = `<div style="text-align:center; padding:15px; font-size:10px; color:var(--text-muted);">No scheduled meetings for this lead.</div>`;
+      return;
+    }
+    box.innerHTML = meets.map(m => `
+      <div class="card-base" style="--card-theme: 54, 211, 153; padding:10px; font-size:10px; display:flex; justify-content:space-between; align-items:center;">
+        <div>
+          <strong>${escapeHtml(m.title)} (${m.meeting_type})</strong>
+          <div style="font-size:8px; color:var(--text-secondary); margin-top:2px;">Scheduled: ${m.scheduled_date} ${m.scheduled_time} | Rep: ${escapeHtml(m.assigned_to || 'System')}</div>
+        </div>
+        <strong style="font-size:9px; color:var(--accent-green);">${m.outcome || 'Scheduled'}</strong>
+      </div>
+    `).join('');
+
+  } else if (tab === 'timeline') {
+    const listEl = document.getElementById('crmDrawerTimelineList');
+    if (!listEl) return;
+    
+    const page = window.crmDrawerPages.timeline;
+    _setText('timelinePageIndicator', `Page ${page}`);
+    
+    safeFetch(`${API_BASE}/api/crm/customers/${customerId}/timeline-paginated?page=${page}&limit=5`)
+      .then(res => res.json())
+      .then(envelope => {
+        const events = envelope.data || [];
+        if (events.length === 0) {
+          listEl.innerHTML = `<div style="text-align:center; padding:15px; font-size:10px; color:var(--text-muted);">No activity records found.</div>`;
+          return;
+        }
+
+        listEl.innerHTML = events.map(e => `
+          <div style="display: flex; gap: 8px; border-left: 2px solid var(--border-color-light); padding-left: 10px; padding-bottom: 8px; position: relative;">
+            <span style="position: absolute; left: -5px; top: 3px; width: 8px; height: 8px; border-radius: 50%; background-color: var(--accent-blue);"></span>
+            <div style="font-size: 11px;">
+              <div style="font-weight: bold; color: var(--text-navy);">${escapeHtml(e.event_type)}</div>
+              <div style="font-size: 9px; color: var(--text-secondary); margin-top: 2px;">${escapeHtml(e.notes || '')}</div>
+              <span style="font-size: 8px; color: var(--text-muted); display: block; margin-top: 2px;">User: ${e.user} | ${new Date(e.created_at).toLocaleString()}</span>
+            </div>
+          </div>
+        `).join('');
+      });
+
+    const prevBtn = document.getElementById('btnTimelinePrev');
+    const nextBtn = document.getElementById('btnTimelineNext');
+    if (prevBtn) {
+      prevBtn.onclick = () => {
+        if (window.crmDrawerPages.timeline > 1) {
+          window.crmDrawerPages.timeline--;
+          loadDrawerTabContent('timeline', customer, data360);
+        }
+      };
+    }
+    if (nextBtn) {
+      nextBtn.onclick = () => {
+        window.crmDrawerPages.timeline++;
+        loadDrawerTabContent('timeline', customer, data360);
+      };
+    }
+
+  } else if (tab === 'notes') {
+    const box = document.getElementById('crmDrawerNotesList');
+    if (!box) return;
+    const followUps = data360.follow_ups || [];
+    const notes = followUps.filter(f => f.title === 'Internal Consult Note' || f.title === 'Consult NoteAdded' || f.title === 'Internal Note');
+
+    if (notes.length === 0) {
+      box.innerHTML = '<div style="font-style: italic; color: var(--text-muted); font-size: 10px; text-align:center; padding:15px;">No internal sales notes added yet.</div>';
+    } else {
+      box.innerHTML = notes.map(n => `
+        <div style="background: rgba(255, 255, 255, 0.02); padding: 8px; border-radius: 4px; border: 1px solid var(--border-color-light); font-size: 10px; margin-bottom: 6px;">
+          <p style="margin: 0; color: #fff; white-space: pre-wrap;">${escapeHtml(n.notes)}</p>
+          <span style="font-size: 8px; color: var(--text-muted); display: block; text-align: right; margin-top: 4px;">User: System | ${new Date(n.created_at || n.due_date).toLocaleDateString()}</span>
+        </div>
+      `).join('');
+    }
+
+    const btnSaveCrmNote = document.getElementById('btnSaveCrmNote');
+    if (btnSaveCrmNote) {
+      btnSaveCrmNote.onclick = () => {
+        const textarea = document.getElementById('crmDrawerNoteText');
+        const noteText = textarea.value.trim();
+        if (!noteText) {
+          showToast('Cannot save an empty note!', 'error');
+          return;
+        }
+        btnSaveCrmNote.disabled = true;
+        safeFetch(`${host}/api/crm/followups`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            customer_id: customerId,
+            title: "Internal Consult Note",
+            due_date: new Date().toISOString(),
+            priority: "Low",
+            status: "Completed",
+            notes: noteText
+          })
+        }).then(() => {
+          textarea.value = '';
+          showToast('Consultation note added successfully.', 'success');
+          delete window.customer360Cache[customerId];
+          safeFetch(`${host}/api/crm/customers/${customerId}/360`)
+            .then(res => res.json())
+            .then(envelope => {
+              const newData = envelope.data || envelope;
+              window.customer360Cache[customerId] = newData;
+              loadDrawerTabContent('notes', customer, newData);
+            });
+        }).finally(() => btnSaveCrmNote.disabled = false);
+      };
+    }
+
+  } else if (tab === 'documents') {
+    const page = window.crmDrawerPages.documents;
+    
+    const chips = document.querySelectorAll('#docCategoryChips .filter-chip');
+    chips.forEach(chip => {
+      chip.onclick = () => {
+        chips.forEach(c => c.classList.remove('active'));
+        chip.classList.add('active');
+        window.crmDrawerPages.documents = 1;
+        fetchAndRenderDocuments(customerId, 1);
+      };
+    });
+
+    const fetchAndRenderDocuments = (custId, pg = 1) => {
+      const chipActive = document.querySelector('#docCategoryChips .filter-chip.active');
+      const filterType = chipActive ? chipActive.getAttribute('data-doc-type') : 'All';
+      let url = `${host}/api/crm/customers/${custId}/documents?page=${pg}&limit=5`;
+      if (filterType !== 'All') {
+        url += `&search=${encodeURIComponent(filterType)}`;
+      }
+      safeFetch(url)
+        .then(res => res.json())
+        .then(envelope => {
+          const docs = envelope.data || [];
+          const listEl = document.getElementById('crmDrawerDocsList');
+          if (!listEl) return;
+          
+          if (docs.length === 0) {
+            listEl.innerHTML = '<div style="text-align:center; padding:15px; font-size:10px; color:var(--text-muted);">No documents found.</div>';
+            return;
+          }
+          
+          listEl.innerHTML = docs.map(d => `
+            <div class="card-base" style="--card-theme: 99, 102, 241; padding: 10px; font-size:11px; margin-bottom: 6px;">
+              <div style="display:flex; justify-content:space-between; font-weight:bold; color:#fff;">
+                <span>${escapeHtml(d.document_name)} (${escapeHtml(d.document_type)})</span>
+                <span class="crm-badge" style="background:${d.verification_status === 'Verified' ? 'rgba(34,197,94,0.15)' : d.verification_status === 'Rejected' ? 'rgba(239,68,68,0.15)' : 'rgba(245,158,11,0.15)'}; color:${d.verification_status === 'Verified' ? '#22c55e' : d.verification_status === 'Rejected' ? '#ef4444' : '#f59e0b'}; font-size:8px;">${d.verification_status}</span>
+              </div>
+              <div style="font-size:9px; color:var(--text-secondary); margin-top:4px;">
+                Uploaded by ${escapeHtml(d.uploaded_by)} on ${new Date(d.uploaded_at).toLocaleDateString()}
+              </div>
+              <div style="margin-top:6px; display:flex; gap:6px; justify-content:flex-end;">
+                <button class="table-action-btn verify-doc-btn" data-doc-id="${d.id}" data-action="Verified" style="font-size:8px; padding:2px 6px;">Verify</button>
+                <button class="table-action-btn reject-doc-btn" data-doc-id="${d.id}" data-action="Rejected" style="font-size:8px; padding:2px 6px; border-color:rgba(239,68,68,0.3); color:#ef4444;">Reject</button>
+                <a href="${host}/${d.file_path}" target="_blank" class="table-action-btn" style="font-size:8px; padding:2px 6px; text-decoration:none;">Download</a>
+                <button class="table-action-btn delete-doc-btn" data-doc-id="${d.id}" style="font-size:8px; padding:2px 6px; border-color:rgba(239,68,68,0.3); color:#ef4444;">Delete</button>
+              </div>
+            </div>
+          `).join('');
+          
+          listEl.querySelectorAll('.verify-doc-btn, .reject-doc-btn').forEach(btn => {
+            btn.onclick = () => {
+              const docId = btn.getAttribute('data-doc-id');
+              const action = btn.getAttribute('data-action');
+              safeFetch(`${host}/api/crm/documents/${docId}`, {
+                method: 'PUT',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ verification_status: action, remarks: `Verified via Customer Profile 3.0.` })
+              })
+                .then(res => res.json())
+                .then(() => {
+                  showToast(`Document updated to ${action}.`, 'success');
+                  delete window.customer360Cache[customerId];
+                  fetchAndRenderDocuments(customerId, pg);
+                });
+            };
+          });
+
+          listEl.querySelectorAll('.delete-doc-btn').forEach(btn => {
+            btn.onclick = () => {
+              if (!confirm('Are you sure you want to delete this document?')) return;
+              const docId = btn.getAttribute('data-doc-id');
+              safeFetch(`${host}/api/crm/documents/${docId}`, { method: 'DELETE' })
+                .then(() => {
+                  showToast('Document deleted.', 'success');
+                  delete window.customer360Cache[customerId];
+                  fetchAndRenderDocuments(customerId, pg);
+                });
+            };
+          });
+        });
+    };
+
+    fetchAndRenderDocuments(customerId, page);
+
+    const dropzone = document.getElementById('docDropzone');
+    const fileInput = document.getElementById('docFileInput');
+    if (dropzone && fileInput) {
+      dropzone.onclick = () => fileInput.click();
+      dropzone.ondragover = (e) => { e.preventDefault(); dropzone.style.borderColor = 'var(--accent-blue)'; };
+      dropzone.ondragleave = () => { dropzone.style.borderColor = 'rgba(0, 181, 226, 0.3)'; };
+      dropzone.ondrop = (e) => {
+        e.preventDefault();
+        dropzone.style.borderColor = 'rgba(0, 181, 226, 0.3)';
+        if (e.dataTransfer.files.length > 0) {
+          handleDocUpload(e.dataTransfer.files, customerId);
+        }
+      };
+      fileInput.onchange = () => {
+        if (fileInput.files.length > 0) {
+          handleDocUpload(fileInput.files, customerId);
+        }
+      };
+    }
+
+    function handleDocUpload(files, custId) {
+      const progList = document.getElementById('docUploadProgressList');
+      if (!progList) return;
+      
+      Array.from(files).forEach(file => {
+        const rowId = 'upload-' + Math.random().toString(36).substring(2, 9);
+        progList.innerHTML += `
+          <div id="${rowId}" style="display:flex; justify-content:space-between; align-items:center; background:rgba(255,255,255,0.02); border:1px solid var(--border-color); padding:6px; border-radius:4px; font-size:10px; margin-bottom:4px;">
+            <span style="color:#fff; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; max-width:200px;">${escapeHtml(file.name)}</span>
+            <span class="upload-pct" style="color:var(--accent-blue);">Uploading...</span>
+          </div>
+        `;
+        
+        const formData = new FormData();
+        formData.append('customer_id', custId);
+        let docType = 'Agreement';
+        if (file.name.toLowerCase().includes('aadhaar')) docType = 'Aadhaar';
+        else if (file.name.toLowerCase().includes('pan')) docType = 'PAN';
+        else if (file.name.toLowerCase().includes('bill')) docType = 'Electricity Bill';
+        else if (file.name.toLowerCase().includes('survey')) docType = 'Site Survey';
+        
+        formData.append('document_type', docType);
+        formData.append('document_name', file.name.replace(/\.[^/.]+$/, ""));
+        formData.append('uploaded_by', customer.salesperson || 'System');
+        formData.append('file', file);
+        
+        const xhr = new XMLHttpRequest();
+        xhr.open('POST', `${host}/api/crm/documents`, true);
+        xhr.upload.onprogress = (e) => {
+          if (e.lengthComputable) {
+            const pct = Math.round((e.loaded / e.total) * 100);
+            const pctEl = document.querySelector(`#${rowId} .upload-pct`);
+            if (pctEl) pctEl.textContent = `${pct}%`;
+          }
+        };
+        xhr.onload = () => {
+          const row = document.getElementById(rowId);
+          if (xhr.status === 200 || xhr.status === 201) {
+            if (row) row.remove();
+            showToast(`File ${file.name} uploaded successfully.`, 'success');
+            delete window.customer360Cache[customerId];
+            fetchAndRenderDocuments(custId, 1);
+          } else {
+            let errMsg = 'Upload failed.';
+            try {
+              const err = JSON.parse(xhr.responseText);
+              errMsg = err.message || errMsg;
+            } catch(e) { /* use default message */ }
+            if (row) {
+              const pctEl = row.querySelector('.upload-pct');
+              if (pctEl) {
+                pctEl.style.color = '#ef4444';
+                pctEl.textContent = 'Error';
+              }
+            }
+            showToast(errMsg, 'error');
+          }
+        };
+        xhr.send(formData);
       });
     }
-  });
 
-  // Sort events newest first
-  events.sort((a, b) => b.timestamp - a.timestamp);
-
-  container.innerHTML = events.map(e => `
-    <div style="display: flex; gap: 8px; border-left: 2px solid var(--border-color-light); padding-left: 10px; padding-bottom: 8px; position: relative;">
-      <span style="position: absolute; left: -5px; top: 3px; width: 8px; height: 8px; border-radius: 50%; background-color: var(--accent-blue);"></span>
-      <div style="font-size: 11px;">
-        <div style="font-weight: bold; color: var(--text-navy);">${escapeHtml(e.title)}</div>
-        <div style="font-size: 9px; color: var(--text-secondary); margin-top: 2px;">${escapeHtml(e.desc)}</div>
-        <span style="font-size: 8px; color: var(--text-muted); display: block; margin-top: 2px;">${e.timeStr}</span>
-      </div>
-    </div>
-  `).join('');
-}
-
-function renderDrawerNotes(email) {
-  const container = document.getElementById('crmDrawerNotesList');
-  if (!container) return;
-
-  const notesMap = getCrmNotes();
-  const notes = notesMap[email] || [];
-
-  if (notes.length === 0) {
-    container.innerHTML = '<div style="font-style: italic; color: var(--text-muted); font-size: 10px;">No internal sales notes added yet.</div>';
-    return;
-  }
-
-  container.innerHTML = notes.map(n => `
-    <div style="background: rgba(255, 255, 255, 0.02); padding: 8px; border-radius: 4px; border: 1px solid var(--border-color-light); font-size: 10px;">
-      <p style="margin: 0; color: var(--text-navy); white-space: pre-wrap;">${escapeHtml(n.text)}</p>
-      <span style="font-size: 8px; color: var(--text-muted); display: block; text-align: right; margin-top: 4px;">${new Date(n.createdAt).toLocaleDateString()} ${new Date(n.createdAt).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}</span>
-    </div>
-  `).join('');
-}
-
-function saveLeadNote() {
-  const email = document.getElementById('crmDrawerLeadEmail')?.textContent;
-  const textarea = document.getElementById('crmDrawerNoteText');
-  if (!email || !textarea) return;
-
-  const noteText = textarea.value.trim();
-  if (!noteText) {
-    showToast('Cannot save an empty note!', 'error');
-    return;
-  }
-
-  const notesMap = getCrmNotes();
-  if (!notesMap[email]) notesMap[email] = [];
-  
-  notesMap[email].unshift({
-    id: 'note-' + Date.now() + '-' + Math.random().toString(36).substr(2, 9),
-    text: noteText,
-    createdAt: new Date().toISOString()
-  });
-
-  saveCrmNotes(notesMap);
-  
-  // Prune notes if total note count > 1000
-  enforceNotesLimit();
-
-  textarea.value = '';
-  renderDrawerNotes(email);
-  
-  const leads = getCrmLeads();
-  const leadName = leads[email]?.name || email;
-  addCrmActivity('note', leadName, 'Added internal consultation note');
-  logAuditEvent((_getUser() || {}).email, 'CRM Updated', 'Admin', `Added sales note for lead: ${leadName} (${email}).`, 'Critical');
-  showToast('Sales note saved successfully!', 'success');
-}
-
-function renderDrawerFollowUps(email) {
-  const container = document.getElementById('crmFollowUpList');
-  if (!container) return;
-
-  const followUps = getCrmFollowUps();
-  const leadFollowUps = followUps.filter(f => f.leadEmail === email);
-
-  if (leadFollowUps.length === 0) {
-    container.innerHTML = '<div class="card-base" style="--card-theme: 23, 168, 229; padding: 10px; font-style: italic; color: var(--text-muted); font-size: 10px; text-align: center;">No follow-up actions scheduled.</div>';
-    return;
-  }
-
-  // Sort: scheduled first, then by date descending
-  leadFollowUps.sort((a, b) => {
-    if (a.status === 'Scheduled' && b.status !== 'Scheduled') return -1;
-    if (a.status !== 'Scheduled' && b.status === 'Scheduled') return 1;
-    return new Date(b.time) - new Date(a.time);
-  });
-
-  container.innerHTML = leadFollowUps.map(item => {
-    const fDate = new Date(item.time);
-    const dateStr = fDate.toLocaleDateString() + ' ' + fDate.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit', hour12: false });
+  } else if (tab === 'communications') {
+    const page = window.crmDrawerPages.communications;
     
-    let btnHtml = '';
-    if (item.status === 'Scheduled') {
-      btnHtml = `<button class="table-action-btn" style="padding: 2px 6px; font-size: 9px; background: rgba(34,197,94,0.1); color: var(--accent-green); border-color: rgba(34,197,94,0.2);" onclick="completeFollowUp('${item.id}')">Complete</button>`;
+    const chips = document.querySelectorAll('#pane-communications .filter-chip');
+    chips.forEach(chip => {
+      chip.onclick = () => {
+        chips.forEach(c => c.classList.remove('active'));
+        chip.classList.add('active');
+        window.crmDrawerPages.communications = 1;
+        fetchAndRenderCommunications(customerId, 1);
+      };
+    });
+
+    const fetchAndRenderCommunications = (custId, pg = 1) => {
+      const chipActive = document.querySelector('#pane-communications .filter-chip.active');
+      const filterType = chipActive ? chipActive.getAttribute('data-comm-chan') : 'All';
+      let url = `${host}/api/crm/customers/${custId}/communications?page=${pg}&limit=5`;
+      if (filterType !== 'All') {
+        url += `&filter_status=${encodeURIComponent(filterType)}`;
+      }
+      safeFetch(url)
+        .then(res => res.json())
+        .then(envelope => {
+          const comms = envelope.data || [];
+          const listEl = document.getElementById('crmDrawerCommsList');
+          if (!listEl) return;
+          
+          if (comms.length === 0) {
+            listEl.innerHTML = '<div style="text-align:center; padding:15px; font-size:10px; color:var(--text-muted);">No communications logged.</div>';
+            return;
+          }
+          
+          listEl.innerHTML = comms.map(c => `
+            <div class="card-base" style="--card-theme: 54, 211, 153; padding: 10px; font-size:11px; margin-bottom: 6px;">
+              <div style="display:flex; justify-content:space-between; font-weight:bold; color:#fff;">
+                <span>${escapeHtml(c.subject || 'No Subject')}</span>
+                <span class="crm-badge" style="background:rgba(0, 181, 226, 0.15); color:var(--accent-blue); font-size:8px;">${c.channel}</span>
+              </div>
+              <p style="margin:4px 0; color:var(--text-secondary); font-size:10px;">${escapeHtml(c.message)}</p>
+              <div style="font-size:8px; color:var(--text-muted); display:flex; justify-content:space-between;">
+                <span>Sender: ${escapeHtml(c.sender)} &rarr; ${escapeHtml(c.receiver || 'Client')}</span>
+                <span>${new Date(c.created_at).toLocaleString()}</span>
+              </div>
+            </div>
+          `).join('');
+        });
+    };
+
+    fetchAndRenderCommunications(customerId, page);
+
+    const btnLogComm = document.getElementById('btnLogCommunication');
+    if (btnLogComm) {
+      btnLogComm.onclick = () => {
+        const channel = document.getElementById('commFormChannel').value;
+        const subject = document.getElementById('commFormSubject').value.trim();
+        const message = document.getElementById('commFormMessage').value.trim();
+        if (!message) {
+          showToast('Please type a communication message.', 'error');
+          return;
+        }
+        btnLogComm.disabled = true;
+        safeFetch(`${host}/api/crm/communications`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            customer_id: customerId,
+            channel,
+            subject: subject || null,
+            message,
+            sender: 'System',
+            receiver: customer.customer_name || 'Client',
+            delivery_status: 'Delivered'
+          })
+        })
+          .then(res => res.json())
+          .then(() => {
+            showToast('Communication logged successfully.', 'success');
+            document.getElementById('commFormSubject').value = '';
+            document.getElementById('commFormMessage').value = '';
+            delete window.customer360Cache[customerId];
+            fetchAndRenderCommunications(customerId, 1);
+          })
+          .finally(() => btnLogComm.disabled = false);
+      };
     }
+
+  } else if (tab === 'installation') {
+    const install = data360.installation || {};
+    document.getElementById('installWorkflowStage').textContent = install.current_stage || 'Lead Won';
+    document.getElementById('installWorkflowPct').textContent = `${install.completion_percentage || 0}%`;
+    document.getElementById('installWorkflowProgressBar').style.width = `${install.completion_percentage || 0}%`;
+
+    document.getElementById('installStageSelect').value = install.current_stage || 'Lead Won';
+    document.getElementById('installEngineerInput').value = install.assigned_engineer || '';
     
-    let statusColor = 'var(--text-secondary)';
-    if (item.status === 'Scheduled') statusColor = 'var(--accent-orange)';
-    else if (item.status === 'Completed') statusColor = 'var(--accent-green)';
-    else if (item.status === 'Missed') statusColor = '#ef4444';
+    _setText('installStartDateText', install.start_date || '—');
+    _setText('installExpectedDateText', install.expected_completion_date || '—');
+    _setText('installNetMeterText', install.net_meter_status || 'Pending');
 
-    return `<div class="card-base" style="--card-theme: 23, 168, 229; padding: 10px; display: flex; justify-content: space-between; align-items: center;">
-      <div style="font-size: 10px;">
-        <div style="font-weight: bold; color: var(--text-navy);">${escapeHtml(item.type)} Follow-up</div>
-        <div style="color: var(--text-muted); margin-top: 2px;">Sched: ${dateStr}</div>
-        <span style="font-size: 9px; font-weight: bold; color: ${statusColor}; text-transform: uppercase;">Status: ${item.status}</span>
-      </div>
-      <div>
-        ${btnHtml}
-      </div>
-    </div>`;
-  }).join('');
-}
+    const renderInstallHistory = (history) => {
+      const logEl = document.getElementById('installHistoryLog');
+      if (!logEl) return;
+      if (!history || history.length === 0) {
+        logEl.innerHTML = '<div style="font-size:9px; color:var(--text-muted); text-align:center;">No history recorded yet.</div>';
+        return;
+      }
+      logEl.innerHTML = history.map(h => `
+        <div style="border-left:1px solid rgba(255,255,255,0.06); padding-left:8px; padding-bottom:6px; font-size:10px;">
+          <div style="font-weight:bold; color:#fff;">${h.stage} (${h.completion_percentage}%)</div>
+          <p style="margin:2px 0; color:var(--text-secondary); font-size:9px;">${escapeHtml(h.remarks)}</p>
+          <span style="font-size:8px; color:var(--text-muted);">${new Date(h.timestamp).toLocaleString()} | Operator: ${h.completed_by}</span>
+        </div>
+      `).join('');
+    };
 
-function scheduleLeadFollowUp() {
-  const email = document.getElementById('crmDrawerLeadEmail')?.textContent;
-  const typeSelect = document.getElementById('crmFollowUpType');
-  const timeInput = document.getElementById('crmFollowUpTime');
-  if (!email || !typeSelect || !timeInput) return;
-
-  const followUpType = typeSelect.value;
-  const timeVal = timeInput.value;
-
-  if (!timeVal) {
-    showToast('Please specify follow-up date and time!', 'error');
-    return;
-  }
-
-  const leads = getCrmLeads();
-  const lead = leads[email];
-  if (!lead) return;
-
-  const followUps = getCrmFollowUps();
-  const newFollowUp = {
-    id: 'fup-' + Date.now() + '-' + Math.random().toString(36).substr(2, 9),
-    leadEmail: email,
-    type: followUpType,
-    time: newTimeLocalToISO(timeVal),
-    status: 'Scheduled',
-    createdAt: new Date().toISOString()
-  };
-
-  followUps.unshift(newFollowUp);
-  saveCrmFollowUps(followUps);
-
-  // Reset input
-  timeInput.value = '';
-  renderDrawerFollowUps(email);
-
-  // Trigger Notifications & Activities
-  const formattedTime = new Date(newFollowUp.time).toLocaleString();
-  createNotification('system', 'Follow-up Scheduled', `Follow-up ${followUpType} scheduled with ${lead.name} on ${formattedTime}.`, 'medium');
-  addCrmActivity('schedule', lead.name, `Scheduled follow-up: ${followUpType} for ${formattedTime}`);
-  
-  // Refresh main Kanban count representation
-  refreshCrmDashboardUI();
-
-  showToast('Follow-up action scheduled successfully!', 'success');
-}
-
-function completeFollowUp(id) {
-  const followUps = getCrmFollowUps();
-  const leads = getCrmLeads();
-  const found = followUps.find(f => f.id === id);
-
-  if (found) {
-    found.status = 'Completed';
-    saveCrmFollowUps(followUps);
-
-    const lead = leads[found.leadEmail] || {};
-    const leadName = lead.name || found.leadEmail;
-
-    // Timeline trigger
-    createNotification('system', 'Follow-up Completed', `Follow-up ${found.type} with ${leadName} marked completed.`, 'low');
-    addCrmActivity('complete', leadName, `Completed follow-up action: ${found.type}`);
-
-    // Re-render
-    if (document.getElementById('crmLeadProfileDrawer')?.style.display === 'block') {
-      const activeEmail = document.getElementById('crmDrawerLeadEmail')?.textContent;
-      if (activeEmail) renderDrawerFollowUps(activeEmail);
+    if (install.history) {
+      try {
+        renderInstallHistory(JSON.parse(install.history));
+      } catch(e) {}
+    } else {
+      renderInstallHistory([]);
     }
-    refreshCrmDashboardUI();
 
-    showToast('Follow-up marked as completed!', 'success');
+    const btnUpdateInstall = document.getElementById('btnUpdateInstallation');
+    if (btnUpdateInstall) {
+      btnUpdateInstall.onclick = () => {
+        const current_stage = document.getElementById('installStageSelect').value;
+        const assigned_engineer = document.getElementById('installEngineerInput').value.trim();
+        const remarks = document.getElementById('installRemarksInput').value.trim();
+        
+        btnUpdateInstall.disabled = true;
+        safeFetch(`${host}/api/crm/customers/${customerId}/installation`, {
+          method: 'PUT',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            current_stage,
+            assigned_engineer: assigned_engineer || null,
+            remarks: remarks || null
+          })
+        })
+          .then(res => res.json())
+          .then(resp => {
+            showToast('Installation stage updated.', 'success');
+            document.getElementById('installRemarksInput').value = '';
+            delete window.customer360Cache[customerId];
+            
+            safeFetch(`${host}/api/crm/customers/${customerId}/360`)
+              .then(res => res.json())
+              .then(envelope => {
+                const newData = envelope.data || envelope;
+                window.customer360Cache[customerId] = newData;
+                loadDrawerTabContent('installation', customer, newData);
+              });
+          })
+          .finally(() => btnUpdateInstall.disabled = false);
+      };
+    }
+
+  } else if (tab === 'payments') {
+    const page = window.crmDrawerPages.payments;
+    
+    const fetchAndRenderPayments = (custId, pg = 1) => {
+      safeFetch(`${host}/api/crm/customers/${custId}/payments?page=${pg}&limit=5`)
+        .then(res => res.json())
+        .then(envelope => {
+          const payments = envelope.data || [];
+          const listEl = document.getElementById('crmDrawerPaymentsList');
+          const invoiceSelect = document.getElementById('payInvoiceSelect');
+          if (!listEl) return;
+          
+          invoiceSelect.innerHTML = '<option value="">-- Create New Invoice --</option>';
+          
+          let invoicedSum = 0;
+          let collectedSum = 0;
+          
+          payments.forEach(p => {
+            invoicedSum += p.invoice_amount;
+            collectedSum += p.paid_amount;
+            if (p.payment_status !== 'Paid') {
+              invoiceSelect.innerHTML += `<option value="${p.id}">Pay Invoice: ${p.invoice_number} (Outstanding: ₹${p.outstanding_amount})</option>`;
+            }
+          });
+          
+          document.getElementById('payTotalInvoiced').textContent = `₹${invoicedSum.toLocaleString('en-IN')}`;
+          document.getElementById('payTotalCollected').textContent = `₹${collectedSum.toLocaleString('en-IN')}`;
+          document.getElementById('payTotalOutstanding').textContent = `₹${(invoicedSum - collectedSum).toLocaleString('en-IN')}`;
+
+          if (payments.length === 0) {
+            listEl.innerHTML = '<div style="text-align:center; padding:15px; font-size:10px; color:var(--text-muted);">No invoices generated.</div>';
+            return;
+          }
+          
+          listEl.innerHTML = payments.map(p => `
+            <div class="card-base" style="--card-theme: 99, 102, 241; padding: 10px; font-size:11px; margin-bottom: 6px;">
+              <div style="display:flex; justify-content:space-between; font-weight:bold; color:#fff;">
+                <span>Inv: ${escapeHtml(p.invoice_number)} (${escapeHtml(p.stage)})</span>
+                <span class="crm-badge" style="background:${p.payment_status === 'Paid' ? 'rgba(34,197,94,0.15)' : p.payment_status === 'Overdue' ? 'rgba(239,68,68,0.15)' : 'rgba(245,158,11,0.15)'}; color:${p.payment_status === 'Paid' ? '#22c55e' : p.payment_status === 'Overdue' ? '#ef4444' : '#f59e0b'}; font-size:8px;">${p.payment_status}</span>
+              </div>
+              <div style="display:grid; grid-template-columns: 1fr 1fr; gap:6px; margin-top:4px; font-size:9px; color:var(--text-secondary);">
+                <span>Amount: ₹${p.invoice_amount.toLocaleString()}</span>
+                <span>Collected: ₹${p.paid_amount.toLocaleString()}</span>
+                <span>Due Date: ${p.due_date}</span>
+                <span>Outstanding: ₹${p.outstanding_amount.toLocaleString()}</span>
+              </div>
+            </div>
+          `).join('');
+        });
+    };
+
+    fetchAndRenderPayments(customerId, page);
+
+    const payInvoiceSelect = document.getElementById('payInvoiceSelect');
+    if (payInvoiceSelect) {
+      payInvoiceSelect.onchange = () => {
+        const isNew = payInvoiceSelect.value === '';
+        document.getElementById('payNewInvoiceGroup').style.display = isNew ? 'grid' : 'none';
+        document.getElementById('payRecordPaymentGroup').style.display = isNew ? 'none' : 'grid';
+        document.getElementById('btnSubmitPaymentAction').textContent = isNew ? 'Create Milestone Invoice' : 'Record Payment Collection';
+      };
+    }
+
+    const btnSubmitPayment = document.getElementById('btnSubmitPaymentAction');
+    if (btnSubmitPayment) {
+      btnSubmitPayment.onclick = () => {
+        const selectedInvoiceId = payInvoiceSelect.value;
+        const amount = parseFloat(document.getElementById('payAmountInput').value);
+        if (isNaN(amount) || amount <= 0) {
+          showToast('Please enter a valid amount.', 'error');
+          return;
+        }
+        
+        btnSubmitPayment.disabled = true;
+        if (selectedInvoiceId === '') {
+          const stage = document.getElementById('payMilestoneStage').value;
+          const due_date = document.getElementById('payDueDateInput').value;
+          if (!due_date) {
+            showToast('Please select a due date.', 'error');
+            btnSubmitPayment.disabled = false;
+            return;
+          }
+          
+          safeFetch(`${host}/api/crm/payments`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+              customer_id: customerId,
+              invoice_amount: amount,
+              due_date,
+              stage
+            })
+          })
+            .then(res => res.json())
+            .then(() => {
+              showToast('Milestone invoice generated successfully.', 'success');
+              document.getElementById('payAmountInput').value = '';
+              delete window.customer360Cache[customerId];
+              fetchAndRenderPayments(customerId, 1);
+            })
+            .finally(() => btnSubmitPayment.disabled = false);
+        } else {
+          const payment_method = document.getElementById('payMethodSelect').value;
+          const transaction_reference = document.getElementById('payRefInput').value.trim();
+          
+          safeFetch(`${host}/api/crm/payments/${selectedInvoiceId}`, {
+            method: 'PUT',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+              paid_amount: amount,
+              payment_method,
+              transaction_reference: transaction_reference || null
+            })
+          })
+            .then(res => res.json())
+            .then(() => {
+              showToast('Payment collection recorded successfully.', 'success');
+              document.getElementById('payAmountInput').value = '';
+              document.getElementById('payRefInput').value = '';
+              delete window.customer360Cache[customerId];
+              fetchAndRenderPayments(customerId, 1);
+            })
+            .finally(() => btnSubmitPayment.disabled = false);
+        }
+      };
+    }
+
+  } else if (tab === 'amc') {
+    const amc = data360.amc || {};
+    document.getElementById('amcContractNumber').textContent = amc.contract_number || 'No Active Contract';
+    document.getElementById('amcWarrantyStatus').textContent = amc.warranty_status || 'Inactive';
+    document.getElementById('amcServiceFreq').textContent = amc.service_frequency || 'N/A';
+    document.getElementById('amcNextService').textContent = amc.next_service || '—';
+    document.getElementById('amcExpiryDate').textContent = amc.expiry_date || '—';
+    document.getElementById('amcContractStatus').textContent = amc.status || 'No Contract';
+
+    document.getElementById('amcFreqSelect').value = amc.service_frequency || 'Quarterly';
+    document.getElementById('amcStatusSelect').value = amc.status || 'Active';
+
+    const renderAmcVisitsList = (visits) => {
+      const listEl = document.getElementById('amcVisitsList');
+      if (!listEl) return;
+      if (!visits || visits.length === 0) {
+        listEl.innerHTML = '<div style="font-size:9px; color:var(--text-muted); text-align:center;">No service visits logged yet.</div>';
+        return;
+      }
+      listEl.innerHTML = visits.map(v => `
+        <div class="card-base" style="--card-theme: 54, 211, 153; padding:8px; font-size:10px; margin-bottom:4px;">
+          <div style="font-weight:bold; color:#fff; display:flex; justify-content:space-between;">
+            <span>${escapeHtml(v.visit_type)}</span>
+            <span>${v.visit_date}</span>
+          </div>
+          <p style="margin:2px 0; color:var(--text-secondary); font-size:9px;">${escapeHtml(v.remarks)}</p>
+          <span style="font-size:8px; color:var(--text-muted);">Engineer: ${escapeHtml(v.engineer)}</span>
+        </div>
+      `).join('');
+    };
+
+    if (amc.visits) {
+      try {
+        renderAmcVisitsList(JSON.parse(amc.visits));
+      } catch(e) {}
+    } else {
+      renderAmcVisitsList([]);
+    }
+
+    const btnUpdateAmc = document.getElementById('btnUpdateAmcSettings');
+    if (btnUpdateAmc) {
+      btnUpdateAmc.onclick = () => {
+        const service_frequency = document.getElementById('amcFreqSelect').value;
+        const status = document.getElementById('amcStatusSelect').value;
+        
+        btnUpdateAmc.disabled = true;
+        safeFetch(`${host}/api/crm/customers/${customerId}/amc`, {
+          method: 'PUT',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ service_frequency, status })
+        })
+          .then(res => res.json())
+          .then(resp => {
+            showToast('AMC contract settings updated.', 'success');
+            delete window.customer360Cache[customerId];
+            
+            const updatedAmc = resp.data || resp;
+            document.getElementById('amcServiceFreq').textContent = updatedAmc.service_frequency;
+            document.getElementById('amcContractStatus').textContent = updatedAmc.status;
+          })
+          .finally(() => btnUpdateAmc.disabled = false);
+      };
+    }
+
+    const btnLogVisit = document.getElementById('btnLogAmcVisit');
+    if (btnLogVisit) {
+      btnLogVisit.onclick = () => {
+        const visit_type = document.getElementById('amcVisitType').value;
+        const engineer = document.getElementById('amcVisitEngineer').value.trim();
+        const remarks = document.getElementById('amcVisitRemarks').value.trim();
+        if (!remarks) {
+          showToast('Please add service remarks.', 'error');
+          return;
+        }
+        
+        const visits = amc.visits ? JSON.parse(amc.visits) : [];
+        visits.push({
+          visit_type,
+          visit_date: new Date().toISOString().split('T')[0],
+          remarks,
+          engineer: engineer || 'System'
+        });
+        
+        btnLogVisit.disabled = true;
+        safeFetch(`${host}/api/crm/customers/${customerId}/amc`, {
+          method: 'PUT',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ visits_json: JSON.stringify(visits) })
+        })
+          .then(res => res.json())
+          .then(resp => {
+            showToast('Service visit logged successfully.', 'success');
+            document.getElementById('amcVisitEngineer').value = '';
+            document.getElementById('amcVisitRemarks').value = '';
+            delete window.customer360Cache[customerId];
+            
+            safeFetch(`${host}/api/crm/customers/${customerId}/360`)
+              .then(res => res.json())
+              .then(envelope => {
+                const newData = envelope.data || envelope;
+                window.customer360Cache[customerId] = newData;
+                loadDrawerTabContent('amc', customer, newData);
+              });
+          })
+          .finally(() => btnLogVisit.disabled = false);
+      };
+    }
+
+  } else if (tab === 'analytics') {
+    const canvas = document.getElementById('crmDrawerSavingsChart');
+    if (canvas) {
+      if (window.crmDrawerSavingsChartInstance) {
+        window.crmDrawerSavingsChartInstance.destroy();
+      }
+      
+      const prop = data360.proposal;
+      const systemCost = prop ? prop.net_system_cost : 250000;
+      const savings25 = prop ? prop.savings_25yr : 750000;
+      const paybackYears = prop ? prop.payback_years : 5.2;
+      const recommendedKw = prop ? prop.recommended_kw : 5;
+      
+      _setText('crmAnalyticPayback', `${paybackYears} Years`);
+      _setText('crmAnalyticCapacity', `${recommendedKw} kW`);
+      _setText('crmAnalyticGeneration', `${Math.round(recommendedKw * 1450).toLocaleString()} kWh/yr`);
+      
+      const roi = systemCost > 0 ? Math.round((savings25 / systemCost) * 100) : 0;
+      _setText('crmAnalyticROI', `${roi}%`);
+
+      const labels = [];
+      const dataset = [];
+      const annualSavings = savings25 / 25;
+      for (let yr = 1; yr <= 25; yr++) {
+        labels.push(`Yr ${yr}`);
+        dataset.push(Math.round((annualSavings * yr) - systemCost));
+      }
+      
+      window.crmDrawerSavingsChartInstance = new Chart(canvas, {
+        type: 'line',
+        data: {
+          labels,
+          datasets: [{
+            label: 'Cumulative Net Benefit (₹)',
+            data: dataset,
+            borderColor: 'rgb(0, 181, 226)',
+            backgroundColor: 'rgba(0, 181, 226, 0.05)',
+            fill: true,
+            tension: 0.3
+          }]
+        },
+        options: {
+          responsive: true,
+          maintainAspectRatio: false,
+          plugins: { legend: { display: false } },
+          scales: {
+            x: { grid: { display: false }, ticks: { color: 'rgba(255,255,255,0.4)', font: { size: 8 } } },
+            y: { grid: { color: 'rgba(255,255,255,0.05)' }, ticks: { color: 'rgba(255,255,255,0.4)', font: { size: 8 } } }
+          }
+        }
+      });
+    }
   }
 }
-
-function newTimeLocalToISO(datetimeLocalString) {
-  return new Date(datetimeLocalString).toISOString();
-}
-
-function exportCrmLeadsCSV() {
-  const headers = ['Lead Name', 'Email', 'Source', 'Pipeline Status', 'Lead Score', 'Health Score', 'Revenue Potential (Rs)'];
-  const rows = crmLeadsList.map(l => [
-    l.name,
-    l.email,
-    l.source,
-    l.status,
-    l.lead_score,
-    l.health_score,
-    l.revenue_potential
-  ]);
-  
-  downloadCSV(getTimestampedFilename('crm_leads'), headers, rows);
-}
-
 // ==========================================================================
 // 15. AUDIT & SYSTEM MONITORING ENGINE
 // ==========================================================================
@@ -8874,7 +10475,7 @@ function safeParseJSON(key, defaultVal) {
     const user = _getUser() || {};
     const email = user.email || 'anonymous';
     // Log LocalStorage Corruption Recovery
-    logAuditEvent(email, 'LocalStorage Corruption Recovery', 'Security', `LocalStorage corruption detected for key "${key}". Value was reset. Error: ${e.message}`, 'Critical');
+    logAuditEvent(email, 'LocalStorage Corruption Recovery', 'Security', `LocalStorage corruption detected for key "${key}".Value was reset.Error: ${ e.message } `, 'Critical');
     localStorage.setItem(key, JSON.stringify(defaultVal));
     return defaultVal;
   }
@@ -8891,7 +10492,7 @@ function logAuditEvent(actor, action, category, description, severity = 'Low') {
     localStorage.setItem('auditLogs', JSON.stringify([]));
     // Call recursively with recovery action but using clean storage
     setTimeout(() => {
-      logAuditEvent('system', 'LocalStorage Corruption Recovery', 'Security', `LocalStorage corruption detected under auditLogs: ${e.message}`, 'Critical');
+      logAuditEvent('system', 'LocalStorage Corruption Recovery', 'Security', `LocalStorage corruption detected under auditLogs: ${ e.message } `, 'Critical');
     }, 0);
   }
 
@@ -8973,8 +10574,9 @@ function initAuditMonitoring() {
 
 function refreshAuditDashboardUI() {
   // 1. Fetch backend health and failed logins
-  const host = API_BASE;
-  safeFetch(`${host}/api/admin/overview`)
+  const url = `${API_BASE}/api/admin/overview`;
+  console.log("Audit URL:", url);
+  safeFetch(url)
     .then(res => res.json())
     .then(data => {
       if (data.success) {
@@ -8985,13 +10587,18 @@ function refreshAuditDashboardUI() {
             const fTime = new Date(f.timestamp * 1000).toISOString();
             const duplicate = logs.some(l => l.action === 'Failed Login Attempt' && l.actor === f.email && Math.abs(new Date(l.timestamp) - new Date(fTime)) < 5000);
             if (!duplicate) {
-              logAuditEvent(f.email, 'Failed Login Attempt', 'Security', `Failed login attempt for user ${f.email}. Error: ${f.error}`, 'High');
+              logAuditEvent(f.email, 'Failed Login Attempt', 'Security', `Failed login attempt for user ${ f.email }.Error: ${ f.error } `, 'High');
             }
           });
         }
         
         // Populate health checklist
         hydrateHealthChecklist(data.health);
+        
+        const activeUsersEl = document.getElementById('auditKpiActiveUsers');
+        if (activeUsersEl) {
+          activeUsersEl.textContent = data.active_users || 0;
+        }
       }
       // Trigger table and analytics rendering
       renderAuditLogsTable();
@@ -9100,304 +10707,304 @@ function renderAuditLogsTable() {
   // Update storage logs label
   const label = document.getElementById('auditLogsStorageCount');
   if (label) {
-    label.textContent = `Storage: ${logs.length} / 1000 logs`;
-  }
+    label.textContent = `Storage: ${ logs.length } / 1000 logs`;
+        }
 
   if (filtered.length === 0) {
-    tableBody.innerHTML = '';
-    if (emptyState) emptyState.style.display = 'block';
-    return;
-  }
-  if (emptyState) emptyState.style.display = 'none';
+          tableBody.innerHTML = '';
+          if (emptyState) emptyState.style.display = 'block';
+          return;
+        }
+        if (emptyState) emptyState.style.display = 'none';
 
-  tableBody.innerHTML = filtered.map(log => {
-    const sevClass = 'badge-' + (log.severity || 'low').toLowerCase();
-    const timeStr = new Date(log.timestamp).toLocaleString();
-    return `<tr class="clickable-row" onclick="viewAuditDetail('${log.id}')" style="border-bottom: 1px solid var(--border-color-light);">
+        tableBody.innerHTML = filtered.map(log => {
+          const sevClass = 'badge-' + (log.severity || 'low').toLowerCase();
+          const timeStr = new Date(log.timestamp).toLocaleString();
+          return `<tr class="clickable-row" onclick="viewAuditDetail('${log.id}')" style="border-bottom: 1px solid var(--border-color-light);">
       <td style="padding: 10px 8px;">${timeStr}</td>
       <td style="padding: 10px 8px;"><strong>${_esc(log.actor)}</strong></td>
       <td style="padding: 10px 8px;">${_esc(log.action)}</td>
       <td style="padding: 10px 8px;">${_esc(log.category)}</td>
       <td style="padding: 10px 8px;"><span class="status-badge ${sevClass}" style="padding: 2px 6px; font-size: 9px; border-radius: 4px;">${log.severity}</span></td>
     </tr>`;
-  }).join('');
-}
-
-function viewAuditDetail(id) {
-  const logs = safeParseJSON('auditLogs', []);
-  const log = logs.find(l => l.id === id);
-  if (!log) return;
-
-  const drawer = document.getElementById('auditEventDrawer');
-  const title = document.getElementById('auditDrawerEventName');
-  const eventId = document.getElementById('auditDrawerEventId');
-  const time = document.getElementById('auditDrawerTimestamp');
-  const actor = document.getElementById('auditDrawerActor');
-  const action = document.getElementById('auditDrawerAction');
-  const category = document.getElementById('auditDrawerCategory');
-  const severity = document.getElementById('auditDrawerSeverity');
-  const desc = document.getElementById('auditDrawerDescription');
-
-  if (title) title.textContent = log.action;
-  if (eventId) eventId.textContent = `Event ID: ${log.id}`;
-  if (time) time.textContent = new Date(log.timestamp).toLocaleString();
-  if (actor) actor.textContent = log.actor;
-  if (action) action.textContent = log.action;
-  
-  if (category) {
-    category.textContent = log.category;
-    category.className = 'status-badge badge-source';
-  }
-  
-  if (severity) {
-    severity.textContent = log.severity;
-    severity.className = 'status-badge badge-' + log.severity.toLowerCase();
-  }
-  
-  if (desc) desc.textContent = log.description || 'No additional details provided.';
-
-  if (drawer) {
-    drawer.style.display = 'block';
-  }
-}
-
-window.viewAuditDetail = viewAuditDetail;
-
-function renderAuditAnalytics() {
-  const logs = safeParseJSON('auditLogs', []);
-  
-  // Executive summaries metrics
-  let highRiskCount = 0;
-  let errorCount = 0;
-  let errorsToday = 0;
-  let criticalErrorCount = 0;
-  let lastErrorTime = null;
-  
-  const todayStr = new Date().toISOString().split('T')[0];
-
-  // System Health overview metrics
-  let totalAuditEvents = logs.length;
-  
-  // Module usage counter
-  const moduleUsage = {
-    "Bill Analyzer": { count: 0, lastAccess: '—', status: 'Healthy' },
-    "Roof Analyzer": { count: 0, lastAccess: '—', status: 'Healthy' },
-    "ROI Calculator": { count: 0, lastAccess: '—', status: 'Healthy' },
-    "Reports Center": { count: 0, lastAccess: '—', status: 'Healthy' },
-    "Solar Copilot": { count: 0, lastAccess: '—', status: 'Healthy' },
-    "Rewards & Referrals": { count: 0, lastAccess: '—', status: 'Healthy' },
-    "Authentication": { count: 0, lastAccess: '—', status: 'Healthy' }
-  };
-
-  const actorFrequency = {};
-  const hourFrequency = {};
-
-  logs.forEach(log => {
-    if (log.severity === 'High' || log.severity === 'Critical') {
-      highRiskCount++;
-    }
-    
-    // Track Errors
-    if (log.action === 'API Failure' || log.action === 'Gemini Timeout' || log.action === 'LocalStorage Corruption Recovery' || log.action === 'Invalid Referral Code Usage') {
-      errorCount++;
-      if (log.timestamp.startsWith(todayStr)) {
-        errorsToday++;
+        }).join('');
       }
-      if (log.severity === 'Critical') {
-        criticalErrorCount++;
+
+      function viewAuditDetail(id) {
+        const logs = safeParseJSON('auditLogs', []);
+        const log = logs.find(l => l.id === id);
+        if (!log) return;
+
+        const drawer = document.getElementById('auditEventDrawer');
+        const title = document.getElementById('auditDrawerEventName');
+        const eventId = document.getElementById('auditDrawerEventId');
+        const time = document.getElementById('auditDrawerTimestamp');
+        const actor = document.getElementById('auditDrawerActor');
+        const action = document.getElementById('auditDrawerAction');
+        const category = document.getElementById('auditDrawerCategory');
+        const severity = document.getElementById('auditDrawerSeverity');
+        const desc = document.getElementById('auditDrawerDescription');
+
+        if (title) title.textContent = log.action;
+        if (eventId) eventId.textContent = `Event ID: ${log.id}`;
+        if (time) time.textContent = new Date(log.timestamp).toLocaleString();
+        if (actor) actor.textContent = log.actor;
+        if (action) action.textContent = log.action;
+
+        if (category) {
+          category.textContent = log.category;
+          category.className = 'status-badge badge-source';
+        }
+
+        if (severity) {
+          severity.textContent = log.severity;
+          severity.className = 'status-badge badge-' + log.severity.toLowerCase();
+        }
+
+        if (desc) desc.textContent = log.description || 'No additional details provided.';
+
+        if (drawer) {
+          drawer.style.display = 'block';
+        }
       }
-      if (!lastErrorTime || new Date(log.timestamp) > new Date(lastErrorTime)) {
-        lastErrorTime = log.timestamp;
-      }
-    }
 
-    // Track User frequency
-    if (log.actor && log.actor !== 'system') {
-      actorFrequency[log.actor] = (actorFrequency[log.actor] || 0) + 1;
-    }
+      window.viewAuditDetail = viewAuditDetail;
 
-    // Track Peak Activity Hour
-    const hr = new Date(log.timestamp).getHours();
-    hourFrequency[hr] = (hourFrequency[hr] || 0) + 1;
+      function renderAuditAnalytics() {
+        const logs = safeParseJSON('auditLogs', []);
 
-    // Track Module usage
-    let mappedModule = null;
-    if (log.category === 'Assessment') {
-      if (log.action.includes('Bill')) mappedModule = 'Bill Analyzer';
-      else if (log.action.includes('Roof')) mappedModule = 'Roof Analyzer';
-      else if (log.action.includes('ROI')) mappedModule = 'ROI Calculator';
-    } else if (log.category === 'Reports') {
-      mappedModule = 'Reports Center';
-    } else if (log.category === 'AI Assistant') {
-      mappedModule = 'Solar Copilot';
-    } else if (log.category === 'Rewards') {
-      mappedModule = 'Rewards & Referrals';
-    } else if (log.category === 'Authentication') {
-      mappedModule = 'Authentication';
-    }
+        // Executive summaries metrics
+        let highRiskCount = 0;
+        let errorCount = 0;
+        let errorsToday = 0;
+        let criticalErrorCount = 0;
+        let lastErrorTime = null;
 
-    if (mappedModule) {
-      moduleUsage[mappedModule].count++;
-      if (moduleUsage[mappedModule].lastAccess === '—' || new Date(log.timestamp) > new Date(moduleUsage[mappedModule].lastAccess)) {
-        moduleUsage[mappedModule].lastAccess = log.timestamp;
-      }
-    }
-  });
+        const todayStr = new Date().toISOString().split('T')[0];
 
-  // Calculate platform health score (max 100)
-  // Drop 5 points per high/critical risk, drop 2 points per other error
-  let platformHealth = 100 - (highRiskCount * 5) - ((errorCount - highRiskCount) * 2);
-  platformHealth = Math.max(10, Math.min(100, platformHealth));
+        // System Health overview metrics
+        let totalAuditEvents = logs.length;
 
-  // Executive summary UI hydration
-  const scoreVal = document.getElementById('summaryPlatformHealth');
-  if (scoreVal) scoreVal.textContent = `${platformHealth}%`;
-  const scoreTrack = document.getElementById('summaryPlatformHealthTrack');
-  if (scoreTrack) scoreTrack.style.width = `${platformHealth}%`;
-  
-  const scoreCard = document.getElementById('summaryPlatformHealthCard');
-  if (scoreCard) {
-    scoreCard.className = 'card-base shadow-lift';
-    if (platformHealth >= 90) scoreCard.style.setProperty('--card-theme', '54, 211, 153');
-    else if (platformHealth >= 70) scoreCard.style.setProperty('--card-theme', '234, 179, 8');
-    else scoreCard.style.setProperty('--card-theme', '231, 76, 60');
-  }
+        // Module usage counter
+        const moduleUsage = {
+          "Bill Analyzer": { count: 0, lastAccess: '—', status: 'Healthy' },
+          "Roof Analyzer": { count: 0, lastAccess: '—', status: 'Healthy' },
+          "ROI Calculator": { count: 0, lastAccess: '—', status: 'Healthy' },
+          "Reports Center": { count: 0, lastAccess: '—', status: 'Healthy' },
+          "Solar Copilot": { count: 0, lastAccess: '—', status: 'Healthy' },
+          "Rewards & Referrals": { count: 0, lastAccess: '—', status: 'Healthy' },
+          "Authentication": { count: 0, lastAccess: '—', status: 'Healthy' }
+        };
 
-  const summaryTotalEvents = document.getElementById('summaryTotalEvents');
-  if (summaryTotalEvents) summaryTotalEvents.textContent = totalAuditEvents;
-  
-  const summaryHighRisk = document.getElementById('summaryHighRisk');
-  if (summaryHighRisk) summaryHighRisk.textContent = highRiskCount;
+        const actorFrequency = {};
+        const hourFrequency = {};
 
-  // Hydrate Error monitor card
-  const errTotalCount = document.getElementById('errTotalCount');
-  if (errTotalCount) errTotalCount.textContent = errorCount;
-  const errTodayCount = document.getElementById('errTodayCount');
-  if (errTodayCount) errTodayCount.textContent = errorsToday;
-  const errCriticalCount = document.getElementById('errCriticalCount');
-  if (errCriticalCount) errCriticalCount.textContent = criticalErrorCount;
-  const errLastTimestamp = document.getElementById('errLastTimestamp');
-  if (errLastTimestamp) {
-    errLastTimestamp.textContent = lastErrorTime ? new Date(lastErrorTime).toLocaleTimeString() : '—';
-  }
+        logs.forEach(log => {
+          if (log.severity === 'High' || log.severity === 'Critical') {
+            highRiskCount++;
+          }
 
-  // Hydrate Most Active statistics
-  const anlMostActiveUser = document.getElementById('anlMostActiveUser');
-  if (anlMostActiveUser) {
-    const sortedActors = Object.keys(actorFrequency).sort((a,b) => actorFrequency[b] - actorFrequency[a]);
-    anlMostActiveUser.textContent = sortedActors.length > 0 ? sortedActors[0].split('@')[0] : '—';
-  }
+          // Track Errors
+          if (log.action === 'API Failure' || log.action === 'Gemini Timeout' || log.action === 'LocalStorage Corruption Recovery' || log.action === 'Invalid Referral Code Usage') {
+            errorCount++;
+            if (log.timestamp.startsWith(todayStr)) {
+              errorsToday++;
+            }
+            if (log.severity === 'Critical') {
+              criticalErrorCount++;
+            }
+            if (!lastErrorTime || new Date(log.timestamp) > new Date(lastErrorTime)) {
+              lastErrorTime = log.timestamp;
+            }
+          }
 
-  const anlMostActiveModule = document.getElementById('anlMostActiveModule');
-  const anlMostUsedFeature = document.getElementById('anlMostUsedFeature');
-  if (anlMostActiveModule || anlMostUsedFeature) {
-    const sortedModules = Object.keys(moduleUsage).sort((a,b) => moduleUsage[b].count - moduleUsage[a].count);
-    const topMod = sortedModules.length > 0 && moduleUsage[sortedModules[0]].count > 0 ? sortedModules[0] : '—';
-    if (anlMostActiveModule) anlMostActiveModule.textContent = topMod;
-    if (anlMostUsedFeature) {
-      if (topMod === 'Bill Analyzer') anlMostUsedFeature.textContent = 'Bill Scanner';
-      else if (topMod === 'Roof Analyzer') anlMostUsedFeature.textContent = 'Satellite Area Scan';
-      else if (topMod === 'ROI Calculator') anlMostUsedFeature.textContent = 'Savings Timeline';
-      else if (topMod === 'Solar Copilot') anlMostUsedFeature.textContent = 'GenAI Recommendations';
-      else if (topMod === 'Reports Center') anlMostUsedFeature.textContent = 'PDF Export';
-      else if (topMod === 'Rewards & Referrals') anlMostUsedFeature.textContent = 'Code Sharing';
-      else if (topMod === 'Authentication') anlMostUsedFeature.textContent = 'User Signins';
-      else anlMostUsedFeature.textContent = '—';
-    }
-  }
+          // Track User frequency
+          if (log.actor && log.actor !== 'system') {
+            actorFrequency[log.actor] = (actorFrequency[log.actor] || 0) + 1;
+          }
 
-  const anlPeakHour = document.getElementById('anlPeakHour');
-  if (anlPeakHour) {
-    const sortedHours = Object.keys(hourFrequency).sort((a,b) => hourFrequency[b] - hourFrequency[a]);
-    if (sortedHours.length > 0) {
-      const hr = parseInt(sortedHours[0]);
-      const ampm = hr >= 12 ? 'PM' : 'AM';
-      const disp = hr % 12 === 0 ? 12 : hr % 12;
-      anlPeakHour.textContent = `${disp} ${ampm}`;
-    } else {
-      anlPeakHour.textContent = '—';
-    }
-  }
+          // Track Peak Activity Hour
+          const hr = new Date(log.timestamp).getHours();
+          hourFrequency[hr] = (hourFrequency[hr] || 0) + 1;
 
-  // Hydrate Module Usage Table
-  const tableBody = document.getElementById('moduleUsageTableBody');
-  if (tableBody) {
-    tableBody.innerHTML = Object.entries(moduleUsage).map(([name, val]) => {
-      const accessStr = val.lastAccess !== '—' ? new Date(val.lastAccess).toLocaleTimeString() : '—';
-      const usageHealth = val.count > 0 && logs.some(l => l.category === 'Security' && l.action === 'API Failure' && l.description.includes(name)) ? 'Warning' : 'Healthy';
-      const statusClass = usageHealth === 'Healthy' ? 'badge-green' : 'badge-orange';
-      return `<tr style="border-bottom: 1px solid var(--border-color-light);">
+          // Track Module usage
+          let mappedModule = null;
+          if (log.category === 'Assessment') {
+            if (log.action.includes('Bill')) mappedModule = 'Bill Analyzer';
+            else if (log.action.includes('Roof')) mappedModule = 'Roof Analyzer';
+            else if (log.action.includes('ROI')) mappedModule = 'ROI Calculator';
+          } else if (log.category === 'Reports') {
+            mappedModule = 'Reports Center';
+          } else if (log.category === 'AI Assistant') {
+            mappedModule = 'Solar Copilot';
+          } else if (log.category === 'Rewards') {
+            mappedModule = 'Rewards & Referrals';
+          } else if (log.category === 'Authentication') {
+            mappedModule = 'Authentication';
+          }
+
+          if (mappedModule) {
+            moduleUsage[mappedModule].count++;
+            if (moduleUsage[mappedModule].lastAccess === '—' || new Date(log.timestamp) > new Date(moduleUsage[mappedModule].lastAccess)) {
+              moduleUsage[mappedModule].lastAccess = log.timestamp;
+            }
+          }
+        });
+
+        // Calculate platform health score (max 100)
+        // Drop 5 points per high/critical risk, drop 2 points per other error
+        let platformHealth = 100 - (highRiskCount * 5) - ((errorCount - highRiskCount) * 2);
+        platformHealth = Math.max(10, Math.min(100, platformHealth));
+
+        // Executive summary UI hydration
+        const scoreVal = document.getElementById('auditKpiHealthScore');
+        if (scoreVal) scoreVal.textContent = `${platformHealth}%`;
+        const scoreTrack = document.getElementById('summaryPlatformHealthTrack');
+        if (scoreTrack) scoreTrack.style.width = `${platformHealth}%`;
+
+        const scoreCard = document.getElementById('summaryPlatformHealthCard');
+        if (scoreCard) {
+          scoreCard.className = 'card-base shadow-lift';
+          if (platformHealth >= 90) scoreCard.style.setProperty('--card-theme', '54, 211, 153');
+          else if (platformHealth >= 70) scoreCard.style.setProperty('--card-theme', '234, 179, 8');
+          else scoreCard.style.setProperty('--card-theme', '231, 76, 60');
+        }
+
+        const summaryTotalEvents = document.getElementById('auditKpiTotalEvents');
+        if (summaryTotalEvents) summaryTotalEvents.textContent = totalAuditEvents;
+
+        const summaryHighRisk = document.getElementById('auditKpiHighRisk');
+        if (summaryHighRisk) summaryHighRisk.textContent = highRiskCount;
+
+        // Hydrate Error monitor card
+        const errTotalCount = document.getElementById('errTotalCount');
+        if (errTotalCount) errTotalCount.textContent = errorCount;
+        const errTodayCount = document.getElementById('errTodayCount');
+        if (errTodayCount) errTodayCount.textContent = errorsToday;
+        const errCriticalCount = document.getElementById('errCriticalCount');
+        if (errCriticalCount) errCriticalCount.textContent = criticalErrorCount;
+        const errLastTimestamp = document.getElementById('errLastTimestamp');
+        if (errLastTimestamp) {
+          errLastTimestamp.textContent = lastErrorTime ? new Date(lastErrorTime).toLocaleTimeString() : '—';
+        }
+
+        // Hydrate Most Active statistics
+        const anlMostActiveUser = document.getElementById('anlMostActiveUser');
+        if (anlMostActiveUser) {
+          const sortedActors = Object.keys(actorFrequency).sort((a, b) => actorFrequency[b] - actorFrequency[a]);
+          anlMostActiveUser.textContent = sortedActors.length > 0 ? sortedActors[0].split('@')[0] : '—';
+        }
+
+        const anlMostActiveModule = document.getElementById('anlMostActiveModule');
+        const anlMostUsedFeature = document.getElementById('anlMostUsedFeature');
+        if (anlMostActiveModule || anlMostUsedFeature) {
+          const sortedModules = Object.keys(moduleUsage).sort((a, b) => moduleUsage[b].count - moduleUsage[a].count);
+          const topMod = sortedModules.length > 0 && moduleUsage[sortedModules[0]].count > 0 ? sortedModules[0] : '—';
+          if (anlMostActiveModule) anlMostActiveModule.textContent = topMod;
+          if (anlMostUsedFeature) {
+            if (topMod === 'Bill Analyzer') anlMostUsedFeature.textContent = 'Bill Scanner';
+            else if (topMod === 'Roof Analyzer') anlMostUsedFeature.textContent = 'Satellite Area Scan';
+            else if (topMod === 'ROI Calculator') anlMostUsedFeature.textContent = 'Savings Timeline';
+            else if (topMod === 'Solar Copilot') anlMostUsedFeature.textContent = 'GenAI Recommendations';
+            else if (topMod === 'Reports Center') anlMostUsedFeature.textContent = 'PDF Export';
+            else if (topMod === 'Rewards & Referrals') anlMostUsedFeature.textContent = 'Code Sharing';
+            else if (topMod === 'Authentication') anlMostUsedFeature.textContent = 'User Signins';
+            else anlMostUsedFeature.textContent = '—';
+          }
+        }
+
+        const anlPeakHour = document.getElementById('anlPeakHour');
+        if (anlPeakHour) {
+          const sortedHours = Object.keys(hourFrequency).sort((a, b) => hourFrequency[b] - hourFrequency[a]);
+          if (sortedHours.length > 0) {
+            const hr = parseInt(sortedHours[0]);
+            const ampm = hr >= 12 ? 'PM' : 'AM';
+            const disp = hr % 12 === 0 ? 12 : hr % 12;
+            anlPeakHour.textContent = `${disp} ${ampm}`;
+          } else {
+            anlPeakHour.textContent = '—';
+          }
+        }
+
+        // Hydrate Module Usage Table
+        const tableBody = document.getElementById('moduleUsageTableBody');
+        if (tableBody) {
+          tableBody.innerHTML = Object.entries(moduleUsage).map(([name, val]) => {
+            const accessStr = val.lastAccess !== '—' ? new Date(val.lastAccess).toLocaleTimeString() : '—';
+            const usageHealth = val.count > 0 && logs.some(l => l.category === 'Security' && l.action === 'API Failure' && l.description.includes(name)) ? 'Warning' : 'Healthy';
+            const statusClass = usageHealth === 'Healthy' ? 'badge-green' : 'badge-orange';
+            return `<tr style="border-bottom: 1px solid var(--border-color-light);">
         <td style="padding: 6px 8px; font-weight: bold;">${name}</td>
         <td style="padding: 6px 8px; text-align: center;">${val.count}</td>
         <td style="padding: 6px 8px; text-align: right; color: var(--text-secondary);">${accessStr}</td>
         <td style="padding: 6px 8px; text-align: right;"><span class="status-badge ${statusClass}" style="padding: 1px 4px; font-size: 8px;">${usageHealth}</span></td>
       </tr>`;
-    }).join('');
-  }
+          }).join('');
+        }
 
-  // Hydrate LocalStorage Quota Tracking progress items
-  hydrateStorageQuotaProgress();
+        // Hydrate LocalStorage Quota Tracking progress items
+        hydrateStorageQuotaProgress();
 
-  // Populate Recent System Events Timeline
-  hydrateRecentSystemTimeline();
-  
-  // Update Admin dashboard telemetry
-  const admAuditTotalEvents = document.getElementById('admAuditTotalEvents');
-  if (admAuditTotalEvents) admAuditTotalEvents.textContent = totalAuditEvents;
-  const admAuditHighSeverity = document.getElementById('admAuditHighSeverity');
-  if (admAuditHighSeverity) {
-    admAuditHighSeverity.textContent = logs.filter(l => l.severity === 'High').length;
-  }
-  const admAuditCritical = document.getElementById('admAuditCritical');
-  if (admAuditCritical) {
-    admAuditCritical.textContent = logs.filter(l => l.severity === 'Critical').length;
-  }
-  const admAuditEventsToday = document.getElementById('admAuditEventsToday');
-  if (admAuditEventsToday) {
-    admAuditEventsToday.textContent = logs.filter(l => l.timestamp.startsWith(todayStr)).length;
-  }
-  const admAuditCommonCategory = document.getElementById('admAuditCommonCategory');
-  if (admAuditCommonCategory) {
-    const cats = {};
-    logs.forEach(l => cats[l.category] = (cats[l.category] || 0) + 1);
-    const sortedCats = Object.keys(cats).sort((a,b) => cats[b] - cats[a]);
-    admAuditCommonCategory.textContent = sortedCats.length > 0 ? sortedCats[0] : '—';
-  }
-}
+        // Populate Recent System Events Timeline
+        hydrateRecentSystemTimeline();
 
-function hydrateRecentSystemTimeline() {
-  const container = document.getElementById('systemEventsTimeline');
-  const emptyTimeline = document.getElementById('systemEventsEmptyState');
-  if (!container) return;
+        // Update Admin dashboard telemetry
+        const admAuditTotalEvents = document.getElementById('admAuditTotalEvents');
+        if (admAuditTotalEvents) admAuditTotalEvents.textContent = totalAuditEvents;
+        const admAuditHighSeverity = document.getElementById('admAuditHighSeverity');
+        if (admAuditHighSeverity) {
+          admAuditHighSeverity.textContent = logs.filter(l => l.severity === 'High').length;
+        }
+        const admAuditCritical = document.getElementById('admAuditCritical');
+        if (admAuditCritical) {
+          admAuditCritical.textContent = logs.filter(l => l.severity === 'Critical').length;
+        }
+        const admAuditEventsToday = document.getElementById('admAuditEventsToday');
+        if (admAuditEventsToday) {
+          admAuditEventsToday.textContent = logs.filter(l => l.timestamp.startsWith(todayStr)).length;
+        }
+        const admAuditCommonCategory = document.getElementById('admAuditCommonCategory');
+        if (admAuditCommonCategory) {
+          const cats = {};
+          logs.forEach(l => cats[l.category] = (cats[l.category] || 0) + 1);
+          const sortedCats = Object.keys(cats).sort((a, b) => cats[b] - cats[a]);
+          admAuditCommonCategory.textContent = sortedCats.length > 0 ? sortedCats[0] : '—';
+        }
+      }
 
-  const logs = safeParseJSON('auditLogs', []);
-  const systemLogs = logs.filter(l => l.category === 'System' || l.category === 'Security' || l.severity === 'Critical' || l.severity === 'High').slice(0, 15);
+      function hydrateRecentSystemTimeline() {
+        const container = document.getElementById('systemEventsTimeline');
+        const emptyTimeline = document.getElementById('systemEventsEmptyState');
+        if (!container) return;
 
-  if (systemLogs.length === 0) {
-    container.innerHTML = '';
-    if (emptyTimeline) emptyTimeline.style.display = 'block';
-    return;
-  }
-  if (emptyTimeline) emptyTimeline.style.display = 'none';
+        const logs = safeParseJSON('auditLogs', []);
+        const systemLogs = logs.filter(l => l.category === 'System' || l.category === 'Security' || l.severity === 'Critical' || l.severity === 'High').slice(0, 15);
 
-  container.innerHTML = systemLogs.map(item => {
-    let icon = '⚙️';
-    let iconBg = 'rgba(255,255,255,0.05)';
-    if (item.category === 'Security') {
-      icon = '🛡️';
-      iconBg = 'rgba(231,76,60,0.12)';
-    } else if (item.severity === 'Critical') {
-      icon = '🚨';
-      iconBg = 'rgba(231,76,60,0.2)';
-    } else if (item.action.includes('Applied') || item.action.includes('Login')) {
-      icon = '🔑';
-      iconBg = 'rgba(54,211,153,0.1)';
-    }
-    
-    const timeStr = new Date(item.timestamp).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
-    const elapsed = getElapsedShortString(item.timestamp);
-    
-    return `<div class="sys-timeline-item sev-${item.severity.toLowerCase()}">
+        if (systemLogs.length === 0) {
+          container.innerHTML = '';
+          if (emptyTimeline) emptyTimeline.style.display = 'block';
+          return;
+        }
+        if (emptyTimeline) emptyTimeline.style.display = 'none';
+
+        container.innerHTML = systemLogs.map(item => {
+          let icon = '⚙️';
+          let iconBg = 'rgba(255,255,255,0.05)';
+          if (item.category === 'Security') {
+            icon = '🛡️';
+            iconBg = 'rgba(231,76,60,0.12)';
+          } else if (item.severity === 'Critical') {
+            icon = '🚨';
+            iconBg = 'rgba(231,76,60,0.2)';
+          } else if (item.action.includes('Applied') || item.action.includes('Login')) {
+            icon = '🔑';
+            iconBg = 'rgba(54,211,153,0.1)';
+          }
+
+          const timeStr = new Date(item.timestamp).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+          const elapsed = getElapsedShortString(item.timestamp);
+
+          return `<div class="sys-timeline-item sev-${item.severity.toLowerCase()}">
       <div class="sys-timeline-icon" style="background: ${iconBg};">${icon}</div>
       <div style="flex: 1; font-size: 10px;">
         <div style="display: flex; justify-content: space-between;">
@@ -9407,60 +11014,60 @@ function hydrateRecentSystemTimeline() {
         <div style="color: var(--text-secondary); margin-top: 2px;">${_esc(item.description)}</div>
       </div>
     </div>`;
-  }).join('');
-}
+        }).join('');
+      }
 
-function getElapsedShortString(isoString) {
-  const sec = Math.floor((new Date() - new Date(isoString)) / 1000);
-  if (sec < 60) return 'now';
-  const min = Math.floor(sec / 60);
-  if (min < 60) return `${min}m ago`;
-  const hr = Math.floor(min / 60);
-  if (hr < 24) return `${hr}h ago`;
-  const days = Math.floor(hr / 24);
-  return `${days}d ago`;
-}
+      function getElapsedShortString(isoString) {
+        const sec = Math.floor((new Date() - new Date(isoString)) / 1000);
+        if (sec < 60) return 'now';
+        const min = Math.floor(sec / 60);
+        if (min < 60) return `${min}m ago`;
+        const hr = Math.floor(min / 60);
+        if (hr < 24) return `${hr}h ago`;
+        const days = Math.floor(hr / 24);
+        return `${days}d ago`;
+      }
 
-function getLocalStorageSize() {
-  let total = 0;
-  for (let x in localStorage) {
-    if (localStorage.hasOwnProperty(x)) {
-      total += ((localStorage[x].length + x.length) * 2);
-    }
-  }
-  return total;
-}
+      function getLocalStorageSize() {
+        let total = 0;
+        for (let x in localStorage) {
+          if (localStorage.hasOwnProperty(x)) {
+            total += ((localStorage[x].length + x.length) * 2);
+          }
+        }
+        return total;
+      }
 
-function hydrateStorageQuotaProgress() {
-  const container = document.getElementById('storageQuotaBars');
-  if (!container) return;
+      function hydrateStorageQuotaProgress() {
+        const container = document.getElementById('storageQuotaBars');
+        if (!container) return;
 
-  const totalBytes = getLocalStorageSize();
-  const maxBytes = 5 * 1024 * 1024; // 5MB
-  const totalPercent = Math.min(100, parseFloat(_safeNum((totalBytes / maxBytes) * 100).toFixed(2)));
+        const totalBytes = getLocalStorageSize();
+        const maxBytes = 5 * 1024 * 1024; // 5MB
+        const totalPercent = Math.min(100, parseFloat(_safeNum((totalBytes / maxBytes) * 100).toFixed(2)));
 
-  const keys = ['auditLogs', 'notifications', 'leads', 'reportHistory'];
-  const colors = {
-    'auditLogs': 'var(--accent-orange)',
-    'notifications': 'var(--accent-blue)',
-    'leads': 'var(--accent-green)',
-    'reportHistory': '#a78bfa'
-  };
-  const labels = {
-    'auditLogs': 'Audit Compliance Logs',
-    'notifications': 'Notification Cache',
-    'leads': 'CRM Lead Profiles',
-    'reportHistory': 'Reports History'
-  };
+        const keys = ['auditLogs', 'notifications', 'leads', 'reportHistory'];
+        const colors = {
+          'auditLogs': 'var(--accent-orange)',
+          'notifications': 'var(--accent-blue)',
+          'leads': 'var(--accent-green)',
+          'reportHistory': '#a78bfa'
+        };
+        const labels = {
+          'auditLogs': 'Audit Compliance Logs',
+          'notifications': 'Notification Cache',
+          'leads': 'CRM Lead Profiles',
+          'reportHistory': 'Reports History'
+        };
 
-  let itemsHtml = keys.map(k => {
-    const val = localStorage.getItem(k) || '';
-    const bytes = val.length * 2;
-    const pct = Math.min(100, parseFloat(_safeNum((bytes / maxBytes) * 100).toFixed(2)));
-    const color = colors[k] || 'var(--text-muted)';
-    const label = labels[k] || k;
-    
-    return `<div class="quota-bar-item">
+        let itemsHtml = keys.map(k => {
+          const val = localStorage.getItem(k) || '';
+          const bytes = val.length * 2;
+          const pct = Math.min(100, parseFloat(_safeNum((bytes / maxBytes) * 100).toFixed(2)));
+          const color = colors[k] || 'var(--text-muted)';
+          const label = labels[k] || k;
+
+          return `<div class="quota-bar-item">
       <div class="quota-bar-labels">
         <span>${label}</span>
         <span>${pct}% (${_safeNum(bytes / 1024).toFixed(1)} KB)</span>
@@ -9469,9 +11076,9 @@ function hydrateStorageQuotaProgress() {
         <div class="quota-bar-fill" style="width: ${pct}%; background-color: ${color};"></div>
       </div>
     </div>`;
-  }).join('');
+        }).join('');
 
-  itemsHtml += `<div class="quota-bar-item" style="border-top: 1px dashed var(--border-color-light); padding-top: 8px; margin-top: 4px;">
+        itemsHtml += `<div class="quota-bar-item" style="border-top: 1px dashed var(--border-color-light); padding-top: 8px; margin-top: 4px;">
     <div class="quota-bar-labels" style="font-weight: bold; color: var(--text-navy);">
       <span>Total Browser storage quota</span>
       <span>${totalPercent}% (${_safeNum(totalBytes / 1024).toFixed(1)} KB / 5.0 MB)</span>
@@ -9481,696 +11088,691 @@ function hydrateStorageQuotaProgress() {
     </div>
   </div>`;
 
-  container.innerHTML = itemsHtml;
-}
-
-function exportAuditLogsCSV() {
-  const headers = ['Timestamp', 'Actor/User', 'Action', 'Category', 'Severity', 'Description'];
-  const logs = safeParseJSON('auditLogs', []);
-  
-  const rows = logs.map(log => [
-    log.timestamp,
-    log.actor,
-    log.action,
-    log.category,
-    log.severity,
-    log.description
-  ]);
-
-  const now = new Date();
-  const format = (num) => String(num).padStart(2, '0');
-  const filename = `audit_log_${now.getFullYear()}-${format(now.getMonth() + 1)}-${format(now.getDate())}_${format(now.getHours())}-${format(now.getMinutes())}-${format(now.getSeconds())}.csv`;
-
-  downloadCSV(filename, headers, rows);
-  logAuditEvent((_getUser() || {}).email, 'Audit Log Exported', 'Admin', 'Exported full compliance audit log table to CSV.', 'Medium');
-}
-
-/* ==========================================================================
-   19. EXECUTIVE BUSINESS INTELLIGENCE PLATFORM (Phase 10.7)
-   ========================================================================== */
-
-let biSegmentationChartInstance = null;
-let biStageDistributionChartInstance = null;
-let biLeadSourceVolumeChartInstance = null;
-let biLeadSourceConvChartInstance = null;
-let biAiCategoryChartInstance = null;
-let biInteractiveChartInstance = null;
-
-// Global variables for Advanced BI (Phase 12.3.1)
-window.biSelectedCities = [];
-window.biSelectedDiscoms = [];
-window.biActiveSegment = "";
-window.biAutoRefreshInterval = null;
-window.biAutoRefreshCountdown = null;
-window.biRemainingSeconds = 0;
-window.biTotalSeconds = 0;
-
-function initBusinessIntelligence() {
-  // Bind tabs for chart selection
-  const chartTabs = document.querySelectorAll('.bi-chart-tab');
-  chartTabs.forEach(tab => {
-    tab.addEventListener('click', (e) => {
-      chartTabs.forEach(t => t.classList.remove('active'));
-      e.target.classList.add('active');
-      const chartType = e.target.getAttribute('data-chart');
-      renderActiveBiChart(chartType);
-    });
-  });
-
-  // Range Slider Value Output bindings
-  const rangeKw = document.getElementById('biFilterKw');
-  const valKw = document.getElementById('biValFilterKw');
-  if (rangeKw && valKw) {
-    rangeKw.addEventListener('input', () => {
-      valKw.textContent = parseFloat(rangeKw.value) === 0 ? 'Any' : `>= ${rangeKw.value} kW`;
-      applyBiFilters();
-    });
-  }
-
-  const rangePayback = document.getElementById('biFilterPayback');
-  const valPayback = document.getElementById('biValFilterPayback');
-  if (rangePayback && valPayback) {
-    rangePayback.addEventListener('input', () => {
-      valPayback.textContent = parseFloat(rangePayback.value) === 10 ? 'Any' : `<= ${rangePayback.value} Yrs`;
-      applyBiFilters();
-    });
-  }
-
-  const rangeBill = document.getElementById('biFilterBill');
-  const valBill = document.getElementById('biValFilterBill');
-  if (rangeBill && valBill) {
-    rangeBill.addEventListener('input', () => {
-      valBill.textContent = parseFloat(rangeBill.value) === 15000 ? 'Any' : `<= ₹${Number(rangeBill.value).toLocaleString('en-IN')}`;
-      applyBiFilters();
-    });
-  }
-
-  const rangeUnits = document.getElementById('biFilterUnits');
-  const valUnits = document.getElementById('biValFilterUnits');
-  if (rangeUnits && valUnits) {
-    rangeUnits.addEventListener('input', () => {
-      valUnits.textContent = parseFloat(rangeUnits.value) === 1500 ? 'Any' : `<= ${rangeUnits.value} Units`;
-      applyBiFilters();
-    });
-  }
-
-  // Filter Search Inputs and dropdowns
-  const searchInput = document.getElementById('biFilterSearch');
-  if (searchInput) {
-    searchInput.addEventListener('input', applyBiFilters);
-  }
-
-  const periodSelect = document.getElementById('biFilterPeriod');
-  if (periodSelect) {
-    periodSelect.addEventListener('change', applyBiFilters);
-  }
-
-  // Multi-select dropdown toggle listeners
-  _setupMultiselectDropdown('biFilterCityBtn', 'biFilterCityOptions');
-  _setupMultiselectDropdown('biFilterDiscomBtn', 'biFilterDiscomOptions');
-  _setupMultiselectDropdown('biTableColumnVisibilityBtn', 'biTableColumnVisibilityOptions');
-  _setupMultiselectDropdown('biBtnExportCenter', 'biExportDropdownMenu');
-
-  // Customer Segmentation quick filters
-  const segCards = document.querySelectorAll('.bi-segment-card');
-  segCards.forEach(card => {
-    card.addEventListener('click', () => {
-      const active = card.classList.contains('active');
-      segCards.forEach(c => c.classList.remove('active'));
-      if (active) {
-        window.biActiveSegment = "";
-      } else {
-        card.classList.add('active');
-        window.biActiveSegment = card.getAttribute('data-segment');
+        container.innerHTML = itemsHtml;
       }
-      applyBiFilters();
-    });
-  });
 
-  // Table sorting headers
-  const headers = [
-    { id: 'biThCustomer', col: 'customer_name' },
-    { id: 'biThConsumerNum', col: 'consumer_number' },
-    { id: 'biThCity', col: 'city' },
-    { id: 'biThDiscom', col: 'discom' },
-    { id: 'biThUnits', col: 'monthly_units' },
-    { id: 'biThBillAmt', col: 'bill_amount' },
-    { id: 'biThRate', col: 'per_unit_rate' },
-    { id: 'biThKw', col: 'recommended_kw' },
-    { id: 'biThMonthlySavings', col: 'monthly_savings' },
-    { id: 'biThAnnualSavings', col: 'annual_savings' },
-    { id: 'biThSavings25Yr', col: 'savings_25yr' },
-    { id: 'biThPayback', col: 'payback_years' },
-    { id: 'biThStatus', col: 'status' }
-  ];
+      function exportAuditLogsCSV() {
+        const headers = ['Timestamp', 'Actor/User', 'Action', 'Category', 'Severity', 'Description'];
+        const logs = safeParseJSON('auditLogs', []);
 
-  window.biSortColumn = 'customer_name';
-  window.biSortDirection = 'asc';
-  window.biTablePage = 1;
-  window.biTablePageSize = 5;
+        const rows = logs.map(log => [
+          log.timestamp,
+          log.actor,
+          log.action,
+          log.category,
+          log.severity,
+          log.description
+        ]);
 
-  headers.forEach(h => {
-    const el = document.getElementById(h.id);
-    if (el) {
-      el.addEventListener('click', () => {
-        if (window.biSortColumn === h.col) {
-          window.biSortDirection = window.biSortDirection === 'asc' ? 'desc' : 'asc';
-        } else {
-          window.biSortColumn = h.col;
-          window.biSortDirection = 'asc';
+        const now = new Date();
+        const format = (num) => String(num).padStart(2, '0');
+        const filename = `audit_log_${now.getFullYear()}-${format(now.getMonth() + 1)}-${format(now.getDate())}_${format(now.getHours())}-${format(now.getMinutes())}-${format(now.getSeconds())}.csv`;
+
+        downloadCSV(filename, headers, rows);
+        logAuditEvent((_getUser() || {}).email, 'Audit Log Exported', 'Admin', 'Exported full compliance audit log table to CSV.', 'Medium');
+      }
+
+      /* ==========================================================================
+         19. EXECUTIVE BUSINESS INTELLIGENCE PLATFORM (Phase 10.7)
+         ========================================================================== */
+
+      let biInteractiveChartInstance = null;
+
+      // Global variables for Advanced BI (Phase 12.3.1)
+      window.biSelectedCities = [];
+      window.biSelectedDiscoms = [];
+      window.biActiveSegment = "";
+      window.biAutoRefreshInterval = null;
+      window.biAutoRefreshCountdown = null;
+      window.biRemainingSeconds = 0;
+      window.biTotalSeconds = 0;
+
+      function initBusinessIntelligence() {
+        // Bind tabs for chart selection
+        const chartTabs = document.querySelectorAll('.bi-chart-tab');
+        chartTabs.forEach(tab => {
+          tab.addEventListener('click', (e) => {
+            chartTabs.forEach(t => t.classList.remove('active'));
+            e.target.classList.add('active');
+            const chartType = e.target.getAttribute('data-chart');
+            renderActiveBiChart(chartType);
+          });
+        });
+
+        // Range Slider Value Output bindings
+        const rangeKw = document.getElementById('biFilterKw');
+        const valKw = document.getElementById('biValFilterKw');
+        if (rangeKw && valKw) {
+          rangeKw.addEventListener('input', () => {
+            valKw.textContent = parseFloat(rangeKw.value) === 0 ? 'Any' : `>= ${rangeKw.value} kW`;
+            applyBiFilters();
+          });
         }
-        headers.forEach(hSub => {
-          const elSub = document.getElementById(hSub.id);
-          if (elSub) {
-            elSub.innerHTML = elSub.innerHTML.replace(/ [▲▼]/g, '');
+
+        const rangePayback = document.getElementById('biFilterPayback');
+        const valPayback = document.getElementById('biValFilterPayback');
+        if (rangePayback && valPayback) {
+          rangePayback.addEventListener('input', () => {
+            valPayback.textContent = parseFloat(rangePayback.value) === 10 ? 'Any' : `<= ${rangePayback.value} Yrs`;
+            applyBiFilters();
+          });
+        }
+
+        const rangeBill = document.getElementById('biFilterBill');
+        const valBill = document.getElementById('biValFilterBill');
+        if (rangeBill && valBill) {
+          rangeBill.addEventListener('input', () => {
+            valBill.textContent = parseFloat(rangeBill.value) === 15000 ? 'Any' : `<= ₹${Number(rangeBill.value).toLocaleString('en-IN')}`;
+            applyBiFilters();
+          });
+        }
+
+        const rangeUnits = document.getElementById('biFilterUnits');
+        const valUnits = document.getElementById('biValFilterUnits');
+        if (rangeUnits && valUnits) {
+          rangeUnits.addEventListener('input', () => {
+            valUnits.textContent = parseFloat(rangeUnits.value) === 1500 ? 'Any' : `<= ${rangeUnits.value} Units`;
+            applyBiFilters();
+          });
+        }
+
+        // Filter Search Inputs and dropdowns
+        const searchInput = document.getElementById('biFilterSearch');
+        if (searchInput) {
+          searchInput.addEventListener('input', applyBiFilters);
+        }
+
+        const periodSelect = document.getElementById('biFilterPeriod');
+        if (periodSelect) {
+          periodSelect.addEventListener('change', applyBiFilters);
+        }
+
+        // Multi-select dropdown toggle listeners
+        _setupMultiselectDropdown('biFilterCityBtn', 'biFilterCityOptions');
+        _setupMultiselectDropdown('biFilterDiscomBtn', 'biFilterDiscomOptions');
+        _setupMultiselectDropdown('biTableColumnVisibilityBtn', 'biTableColumnVisibilityOptions');
+        _setupMultiselectDropdown('biBtnExportCenter', 'biExportDropdownMenu');
+
+        // Customer Segmentation quick filters
+        const segCards = document.querySelectorAll('.bi-segment-card');
+        segCards.forEach(card => {
+          card.addEventListener('click', () => {
+            const active = card.classList.contains('active');
+            segCards.forEach(c => c.classList.remove('active'));
+            if (active) {
+              window.biActiveSegment = "";
+            } else {
+              card.classList.add('active');
+              window.biActiveSegment = card.getAttribute('data-segment');
+            }
+            applyBiFilters();
+          });
+        });
+
+        // Table sorting headers
+        const headers = [
+          { id: 'biThCustomer', col: 'customer_name' },
+          { id: 'biThConsumerNum', col: 'consumer_number' },
+          { id: 'biThCity', col: 'city' },
+          { id: 'biThDiscom', col: 'discom' },
+          { id: 'biThUnits', col: 'monthly_units' },
+          { id: 'biThBillAmt', col: 'bill_amount' },
+          { id: 'biThRate', col: 'per_unit_rate' },
+          { id: 'biThKw', col: 'recommended_kw' },
+          { id: 'biThMonthlySavings', col: 'monthly_savings' },
+          { id: 'biThAnnualSavings', col: 'annual_savings' },
+          { id: 'biThSavings25Yr', col: 'savings_25yr' },
+          { id: 'biThPayback', col: 'payback_years' },
+          { id: 'biThStatus', col: 'status' }
+        ];
+
+        window.biSortColumn = 'customer_name';
+        window.biSortDirection = 'asc';
+        window.biTablePage = 1;
+        window.biTablePageSize = 5;
+
+        headers.forEach(h => {
+          const el = document.getElementById(h.id);
+          if (el) {
+            el.addEventListener('click', () => {
+              if (window.biSortColumn === h.col) {
+                window.biSortDirection = window.biSortDirection === 'asc' ? 'desc' : 'asc';
+              } else {
+                window.biSortColumn = h.col;
+                window.biSortDirection = 'asc';
+              }
+              headers.forEach(hSub => {
+                const elSub = document.getElementById(hSub.id);
+                if (elSub) {
+                  elSub.innerHTML = elSub.innerHTML.replace(/ [▲▼]/g, '');
+                }
+              });
+              const arrow = window.biSortDirection === 'asc' ? ' ▲' : ' ▼';
+              el.innerHTML += arrow;
+              sortAndRenderBiTable();
+            });
           }
         });
-        const arrow = window.biSortDirection === 'asc' ? ' ▲' : ' ▼';
-        el.innerHTML += arrow;
-        sortAndRenderBiTable();
-      });
-    }
-  });
 
-  // Table select all checkbox
-  const selectAllCheckbox = document.getElementById('biTableSelectAll');
-  if (selectAllCheckbox) {
-    selectAllCheckbox.addEventListener('change', (e) => {
-      const isChecked = e.target.checked;
-      const rowChecks = document.querySelectorAll('.bi-row-checkbox');
-      rowChecks.forEach(chk => {
-        chk.checked = isChecked;
-        const tr = chk.closest('tr');
-        if (tr) {
-          if (isChecked) tr.classList.add('bi-table-row-selected');
-          else tr.classList.remove('bi-table-row-selected');
+        // Table select all checkbox
+        const selectAllCheckbox = document.getElementById('biTableSelectAll');
+        if (selectAllCheckbox) {
+          selectAllCheckbox.addEventListener('change', (e) => {
+            const isChecked = e.target.checked;
+            const rowChecks = document.querySelectorAll('.bi-row-checkbox');
+            rowChecks.forEach(chk => {
+              chk.checked = isChecked;
+              const tr = chk.closest('tr');
+              if (tr) {
+                if (isChecked) tr.classList.add('bi-table-row-selected');
+                else tr.classList.remove('bi-table-row-selected');
+              }
+            });
+          });
         }
-      });
-    });
-  }
 
-  // Export buttons
-  const btnExportSelected = document.getElementById('biBtnExportSelected');
-  if (btnExportSelected) {
-    btnExportSelected.addEventListener('click', exportSelectedBiRows);
-  }
+        // Export buttons
+        const btnExportSelected = document.getElementById('biBtnExportSelected');
+        if (btnExportSelected) {
+          btnExportSelected.addEventListener('click', exportSelectedBiRows);
+        }
 
-  // Export Center Actions
-  const boardReportBtn = document.getElementById('biExportBoardReport');
-  if (boardReportBtn) boardReportBtn.addEventListener('click', () => triggerExportCenterReport('board'));
-  const mgmtSummaryBtn = document.getElementById('biExportMgmtSummary');
-  if (mgmtSummaryBtn) mgmtSummaryBtn.addEventListener('click', () => triggerExportCenterReport('mgmt'));
-  const custReportBtn = document.getElementById('biExportCustReport');
-  if (custReportBtn) custReportBtn.addEventListener('click', () => triggerExportCenterReport('customer'));
-  const snapshotBtn = document.getElementById('biExportSnapshot');
-  if (snapshotBtn) snapshotBtn.addEventListener('click', () => triggerExportCenterReport('snapshot'));
+        // Export Center Actions
+        const boardReportBtn = document.getElementById('biExportBoardReport');
+        if (boardReportBtn) boardReportBtn.addEventListener('click', () => triggerExportCenterReport('board'));
+        const mgmtSummaryBtn = document.getElementById('biExportMgmtSummary');
+        if (mgmtSummaryBtn) mgmtSummaryBtn.addEventListener('click', () => triggerExportCenterReport('mgmt'));
+        const custReportBtn = document.getElementById('biExportCustReport');
+        if (custReportBtn) custReportBtn.addEventListener('click', () => triggerExportCenterReport('customer'));
+        const snapshotBtn = document.getElementById('biExportSnapshot');
+        if (snapshotBtn) snapshotBtn.addEventListener('click', () => triggerExportCenterReport('snapshot'));
 
-  // Print button
-  const btnPrintReport = document.getElementById('biBtnPrintReport');
-  if (btnPrintReport) {
-    btnPrintReport.addEventListener('click', () => {
-      window.print();
-      logAuditEvent((_getUser() || {}).email, 'Print BI Report', 'Admin', 'Triggered print report action in BI dashboard', 'Low');
-    });
-  }
+        // Print button
+        const btnPrintReport = document.getElementById('biBtnPrintReport');
+        if (btnPrintReport) {
+          btnPrintReport.addEventListener('click', () => {
+            window.print();
+            logAuditEvent((_getUser() || {}).email, 'Print BI Report', 'Admin', 'Triggered print report action in BI dashboard', 'Low');
+          });
+        }
 
-  // Pagination buttons
-  const btnPrev = document.getElementById('biTableBtnPrev');
-  if (btnPrev) {
-    btnPrev.addEventListener('click', () => {
-      if (window.biTablePage > 1) {
-        window.biTablePage--;
-        renderBiTablePage();
+        // Pagination buttons
+        const btnPrev = document.getElementById('biTableBtnPrev');
+        if (btnPrev) {
+          btnPrev.addEventListener('click', () => {
+            if (window.biTablePage > 1) {
+              window.biTablePage--;
+              renderBiTablePage();
+            }
+          });
+        }
+
+        const btnNext = document.getElementById('biTableBtnNext');
+        if (btnNext) {
+          btnNext.addEventListener('click', () => {
+            const totalPages = Math.ceil(window.biFilteredDirectory.length / window.biTablePageSize);
+            if (window.biTablePage < totalPages) {
+              window.biTablePage++;
+              renderBiTablePage();
+            }
+          });
+        }
+
+        // Retry Connection Button
+        const retryBtn = document.getElementById('biErrorRetryBtn');
+        if (retryBtn) {
+          retryBtn.addEventListener('click', refreshBusinessIntelligenceUI);
+        }
+
+        // Auto-Refresh selector
+        const refreshSelect = document.getElementById('biAutoRefresh');
+        if (refreshSelect) {
+          refreshSelect.addEventListener('change', () => {
+            setupAutoRefreshLoop(refreshSelect.value);
+          });
+        }
+
+        // Chart canvas utilities (fullscreen, download png, download csv)
+        const fullBtn = document.getElementById('biChartBtnFullscreen');
+        if (fullBtn) {
+          fullBtn.addEventListener('click', toggleFullscreenChart);
+        }
+        const pngBtn = document.getElementById('biChartBtnPng');
+        if (pngBtn) {
+          pngBtn.addEventListener('click', downloadChartPng);
+        }
+        const csvBtn = document.getElementById('biChartBtnCsv');
+        if (csvBtn) {
+          csvBtn.addEventListener('click', downloadChartCsvData);
+        }
+
+        // Leaderboard Selector Switch
+        const lbSelect = document.getElementById('biLeaderboardSelector');
+        if (lbSelect) {
+          lbSelect.addEventListener('change', () => {
+            renderBiLeaderboards();
+          });
+        }
+
+        // Table Inline Search
+        const tableSearch = document.getElementById('biTableSearch');
+        if (tableSearch) {
+          tableSearch.addEventListener('input', () => {
+            sortAndRenderBiTable();
+          });
+        }
+
+        // Drill-down KPI Card Clicks
+        const bindKpiDrillDown = (cardId, filterSetup) => {
+          const card = document.getElementById(cardId);
+          if (card) {
+            card.addEventListener('click', () => {
+              filterSetup();
+              applyBiFilters();
+            });
+          }
+        };
+
+        bindKpiDrillDown('biCardKpiCustomers', () => {
+          const search = document.getElementById('biFilterSearch');
+          if (search) search.value = "";
+          document.querySelectorAll('.bi-segment-card').forEach(c => c.classList.remove('active'));
+          window.biActiveSegment = "";
+        });
+
+        bindKpiDrillDown('biCardKpiRevenue', () => {
+          const rangeKw = document.getElementById('biFilterKw');
+          if (rangeKw) {
+            rangeKw.value = "5.0";
+            const valKw = document.getElementById('biValFilterKw');
+            if (valKw) valKw.textContent = ">= 5.0 kW";
+          }
+        });
+
+        bindKpiDrillDown('biCardKpiAvgPayback', () => {
+          const rangePayback = document.getElementById('biFilterPayback');
+          if (rangePayback) {
+            rangePayback.value = "4.0";
+            const valPayback = document.getElementById('biValFilterPayback');
+            if (valPayback) valPayback.textContent = "<= 4.0 Yrs";
+          }
+        });
+
+        // Table Column resizing setup
+        setupTableColumnResizing();
       }
-    });
-  }
 
-  const btnNext = document.getElementById('biTableBtnNext');
-  if (btnNext) {
-    btnNext.addEventListener('click', () => {
-      const totalPages = Math.ceil(window.biFilteredDirectory.length / window.biTablePageSize);
-      if (window.biTablePage < totalPages) {
-        window.biTablePage++;
-        renderBiTablePage();
+      function _setupMultiselectDropdown(btnId, containerId) {
+        const btn = document.getElementById(btnId);
+        const container = document.getElementById(containerId);
+        if (!btn || !container) return;
+
+        btn.addEventListener('click', (e) => {
+          e.stopPropagation();
+          // Close other dropdowns
+          document.querySelectorAll('.bi-multiselect-options').forEach(c => {
+            if (c.id !== containerId) c.classList.remove('open');
+          });
+          container.classList.toggle('open');
+        });
+
+        document.addEventListener('click', (e) => {
+          if (!container.contains(e.target) && e.target !== btn) {
+            container.classList.remove('open');
+          }
+        });
       }
-    });
-  }
 
-  // Retry Connection Button
-  const retryBtn = document.getElementById('biErrorRetryBtn');
-  if (retryBtn) {
-    retryBtn.addEventListener('click', refreshBusinessIntelligenceUI);
-  }
+      function setupAutoRefreshLoop(val) {
+        if (window.biAutoRefreshInterval) clearInterval(window.biAutoRefreshInterval);
+        if (window.biAutoRefreshCountdown) clearInterval(window.biAutoRefreshCountdown);
 
-  // Auto-Refresh selector
-  const refreshSelect = document.getElementById('biAutoRefresh');
-  if (refreshSelect) {
-    refreshSelect.addEventListener('change', () => {
-      setupAutoRefreshLoop(refreshSelect.value);
-    });
-  }
+        const bar = document.getElementById('biRefreshTimerBar');
+        if (bar) bar.style.width = '0%';
 
-  // Chart canvas utilities (fullscreen, download png, download csv)
-  const fullBtn = document.getElementById('biChartBtnFullscreen');
-  if (fullBtn) {
-    fullBtn.addEventListener('click', toggleFullscreenChart);
-  }
-  const pngBtn = document.getElementById('biChartBtnPng');
-  if (pngBtn) {
-    pngBtn.addEventListener('click', downloadChartPng);
-  }
-  const csvBtn = document.getElementById('biChartBtnCsv');
-  if (csvBtn) {
-    csvBtn.addEventListener('click', downloadChartCsvData);
-  }
+        if (val === 'off') {
+          window.biTotalSeconds = 0;
+          window.biRemainingSeconds = 0;
+          return;
+        }
 
-  // Leaderboard Selector Switch
-  const lbSelect = document.getElementById('biLeaderboardSelector');
-  if (lbSelect) {
-    lbSelect.addEventListener('change', () => {
-      renderBiLeaderboards();
-    });
-  }
+        const secs = parseInt(val);
+        window.biTotalSeconds = secs;
+        window.biRemainingSeconds = secs;
 
-  // Table Inline Search
-  const tableSearch = document.getElementById('biTableSearch');
-  if (tableSearch) {
-    tableSearch.addEventListener('input', () => {
-      sortAndRenderBiTable();
-    });
-  }
-
-  // Drill-down KPI Card Clicks
-  const bindKpiDrillDown = (cardId, filterSetup) => {
-    const card = document.getElementById(cardId);
-    if (card) {
-      card.addEventListener('click', () => {
-        filterSetup();
-        applyBiFilters();
-      });
-    }
-  };
-
-  bindKpiDrillDown('biCardKpiCustomers', () => {
-    const search = document.getElementById('biFilterSearch');
-    if (search) search.value = "";
-    document.querySelectorAll('.bi-segment-card').forEach(c => c.classList.remove('active'));
-    window.biActiveSegment = "";
-  });
-  
-  bindKpiDrillDown('biCardKpiRevenue', () => {
-    const rangeKw = document.getElementById('biFilterKw');
-    if (rangeKw) {
-      rangeKw.value = "5.0";
-      const valKw = document.getElementById('biValFilterKw');
-      if (valKw) valKw.textContent = ">= 5.0 kW";
-    }
-  });
-
-  bindKpiDrillDown('biCardKpiAvgPayback', () => {
-    const rangePayback = document.getElementById('biFilterPayback');
-    if (rangePayback) {
-      rangePayback.value = "4.0";
-      const valPayback = document.getElementById('biValFilterPayback');
-      if (valPayback) valPayback.textContent = "<= 4.0 Yrs";
-    }
-  });
-
-  // Table Column resizing setup
-  setupTableColumnResizing();
-}
-
-function _setupMultiselectDropdown(btnId, containerId) {
-  const btn = document.getElementById(btnId);
-  const container = document.getElementById(containerId);
-  if (!btn || !container) return;
-
-  btn.addEventListener('click', (e) => {
-    e.stopPropagation();
-    // Close other dropdowns
-    document.querySelectorAll('.bi-multiselect-options').forEach(c => {
-      if (c.id !== containerId) c.classList.remove('open');
-    });
-    container.classList.toggle('open');
-  });
-
-  document.addEventListener('click', (e) => {
-    if (!container.contains(e.target) && e.target !== btn) {
-      container.classList.remove('open');
-    }
-  });
-}
-
-function setupAutoRefreshLoop(val) {
-  if (window.biAutoRefreshInterval) clearInterval(window.biAutoRefreshInterval);
-  if (window.biAutoRefreshCountdown) clearInterval(window.biAutoRefreshCountdown);
-
-  const bar = document.getElementById('biRefreshTimerBar');
-  if (bar) bar.style.width = '0%';
-
-  if (val === 'off') {
-    window.biTotalSeconds = 0;
-    window.biRemainingSeconds = 0;
-    return;
-  }
-
-  const secs = parseInt(val);
-  window.biTotalSeconds = secs;
-  window.biRemainingSeconds = secs;
-
-  window.biAutoRefreshCountdown = setInterval(() => {
-    window.biRemainingSeconds--;
-    if (bar) {
-      const pct = ((window.biRemainingSeconds / window.biTotalSeconds) * 100);
-      bar.style.width = (100 - pct) + '%';
-    }
-    if (window.biRemainingSeconds <= 0) {
-      window.biRemainingSeconds = window.biTotalSeconds;
-      refreshBusinessIntelligenceUI();
-    }
-  }, 1000);
-}
-
-async function refreshBusinessIntelligenceUI() {
-  const loader = document.getElementById('biSkeletonLoader');
-  const errorContainer = document.getElementById('biErrorContainer');
-  const activeView = document.getElementById('biDashboardActiveView');
-  
-  if (loader) loader.style.display = 'grid';
-  if (errorContainer) errorContainer.style.display = 'none';
-  if (activeView) activeView.style.display = 'none';
-  
-  try {
-    const res = await safeFetch(`${API_BASE}/api/dashboard/analytics`);
-    const data = await res.json();
-    
-    window.biOriginalData = data;
-    window.biFilteredDirectory = [...(data.directory || [])];
-    
-    // Set Command Center fields
-    document.getElementById('biCcHealthScore').textContent = `${data.command_center.platform_health_score}%`;
-    document.getElementById('biCcActiveCustomers').textContent = data.command_center.total_active_customers;
-    
-    const indicator = document.getElementById('biCcHealthIndicator');
-    if (indicator) {
-      indicator.className = 'bi-health-indicator-circle';
-      if (data.command_center.platform_health_score >= 95) indicator.classList.add('healthy');
-      else if (data.command_center.platform_health_score >= 85) indicator.classList.add('warning');
-      else indicator.classList.add('danger');
-    }
-    
-    // Set Time Intelligence chips
-    document.getElementById('biTimeCustomersToday').textContent = data.time_intelligence.customers_today || 0;
-    document.getElementById('biTimeBillsToday').textContent = data.time_intelligence.bills_today || 0;
-    document.getElementById('biTimeCustomersWeek').textContent = data.time_intelligence.customers_week || 0;
-    document.getElementById('biTimeCustomersMonth').textContent = data.time_intelligence.customers_month || 0;
-    document.getElementById('biTimeCustomers30d').textContent = data.time_intelligence.customers_30d || 0;
-    document.getElementById('biTimeCustomersPrevMonth').textContent = data.time_intelligence.customers_prev_month || 0;
-    
-    const impChip = document.getElementById('biTimeLatestImport');
-    const impChipDate = document.getElementById('biTimeLatestImportDate');
-    if (impChip && data.time_intelligence.newest_bill) {
-      impChip.textContent = data.time_intelligence.newest_bill.customer_name;
-      if (impChipDate) {
-        const d = new Date(data.time_intelligence.newest_bill.date);
-        impChipDate.textContent = d.toLocaleDateString();
+        window.biAutoRefreshCountdown = setInterval(() => {
+          window.biRemainingSeconds--;
+          if (bar) {
+            const pct = ((window.biRemainingSeconds / window.biTotalSeconds) * 100);
+            bar.style.width = (100 - pct) + '%';
+          }
+          if (window.biRemainingSeconds <= 0) {
+            window.biRemainingSeconds = window.biTotalSeconds;
+            refreshBusinessIntelligenceUI();
+          }
+        }, 1000);
       }
-    }
-    
-    // Populate dynamic multi-select filters
-    _populateMultiSelectOptions(data);
-    _populateColumnVisibilityOptions();
-    
-    // Set Refreshed time
-    const lastRefresh = document.getElementById('biLastRefreshTime');
-    if (lastRefresh) {
-      const now = new Date();
-      lastRefresh.textContent = `Last Refreshed: ${now.toLocaleTimeString()}`;
-    }
-    
-    // Apply filters which will draw KPIs, Leaderboards, geo cards, tables, charts
-    applyBiFilters();
-    
-    if (loader) loader.style.display = 'none';
-    if (activeView) activeView.style.display = 'block';
-  } catch (err) {
-    console.error("Failed to load business intelligence dashboard analytics from backend", err);
-    if (loader) loader.style.display = 'none';
-    if (errorContainer) errorContainer.style.display = 'block';
-  }
-}
 
-function _populateMultiSelectOptions(data) {
-  const cityContainer = document.getElementById('biFilterCityOptions');
-  const discomContainer = document.getElementById('biFilterDiscomOptions');
-  const periodSelect = document.getElementById('biFilterPeriod');
-  
-  if (cityContainer) {
-    cityContainer.innerHTML = '';
-    const cities = [...new Set((data.directory || []).map(x => x.city))].sort();
-    cities.forEach(c => {
-      const div = document.createElement('div');
-      div.className = 'bi-multiselect-item';
-      div.innerHTML = `<input type="checkbox" value="${c}" id="chkCity_${c}" class="bi-city-checkbox"> <label for="chkCity_${c}">${c}</label>`;
-      div.addEventListener('click', (e) => {
-        if (e.target.tagName !== 'INPUT') {
+      async function refreshBusinessIntelligenceUI() {
+        const loader = document.getElementById('biSkeletonLoader');
+        const errorContainer = document.getElementById('biErrorContainer');
+        const activeView = document.getElementById('biDashboardActiveView');
+
+        if (loader) loader.style.display = 'grid';
+        if (errorContainer) errorContainer.style.display = 'none';
+        if (activeView) activeView.style.display = 'none';
+
+        try {
+          const res = await safeFetch(`${API_BASE}/api/dashboard/analytics`);
+          const data = await res.json();
+
+          window.biOriginalData = data;
+          window.biFilteredDirectory = [...(data.directory || [])];
+
+          // Set Command Center fields
+          document.getElementById('biCcHealthScore').textContent = `${data.command_center.platform_health_score}%`;
+          document.getElementById('biCcActiveCustomers').textContent = data.command_center.total_active_customers;
+
+          const indicator = document.getElementById('biCcHealthIndicator');
+          if (indicator) {
+            indicator.className = 'bi-health-indicator-circle';
+            if (data.command_center.platform_health_score >= 95) indicator.classList.add('healthy');
+            else if (data.command_center.platform_health_score >= 85) indicator.classList.add('warning');
+            else indicator.classList.add('danger');
+          }
+
+          // Set Time Intelligence chips
+          document.getElementById('biTimeCustomersToday').textContent = data.time_intelligence.customers_today || 0;
+          document.getElementById('biTimeBillsToday').textContent = data.time_intelligence.bills_today || 0;
+          document.getElementById('biTimeCustomersWeek').textContent = data.time_intelligence.customers_week || 0;
+          document.getElementById('biTimeCustomersMonth').textContent = data.time_intelligence.customers_month || 0;
+          document.getElementById('biTimeCustomers30d').textContent = data.time_intelligence.customers_30d || 0;
+          document.getElementById('biTimeCustomersPrevMonth').textContent = data.time_intelligence.customers_prev_month || 0;
+
+          const impChip = document.getElementById('biTimeLatestImport');
+          const impChipDate = document.getElementById('biTimeLatestImportDate');
+          if (impChip && data.time_intelligence.newest_bill) {
+            impChip.textContent = data.time_intelligence.newest_bill.customer_name;
+            if (impChipDate) {
+              const d = new Date(data.time_intelligence.newest_bill.date);
+              impChipDate.textContent = d.toLocaleDateString();
+            }
+          }
+
+          // Populate dynamic multi-select filters
+          _populateMultiSelectOptions(data);
+          _populateColumnVisibilityOptions();
+
+          // Set Refreshed time
+          const lastRefresh = document.getElementById('biLastRefreshTime');
+          if (lastRefresh) {
+            const now = new Date();
+            lastRefresh.textContent = `Last Refreshed: ${now.toLocaleTimeString()}`;
+          }
+
+          // Apply filters which will draw KPIs, Leaderboards, geo cards, tables, charts
+          applyBiFilters();
+
+          if (loader) loader.style.display = 'none';
+          if (activeView) activeView.style.display = 'block';
+        } catch (err) {
+          console.error("Failed to load business intelligence dashboard analytics from backend", err);
+          if (loader) loader.style.display = 'none';
+          if (errorContainer) errorContainer.style.display = 'block';
+        }
+      }
+
+      function _populateMultiSelectOptions(data) {
+        const cityContainer = document.getElementById('biFilterCityOptions');
+        const discomContainer = document.getElementById('biFilterDiscomOptions');
+        const periodSelect = document.getElementById('biFilterPeriod');
+
+        if (cityContainer) {
+          cityContainer.innerHTML = '';
+          const cities = [...new Set((data.directory || []).map(x => x.city))].sort();
+          cities.forEach(c => {
+            const div = document.createElement('div');
+            div.className = 'bi-multiselect-item';
+            div.innerHTML = `<input type="checkbox" value="${c}" id="chkCity_${c}" class="bi-city-checkbox"> <label for="chkCity_${c}">${c}</label>`;
+            div.addEventListener('click', (e) => {
+              if (e.target.tagName !== 'INPUT') {
+                const chk = div.querySelector('input');
+                chk.checked = !chk.checked;
+                chk.dispatchEvent(new Event('change'));
+              }
+            });
+            const chk = div.querySelector('input');
+            chk.addEventListener('change', () => {
+              if (chk.checked) {
+                if (!window.biSelectedCities.includes(chk.value)) window.biSelectedCities.push(chk.value);
+              } else {
+                window.biSelectedCities = window.biSelectedCities.filter(x => x !== chk.value);
+              }
+              const btn = document.getElementById('biFilterCityBtn');
+              if (btn) {
+                btn.textContent = window.biSelectedCities.length === 0 ? "Select Cities ▼" : `Cities (${window.biSelectedCities.length}) ▼`;
+              }
+              applyBiFilters();
+            });
+            cityContainer.appendChild(div);
+          });
+        }
+
+        if (discomContainer) {
+          discomContainer.innerHTML = '';
+          const discoms = [...new Set((data.directory || []).map(x => x.discom))].sort();
+          discoms.forEach(d => {
+            const div = document.createElement('div');
+            div.className = 'bi-multiselect-item';
+            div.innerHTML = `<input type="checkbox" value="${d}" id="chkDiscom_${d}" class="bi-discom-checkbox"> <label for="chkDiscom_${d}">${d}</label>`;
+            div.addEventListener('click', (e) => {
+              if (e.target.tagName !== 'INPUT') {
+                const chk = div.querySelector('input');
+                chk.checked = !chk.checked;
+                chk.dispatchEvent(new Event('change'));
+              }
+            });
+            const chk = div.querySelector('input');
+            chk.addEventListener('change', () => {
+              if (chk.checked) {
+                if (!window.biSelectedDiscoms.includes(chk.value)) window.biSelectedDiscoms.push(chk.value);
+              } else {
+                window.biSelectedDiscoms = window.biSelectedDiscoms.filter(x => x !== chk.value);
+              }
+              const btn = document.getElementById('biFilterDiscomBtn');
+              if (btn) {
+                btn.textContent = window.biSelectedDiscoms.length === 0 ? "Select DISCOMs ▼" : `DISCOMs (${window.biSelectedDiscoms.length}) ▼`;
+              }
+              applyBiFilters();
+            });
+            discomContainer.appendChild(div);
+          });
+        }
+
+        if (periodSelect) {
+          const current = periodSelect.value;
+          periodSelect.innerHTML = '<option value="">All Periods</option>';
+          periodSelect.value = current;
+        }
+      }
+
+      function _populateColumnVisibilityOptions() {
+        const container = document.getElementById('biTableColumnVisibilityOptions');
+        if (!container) return;
+        container.innerHTML = '';
+
+        const columns = [
+          { name: 'Customer', index: 1 },
+          { name: 'Consumer ID', index: 2 },
+          { name: 'City', index: 3 },
+          { name: 'DISCOM', index: 4 },
+          { name: 'Monthly Units', index: 5 },
+          { name: 'Bill Amount', index: 6 },
+          { name: 'Per Unit Rate', index: 7 },
+          { name: 'Rec. kW', index: 8 },
+          { name: 'Monthly Savings', index: 9 },
+          { name: 'Annual Savings', index: 10 },
+          { name: '25-Year Savings', index: 11 },
+          { name: 'Payback', index: 12 },
+          { name: 'Status', index: 13 }
+        ];
+
+        columns.forEach(col => {
+          const div = document.createElement('div');
+          div.className = 'bi-multiselect-item';
+          div.innerHTML = `<input type="checkbox" checked id="chkCol_${col.index}"> <label for="chkCol_${col.index}">${col.name}</label>`;
           const chk = div.querySelector('input');
-          chk.checked = !chk.checked;
-          chk.dispatchEvent(new Event('change'));
-        }
-      });
-      const chk = div.querySelector('input');
-      chk.addEventListener('change', () => {
-        if (chk.checked) {
-          if (!window.biSelectedCities.includes(chk.value)) window.biSelectedCities.push(chk.value);
-        } else {
-          window.biSelectedCities = window.biSelectedCities.filter(x => x !== chk.value);
-        }
-        const btn = document.getElementById('biFilterCityBtn');
-        if (btn) {
-          btn.textContent = window.biSelectedCities.length === 0 ? "Select Cities ▼" : `Cities (${window.biSelectedCities.length}) ▼`;
-        }
-        applyBiFilters();
-      });
-      cityContainer.appendChild(div);
-    });
-  }
-  
-  if (discomContainer) {
-    discomContainer.innerHTML = '';
-    const discoms = [...new Set((data.directory || []).map(x => x.discom))].sort();
-    discoms.forEach(d => {
-      const div = document.createElement('div');
-      div.className = 'bi-multiselect-item';
-      div.innerHTML = `<input type="checkbox" value="${d}" id="chkDiscom_${d}" class="bi-discom-checkbox"> <label for="chkDiscom_${d}">${d}</label>`;
-      div.addEventListener('click', (e) => {
-        if (e.target.tagName !== 'INPUT') {
-          const chk = div.querySelector('input');
-          chk.checked = !chk.checked;
-          chk.dispatchEvent(new Event('change'));
-        }
-      });
-      const chk = div.querySelector('input');
-      chk.addEventListener('change', () => {
-        if (chk.checked) {
-          if (!window.biSelectedDiscoms.includes(chk.value)) window.biSelectedDiscoms.push(chk.value);
-        } else {
-          window.biSelectedDiscoms = window.biSelectedDiscoms.filter(x => x !== chk.value);
-        }
-        const btn = document.getElementById('biFilterDiscomBtn');
-        if (btn) {
-          btn.textContent = window.biSelectedDiscoms.length === 0 ? "Select DISCOMs ▼" : `DISCOMs (${window.biSelectedDiscoms.length}) ▼`;
-        }
-        applyBiFilters();
-      });
-      discomContainer.appendChild(div);
-    });
-  }
-  
-  if (periodSelect) {
-    const current = periodSelect.value;
-    periodSelect.innerHTML = '<option value="">All Periods</option>';
-    periodSelect.value = current;
-  }
-}
-
-function _populateColumnVisibilityOptions() {
-  const container = document.getElementById('biTableColumnVisibilityOptions');
-  if (!container) return;
-  container.innerHTML = '';
-
-  const columns = [
-    { name: 'Customer', index: 1 },
-    { name: 'Consumer ID', index: 2 },
-    { name: 'City', index: 3 },
-    { name: 'DISCOM', index: 4 },
-    { name: 'Monthly Units', index: 5 },
-    { name: 'Bill Amount', index: 6 },
-    { name: 'Per Unit Rate', index: 7 },
-    { name: 'Rec. kW', index: 8 },
-    { name: 'Monthly Savings', index: 9 },
-    { name: 'Annual Savings', index: 10 },
-    { name: '25-Year Savings', index: 11 },
-    { name: 'Payback', index: 12 },
-    { name: 'Status', index: 13 }
-  ];
-
-  columns.forEach(col => {
-    const div = document.createElement('div');
-    div.className = 'bi-multiselect-item';
-    div.innerHTML = `<input type="checkbox" checked id="chkCol_${col.index}"> <label for="chkCol_${col.index}">${col.name}</label>`;
-    const chk = div.querySelector('input');
-    chk.addEventListener('change', () => {
-      const table = document.getElementById('biAnalyticsDirectoryTable');
-      if (!table) return;
-      const rows = table.querySelectorAll('tr');
-      rows.forEach(row => {
-        const cells = row.cells;
-        if (cells[col.index]) {
-          cells[col.index].style.display = chk.checked ? '' : 'none';
-        }
-      });
-    });
-    div.addEventListener('click', (e) => {
-      if (e.target.tagName !== 'INPUT') {
-        chk.checked = !chk.checked;
-        chk.dispatchEvent(new Event('change'));
+          chk.addEventListener('change', () => {
+            const table = document.getElementById('biAnalyticsDirectoryTable');
+            if (!table) return;
+            const rows = table.querySelectorAll('tr');
+            rows.forEach(row => {
+              const cells = row.cells;
+              if (cells[col.index]) {
+                cells[col.index].style.display = chk.checked ? '' : 'none';
+              }
+            });
+          });
+          div.addEventListener('click', (e) => {
+            if (e.target.tagName !== 'INPUT') {
+              chk.checked = !chk.checked;
+              chk.dispatchEvent(new Event('change'));
+            }
+          });
+          container.appendChild(div);
+        });
       }
-    });
-    container.appendChild(div);
-  });
-}
 
-function applyBiFilters() {
-  if (!window.biOriginalData) return;
-  
-  const searchInput = document.getElementById('biFilterSearch');
-  const search = searchInput ? searchInput.value.toLowerCase().trim() : '';
-  
-  const kwMin = parseFloat(document.getElementById('biFilterKw')?.value || '0');
-  const paybackMax = parseFloat(document.getElementById('biFilterPayback')?.value || '10');
-  const billMax = parseFloat(document.getElementById('biFilterBill')?.value || '15000');
-  const unitsMax = parseFloat(document.getElementById('biFilterUnits')?.value || '1500');
-  
-  window.biFilteredDirectory = (window.biOriginalData.directory || []).filter(item => {
-    // Search filter
-    if (search) {
-      const name = (item.customer_name || '').toLowerCase();
-      const conNum = (item.consumer_number || '').toLowerCase();
-      if (!name.includes(search) && !conNum.includes(search)) return false;
-    }
-    
-    // Multi-select dropdown checks
-    if (window.biSelectedCities.length > 0 && !window.biSelectedCities.includes(item.city)) return false;
-    if (window.biSelectedDiscoms.length > 0 && !window.biSelectedDiscoms.includes(item.discom)) return false;
-    
-    // Segment checks
-    if (window.biActiveSegment) {
-      const email = item.email || "N/A";
-      const segEmails = window.biOriginalData.segmentation.emails[window.biActiveSegment] || [];
-      if (!segEmails.includes(email)) return false;
-    }
-    
-    // Range sliders
-    if (item.recommended_kw < kwMin) return false;
-    if (item.payback_years > paybackMax) return false;
-    if (item.bill_amount > billMax) return false;
-    if (item.monthly_units > unitsMax) return false;
-    
-    return true;
-  });
-  
-  calculateAndRenderFilteredAggregates();
-}
+      function applyBiFilters() {
+        if (!window.biOriginalData) return;
 
-function calculateAndRenderFilteredAggregates() {
-  const dir = window.biFilteredDirectory;
-  const original = window.biOriginalData;
-  
-  // Dynamic KPIs Calculations
-  const totalCustomers = new Set(dir.map(x => x.customer_id)).size;
-  const billsCount = dir.length;
-  const totalMonthlyRev = dir.reduce((acc, curr) => acc + curr.bill_amount, 0);
-  
-  const avgBill = billsCount > 0 ? (totalMonthlyRev / billsCount) : 0.0;
-  const avgUnits = billsCount > 0 ? (dir.reduce((acc, curr) => acc + curr.monthly_units, 0) / billsCount) : 0.0;
-  const avgPayback = billsCount > 0 ? (dir.reduce((acc, curr) => acc + curr.payback_years, 0) / billsCount) : 0.0;
-  const avgKw = billsCount > 0 ? (dir.reduce((acc, curr) => acc + curr.recommended_kw, 0) / billsCount) : 0.0;
-  const totalKw = dir.reduce((acc, curr) => acc + curr.recommended_kw, 0);
-  const totalProjVal = dir.reduce((acc, curr) => acc + curr.system_cost, 0);
-  const total25Savings = dir.reduce((acc, curr) => acc + curr.savings_25yr, 0);
-  const avgMonthlySavings = billsCount > 0 ? (dir.reduce((acc, curr) => acc + curr.monthly_savings, 0) / billsCount) : 0.0;
-  const totalAnnualSavings = dir.reduce((acc, curr) => acc + curr.annual_savings, 0);
-  
-  const uniqueCities = new Set(dir.map(x => x.city)).size;
-  const uniqueDiscoms = new Set(dir.map(x => x.discom)).size;
-  
-  // Update KPI displays
-  document.getElementById('biKpiCustomers').textContent = totalCustomers;
-  document.getElementById('biKpiBills').textContent = billsCount;
-  document.getElementById('biKpiMonthlyRevenue').textContent = formatCurrencyRupee(totalMonthlyRev);
-  document.getElementById('biKpiAvgBill').textContent = formatCurrencyRupee(avgBill);
-  document.getElementById('biKpiAvgUnits').textContent = Math.round(avgUnits) + ' Units';
-  document.getElementById('biKpiAvgPayback').textContent = avgPayback.toFixed(1) + ' Yrs';
-  document.getElementById('biKpiAvgSystemSize').textContent = avgKw.toFixed(1) + ' kW';
-  document.getElementById('biKpiTotalInstalled').textContent = totalKw.toFixed(1) + ' kW';
-  document.getElementById('biKpiTotalProjectValue').textContent = formatCurrencyRupee(totalProjVal);
-  document.getElementById('biKpiTotal25YrSavings').textContent = formatCurrencyRupee(total25Savings);
-  document.getElementById('biKpiAvgMonthlySavings').textContent = formatCurrencyRupee(avgMonthlySavings);
-  document.getElementById('biKpiTotalAnnualSavings').textContent = formatCurrencyRupee(totalAnnualSavings);
-  document.getElementById('biKpiCities').textContent = uniqueCities;
-  document.getElementById('biKpiDiscoms').textContent = uniqueDiscoms;
+        const searchInput = document.getElementById('biFilterSearch');
+        const search = searchInput ? searchInput.value.toLowerCase().trim() : '';
 
-  // Hydrate Sparklines SVGs
-  _drawSparklineSVG('biSparklineCustomers', [2, 4, 3, 5, totalCustomers]);
-  _drawSparklineSVG('biSparklineBills', [3, 6, 5, 8, billsCount]);
-  _drawSparklineSVG('biSparklineRevenue', [12000, 18000, 24000, 31000, totalMonthlyRev]);
-  _drawSparklineSVG('biSparklineAvgBill', [2200, 2400, 2300, 2600, avgBill]);
-  _drawSparklineSVG('biSparklineAvgUnits', [180, 210, 190, 230, avgUnits]);
-  _drawSparklineSVG('biSparklineAvgPayback', [6.2, 5.8, 5.9, 5.1, avgPayback]);
-  _drawSparklineSVG('biSparklineAvgSystemSize', [3.1, 3.4, 3.2, 4.0, avgKw]);
-  _drawSparklineSVG('biSparklineCapacity', [12, 18, 22, 29, totalKw]);
-  _drawSparklineSVG('biSparklineProjectValue', [600000, 800000, 1100000, 1400000, totalProjVal]);
-  _drawSparklineSVG('biSparklineSavings25', [1400000, 2200000, 3100000, 4800000, total25Savings]);
-  _drawSparklineSVG('biSparklineMonthlySavings', [1100, 1400, 1600, 1900, avgMonthlySavings]);
-  _drawSparklineSVG('biSparklineAnnualSavings', [13200, 16800, 19200, 22800, totalAnnualSavings]);
-  _drawSparklineSVG('biSparklineCities', [1, 1, 1, 1, uniqueCities]);
-  _drawSparklineSVG('biSparklineDiscoms', [1, 1, 1, 1, uniqueDiscoms]);
+        const kwMin = parseFloat(document.getElementById('biFilterKw')?.value || '0');
+        const paybackMax = parseFloat(document.getElementById('biFilterPayback')?.value || '10');
+        const billMax = parseFloat(document.getElementById('biFilterBill')?.value || '15000');
+        const unitsMax = parseFloat(document.getElementById('biFilterUnits')?.value || '1500');
 
-  // Set KPI Trend comparisons
-  const comps = original.kpi_comparison || {};
-  const setTrendComp = (trendId, key, suffix = '') => {
-    const el = document.getElementById(trendId);
-    if (el && comps[key]) {
-      const c = comps[key];
-      const sign = c.trend === 'up' ? '↑' : (c.trend === 'down' ? '↓' : '→');
-      el.textContent = `${sign} ${Math.abs(c.change_pct)}% ${suffix}`;
-      el.className = `bi-kpi-trend ${c.trend === 'up' ? 'healthy' : (c.trend === 'down' ? 'danger' : '')}`;
-    }
-  };
-  setTrendComp('biTrendRevenue', 'revenue', 'MoM');
-  setTrendComp('biTrendAvgBill', 'average_bill', 'MoM');
-  setTrendComp('biTrendAvgSystemSize', 'system_size', 'MoM');
-  setTrendComp('biTrendAvgPayback', 'payback', 'MoM');
-  
-  // Render Executive brief summary paragraph
-  const executiveBrief = document.getElementById('biExecutiveBrief');
-  if (executiveBrief) {
-    executiveBrief.textContent = original.command_center.executive_summary || '';
-  }
+        window.biFilteredDirectory = (window.biOriginalData.directory || []).filter(item => {
+          // Search filter
+          if (search) {
+            const name = (item.customer_name || '').toLowerCase();
+            const conNum = (item.consumer_number || '').toLowerCase();
+            if (!name.includes(search) && !conNum.includes(search)) return false;
+          }
 
-  // Hydrate Sales Funnel Stage visualization
-  const fn = original.funnel || {};
-  const funnelContainer = document.getElementById('biFunnelContainer');
-  if (funnelContainer) {
-    funnelContainer.innerHTML = '';
-    const stages = ['lead', 'qualified', 'proposal_generated', 'negotiation', 'won', 'lost'];
-    stages.forEach(st => {
-      if (fn[st]) {
-        const item = fn[st];
-        const div = document.createElement('div');
-        div.className = 'bi-funnel-stage';
-        div.innerHTML = `
+          // Multi-select dropdown checks
+          if (window.biSelectedCities.length > 0 && !window.biSelectedCities.includes(item.city)) return false;
+          if (window.biSelectedDiscoms.length > 0 && !window.biSelectedDiscoms.includes(item.discom)) return false;
+
+          // Segment checks
+          if (window.biActiveSegment) {
+            const email = item.email || "N/A";
+            const segEmails = window.biOriginalData.segmentation.emails[window.biActiveSegment] || [];
+            if (!segEmails.includes(email)) return false;
+          }
+
+          // Range sliders
+          if (item.recommended_kw < kwMin) return false;
+          if (item.payback_years > paybackMax) return false;
+          if (item.bill_amount > billMax) return false;
+          if (item.monthly_units > unitsMax) return false;
+
+          return true;
+        });
+
+        calculateAndRenderFilteredAggregates();
+      }
+
+      function calculateAndRenderFilteredAggregates() {
+        const dir = window.biFilteredDirectory;
+        const original = window.biOriginalData;
+
+        // Dynamic KPIs Calculations
+        const totalCustomers = new Set(dir.map(x => x.customer_id)).size;
+        const billsCount = dir.length;
+        const totalMonthlyRev = dir.reduce((acc, curr) => acc + curr.bill_amount, 0);
+
+        const avgBill = billsCount > 0 ? (totalMonthlyRev / billsCount) : 0.0;
+        const avgUnits = billsCount > 0 ? (dir.reduce((acc, curr) => acc + curr.monthly_units, 0) / billsCount) : 0.0;
+        const avgPayback = billsCount > 0 ? (dir.reduce((acc, curr) => acc + curr.payback_years, 0) / billsCount) : 0.0;
+        const avgKw = billsCount > 0 ? (dir.reduce((acc, curr) => acc + curr.recommended_kw, 0) / billsCount) : 0.0;
+        const totalKw = dir.reduce((acc, curr) => acc + curr.recommended_kw, 0);
+        const totalProjVal = dir.reduce((acc, curr) => acc + curr.system_cost, 0);
+        const total25Savings = dir.reduce((acc, curr) => acc + curr.savings_25yr, 0);
+        const avgMonthlySavings = billsCount > 0 ? (dir.reduce((acc, curr) => acc + curr.monthly_savings, 0) / billsCount) : 0.0;
+        const totalAnnualSavings = dir.reduce((acc, curr) => acc + curr.annual_savings, 0);
+
+        const uniqueCities = new Set(dir.map(x => x.city)).size;
+        const uniqueDiscoms = new Set(dir.map(x => x.discom)).size;
+
+        // Update KPI displays
+        document.getElementById('biKpiCustomers').textContent = totalCustomers;
+        document.getElementById('biKpiBills').textContent = billsCount;
+        document.getElementById('biKpiMonthlyRevenue').textContent = formatCurrencyRupee(totalMonthlyRev);
+        document.getElementById('biKpiAvgBill').textContent = formatCurrencyRupee(avgBill);
+        document.getElementById('biKpiAvgUnits').textContent = Math.round(avgUnits) + ' Units';
+        document.getElementById('biKpiAvgPayback').textContent = avgPayback.toFixed(1) + ' Yrs';
+        document.getElementById('biKpiAvgSystemSize').textContent = avgKw.toFixed(1) + ' kW';
+        document.getElementById('biKpiTotalInstalled').textContent = totalKw.toFixed(1) + ' kW';
+        document.getElementById('biKpiTotalProjectValue').textContent = formatCurrencyRupee(totalProjVal);
+        document.getElementById('biKpiTotal25YrSavings').textContent = formatCurrencyRupee(total25Savings);
+        document.getElementById('biKpiAvgMonthlySavings').textContent = formatCurrencyRupee(avgMonthlySavings);
+        document.getElementById('biKpiTotalAnnualSavings').textContent = formatCurrencyRupee(totalAnnualSavings);
+        document.getElementById('biKpiCities').textContent = uniqueCities;
+        document.getElementById('biKpiDiscoms').textContent = uniqueDiscoms;
+
+        // Hydrate Sparklines SVGs
+        _drawSparklineSVG('biSparklineCustomers', [2, 4, 3, 5, totalCustomers]);
+        _drawSparklineSVG('biSparklineBills', [3, 6, 5, 8, billsCount]);
+        _drawSparklineSVG('biSparklineRevenue', [12000, 18000, 24000, 31000, totalMonthlyRev]);
+        _drawSparklineSVG('biSparklineAvgBill', [2200, 2400, 2300, 2600, avgBill]);
+        _drawSparklineSVG('biSparklineAvgUnits', [180, 210, 190, 230, avgUnits]);
+        _drawSparklineSVG('biSparklineAvgPayback', [6.2, 5.8, 5.9, 5.1, avgPayback]);
+        _drawSparklineSVG('biSparklineAvgSystemSize', [3.1, 3.4, 3.2, 4.0, avgKw]);
+        _drawSparklineSVG('biSparklineCapacity', [12, 18, 22, 29, totalKw]);
+        _drawSparklineSVG('biSparklineProjectValue', [600000, 800000, 1100000, 1400000, totalProjVal]);
+        _drawSparklineSVG('biSparklineSavings25', [1400000, 2200000, 3100000, 4800000, total25Savings]);
+        _drawSparklineSVG('biSparklineMonthlySavings', [1100, 1400, 1600, 1900, avgMonthlySavings]);
+        _drawSparklineSVG('biSparklineAnnualSavings', [13200, 16800, 19200, 22800, totalAnnualSavings]);
+        _drawSparklineSVG('biSparklineCities', [1, 1, 1, 1, uniqueCities]);
+        _drawSparklineSVG('biSparklineDiscoms', [1, 1, 1, 1, uniqueDiscoms]);
+
+        // Set KPI Trend comparisons
+        const comps = original.kpi_comparison || {};
+        const setTrendComp = (trendId, key, suffix = '') => {
+          const el = document.getElementById(trendId);
+          if (el && comps[key]) {
+            const c = comps[key];
+            const sign = c.trend === 'up' ? '↑' : (c.trend === 'down' ? '↓' : '→');
+            el.textContent = `${sign} ${Math.abs(c.change_pct)}% ${suffix}`;
+            el.className = `bi-kpi-trend ${c.trend === 'up' ? 'healthy' : (c.trend === 'down' ? 'danger' : '')}`;
+          }
+        };
+        setTrendComp('biTrendRevenue', 'revenue', 'MoM');
+        setTrendComp('biTrendAvgBill', 'average_bill', 'MoM');
+        setTrendComp('biTrendAvgSystemSize', 'system_size', 'MoM');
+        setTrendComp('biTrendAvgPayback', 'payback', 'MoM');
+
+        // Render Executive brief summary paragraph
+        const executiveBrief = document.getElementById('biExecutiveBrief');
+        if (executiveBrief) {
+          executiveBrief.textContent = original.command_center.executive_summary || '';
+        }
+
+        // Hydrate Sales Funnel Stage visualization
+        const fn = original.funnel || {};
+        const funnelContainer = document.getElementById('biFunnelContainer');
+        if (funnelContainer) {
+          funnelContainer.innerHTML = '';
+          const stages = ['lead', 'qualified', 'proposal_generated', 'negotiation', 'won', 'lost'];
+          stages.forEach(st => {
+            if (fn[st]) {
+              const item = fn[st];
+              const div = document.createElement('div');
+              div.className = 'bi-funnel-stage';
+              div.innerHTML = `
           <span class="bi-funnel-label">${st.replace('_', ' ')}</span>
           <div class="bi-funnel-bar-outer">
             <div class="bi-funnel-bar-inner" style="width: ${item.conversion}%;"></div>
@@ -10178,336 +11780,337 @@ function calculateAndRenderFilteredAggregates() {
           </div>
           <span class="bi-funnel-percent">${item.conversion.toFixed(1)}% Conv</span>
         `;
-        funnelContainer.appendChild(div);
+              funnelContainer.appendChild(div);
+            }
+          });
+        }
+
+        // Hydrate Forecasting regression metrics
+        const fc = original.forecasting || {};
+        document.getElementById('biForecastMonthlyRev').textContent = formatCurrencyRupee(fc.expected_monthly_revenue);
+        document.getElementById('biForecastCustGrowth').textContent = `+ ${fc.expected_customer_growth} Leads`;
+        document.getElementById('biForecastInstalledKw').textContent = `${fc.expected_installed_capacity} kW`;
+        document.getElementById('biForecastSavings').textContent = formatCurrencyRupee(fc.expected_savings);
+        document.getElementById('biForecastAnnualRev').textContent = formatCurrencyRupee(fc.projected_annual_revenue);
+
+        // Classify and Populate Segment cards
+        const segCounts = original.segmentation.counts || {};
+        document.getElementById('biSegResidential').textContent = segCounts.residential || 0;
+        document.getElementById('biSegCommercial').textContent = segCounts.commercial || 0;
+        document.getElementById('biSegIndustrial').textContent = segCounts.industrial || 0;
+        document.getElementById('biSegHighCons').textContent = segCounts.high_consumption || 0;
+        document.getElementById('biSegMedCons').textContent = segCounts.medium_consumption || 0;
+        document.getElementById('biSegLowCons').textContent = segCounts.low_consumption || 0;
+        document.getElementById('biSegHighRoi').textContent = segCounts.high_roi || 0;
+        document.getElementById('biSegLongPayback').textContent = segCounts.long_payback || 0;
+        document.getElementById('biSegPremium').textContent = segCounts.premium_customers || 0;
+
+        // Render active interactive chart tab
+        const activeTab = document.querySelector('.bi-chart-tab.active');
+        const activeChart = activeTab ? activeTab.getAttribute('data-chart') : 'bill';
+        renderActiveBiChart(activeChart);
+
+        // Render Leaderboards
+        renderBiLeaderboards();
+
+        // Render Geo Grid summaries
+        renderBiGeoGrid();
+
+        // Render alerts list
+        renderBiAlerts();
+
+        // Sort and Render Table Page
+        window.biTablePage = 1;
+        sortAndRenderBiTable();
       }
-    });
-  }
 
-  // Hydrate Forecasting regression metrics
-  const fc = original.forecasting || {};
-  document.getElementById('biForecastMonthlyRev').textContent = formatCurrencyRupee(fc.expected_monthly_revenue);
-  document.getElementById('biForecastCustGrowth').textContent = `+ ${fc.expected_customer_growth} Leads`;
-  document.getElementById('biForecastInstalledKw').textContent = `${fc.expected_installed_capacity} kW`;
-  document.getElementById('biForecastSavings').textContent = formatCurrencyRupee(fc.expected_savings);
-  document.getElementById('biForecastAnnualRev').textContent = formatCurrencyRupee(fc.projected_annual_revenue);
+      function _drawSparklineSVG(svgId, dataPoints) {
+        const svg = document.getElementById(svgId);
+        if (!svg) return;
+        svg.innerHTML = '';
 
-  // Classify and Populate Segment cards
-  const segCounts = original.segmentation.counts || {};
-  document.getElementById('biSegResidential').textContent = segCounts.residential || 0;
-  document.getElementById('biSegCommercial').textContent = segCounts.commercial || 0;
-  document.getElementById('biSegIndustrial').textContent = segCounts.industrial || 0;
-  document.getElementById('biSegHighCons').textContent = segCounts.high_consumption || 0;
-  document.getElementById('biSegMedCons').textContent = segCounts.medium_consumption || 0;
-  document.getElementById('biSegLowCons').textContent = segCounts.low_consumption || 0;
-  document.getElementById('biSegHighRoi').textContent = segCounts.high_roi || 0;
-  document.getElementById('biSegLongPayback').textContent = segCounts.long_payback || 0;
-  document.getElementById('biSegPremium').textContent = segCounts.premium_customers || 0;
+        const width = svg.clientWidth || 100;
+        const height = svg.clientHeight || 30;
 
-  // Render active interactive chart tab
-  const activeTab = document.querySelector('.bi-chart-tab.active');
-  const activeChart = activeTab ? activeTab.getAttribute('data-chart') : 'bill';
-  renderActiveBiChart(activeChart);
-  
-  // Render Leaderboards
-  renderBiLeaderboards();
-  
-  // Render Geo Grid summaries
-  renderBiGeoGrid();
-  
-  // Render alerts list
-  renderBiAlerts();
-  
-  // Sort and Render Table Page
-  window.biTablePage = 1;
-  sortAndRenderBiTable();
-}
+        if (dataPoints.length < 2) return;
 
-function _drawSparklineSVG(svgId, dataPoints) {
-  const svg = document.getElementById(svgId);
-  if (!svg) return;
-  svg.innerHTML = '';
-  
-  const width = svg.clientWidth || 100;
-  const height = svg.clientHeight || 30;
-  
-  if (dataPoints.length < 2) return;
-  
-  const minVal = Math.min(...dataPoints);
-  const maxVal = Math.max(...dataPoints);
-  const range = maxVal - minVal === 0 ? 1 : maxVal - minVal;
-  
-  const stepX = width / (dataPoints.length - 1);
-  let pathD = '';
-  let fillD = `M 0 ${height} `;
-  
-  dataPoints.forEach((val, idx) => {
-    const x = idx * stepX;
-    const y = height - ((val - minVal) / range) * (height - 6) - 3;
-    if (idx === 0) {
-      pathD += `M ${x} ${y} `;
-    } else {
-      pathD += `L ${x} ${y} `;
-    }
-    fillD += `L ${x} ${y} `;
-  });
-  
-  fillD += `L ${width} ${height} Z`;
-  
-  svg.innerHTML = `
+        const minVal = Math.min(...dataPoints);
+        const maxVal = Math.max(...dataPoints);
+        const range = maxVal - minVal === 0 ? 1 : maxVal - minVal;
+
+        const stepX = width / (dataPoints.length - 1);
+        let pathD = '';
+        let fillD = `M 0 ${height} `;
+
+        dataPoints.forEach((val, idx) => {
+          const x = idx * stepX;
+          const y = height - ((val - minVal) / range) * (height - 6) - 3;
+          if (idx === 0) {
+            pathD += `M ${x} ${y} `;
+          } else {
+            pathD += `L ${x} ${y} `;
+          }
+          fillD += `L ${x} ${y} `;
+        });
+
+        fillD += `L ${width} ${height} Z`;
+
+        svg.innerHTML = `
     <path class="bi-sparkline-fill" d="${fillD}"></path>
     <path class="bi-sparkline-path" d="${pathD}"></path>
   `;
-}
-
-function renderActiveBiChart(type) {
-  const canvas = document.getElementById('biInteractiveChartCanvas');
-  if (!canvas) return;
-  
-  if (biInteractiveChartInstance) {
-    biInteractiveChartInstance.destroy();
-  }
-  
-  const ctx = canvas.getContext('2d');
-  const dir = window.biFilteredDirectory;
-  
-  let labels = [];
-  let counts = [];
-  let labelText = '';
-  let chartType = 'bar';
-  let bgColors = [];
-  let borderColors = [];
-  
-  const defaultColors = [
-    'rgba(0, 174, 239, 0.75)',
-    'rgba(247, 147, 30, 0.75)',
-    'rgba(54, 211, 153, 0.75)',
-    'rgba(168, 85, 247, 0.75)',
-    'rgba(239, 68, 68, 0.75)',
-    'rgba(100, 116, 139, 0.75)'
-  ];
-  const borderColorsSet = [
-    '#00aeef', '#ff8a1d', '#36d399', '#a855f7', '#ef4444', '#64748b'
-  ];
-  
-  if (type === 'bill') {
-    labels = ['0-2k', '2k-4k', '4k-6k', '6k-8k', '8k+'];
-    counts = [0,0,0,0,0];
-    dir.forEach(x => {
-      const v = x.bill_amount;
-      if (v <= 2000) counts[0]++;
-      else if (v <= 4000) counts[1]++;
-      else if (v <= 6000) counts[2]++;
-      else if (v <= 8000) counts[3]++;
-      else counts[4]++;
-    });
-    labelText = 'Monthly Electricity Bill Distribution';
-    bgColors = 'rgba(0, 174, 239, 0.75)';
-    borderColors = '#00aeef';
-  } else if (type === 'units') {
-    labels = ['0-150', '150-300', '300-450', '450-600', '600+'];
-    counts = [0,0,0,0,0];
-    dir.forEach(x => {
-      const v = x.monthly_units;
-      if (v <= 150) counts[0]++;
-      else if (v <= 300) counts[1]++;
-      else if (v <= 450) counts[2]++;
-      else if (v <= 600) counts[3]++;
-      else counts[4]++;
-    });
-    labelText = 'Electricity Units Consumed';
-    bgColors = 'rgba(247, 147, 30, 0.75)';
-    borderColors = '#ff8a1d';
-  } else if (type === 'kw') {
-    labels = ['0-2 kW', '2-4 kW', '4-6 kW', '6-8 kW', '8 kW+'];
-    counts = [0,0,0,0,0];
-    dir.forEach(x => {
-      const v = x.recommended_kw;
-      if (v <= 2) counts[0]++;
-      else if (v <= 4) counts[1]++;
-      else if (v <= 6) counts[2]++;
-      else if (v <= 8) counts[3]++;
-      else counts[4]++;
-    });
-    labelText = 'Recommended System Size kW';
-    bgColors = 'rgba(54, 211, 153, 0.75)';
-    borderColors = '#36d399';
-  } else if (type === 'payback') {
-    labels = ['0-2 Yr', '2-4 Yr', '4-6 Yr', '6-8 Yr', '8 Yr+'];
-    counts = [0,0,0,0,0];
-    dir.forEach(x => {
-      const v = x.payback_years;
-      if (v <= 2) counts[0]++;
-      else if (v <= 4) counts[1]++;
-      else if (v <= 6) counts[2]++;
-      else if (v <= 8) counts[3]++;
-      else counts[4]++;
-    });
-    labelText = 'Payback Period Years';
-    bgColors = 'rgba(168, 85, 247, 0.75)';
-    borderColors = '#a855f7';
-  } else if (type === 'savings') {
-    labels = ['0-1k', '1k-2k', '2k-3k', '3k-4k', '4k+'];
-    counts = [0,0,0,0,0];
-    dir.forEach(x => {
-      const v = x.monthly_savings;
-      if (v <= 1000) counts[0]++;
-      else if (v <= 2000) counts[1]++;
-      else if (v <= 3000) counts[2]++;
-      else if (v <= 4000) counts[3]++;
-      else counts[4]++;
-    });
-    labelText = 'Estimated Monthly Savings';
-    bgColors = 'rgba(54, 211, 153, 0.75)';
-    borderColors = '#36d399';
-  } else if (type === 'annSavings') {
-    labels = ['0-12k', '12k-24k', '24k-36k', '36k-48k', '48k+'];
-    counts = [0,0,0,0,0];
-    dir.forEach(x => {
-      const v = x.annual_savings;
-      if (v <= 12000) counts[0]++;
-      else if (v <= 24000) counts[1]++;
-      else if (v <= 36000) counts[2]++;
-      else if (v <= 48000) counts[3]++;
-      else counts[4]++;
-    });
-    labelText = 'Estimated Annual Savings';
-    bgColors = 'rgba(0, 174, 239, 0.75)';
-    borderColors = '#00aeef';
-  } else if (type === 'projValue') {
-    labels = ['0-1L', '1L-2L', '2L-3L', '3L-4L', '4L+'];
-    counts = [0,0,0,0,0];
-    dir.forEach(x => {
-      const v = x.system_cost;
-      if (v <= 100000) counts[0]++;
-      else if (v <= 200000) counts[1]++;
-      else if (v <= 300000) counts[2]++;
-      else if (v <= 400000) counts[3]++;
-      else counts[4]++;
-    });
-    labelText = 'Estimated Project Value Cost';
-    bgColors = 'rgba(247, 147, 30, 0.75)';
-    borderColors = '#ff8a1d';
-  } else if (type === 'growth') {
-    chartType = 'line';
-    const sorted = [...dir].sort((a,b) => a.customer_id - b.customer_id);
-    sorted.forEach((x, index) => {
-      labels.push(x.customer_name);
-      counts.push(index + 1);
-    });
-    labelText = 'Cumulative Platform Growth';
-    bgColors = 'rgba(0, 174, 239, 0.1)';
-    borderColors = '#00aeef';
-  } else if (type === 'city') {
-    chartType = 'doughnut';
-    const cityMap = {};
-    dir.forEach(x => { cityMap[x.city] = (cityMap[x.city] || 0) + 1; });
-    labels = Object.keys(cityMap);
-    counts = Object.values(cityMap);
-    labelText = 'City Customer Split';
-    bgColors = defaultColors.slice(0, labels.length);
-    borderColors = borderColorsSet.slice(0, labels.length);
-  } else if (type === 'discom') {
-    chartType = 'pie';
-    const discomMap = {};
-    dir.forEach(x => { discomMap[x.discom] = (discomMap[x.discom] || 0) + 1; });
-    labels = Object.keys(discomMap);
-    counts = Object.values(discomMap);
-    labelText = 'DISCOM Market Shares';
-    bgColors = defaultColors.slice(0, labels.length);
-    borderColors = borderColorsSet.slice(0, labels.length);
-  }
-  
-  const dataset = {
-    label: labelText,
-    data: counts,
-    backgroundColor: bgColors,
-    borderColor: borderColors,
-    borderWidth: 1.5
-  };
-  
-  if (chartType === 'line') {
-    dataset.fill = true;
-    dataset.tension = 0.2;
-  }
-  
-  biInteractiveChartInstance = new Chart(ctx, {
-    type: chartType,
-    data: {
-      labels: labels,
-      datasets: [dataset]
-    },
-    options: {
-      responsive: true,
-      maintainAspectRatio: false,
-      plugins: {
-        legend: {
-          display: ['doughnut', 'pie'].includes(chartType),
-          labels: { color: '#94a3b8', font: { family: 'Outfit', size: 10 } }
-        }
-      },
-      scales: ['doughnut', 'pie'].includes(chartType) ? {} : {
-        x: {
-          grid: { color: 'rgba(255,255,255,0.05)' },
-          ticks: { color: '#94a3b8', font: { family: 'Outfit', size: 10 } }
-        },
-        y: {
-          grid: { color: 'rgba(255,255,255,0.05)' },
-          ticks: { color: '#94a3b8', font: { family: 'Outfit', size: 10 }, precision: 0 }
-        }
       }
-    }
-  });
-}
 
-function renderBiLeaderboards() {
-  const container = document.getElementById('biLeaderboardGridContainer');
-  if (!container) return;
-  container.innerHTML = '';
+      function renderActiveBiChart(type) {
+        const canvas = document.getElementById('biInteractiveChartCanvas');
+        if (!canvas) return;
 
-  const data = window.biOriginalData;
-  if (!data || !data.leaderboards) return;
+        if (biInteractiveChartInstance) {
+          biInteractiveChartInstance.destroy();
+        }
 
-  const lbType = document.getElementById('biLeaderboardSelector')?.value || 'groupA';
+        const ctx = canvas.getContext('2d');
+        const dir = window.biFilteredDirectory;
 
-  const groupA = [
-    { title: 'Highest Bills', key: 'highest_bills', formatter: x => formatCurrencyRupee(x.value) },
-    { title: 'Highest Savings (25yr)', key: 'highest_savings', formatter: x => formatCurrencyRupee(x.value) },
-    { title: 'Largest System sizes', key: 'largest_systems', formatter: x => `${x.value} kW` },
-    { title: 'Highest ROI Yield', key: 'highest_roi', formatter: x => `${x.value}% ROI` },
-    { title: 'Fastest Payback', key: 'fastest_payback', formatter: x => `${x.value} Years` }
-  ];
+        let labels = [];
+        let counts = [];
+        let labelText = '';
+        let chartType = 'bar';
+        let bgColors = [];
+        let borderColors = [];
 
-  const groupB = [
-    { title: 'Largest Projects', key: 'largest_projects', formatter: x => formatCurrencyRupee(x.value) },
-    { title: 'Highest Monthly Units', key: 'highest_monthly_units', formatter: x => `${Math.round(x.value)} Units` },
-    { title: 'Most Valuable Customers', key: 'most_valuable_customers', formatter: x => formatCurrencyRupee(x.value) },
-    { title: 'Newest Registered', key: 'newest_customers', formatter: x => {
-        const d = new Date(x.value);
-        return d.toLocaleDateString();
+        const defaultColors = [
+          'rgba(0, 174, 239, 0.75)',
+          'rgba(247, 147, 30, 0.75)',
+          'rgba(54, 211, 153, 0.75)',
+          'rgba(168, 85, 247, 0.75)',
+          'rgba(239, 68, 68, 0.75)',
+          'rgba(100, 116, 139, 0.75)'
+        ];
+        const borderColorsSet = [
+          '#00aeef', '#ff8a1d', '#36d399', '#a855f7', '#ef4444', '#64748b'
+        ];
+
+        if (type === 'bill') {
+          labels = ['0-2k', '2k-4k', '4k-6k', '6k-8k', '8k+'];
+          counts = [0, 0, 0, 0, 0];
+          dir.forEach(x => {
+            const v = x.bill_amount;
+            if (v <= 2000) counts[0]++;
+            else if (v <= 4000) counts[1]++;
+            else if (v <= 6000) counts[2]++;
+            else if (v <= 8000) counts[3]++;
+            else counts[4]++;
+          });
+          labelText = 'Monthly Electricity Bill Distribution';
+          bgColors = 'rgba(0, 174, 239, 0.75)';
+          borderColors = '#00aeef';
+        } else if (type === 'units') {
+          labels = ['0-150', '150-300', '300-450', '450-600', '600+'];
+          counts = [0, 0, 0, 0, 0];
+          dir.forEach(x => {
+            const v = x.monthly_units;
+            if (v <= 150) counts[0]++;
+            else if (v <= 300) counts[1]++;
+            else if (v <= 450) counts[2]++;
+            else if (v <= 600) counts[3]++;
+            else counts[4]++;
+          });
+          labelText = 'Electricity Units Consumed';
+          bgColors = 'rgba(247, 147, 30, 0.75)';
+          borderColors = '#ff8a1d';
+        } else if (type === 'kw') {
+          labels = ['0-2 kW', '2-4 kW', '4-6 kW', '6-8 kW', '8 kW+'];
+          counts = [0, 0, 0, 0, 0];
+          dir.forEach(x => {
+            const v = x.recommended_kw;
+            if (v <= 2) counts[0]++;
+            else if (v <= 4) counts[1]++;
+            else if (v <= 6) counts[2]++;
+            else if (v <= 8) counts[3]++;
+            else counts[4]++;
+          });
+          labelText = 'Recommended System Size kW';
+          bgColors = 'rgba(54, 211, 153, 0.75)';
+          borderColors = '#36d399';
+        } else if (type === 'payback') {
+          labels = ['0-2 Yr', '2-4 Yr', '4-6 Yr', '6-8 Yr', '8 Yr+'];
+          counts = [0, 0, 0, 0, 0];
+          dir.forEach(x => {
+            const v = x.payback_years;
+            if (v <= 2) counts[0]++;
+            else if (v <= 4) counts[1]++;
+            else if (v <= 6) counts[2]++;
+            else if (v <= 8) counts[3]++;
+            else counts[4]++;
+          });
+          labelText = 'Payback Period Years';
+          bgColors = 'rgba(168, 85, 247, 0.75)';
+          borderColors = '#a855f7';
+        } else if (type === 'savings') {
+          labels = ['0-1k', '1k-2k', '2k-3k', '3k-4k', '4k+'];
+          counts = [0, 0, 0, 0, 0];
+          dir.forEach(x => {
+            const v = x.monthly_savings;
+            if (v <= 1000) counts[0]++;
+            else if (v <= 2000) counts[1]++;
+            else if (v <= 3000) counts[2]++;
+            else if (v <= 4000) counts[3]++;
+            else counts[4]++;
+          });
+          labelText = 'Estimated Monthly Savings';
+          bgColors = 'rgba(54, 211, 153, 0.75)';
+          borderColors = '#36d399';
+        } else if (type === 'annSavings') {
+          labels = ['0-12k', '12k-24k', '24k-36k', '36k-48k', '48k+'];
+          counts = [0, 0, 0, 0, 0];
+          dir.forEach(x => {
+            const v = x.annual_savings;
+            if (v <= 12000) counts[0]++;
+            else if (v <= 24000) counts[1]++;
+            else if (v <= 36000) counts[2]++;
+            else if (v <= 48000) counts[3]++;
+            else counts[4]++;
+          });
+          labelText = 'Estimated Annual Savings';
+          bgColors = 'rgba(0, 174, 239, 0.75)';
+          borderColors = '#00aeef';
+        } else if (type === 'projValue') {
+          labels = ['0-1L', '1L-2L', '2L-3L', '3L-4L', '4L+'];
+          counts = [0, 0, 0, 0, 0];
+          dir.forEach(x => {
+            const v = x.system_cost;
+            if (v <= 100000) counts[0]++;
+            else if (v <= 200000) counts[1]++;
+            else if (v <= 300000) counts[2]++;
+            else if (v <= 400000) counts[3]++;
+            else counts[4]++;
+          });
+          labelText = 'Estimated Project Value Cost';
+          bgColors = 'rgba(247, 147, 30, 0.75)';
+          borderColors = '#ff8a1d';
+        } else if (type === 'growth') {
+          chartType = 'line';
+          const sorted = [...dir].sort((a, b) => a.customer_id - b.customer_id);
+          sorted.forEach((x, index) => {
+            labels.push(x.customer_name);
+            counts.push(index + 1);
+          });
+          labelText = 'Cumulative Platform Growth';
+          bgColors = 'rgba(0, 174, 239, 0.1)';
+          borderColors = '#00aeef';
+        } else if (type === 'city') {
+          chartType = 'doughnut';
+          const cityMap = {};
+          dir.forEach(x => { cityMap[x.city] = (cityMap[x.city] || 0) + 1; });
+          labels = Object.keys(cityMap);
+          counts = Object.values(cityMap);
+          labelText = 'City Customer Split';
+          bgColors = defaultColors.slice(0, labels.length);
+          borderColors = borderColorsSet.slice(0, labels.length);
+        } else if (type === 'discom') {
+          chartType = 'pie';
+          const discomMap = {};
+          dir.forEach(x => { discomMap[x.discom] = (discomMap[x.discom] || 0) + 1; });
+          labels = Object.keys(discomMap);
+          counts = Object.values(discomMap);
+          labelText = 'DISCOM Market Shares';
+          bgColors = defaultColors.slice(0, labels.length);
+          borderColors = borderColorsSet.slice(0, labels.length);
+        }
+
+        const dataset = {
+          label: labelText,
+          data: counts,
+          backgroundColor: bgColors,
+          borderColor: borderColors,
+          borderWidth: 1.5
+        };
+
+        if (chartType === 'line') {
+          dataset.fill = true;
+          dataset.tension = 0.2;
+        }
+
+        biInteractiveChartInstance = new Chart(ctx, {
+          type: chartType,
+          data: {
+            labels: labels,
+            datasets: [dataset]
+          },
+          options: {
+            responsive: true,
+            maintainAspectRatio: false,
+            plugins: {
+              legend: {
+                display: ['doughnut', 'pie'].includes(chartType),
+                labels: { color: '#94a3b8', font: { family: 'Outfit', size: 10 } }
+              }
+            },
+            scales: ['doughnut', 'pie'].includes(chartType) ? {} : {
+              x: {
+                grid: { color: 'rgba(255,255,255,0.05)' },
+                ticks: { color: '#94a3b8', font: { family: 'Outfit', size: 10 } }
+              },
+              y: {
+                grid: { color: 'rgba(255,255,255,0.05)' },
+                ticks: { color: '#94a3b8', font: { family: 'Outfit', size: 10 }, precision: 0 }
+              }
+            }
+          }
+        });
       }
-    },
-    { title: 'Highest Revenue Opportunities', key: 'highest_revenue', formatter: x => formatCurrencyRupee(x.value) }
-  ];
 
-  const activeGroup = lbType === 'groupA' ? groupA : groupB;
+      function renderBiLeaderboards() {
+        const container = document.getElementById('biLeaderboardGridContainer');
+        if (!container) return;
+        container.innerHTML = '';
 
-  activeGroup.forEach(lb => {
-    const card = document.createElement('div');
-    card.className = 'bi-leaderboard-card';
-    card.innerHTML = `
+        const data = window.biOriginalData;
+        if (!data || !data.leaderboards) return;
+
+        const lbType = document.getElementById('biLeaderboardSelector')?.value || 'groupA';
+
+        const groupA = [
+          { title: 'Highest Bills', key: 'highest_bills', formatter: x => formatCurrencyRupee(x.value) },
+          { title: 'Highest Savings (25yr)', key: 'highest_savings', formatter: x => formatCurrencyRupee(x.value) },
+          { title: 'Largest System sizes', key: 'largest_systems', formatter: x => `${x.value} kW` },
+          { title: 'Highest ROI Yield', key: 'highest_roi', formatter: x => `${x.value}% ROI` },
+          { title: 'Fastest Payback', key: 'fastest_payback', formatter: x => `${x.value} Years` }
+        ];
+
+        const groupB = [
+          { title: 'Largest Projects', key: 'largest_projects', formatter: x => formatCurrencyRupee(x.value) },
+          { title: 'Highest Monthly Units', key: 'highest_monthly_units', formatter: x => `${Math.round(x.value)} Units` },
+          { title: 'Most Valuable Customers', key: 'most_valuable_customers', formatter: x => formatCurrencyRupee(x.value) },
+          {
+            title: 'Newest Registered', key: 'newest_customers', formatter: x => {
+              const d = new Date(x.value);
+              return d.toLocaleDateString();
+            }
+          },
+          { title: 'Highest Revenue Opportunities', key: 'highest_revenue', formatter: x => formatCurrencyRupee(x.value) }
+        ];
+
+        const activeGroup = lbType === 'groupA' ? groupA : groupB;
+
+        activeGroup.forEach(lb => {
+          const card = document.createElement('div');
+          card.className = 'bi-leaderboard-card';
+          card.innerHTML = `
       <span style="font-size: 10px; font-weight: 800; text-transform: uppercase; color: var(--text-secondary);">${lb.title}</span>
       <div class="bi-leaderboard-list"></div>
     `;
-    const list = card.querySelector('.bi-leaderboard-list');
-    const items = data.leaderboards[lb.key] || [];
+          const list = card.querySelector('.bi-leaderboard-list');
+          const items = data.leaderboards[lb.key] || [];
 
-    if (items.length === 0) {
-      list.innerHTML = '<div style="font-size: 10px; color: var(--text-muted); padding: 5px;">No records</div>';
-    } else {
-      items.forEach((item, idx) => {
-        const div = document.createElement('div');
-        div.className = 'bi-leaderboard-item';
-        div.innerHTML = `
+          if (items.length === 0) {
+            list.innerHTML = '<div style="font-size: 10px; color: var(--text-muted); padding: 5px;">No records</div>';
+          } else {
+            items.forEach((item, idx) => {
+              const div = document.createElement('div');
+              div.className = 'bi-leaderboard-item';
+              div.innerHTML = `
           <span class="bi-rank-pill">${idx + 1}</span>
           <div style="flex: 1; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;">
             <strong style="color: #ffffff; font-weight:700;">${item.name}</strong>
@@ -10515,43 +12118,43 @@ function renderBiLeaderboards() {
           </div>
           <span style="font-weight: 800; color: var(--accent-blue);">${lb.formatter(item)}</span>
         `;
-        div.addEventListener('click', () => {
-          openLeadProfileDrawer(item.email);
+              div.addEventListener('click', () => {
+                openLeadProfileDrawer(item.customer_id);
+              });
+              list.appendChild(div);
+            });
+          }
+          container.appendChild(card);
         });
-        list.appendChild(div);
-      });
-    }
-    container.appendChild(card);
-  });
 
-  // Set Strategic Smart Insights
-  const ins = data.insights || {};
-  document.getElementById('biInsightHighestBill').textContent = ins.highest_bill_customer || 'N/A';
-  document.getElementById('biInsightHighestSavings').textContent = ins.highest_savings_customer || 'N/A';
-  document.getElementById('biInsightFastestPayback').textContent = ins.fastest_payback || 'N/A';
-  document.getElementById('biInsightLargestSystem').textContent = ins.largest_recommended_system || 'N/A';
-  document.getElementById('biInsightLargestProject').textContent = ins.largest_project_value || 'N/A';
-  document.getElementById('biInsightHighestRoi').textContent = ins.highest_roi || 'N/A';
-  document.getElementById('biInsightCommonCity').textContent = ins.most_common_city || 'N/A';
-  document.getElementById('biInsightCommonDiscom').textContent = ins.most_common_discom || 'N/A';
-}
+        // Set Strategic Smart Insights
+        const ins = data.insights || {};
+        document.getElementById('biInsightHighestBill').textContent = ins.highest_bill_customer || 'N/A';
+        document.getElementById('biInsightHighestSavings').textContent = ins.highest_savings_customer || 'N/A';
+        document.getElementById('biInsightFastestPayback').textContent = ins.fastest_payback || 'N/A';
+        document.getElementById('biInsightLargestSystem').textContent = ins.largest_recommended_system || 'N/A';
+        document.getElementById('biInsightLargestProject').textContent = ins.largest_project_value || 'N/A';
+        document.getElementById('biInsightHighestRoi').textContent = ins.highest_roi || 'N/A';
+        document.getElementById('biInsightCommonCity').textContent = ins.most_common_city || 'N/A';
+        document.getElementById('biInsightCommonDiscom').textContent = ins.most_common_discom || 'N/A';
+      }
 
-function renderBiGeoGrid() {
-  const container = document.getElementById('biGeoGridContainer');
-  if (!container) return;
-  container.innerHTML = '';
-  
-  const summaries = window.biOriginalData.geography || [];
-  
-  if (summaries.length === 0) {
-    container.innerHTML = '<div class="card-base" style="grid-column: 1/-1; padding: 20px; text-align: center; color: var(--text-muted);">No geographic summaries matching active filters.</div>';
-    return;
-  }
-  
-  summaries.forEach(s => {
-    const card = document.createElement('div');
-    card.className = 'bi-geo-card';
-    card.innerHTML = `
+      function renderBiGeoGrid() {
+        const container = document.getElementById('biGeoGridContainer');
+        if (!container) return;
+        container.innerHTML = '';
+
+        const summaries = window.biOriginalData.geography || [];
+
+        if (summaries.length === 0) {
+          container.innerHTML = '<div class="card-base" style="grid-column: 1/-1; padding: 20px; text-align: center; color: var(--text-muted);">No geographic summaries matching active filters.</div>';
+          return;
+        }
+
+        summaries.forEach(s => {
+          const card = document.createElement('div');
+          card.className = 'bi-geo-card';
+          card.innerHTML = `
       <div style="display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 10px;">
         <h4 style="margin: 0; font-size: 13px; font-weight: 800; color: #ffffff;">📍 ${s.city}</h4>
         <div style="text-align: right;">
@@ -10569,129 +12172,129 @@ function renderBiGeoGrid() {
         </div>
       </div>
     `;
-    card.addEventListener('click', () => {
-      // Toggle City Checkbox
-      const chk = document.getElementById(`chkCity_${s.city}`);
-      if (chk) {
-        chk.checked = true;
-        chk.dispatchEvent(new Event('change'));
+          card.addEventListener('click', () => {
+            // Toggle City Checkbox
+            const chk = document.getElementById(`chkCity_${s.city}`);
+            if (chk) {
+              chk.checked = true;
+              chk.dispatchEvent(new Event('change'));
+            }
+          });
+          container.appendChild(card);
+        });
       }
-    });
-    container.appendChild(card);
-  });
-}
 
-function renderBiAlerts() {
-  const container = document.getElementById('biAlertsContainer');
-  if (!container) return;
-  container.innerHTML = '';
-  
-  const alerts = window.biOriginalData.alerts || [];
-  
-  if (alerts.length === 0) {
-    container.innerHTML = '<div style="font-size: 11px; color: var(--text-muted); text-align: center; border: 1px dashed var(--border-color); padding: 10px; border-radius: 6px;">All operational indicators are healthy. No executive alerts active.</div>';
-    return;
-  }
-  
-  alerts.slice(0, 6).forEach(a => {
-    const banner = document.createElement('div');
-    banner.className = `bi-alert-banner ${a.type === 'critical' ? 'danger' : a.type}`;
-    
-    let icon = 'ℹ️';
-    if (a.type === 'warning') icon = '⚠️';
-    if (a.type === 'critical' || a.type === 'danger') icon = '🚨';
-    
-    banner.innerHTML = `
+      function renderBiAlerts() {
+        const container = document.getElementById('biAlertsContainer');
+        if (!container) return;
+        container.innerHTML = '';
+
+        const alerts = window.biOriginalData.alerts || [];
+
+        if (alerts.length === 0) {
+          container.innerHTML = '<div style="font-size: 11px; color: var(--text-muted); text-align: center; border: 1px dashed var(--border-color); padding: 10px; border-radius: 6px;">All operational indicators are healthy. No executive alerts active.</div>';
+          return;
+        }
+
+        alerts.slice(0, 6).forEach(a => {
+          const banner = document.createElement('div');
+          banner.className = `bi-alert-banner ${a.type === 'critical' ? 'danger' : a.type}`;
+
+          let icon = 'ℹ️';
+          if (a.type === 'warning') icon = '⚠️';
+          if (a.type === 'critical' || a.type === 'danger') icon = '🚨';
+
+          banner.innerHTML = `
       <span class="bi-alert-icon">${icon}</span>
       <div>
         <div class="bi-alert-title">${a.title}</div>
         <div>${a.description}</div>
       </div>
     `;
-    container.appendChild(banner);
-  });
-}
+          container.appendChild(banner);
+        });
+      }
 
-function sortAndRenderBiTable() {
-  const col = window.biSortColumn;
-  const dir = window.biSortDirection;
-  
-  window.biFilteredDirectory.sort((a, b) => {
-    let valA = a[col];
-    let valB = b[col];
-    
-    if (typeof valA === 'string') {
-      valA = valA.toLowerCase();
-      valB = valB.toLowerCase();
-    }
-    
-    if (valA < valB) return dir === 'asc' ? -1 : 1;
-    if (valA > valB) return dir === 'asc' ? 1 : -1;
-    return 0;
-  });
-  
-  renderBiTablePage();
-}
+      function sortAndRenderBiTable() {
+        const col = window.biSortColumn;
+        const dir = window.biSortDirection;
 
-function renderBiTablePage() {
-  const container = document.getElementById('biAnalyticsTableBody');
-  if (!container) return;
-  container.innerHTML = '';
-  
-  const searchInput = document.getElementById('biTableSearch');
-  const tableSearch = searchInput ? searchInput.value.toLowerCase().trim() : '';
+        window.biFilteredDirectory.sort((a, b) => {
+          let valA = a[col];
+          let valB = b[col];
 
-  let dataset = window.biFilteredDirectory;
-  if (tableSearch) {
-    dataset = dataset.filter(item => {
-      return (item.customer_name || '').toLowerCase().includes(tableSearch) ||
-             (item.consumer_number || '').toLowerCase().includes(tableSearch) ||
-             (item.city || '').toLowerCase().includes(tableSearch) ||
-             (item.discom || '').toLowerCase().includes(tableSearch);
-    });
-  }
+          if (typeof valA === 'string') {
+            valA = valA.toLowerCase();
+            valB = valB.toLowerCase();
+          }
 
-  const page = window.biTablePage;
-  const size = window.biTablePageSize;
-  const total = dataset.length;
-  
-  const totalPages = Math.max(1, Math.ceil(total / size));
-  if (page > totalPages) window.biTablePage = totalPages;
-  
-  const start = (window.biTablePage - 1) * size;
-  const end = Math.min(start + size, total);
-  
-  const summaryText = document.getElementById('biTablePaginationSummary');
-  if (summaryText) {
-    if (total === 0) {
-      summaryText.textContent = 'Showing 0-0 of 0 entries';
-    } else {
-      summaryText.textContent = `Showing ${start + 1}-${end} of ${total} entries`;
-    }
-  }
-  
-  const prevBtn = document.getElementById('biTableBtnPrev');
-  if (prevBtn) {
-    prevBtn.disabled = window.biTablePage === 1;
-    prevBtn.style.opacity = window.biTablePage === 1 ? '0.4' : '1';
-  }
-  
-  const nextBtn = document.getElementById('biTableBtnNext');
-  if (nextBtn) {
-    nextBtn.disabled = window.biTablePage === totalPages;
-    nextBtn.style.opacity = window.biTablePage === totalPages ? '0.4' : '1';
-  }
-  
-  if (total === 0) {
-    container.innerHTML = `<tr><td colspan="14" style="text-align: center; padding: 25px; color: var(--text-muted); font-size:11px;">No records match table search filters.</td></tr>`;
-    return;
-  }
-  
-  const items = dataset.slice(start, end);
-  items.forEach(item => {
-    const tr = document.createElement('tr');
-    tr.style.cursor = 'pointer';
-    tr.innerHTML = `
+          if (valA < valB) return dir === 'asc' ? -1 : 1;
+          if (valA > valB) return dir === 'asc' ? 1 : -1;
+          return 0;
+        });
+
+        renderBiTablePage();
+      }
+
+      function renderBiTablePage() {
+        const container = document.getElementById('biAnalyticsTableBody');
+        if (!container) return;
+        container.innerHTML = '';
+
+        const searchInput = document.getElementById('biTableSearch');
+        const tableSearch = searchInput ? searchInput.value.toLowerCase().trim() : '';
+
+        let dataset = window.biFilteredDirectory;
+        if (tableSearch) {
+          dataset = dataset.filter(item => {
+            return (item.customer_name || '').toLowerCase().includes(tableSearch) ||
+              (item.consumer_number || '').toLowerCase().includes(tableSearch) ||
+              (item.city || '').toLowerCase().includes(tableSearch) ||
+              (item.discom || '').toLowerCase().includes(tableSearch);
+          });
+        }
+
+        const page = window.biTablePage;
+        const size = window.biTablePageSize;
+        const total = dataset.length;
+
+        const totalPages = Math.max(1, Math.ceil(total / size));
+        if (page > totalPages) window.biTablePage = totalPages;
+
+        const start = (window.biTablePage - 1) * size;
+        const end = Math.min(start + size, total);
+
+        const summaryText = document.getElementById('biTablePaginationSummary');
+        if (summaryText) {
+          if (total === 0) {
+            summaryText.textContent = 'Showing 0-0 of 0 entries';
+          } else {
+            summaryText.textContent = `Showing ${start + 1}-${end} of ${total} entries`;
+          }
+        }
+
+        const prevBtn = document.getElementById('biTableBtnPrev');
+        if (prevBtn) {
+          prevBtn.disabled = window.biTablePage === 1;
+          prevBtn.style.opacity = window.biTablePage === 1 ? '0.4' : '1';
+        }
+
+        const nextBtn = document.getElementById('biTableBtnNext');
+        if (nextBtn) {
+          nextBtn.disabled = window.biTablePage === totalPages;
+          nextBtn.style.opacity = window.biTablePage === totalPages ? '0.4' : '1';
+        }
+
+        if (total === 0) {
+          container.innerHTML = `<tr><td colspan="14" style="text-align: center; padding: 25px; color: var(--text-muted); font-size:11px;">No records match table search filters.</td></tr>`;
+          return;
+        }
+
+        const items = dataset.slice(start, end);
+        items.forEach(item => {
+          const tr = document.createElement('tr');
+          tr.style.cursor = 'pointer';
+          tr.innerHTML = `
       <td style="padding: 10px; text-align: center;" onclick="event.stopPropagation();"><input type="checkbox" class="bi-row-checkbox" data-email="${item.email}" aria-label="Select row"></td>
       <td style="padding: 10px; text-align: left; font-weight: 700; color: #ffffff;">${item.customer_name}</td>
       <td style="padding: 10px; text-align: left;">${item.consumer_number}</td>
@@ -10707,149 +12310,149 @@ function renderBiTablePage() {
       <td style="padding: 10px; text-align: right;">${item.payback_years} Yrs</td>
       <td style="padding: 10px; text-align: center;"><span class="crm-badge badge-intent-high" style="font-size: 8px; padding: 1px 4px;">Won</span></td>
     `;
-    
-    const chk = tr.querySelector('.bi-row-checkbox');
-    chk.addEventListener('change', () => {
-      if (chk.checked) tr.classList.add('bi-table-row-selected');
-      else tr.classList.remove('bi-table-row-selected');
-    });
-    
-    tr.addEventListener('click', () => {
-      openLeadProfileDrawer(item.email);
-    });
-    
-    // Hide columns that are currently toggled off
-    document.querySelectorAll('#biTableColumnVisibilityOptions input').forEach((opt, idx) => {
-      if (!opt.checked) {
-        tr.cells[idx + 1].style.display = 'none';
+
+          const chk = tr.querySelector('.bi-row-checkbox');
+          chk.addEventListener('change', () => {
+            if (chk.checked) tr.classList.add('bi-table-row-selected');
+            else tr.classList.remove('bi-table-row-selected');
+          });
+
+          tr.addEventListener('click', () => {
+            openLeadProfileDrawer(item.customer_id);
+          });
+
+          // Hide columns that are currently toggled off
+          document.querySelectorAll('#biTableColumnVisibilityOptions input').forEach((opt, idx) => {
+            if (!opt.checked) {
+              tr.cells[idx + 1].style.display = 'none';
+            }
+          });
+
+          container.appendChild(tr);
+        });
       }
-    });
-    
-    container.appendChild(tr);
-  });
-}
 
-function exportSelectedBiRows() {
-  const selectedEmails = [];
-  const rowChecks = document.querySelectorAll('.bi-row-checkbox:checked');
-  rowChecks.forEach(chk => {
-    selectedEmails.push(chk.getAttribute('data-email'));
-  });
-  
-  if (selectedEmails.length === 0) {
-    showToast("Please check at least one row checkbox to export selected.", "warning");
-    return;
-  }
-  
-  const allDir = window.biFilteredDirectory || [];
-  const selectedRows = allDir.filter(x => selectedEmails.includes(x.email));
-  
-  const headers = ['Customer Name', 'Consumer Number', 'City', 'DISCOM', 'Monthly Units', 'Bill Amount (Rs)', 'Rate per Unit', 'Recommended Size (kW)', 'Project Cost (Rs)', 'Monthly Savings (Rs)', 'Annual Savings (Rs)', '25-Year Savings (Rs)', 'Payback Years'];
-  const rows = selectedRows.map(x => [
-    x.customer_name,
-    x.consumer_number,
-    x.city,
-    x.discom,
-    x.monthly_units,
-    x.bill_amount,
-    x.per_unit_rate,
-    x.recommended_kw,
-    x.system_cost,
-    x.monthly_savings,
-    x.annual_savings,
-    x.savings_25yr,
-    x.payback_years
-  ]);
-  
-  const filename = `GSE_BI_Selected_Rows_${Date.now()}.csv`;
-  downloadCSV(filename, headers, rows);
-  showToast(`Selected Rows Exported: ${filename}`, "success");
-  logAuditEvent((_getUser() || {}).email, 'Export BI Selected Rows', 'Admin', `Exported ${selectedRows.length} selected table rows.`, 'Low');
-}
+      function exportSelectedBiRows() {
+        const selectedEmails = [];
+        const rowChecks = document.querySelectorAll('.bi-row-checkbox:checked');
+        rowChecks.forEach(chk => {
+          selectedEmails.push(chk.getAttribute('data-email'));
+        });
 
-function toggleFullscreenChart() {
-  const container = document.getElementById('biInteractiveChartContainer');
-  if (!container) return;
+        if (selectedEmails.length === 0) {
+          showToast("Please check at least one row checkbox to export selected.", "warning");
+          return;
+        }
 
-  const isFull = container.classList.contains('bi-chart-fullscreen-overlay');
-  if (isFull) {
-    container.classList.remove('bi-chart-fullscreen-overlay');
-    document.body.style.overflow = '';
-  } else {
-    container.classList.add('bi-chart-fullscreen-overlay');
-    document.body.style.overflow = 'hidden';
-  }
-  
-  if (biInteractiveChartInstance) {
-    biInteractiveChartInstance.resize();
-  }
-}
+        const allDir = window.biFilteredDirectory || [];
+        const selectedRows = allDir.filter(x => selectedEmails.includes(x.email));
 
-function downloadChartPng() {
-  const canvas = document.getElementById('biInteractiveChartCanvas');
-  if (!canvas) return;
+        const headers = ['Customer Name', 'Consumer Number', 'City', 'DISCOM', 'Monthly Units', 'Bill Amount (Rs)', 'Rate per Unit', 'Recommended Size (kW)', 'Project Cost (Rs)', 'Monthly Savings (Rs)', 'Annual Savings (Rs)', '25-Year Savings (Rs)', 'Payback Years'];
+        const rows = selectedRows.map(x => [
+          x.customer_name,
+          x.consumer_number,
+          x.city,
+          x.discom,
+          x.monthly_units,
+          x.bill_amount,
+          x.per_unit_rate,
+          x.recommended_kw,
+          x.system_cost,
+          x.monthly_savings,
+          x.annual_savings,
+          x.savings_25yr,
+          x.payback_years
+        ]);
 
-  const url = canvas.toDataURL("image/png");
-  const link = document.createElement("a");
-  link.download = `GSE_BI_Chart_${Date.now()}.png`;
-  link.href = url;
-  document.body.appendChild(link);
-  link.click();
-  document.body.removeChild(link);
-  showToast("PNG chart downloaded successfully.", "success");
-}
+        const filename = `GSE_BI_Selected_Rows_${Date.now()}.csv`;
+        downloadCSV(filename, headers, rows);
+        showToast(`Selected Rows Exported: ${filename}`, "success");
+        logAuditEvent((_getUser() || {}).email, 'Export BI Selected Rows', 'Admin', `Exported ${selectedRows.length} selected table rows.`, 'Low');
+      }
 
-function downloadChartCsvData() {
-  if (!biInteractiveChartInstance) return;
+      function toggleFullscreenChart() {
+        const container = document.getElementById('biInteractiveChartContainer');
+        if (!container) return;
 
-  const data = biInteractiveChartInstance.data;
-  const labels = data.labels;
-  const dataset = data.datasets[0];
-  const values = dataset.data;
+        const isFull = container.classList.contains('bi-chart-fullscreen-overlay');
+        if (isFull) {
+          container.classList.remove('bi-chart-fullscreen-overlay');
+          document.body.style.overflow = '';
+        } else {
+          container.classList.add('bi-chart-fullscreen-overlay');
+          document.body.style.overflow = 'hidden';
+        }
 
-  const headers = ['Category Label', dataset.label];
-  const rows = labels.map((l, idx) => [l, values[idx]]);
+        if (biInteractiveChartInstance) {
+          biInteractiveChartInstance.resize();
+        }
+      }
 
-  downloadCSV(`GSE_BI_ChartData_${Date.now()}.csv`, headers, rows);
-  showToast("Chart underlying dataset exported.", "success");
-}
+      function downloadChartPng() {
+        const canvas = document.getElementById('biInteractiveChartCanvas');
+        if (!canvas) return;
 
-function triggerExportCenterReport(type) {
-  const data = window.biOriginalData;
-  if (!data) return;
+        const url = canvas.toDataURL("image/png");
+        const link = document.createElement("a");
+        link.download = `GSE_BI_Chart_${Date.now()}.png`;
+        link.href = url;
+        document.body.appendChild(link);
+        link.click();
+        document.body.removeChild(link);
+        showToast("PNG chart downloaded successfully.", "success");
+      }
 
-  if (type === 'customer') {
-    const headers = ['Customer Name', 'Consumer Number', 'City', 'DISCOM', 'Monthly Units', 'Bill Amount (Rs)', 'Recommended Size (kW)', 'Monthly Savings (Rs)', 'Payback Years'];
-    const rows = data.directory.map(x => [
-      x.customer_name,
-      x.consumer_number,
-      x.city,
-      x.discom,
-      x.monthly_units,
-      x.bill_amount,
-      x.recommended_kw,
-      x.monthly_savings,
-      x.payback_years
-    ]);
-    downloadCSV(`GSE_BI_CustomerReport_${Date.now()}.csv`, headers, rows);
-    showToast("Customer report exported.", "success");
-  } else if (type === 'mgmt') {
-    // Generate pre-styled spreadsheet content
-    const headers = ['Metric Key', 'Current Valuation'];
-    const rows = [
-      ['Total Active Customers', data.command_center.total_active_customers],
-      ['Platform Health Score', `${data.command_center.platform_health_score}%`],
-      ['Total Monthly Revenue Analyzed', formatCurrencyRupee(data.kpis.total_monthly_revenue)],
-      ['Average Payback period', `${data.kpi_comparison.payback.current.toFixed(2)} Yrs`],
-      ['Expected Monthly Revenue Forecast', formatCurrencyRupee(data.forecasting.expected_monthly_revenue)],
-      ['Projected Annual Revenue', formatCurrencyRupee(data.forecasting.projected_annual_revenue)]
-    ];
-    downloadCSV(`GSE_BI_ManagementSummary_${Date.now()}.csv`, headers, rows);
-    showToast("Management summary XLS simulated to CSV.", "success");
-  } else if (type === 'board') {
-    // Generate pre-formatted HTML print overlay for Boardroom Meeting
-    const printWindow = window.open('', '_blank');
-    printWindow.document.write(`
+      function downloadChartCsvData() {
+        if (!biInteractiveChartInstance) return;
+
+        const data = biInteractiveChartInstance.data;
+        const labels = data.labels;
+        const dataset = data.datasets[0];
+        const values = dataset.data;
+
+        const headers = ['Category Label', dataset.label];
+        const rows = labels.map((l, idx) => [l, values[idx]]);
+
+        downloadCSV(`GSE_BI_ChartData_${Date.now()}.csv`, headers, rows);
+        showToast("Chart underlying dataset exported.", "success");
+      }
+
+      function triggerExportCenterReport(type) {
+        const data = window.biOriginalData;
+        if (!data) return;
+
+        if (type === 'customer') {
+          const headers = ['Customer Name', 'Consumer Number', 'City', 'DISCOM', 'Monthly Units', 'Bill Amount (Rs)', 'Recommended Size (kW)', 'Monthly Savings (Rs)', 'Payback Years'];
+          const rows = data.directory.map(x => [
+            x.customer_name,
+            x.consumer_number,
+            x.city,
+            x.discom,
+            x.monthly_units,
+            x.bill_amount,
+            x.recommended_kw,
+            x.monthly_savings,
+            x.payback_years
+          ]);
+          downloadCSV(`GSE_BI_CustomerReport_${Date.now()}.csv`, headers, rows);
+          showToast("Customer report exported.", "success");
+        } else if (type === 'mgmt') {
+          // Generate pre-styled spreadsheet content
+          const headers = ['Metric Key', 'Current Valuation'];
+          const rows = [
+            ['Total Active Customers', data.command_center.total_active_customers],
+            ['Platform Health Score', `${data.command_center.platform_health_score}%`],
+            ['Total Monthly Revenue Analyzed', formatCurrencyRupee(data.kpis.total_monthly_revenue)],
+            ['Average Payback period', `${data.kpi_comparison.payback.current.toFixed(2)} Yrs`],
+            ['Expected Monthly Revenue Forecast', formatCurrencyRupee(data.forecasting.expected_monthly_revenue)],
+            ['Projected Annual Revenue', formatCurrencyRupee(data.forecasting.projected_annual_revenue)]
+          ];
+          downloadCSV(`GSE_BI_ManagementSummary_${Date.now()}.csv`, headers, rows);
+          showToast("Management summary XLS simulated to CSV.", "success");
+        } else if (type === 'board') {
+          // Generate pre-formatted HTML print overlay for Boardroom Meeting
+          const printWindow = window.open('', '_blank');
+          printWindow.document.write(`
       <html>
         <head>
           <title>GSE - Boardroom Executive BI Report</title>
@@ -10890,392 +12493,824 @@ function triggerExportCenterReport(type) {
         </body>
       </html>
     `);
-    printWindow.document.close();
-    showToast("Board Meeting report generated.", "success");
-  } else if (type === 'snapshot') {
-    window.print();
-    showToast("Print snapshot triggered.", "success");
-  }
-}
+          printWindow.document.close();
+          showToast("Board Meeting report generated.", "success");
+        } else if (type === 'snapshot') {
+          window.print();
+          showToast("Print snapshot triggered.", "success");
+        }
+      }
 
-function setupTableColumnResizing() {
-  const table = document.getElementById('biAnalyticsDirectoryTable');
-  if (!table) return;
+      function setupTableColumnResizing() {
+        const table = document.getElementById('biAnalyticsDirectoryTable');
+        if (!table) return;
 
-  const ths = table.querySelectorAll('th.bi-resizable-th');
-  ths.forEach(th => {
-    const resizer = th.querySelector('.bi-col-resizer');
-    if (!resizer) return;
+        const ths = table.querySelectorAll('th.bi-resizable-th');
+        ths.forEach(th => {
+          const resizer = th.querySelector('.bi-col-resizer');
+          if (!resizer) return;
 
-    let startX, startWidth;
+          let startX, startWidth;
 
-    resizer.addEventListener('mousedown', (e) => {
-      e.stopPropagation();
-      startX = e.pageX;
-      startWidth = th.offsetWidth;
-      document.addEventListener('mousemove', onMouseMove);
-      document.addEventListener('mouseup', onMouseUp);
-    });
+          resizer.addEventListener('mousedown', (e) => {
+            e.stopPropagation();
+            startX = e.pageX;
+            startWidth = th.offsetWidth;
+            document.addEventListener('mousemove', onMouseMove);
+            document.addEventListener('mouseup', onMouseUp);
+          });
 
-    const onMouseMove = (e) => {
-      const w = startWidth + (e.pageX - startX);
-      th.style.width = w + 'px';
-      th.style.minWidth = w + 'px';
-    };
+          const onMouseMove = (e) => {
+            const w = startWidth + (e.pageX - startX);
+            th.style.width = w + 'px';
+            th.style.minWidth = w + 'px';
+          };
 
-    const onMouseUp = () => {
-      document.removeEventListener('mousemove', onMouseMove);
-      document.removeEventListener('mouseup', onMouseUp);
-    };
-  });
-}
+          const onMouseUp = () => {
+            document.removeEventListener('mousemove', onMouseMove);
+            document.removeEventListener('mouseup', onMouseUp);
+          };
+        });
+      }
 
-function _hydrateBusinessIntelligenceUI(data) {
-  window.biOriginalData = data;
-  window.biFilteredDirectory = [...(data.directory || [])];
-  
-  document.getElementById('biCcHealthScore').textContent = `${data.command_center.platform_health_score}%`;
-  document.getElementById('biCcActiveCustomers').textContent = data.command_center.total_active_customers;
-  
-  _populateMultiSelectOptions(data);
-  _populateColumnVisibilityOptions();
-  applyBiFilters();
-}
+      function _hydrateBusinessIntelligenceUI(data) {
+        window.biOriginalData = data;
+        window.biFilteredDirectory = [...(data.directory || [])];
 
-function formatCurrencyRupee(value) {
-  if (value === null || value === undefined || isNaN(value)) return '₹0';
-  return '₹' + Math.round(value).toLocaleString('en-IN');
-}/* ==========================================================================
+        document.getElementById('biCcHealthScore').textContent = `${data.command_center.platform_health_score}%`;
+        document.getElementById('biCcActiveCustomers').textContent = data.command_center.total_active_customers;
+
+        _populateMultiSelectOptions(data);
+        _populateColumnVisibilityOptions();
+        applyBiFilters();
+      }
+
+      function _hydrateBiTelemetryWidget(data) {
+        const metrics = calculateBiMetrics(data);
+        
+        const forecastEl = document.getElementById('admTelemetryBiRevenue');
+        const convEl = document.getElementById('admTelemetryBiConversion');
+        const scoreEl = document.getElementById('admTelemetryBiScore');
+        const growthEl = document.getElementById('admTelemetryBiGrowth');
+        
+        if (forecastEl) forecastEl.textContent = formatCurrencyRupee(metrics.revenueForecast);
+        if (convEl) convEl.textContent = `${_safeNum(metrics.conversionRate).toFixed(1)}%`;
+        if (scoreEl) scoreEl.textContent = `${Math.round(metrics.businessScore)}/100`;
+        if (growthEl) growthEl.textContent = `${metrics.growthScore >= 0 ? '+' : ''}${Math.round(metrics.growthScore)}%`;
+      }
+
+      function calculateBiMetrics(data) {
+        const users = (data.users && data.users.users) ? data.users.users : [];
+        const overview = data.overview || {};
+        
+        // Re-read CRM leads list
+        const leads = Object.values(getCrmLeads() || {});
+        
+        // Total stats
+        const totalUsers = users.length;
+        const totalLeads = leads.length;
+        
+        // 1. CRM & Lead Conversions
+        let pipelineRevenue = 0;
+        let qualifiedRevenue = 0;
+        let proposalRevenue = 0;
+        let wonRevenue = 0;
+
+        let leadCount = totalLeads;
+        let qualifiedCount = 0;
+        let proposalCount = 0;
+        let wonCount = 0;
+
+        leads.forEach(lead => {
+          const rev = lead.revenue_potential || 0;
+          pipelineRevenue += rev;
+
+          if (['Qualified', 'Proposal Sent', 'Won'].includes(lead.status)) {
+            qualifiedCount++;
+            qualifiedRevenue += rev;
+          }
+          if (['Proposal Sent', 'Won'].includes(lead.status)) {
+            proposalCount++;
+            proposalRevenue += rev;
+          }
+          if (lead.status === 'Won') {
+            wonCount++;
+            wonRevenue += rev;
+          }
+        });
+        
+        const leadToQualifiedRate = leadCount > 0 ? (qualifiedCount / leadCount * 100) : 0;
+        const qualifiedToProposalRate = qualifiedCount > 0 ? (proposalCount / qualifiedCount * 100) : 0;
+        const proposalToWonRate = proposalCount > 0 ? (wonCount / proposalCount * 100) : 0;
+        const overallConversionRate = leadCount > 0 ? (wonCount / leadCount * 100) : 0;
+        const conversionRate = overallConversionRate;
+
+        const getStageHealth = (rate, excellentThreshold, averageThreshold) => {
+          if (rate > excellentThreshold) {
+            return { status: 'excellent', text: '🟢 Excellent' };
+          } else if (rate >= averageThreshold) {
+            return { status: 'average', text: '🟡 Average' };
+          } else {
+            return { status: 'weak', text: '🔴 Weak' };
+          }
+        };
+
+        const conversionHealth = {
+          leadToQualified: getStageHealth(leadToQualifiedRate, 70, 40),
+          qualifiedToProposal: getStageHealth(qualifiedToProposalRate, 60, 30),
+          proposalToWon: getStageHealth(proposalToWonRate, 35, 15)
+        };
+
+        const revPerLead = leadCount > 0 ? (pipelineRevenue / leadCount) : 0;
+        const revPerQualified = qualifiedCount > 0 ? (qualifiedRevenue / qualifiedCount) : 0;
+        const revPerWon = wonCount > 0 ? (wonRevenue / wonCount) : 0;
+        const expectedRevenue = proposalToWonRate > 0 ? (proposalRevenue * (proposalToWonRate / 100)) : (proposalRevenue * 0.35);
+        const avgDealSize = leadCount > 0 ? (pipelineRevenue / leadCount) : 0;
+        const winRate = overallConversionRate;
+
+        const pipelineVal = pipelineRevenue;
+        const qualifiedVal = qualifiedRevenue;
+        const proposalVal = proposalRevenue;
+        const wonVal = wonRevenue;
+        
+        // 2. Customer Segmentation
+        let newUsersCount = 0;
+        let engagedUsersCount = 0;
+        let highIntentLeadsCount = 0;
+        let customersCount = 0;
+        let advocatesCount = 0;
+        
+        users.forEach(u => {
+          const lead = leads.find(l => l.email === u.email);
+          const status = lead ? lead.status : 'New Lead';
+          const score = lead ? lead.lead_score : 0;
+          
+          if (status === 'Won' && (u.points > 0 || u.referrals_count > 0)) {
+            advocatesCount++;
+          } else if (status === 'Won') {
+            customersCount++;
+          } else if (score >= 70) {
+            highIntentLeadsCount++;
+          } else if (score >= 40 || u.reports_count > 0 || u.copilot_messages > 0) {
+            engagedUsersCount++;
+          } else {
+            newUsersCount++;
+          }
+        });
+        
+        // 3. User Cohort Analysis
+        const cohorts = {};
+        users.forEach(u => {
+          if (!u.registration_date) return;
+          const month = u.registration_date.substring(0, 7); // "YYYY-MM"
+          if (!cohorts[month]) {
+            cohorts[month] = { size: 0, billCount: 0, roofCount: 0, referralCount: 0, copilotCount: 0 };
+          }
+          const c = cohorts[month];
+          c.size++;
+          if (u.analyses && u.analyses.bill) c.billCount++;
+          if (u.analyses && u.analyses.roof) c.roofCount++;
+          if (u.points > 0 || u.referrals_count > 0) c.referralCount++;
+          if (u.copilot_messages > 0) c.copilotCount++;
+        });
+        
+        const cohortMetrics = {};
+        for (let month in cohorts) {
+          const c = cohorts[month];
+          cohortMetrics[month] = {
+            size: c.size,
+            billPct: c.size > 0 ? (c.billCount / c.size * 100) : 0,
+            roofPct: c.size > 0 ? (c.roofCount / c.size * 100) : 0,
+            referralPct: c.size > 0 ? (c.referralCount / c.size * 100) : 0,
+            copilotPct: c.size > 0 ? (c.copilotCount / c.size * 100) : 0
+          };
+        }
+        
+        // 4. Solar Metrics (Dynamic averages)
+        let totalBill = 0, billCount = 0;
+        let totalKw = 0, kwCount = 0;
+        let totalPayback = 0, paybackCount = 0;
+        let totalRoi = 0, roiCount = 0;
+        let totalSuitability = 0, suitabilityCount = 0;
+        
+        users.forEach(u => {
+          const a = u.analyses || {};
+          if (a.bill && a.bill.monthly_bill) {
+            totalBill += a.bill.monthly_bill;
+            billCount++;
+          }
+          if (a.roi) {
+            if (a.roi.recommended_kw) {
+              totalKw += a.roi.recommended_kw;
+              kwCount++;
+            }
+            if (a.roi.payback_years) {
+              totalPayback += a.roi.payback_years;
+              paybackCount++;
+            }
+            if (a.roi.roi_percent) {
+              totalRoi += a.roi.roi_percent;
+              roiCount++;
+            }
+          }
+          if (a.roof && a.roof.suitability_score) {
+            totalSuitability += a.roof.suitability_score;
+            suitabilityCount++;
+          }
+        });
+        
+        const avgBill = billCount > 0 ? (totalBill / billCount) : 6500;
+        const avgSize = kwCount > 0 ? (totalKw / kwCount) : 3.0;
+        const avgPayback = paybackCount > 0 ? (totalPayback / paybackCount) : 4.5;
+        const avgRoi = roiCount > 0 ? (totalRoi / roiCount) : 250;
+        const avgSuitability = suitabilityCount > 0 ? (totalSuitability / suitabilityCount) : 85;
+        
+        // 5. Referral Revenue Impact
+        let referralRevenue = 0;
+        let referralLeadsCount = 0;
+        let referralWonCount = 0;
+        let referralPipeline = 0;
+        
+        leads.forEach(lead => {
+          if (lead.source === 'Referral') {
+            referralPipeline += lead.revenue_potential || 0;
+            referralLeadsCount++;
+            if (lead.status === 'Won') {
+              referralWonCount++;
+              referralRevenue += lead.revenue_potential || 0;
+            }
+          }
+        });
+        
+        const referralConversionRate = referralLeadsCount > 0 ? (referralWonCount / referralLeadsCount * 100) : 0;
+        const referralMultiplier = referralRevenue > 0 ? (referralRevenue / (pipelineVal || 1) * 5) : 1.2;
+        
+        // 6. AI influence & score
+        let copilotQueries = 0;
+        let copilotUsersCount = 0;
+        let copilotAssessmentsCount = 0;
+        let copilotWonCount = 0;
+        
+        users.forEach(u => {
+          if (u.copilot_messages > 0) {
+            copilotQueries += u.copilot_messages;
+            copilotUsersCount++;
+            if (u.analyses && (u.analyses.bill || u.analyses.roof || u.analyses.roi)) {
+              copilotAssessmentsCount++;
+            }
+            const lead = leads.find(l => l.email === u.email);
+            if (lead && lead.status === 'Won') {
+              copilotWonCount++;
+            }
+          }
+        });
+        
+        const aiInfluenceScore = totalUsers > 0 ? (copilotUsersCount / totalUsers * 100) : 0;
+        const aiRecommendations = Math.round(copilotQueries * 1.5);
+        const aiLeadsInfluenced = copilotUsersCount;
+        const aiConversionPct = copilotUsersCount > 0 ? (copilotAssessmentsCount / copilotUsersCount * 100) : 0;
+        
+        // 7. Month over Month Benchmarking
+        const now = new Date();
+        const thirtyDaysAgo = new Date(now.getTime() - 30 * 24 * 60 * 60 * 1000);
+        const sixtyDaysAgo = new Date(now.getTime() - 60 * 24 * 60 * 60 * 1000);
+        
+        let currentMonthUsers = 0;
+        let prevMonthUsers = 0;
+        let currentMonthRefs = 0;
+        let prevMonthRefs = 0;
+        let currentMonthLeads = 0;
+        let prevMonthLeads = 0;
+        let currentMonthRevenue = 0;
+        let prevMonthRevenue = 0;
+        
+        users.forEach(u => {
+          if (!u.registration_date) return;
+          const rDate = new Date(u.registration_date);
+          if (rDate >= thirtyDaysAgo && rDate <= now) {
+            currentMonthUsers++;
+            if (u.points > 0 || u.referrals_count > 0) currentMonthRefs++;
+          } else if (rDate >= sixtyDaysAgo && rDate < thirtyDaysAgo) {
+            prevMonthUsers++;
+            if (u.points > 0 || u.referrals_count > 0) prevMonthRefs++;
+          }
+        });
+        
+        leads.forEach(lead => {
+          if (!lead.createdAt) return;
+          const cDate = new Date(lead.createdAt);
+          if (cDate >= thirtyDaysAgo && cDate <= now) {
+            currentMonthLeads++;
+            if (lead.status === 'Won') currentMonthRevenue += (lead.revenue_potential || 0);
+          } else if (cDate >= sixtyDaysAgo && cDate < thirtyDaysAgo) {
+            prevMonthLeads++;
+            if (lead.status === 'Won') prevMonthRevenue += (lead.revenue_potential || 0);
+          }
+        });
+        
+        const getTrendObject = (current, prev) => {
+          const diffVal = current - prev;
+          const diffPct = prev > 0 ? (diffVal / prev * 100) : (current > 0 ? 100 : 0);
+          const trendClass = diffVal > 0 ? 'trend-up' : diffVal < 0 ? 'trend-down' : 'trend-neutral';
+          const arrow = diffVal > 0 ? '▲' : diffVal < 0 ? '▼' : '→';
+          const diffText = `${arrow} ${_safeNum(Math.abs(diffPct)).toFixed(0)}%`;
+          return { current, prev, diffVal, diffPct, trendClass, diffText };
+        };
+        
+        const benchmarks = {
+          users: getTrendObject(currentMonthUsers, prevMonthUsers),
+          referrals: getTrendObject(currentMonthRefs, prevMonthRefs),
+          leads: getTrendObject(currentMonthLeads, prevMonthLeads),
+          revenue: getTrendObject(currentMonthRevenue, prevMonthRevenue)
+        };
+        
+        // 8. Forecasting & Trends
+        const activeUserPct = totalUsers > 0 ? (overview.active_users_30_days || 0) / totalUsers * 100 : 0;
+        const leadGrowth = prevMonthLeads > 0 ? ((currentMonthLeads - prevMonthLeads) / prevMonthLeads * 100) : 12.5;
+        const revenueForecast = currentMonthRevenue * (1 + (leadGrowth / 100));
+        
+        // Business Health Score
+        let businessScore = (conversionRate * 3) + (activeUserPct * 0.3) + (aiInfluenceScore * 0.3) + (Math.max(0, leadGrowth) * 0.4);
+        businessScore = Math.min(100, Math.max(10, businessScore || 55));
+        
+        const growthScore = leadGrowth;
+        
+        // Platform Risk Level & Warnings
+        const risks = [];
+        const opportunities = [];
+        
+        // Check failed login attempts
+        const auditLogs = safeParseJSON('auditLogs', []);
+        const failedLoginsToday = auditLogs.filter(l => l.action === 'Failed Login Attempt' && (new Date() - new Date(l.timestamp)) < 24 * 60 * 60 * 1000).length;
+        if (failedLoginsToday > 3) {
+          risks.push({ title: 'Brute Force Attempt', desc: `${failedLoginsToday} failed logins recorded in last 24h.` });
+        }
+        
+        // Stalled leads warning
+        let stalledCount = 0;
+        leads.forEach(lead => {
+          if (lead.status !== 'Won' && lead.status !== 'Lost') {
+            const createdDate = new Date(lead.createdAt);
+            if ((now - createdDate) > 30 * 24 * 60 * 60 * 1000) {
+              stalledCount++;
+            }
+          }
+        });
+        if (stalledCount > 0) {
+          risks.push({ title: 'Stalled Pipeline', desc: `${stalledCount} CRM leads inactive for over 30 days.` });
+        }
+        
+        // Low conversions warning
+        const qualToPropRate = qualifiedCount > 0 ? (proposalCount / qualifiedCount * 100) : 0;
+        const propToWonRate = proposalCount > 0 ? (wonCount / proposalCount * 100) : 0;
+        
+        if (qualToPropRate < 40 && qualifiedCount > 0) {
+          opportunities.push({ title: 'Proposal Automation', desc: `Qualified-to-Proposal Sent rate is low (${_safeNum(qualToPropRate).toFixed(0)}%). Automate proposal drafting to accelerate velocity.` });
+        }
+        if (propToWonRate < 30 && proposalCount > 0) {
+          opportunities.push({ title: 'CRM Follow-ups', desc: `Proposal-to-Won conversion is at ${_safeNum(propToWonRate).toFixed(0)}%. Focus sales team on follow-ups.` });
+        }
+        if (conversionRate < 15 && totalLeads > 0) {
+          opportunities.push({ title: 'Lead Qualification', desc: `Overall conversion is low (${_safeNum(conversionRate).toFixed(0)}%). Refine lead scoring metrics.` });
+        }
+        if (opportunities.length === 0) {
+          opportunities.push({ title: 'Promote Referrals', desc: 'Conversions are stable. Enhance referral rewards program to boost user acquisition.' });
+        }
+        
+        const riskLevel = risks.length > 1 ? 'High' : risks.length === 1 ? 'Medium' : 'Low';
+        
+        // Plain-English Executive Summary text generator
+        let summary = '';
+        if (leadGrowth > 0) {
+          summary += `Lead acquisition is growing steadily at ${_safeNum(leadGrowth).toFixed(1)}% MoM. `;
+        } else {
+          summary += `Lead acquisition has softened recently. `;
+        }
+        
+        if (referralConversionRate > conversionRate) {
+          summary += `Referrals are converting at ${_safeNum(referralConversionRate).toFixed(0)}%, outperforming direct signups. `;
+        } else {
+          summary += `Direct organic lead generation remains the primary driver. `;
+        }
+        
+        if (revenueForecast > wonVal) {
+          summary += `Revenue forecasts indicate moderate growth over the next 30 days to ${formatCurrencyRupee(revenueForecast)}.`;
+        } else {
+          summary += `Revenue forecasts remain steady at ${formatCurrencyRupee(wonVal || 165000)} for the upcoming period.`;
+        }
+        
+        return {
+          totalUsers,
+          totalLeads,
+          conversionRate,
+          conversionTrendText: benchmarks.leads.diffText,
+          conversionTrendClass: benchmarks.leads.trendClass,
+          referralConversions: referralWonCount,
+          waterfall: {
+            pipeline: pipelineVal,
+            qualified: qualifiedVal,
+            qualifiedPct: pipelineVal > 0 ? (qualifiedVal / pipelineVal * 100) : 0,
+            proposal: proposalVal,
+            proposalPct: pipelineVal > 0 ? (proposalVal / pipelineVal * 100) : 0,
+            won: wonVal,
+            wonPct: pipelineVal > 0 ? (wonVal / pipelineVal * 100) : 0
+          },
+          segmentation: {
+            newUsers: newUsersCount,
+            engagedUsers: engagedUsersCount,
+            highIntent: highIntentLeadsCount,
+            customers: customersCount,
+            advocates: advocatesCount
+          },
+          cohorts: cohortMetrics,
+          solar: {
+            avgBill,
+            avgSize,
+            avgPayback,
+            avgRoi,
+            avgSuitability
+          },
+          referral: {
+            pipeline: referralPipeline,
+            conversionRate: referralConversionRate,
+            topSegment: advocatesCount > 0 ? 'Advocates' : 'Engaged Users',
+            multiplier: referralMultiplier
+          },
+          ai: {
+            influenceScore: aiInfluenceScore,
+            queries: copilotQueries,
+            recommendations: aiRecommendations,
+            leadsInfluenced: aiLeadsInfluenced,
+            conversionPct: aiConversionPct
+          },
+          benchmarks,
+          leadGrowth,
+          revenueForecast: revenueForecast || 165000,
+          businessScore,
+          growthScore,
+          riskLevel,
+          risks,
+          opportunities,
+          executiveSummary: summary,
+          
+          // Added metrics for Phase 10.7 BI Fix & Enhancement
+          qualifiedCount,
+          proposalCount,
+          wonCount,
+          pipelineRevenue,
+          qualifiedRevenue,
+          proposalRevenue,
+          wonRevenue,
+          expectedRevenue,
+          revPerLead,
+          revPerQualified,
+          revPerWon,
+          avgDealSize,
+          winRate,
+          conversionRates: {
+            leadToQualifiedRate,
+            qualifiedToProposalRate,
+            proposalToWonRate,
+            overallConversionRate
+          },
+          conversionHealth
+        };
+      }
+
+      function formatCurrencyRupee(value) {
+        if (value === null || value === undefined || isNaN(value)) return '₹0';
+        return '₹' + Math.round(value).toLocaleString('en-IN');
+      }/* ==========================================================================
    26. VENDOR PORTAL - AI PROPOSAL GENERATOR (PHASE 11.1)
    ========================================================================== */
-function initVendorPortal() {
-  const btnAutofill = document.getElementById('btnAutofillAssessment');
-  const btnReset = document.getElementById('btnResetProposal');
-  const btnGenerate = document.getElementById('btnGenerateProposal');
-  const btnPreview = document.getElementById('btnPreviewProposal');
-  const btnDownload = document.getElementById('btnDownloadProposalPDF');
-  
-  // Close Modal triggers
-  const btnCloseModalX = document.getElementById('closeProposalPreviewModal');
-  const btnCloseModalBtn = document.getElementById('btnPreviewClose');
-  const btnPreviewDownloadBtn = document.getElementById('btnPreviewDownload');
+      function initVendorPortal() {
+        const btnAutofill = document.getElementById('btnAutofillAssessment');
+        const btnReset = document.getElementById('btnResetProposal');
+        const btnGenerate = document.getElementById('btnGenerateProposal');
+        const btnPreview = document.getElementById('btnPreviewProposal');
+        const btnDownload = document.getElementById('btnDownloadProposalPDF');
 
-  if (btnAutofill) btnAutofill.addEventListener('click', autofillAssessmentData);
-  if (btnReset) btnReset.addEventListener('click', resetProposalForm);
-  if (btnGenerate) btnGenerate.addEventListener('click', generateProposal);
-  if (btnPreview) btnPreview.addEventListener('click', () => {
-    const lastProp = getLastGeneratedProposal();
-    if (lastProp) showPreviewModal(lastProp);
-  });
-  if (btnDownload) btnDownload.addEventListener('click', () => {
-    const lastProp = getLastGeneratedProposal();
-    if (lastProp) downloadProposalPDF(lastProp);
-  });
+        // Close Modal triggers
+        const btnCloseModalX = document.getElementById('closeProposalPreviewModal');
+        const btnCloseModalBtn = document.getElementById('btnPreviewClose');
+        const btnPreviewDownloadBtn = document.getElementById('btnPreviewDownload');
 
-  if (btnCloseModalX) btnCloseModalX.addEventListener('click', hidePreviewModal);
-  if (btnCloseModalBtn) btnCloseModalBtn.addEventListener('click', hidePreviewModal);
-  if (btnPreviewDownloadBtn) btnPreviewDownloadBtn.addEventListener('click', () => {
-    const lastProp = getLastGeneratedProposal();
-    if (lastProp) downloadProposalPDF(lastProp);
-  });
+        if (btnAutofill) btnAutofill.addEventListener('click', autofillAssessmentData);
+        if (btnReset) btnReset.addEventListener('click', resetProposalForm);
+        if (btnGenerate) btnGenerate.addEventListener('click', generateProposal);
+        if (btnPreview) btnPreview.addEventListener('click', () => {
+          const lastProp = getLastGeneratedProposal();
+          if (lastProp) showPreviewModal(lastProp);
+        });
+        if (btnDownload) btnDownload.addEventListener('click', () => {
+          const lastProp = getLastGeneratedProposal();
+          if (lastProp) downloadProposalPDF(lastProp);
+        });
 
-  // Restore automatically on refresh
-  const lastProp = getLastGeneratedProposal();
-  if (lastProp) {
-    renderProposal(lastProp);
-  }
-  
-  refreshProposalHistory();
-}
+        if (btnCloseModalX) btnCloseModalX.addEventListener('click', hidePreviewModal);
+        if (btnCloseModalBtn) btnCloseModalBtn.addEventListener('click', hidePreviewModal);
+        if (btnPreviewDownloadBtn) btnPreviewDownloadBtn.addEventListener('click', () => {
+          const lastProp = getLastGeneratedProposal();
+          if (lastProp) downloadProposalPDF(lastProp);
+        });
 
-function getLastGeneratedProposal() {
-  try {
-    const raw = localStorage.getItem('lastGeneratedProposal');
-    return raw ? JSON.parse(raw) : null;
-  } catch (e) {
-    return null;
-  }
-}
+        // Restore automatically on refresh
+        const lastProp = getLastGeneratedProposal();
+        if (lastProp) {
+          renderProposal(lastProp);
+        }
 
-function autofillAssessmentData() {
-  let billData = null, roofData = null, roiData = null;
-  try { billData = JSON.parse(localStorage.getItem('lastBillAnalysis')); } catch(e) {}
-  try { roofData = JSON.parse(localStorage.getItem('lastRoofAnalysis')); } catch(e) {}
-  try { roiData = JSON.parse(localStorage.getItem('lastROIAnalysis')); } catch(e) {}
+        refreshProposalHistory();
+      }
 
-  if (!billData && !roofData && !roiData) {
-    showToast('No existing assessment data found in this session.', 'info');
-    return;
-  }
+      function getLastGeneratedProposal() {
+        try {
+          const raw = localStorage.getItem('lastGeneratedProposal');
+          return raw ? JSON.parse(raw) : null;
+        } catch (e) {
+          return null;
+        }
+      }
 
-  // Populate inputs with safe logic and fallbacks
-  const customerName = billData?.customer_name || '';
-  const perUnitRate = billData?.per_unit_rate || 7.50;
-  const monthlyBill = billData?.monthly_bill_rs || billData?.bill_amount || roiData?.monthly_bill || '';
-  const monthlyUnits = billData?.monthly_units || (roiData?.data?.monthly_generation_units) || '';
-  const roofArea = roofData?.usable_area_sqft || roofData?.total_area_sqft || billData?.roof_area_sqft || '';
-  const recommendedKw = roiData?.system_size || roofData?.recommended_kw || billData?.recommended_kw || '';
-  const customerAddress = billData?.customer_address || '';
-  const customerCity = billData?.city || '';
+      function autofillAssessmentData() {
+        let billData = null, roofData = null, roiData = null;
+        try { billData = JSON.parse(localStorage.getItem('lastBillAnalysis')); } catch (e) { }
+        try { roofData = JSON.parse(localStorage.getItem('lastRoofAnalysis')); } catch (e) { }
+        try { roiData = JSON.parse(localStorage.getItem('lastROIAnalysis')); } catch (e) { }
 
-  if (customerName) document.getElementById('propCustomerName').value = customerName;
-  document.getElementById('propUnitRate').value = perUnitRate;
-  if (monthlyBill) document.getElementById('propMonthlyBill').value = monthlyBill;
-  if (monthlyUnits) document.getElementById('propMonthlyUnits').value = monthlyUnits;
-  if (roofArea) document.getElementById('propRoofArea').value = roofArea;
-  if (recommendedKw) document.getElementById('propSystemSize').value = recommendedKw;
-  if (customerAddress) document.getElementById('propCustomerAddress').value = customerAddress;
-  if (customerCity) {
-    const citySelect = document.getElementById('propCustomerCity');
-    if (citySelect) {
-      citySelect.value = customerCity;
-    }
-  }
+        if (!billData && !roofData && !roiData) {
+          showToast('No existing assessment data found in this session.', 'info');
+          return;
+        }
 
-  showToast('Successfully loaded existing assessment data!', 'success');
-}
+        // Populate inputs with safe logic and fallbacks
+        const customerName = billData?.customer_name || '';
+        const perUnitRate = billData?.per_unit_rate || 7.50;
+        const monthlyBill = billData?.monthly_bill_rs || billData?.bill_amount || roiData?.monthly_bill || '';
+        const monthlyUnits = billData?.monthly_units || (roiData?.data?.monthly_generation_units) || '';
+        const roofArea = roofData?.usable_area_sqft || roofData?.total_area_sqft || billData?.roof_area_sqft || '';
+        const recommendedKw = roiData?.system_size || roofData?.recommended_kw || billData?.recommended_kw || '';
+        const customerAddress = billData?.customer_address || '';
+        const customerCity = billData?.city || '';
 
-function resetProposalForm() {
-  const form = document.getElementById('proposalForm');
-  if (form) form.reset();
-  
-  const resultsView = document.getElementById('proposalResultsView');
-  const placeholderInfo = document.getElementById('proposalPlaceholderInfo');
-  const statusTag = document.getElementById('proposalStatusTag');
+        if (customerName) document.getElementById('propCustomerName').value = customerName;
+        document.getElementById('propUnitRate').value = perUnitRate;
+        if (monthlyBill) document.getElementById('propMonthlyBill').value = monthlyBill;
+        if (monthlyUnits) document.getElementById('propMonthlyUnits').value = monthlyUnits;
+        if (roofArea) document.getElementById('propRoofArea').value = roofArea;
+        if (recommendedKw) document.getElementById('propSystemSize').value = recommendedKw;
+        if (customerAddress) document.getElementById('propCustomerAddress').value = customerAddress;
+        if (customerCity) {
+          const citySelect = document.getElementById('propCustomerCity');
+          if (citySelect) {
+            citySelect.value = customerCity;
+          }
+        }
 
-  if (resultsView) resultsView.style.display = 'none';
-  if (placeholderInfo) placeholderInfo.style.display = 'flex';
-  if (statusTag) statusTag.style.display = 'none';
-  
-  showToast('Proposal details form cleared.', 'info');
-}
+        showToast('Successfully loaded existing assessment data!', 'success');
+      }
 
-function generateProposal() {
-  const form = document.getElementById('proposalForm');
-  if (!form.reportValidity()) return;
+      function resetProposalForm() {
+        const form = document.getElementById('proposalForm');
+        if (form) form.reset();
 
-  const customerName = document.getElementById('propCustomerName').value.trim();
-  const vendorName = document.getElementById('propVendorName').value.trim();
-  const customerPhone = document.getElementById('propCustomerPhone').value.trim();
-  const customerEmail = document.getElementById('propCustomerEmail').value.trim();
-  const customerAddress = document.getElementById('propCustomerAddress').value.trim();
-  const customerCity = document.getElementById('propCustomerCity').value;
-  const perUnitRate = parseFloat(document.getElementById('propUnitRate').value);
-  const monthlyBill = parseFloat(document.getElementById('propMonthlyBill').value);
-  const monthlyUnits = parseFloat(document.getElementById('propMonthlyUnits').value);
-  const roofArea = parseFloat(document.getElementById('propRoofArea').value);
-  const recommendedKw = parseFloat(document.getElementById('propSystemSize').value);
+        const resultsView = document.getElementById('proposalResultsView');
+        const placeholderInfo = document.getElementById('proposalPlaceholderInfo');
+        const statusTag = document.getElementById('proposalStatusTag');
 
-  if (isNaN(perUnitRate) || isNaN(monthlyBill) || isNaN(monthlyUnits) || isNaN(roofArea) || isNaN(recommendedKw)) {
-    showToast('Please enter valid numerical values.', 'error');
-    return;
-  }
+        if (resultsView) resultsView.style.display = 'none';
+        if (placeholderInfo) placeholderInfo.style.display = 'flex';
+        if (statusTag) statusTag.style.display = 'none';
 
-  // Generate Unique ID GSE-PROP-YYYYMMDD-XXXX
-  const today = new Date();
-  const yyyy = today.getFullYear();
-  const mm = String(today.getMonth() + 1).padStart(2, '0');
-  const dd = String(today.getDate()).padStart(2, '0');
-  const hh = String(today.getHours()).padStart(2, '0');
-  const min = String(today.getMinutes()).padStart(2, '0');
-  const proposalId = `GSE-PROP-${yyyy}${mm}${dd}-${hh}${min}`;
+        showToast('Proposal details form cleared.', 'info');
+      }
 
-  // Toggle Skeletons
-  const loader = document.getElementById('proposalLoaderSkeletons');
-  const placeholder = document.getElementById('proposalPlaceholderInfo');
-  const results = document.getElementById('proposalResultsView');
-  const statusTag = document.getElementById('proposalStatusTag');
-  const generateBtn = document.getElementById('btnGenerateProposal');
+      function generateProposal() {
+        const form = document.getElementById('proposalForm');
+        if (!form.reportValidity()) return;
 
-  if (loader) loader.style.display = 'flex';
-  if (placeholder) placeholder.style.display = 'none';
-  if (results) results.style.display = 'none';
-  if (statusTag) statusTag.style.display = 'none';
-  if (generateBtn) generateBtn.disabled = true;
+        const customerName = document.getElementById('propCustomerName').value.trim();
+        const vendorName = document.getElementById('propVendorName').value.trim();
+        const customerPhone = document.getElementById('propCustomerPhone').value.trim();
+        const customerEmail = document.getElementById('propCustomerEmail').value.trim();
+        const customerAddress = document.getElementById('propCustomerAddress').value.trim();
+        const customerCity = document.getElementById('propCustomerCity').value;
+        const perUnitRate = parseFloat(document.getElementById('propUnitRate').value);
+        const monthlyBill = parseFloat(document.getElementById('propMonthlyBill').value);
+        const monthlyUnits = parseFloat(document.getElementById('propMonthlyUnits').value);
+        const roofArea = parseFloat(document.getElementById('propRoofArea').value);
+        const recommendedKw = parseFloat(document.getElementById('propSystemSize').value);
 
-  const payload = {
-    customer_name: customerName,
-    customer_address: customerAddress,
-    city: customerCity,
-    monthly_units: monthlyUnits,
-    monthly_bill_rs: monthlyBill,
-    per_unit_rate: perUnitRate,
-    recommended_kw: recommendedKw,
-    roof_area_sqft: roofArea,
-    vendor_name: vendorName
-  };
+        if (isNaN(perUnitRate) || isNaN(monthlyBill) || isNaN(monthlyUnits) || isNaN(roofArea) || isNaN(recommendedKw)) {
+          showToast('Please enter valid numerical values.', 'error');
+          return;
+        }
 
-  const host = API_BASE;
+        // Generate Unique ID GSE-PROP-YYYYMMDD-XXXX
+        const today = new Date();
+        const yyyy = today.getFullYear();
+        const mm = String(today.getMonth() + 1).padStart(2, '0');
+        const dd = String(today.getDate()).padStart(2, '0');
+        const hh = String(today.getHours()).padStart(2, '0');
+        const min = String(today.getMinutes()).padStart(2, '0');
+        const proposalId = `GSE-PROP-${yyyy}${mm}${dd}-${hh}${min}`;
 
-  safeFetch(`${host}/api/generate-proposal`, {
-    method: 'POST',
-    headers: {
-      'Content-Type': 'application/json'
-    },
-    body: JSON.stringify(payload)
-  })
-  .then(async (res) => {
-    if (!res.ok) {
-      throw new Error('API server returned an error.');
-    }
-    return res.json();
-  })
-  .then((result) => {
-    if (!result || result.success !== true || !result.data) {
-      throw new Error(result.error || 'Invalid API response format.');
-    }
+        // Toggle Skeletons
+        const loader = document.getElementById('proposalLoaderSkeletons');
+        const placeholder = document.getElementById('proposalPlaceholderInfo');
+        const results = document.getElementById('proposalResultsView');
+        const statusTag = document.getElementById('proposalStatusTag');
+        const generateBtn = document.getElementById('btnGenerateProposal');
 
-    const proposal = {
-      ...result.data,
-      proposalId: proposalId,
-      customerPhone: customerPhone,
-      customerEmail: customerEmail,
-      customerAddress: customerAddress,
-      city: customerCity,
-      perUnitRate: perUnitRate,
-      monthlyBill: monthlyBill,
-      monthlyUnits: monthlyUnits,
-      roofArea: roofArea,
-      recommendedKw: recommendedKw,
-      createdAt: new Date().toISOString()
-    };
+        if (loader) loader.style.display = 'flex';
+        if (placeholder) placeholder.style.display = 'none';
+        if (results) results.style.display = 'none';
+        if (statusTag) statusTag.style.display = 'none';
+        if (generateBtn) generateBtn.disabled = true;
 
-    // Save state
-    localStorage.setItem('lastGeneratedProposal', JSON.stringify(proposal));
+        const payload = {
+          customer_name: customerName,
+          customer_address: customerAddress,
+          city: customerCity,
+          monthly_units: monthlyUnits,
+          monthly_bill_rs: monthlyBill,
+          per_unit_rate: perUnitRate,
+          recommended_kw: recommendedKw,
+          roof_area_sqft: roofArea,
+          vendor_name: vendorName
+        };
 
-    // Save in history
-    let history = [];
-    try {
-      history = JSON.parse(localStorage.getItem('proposalHistory')) || [];
-    } catch(e) {}
-    history.unshift(proposal);
-    history = history.slice(0, 100);
-    localStorage.setItem('proposalHistory', JSON.stringify(history));
+        const host = API_BASE;
 
-    // Save analytics
-    let stats = { proposalCount: 0, proposalValue: 0, proposalSavings: 0, proposalSystemSize: 0 };
-    try {
-      const savedStats = localStorage.getItem('vendorAnalyticsStats');
-      if (savedStats) stats = JSON.parse(savedStats);
-    } catch (e) {}
-    stats.proposalCount = (stats.proposalCount || 0) + 1;
-    stats.proposalValue = (stats.proposalValue || 0) + parseFloat(proposal.net_cost_rs || 0);
-    stats.proposalSavings = (stats.proposalSavings || 0) + parseFloat(proposal.annual_savings_rs || 0);
-    stats.proposalSystemSize = (stats.proposalSystemSize || 0) + parseFloat(proposal.recommendedKw || 0);
-    localStorage.setItem('vendorAnalyticsStats', JSON.stringify(stats));
+        safeFetch(`${host}/api/generate-proposal`, {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json'
+          },
+          body: JSON.stringify(payload)
+        })
+          .then(async (res) => {
+            if (!res.ok) {
+              throw new Error('API server returned an error.');
+            }
+            return res.json();
+          })
+          .then((result) => {
+            if (!result || result.success !== true || !result.data) {
+              throw new Error(result.error || 'Invalid API response format.');
+            }
 
-    // Create Notification
-    createNotification('reports', 'Proposal Generated', `Proposal generated successfully for ${customerName}`, 'medium');
+            const proposal = {
+              ...result.data,
+              proposalId: proposalId,
+              customerPhone: customerPhone,
+              customerEmail: customerEmail,
+              customerAddress: customerAddress,
+              city: customerCity,
+              perUnitRate: perUnitRate,
+              monthlyBill: monthlyBill,
+              monthlyUnits: monthlyUnits,
+              roofArea: roofArea,
+              recommendedKw: recommendedKw,
+              createdAt: new Date().toISOString()
+            };
 
-    // Activity Log
-    addActivityLog('crm', 'Proposal Generated', `Proposal generated for ${customerName} (${recommendedKw} kW)`);
+            // Save state
+            localStorage.setItem('lastGeneratedProposal', JSON.stringify(proposal));
 
-    // Audit Log
-    const currentUser = _getUser() || {};
-    logAuditEvent(currentUser.email || 'system', 'Proposal Generated', 'Vendor Portal', `Generated solar proposal ${proposalId} for ${customerName} (${recommendedKw} kW) with net cost ₹${proposal.net_cost_rs}.`, 'Medium');
+            // Save in history
+            let history = [];
+            try {
+              history = JSON.parse(localStorage.getItem('proposalHistory')) || [];
+            } catch (e) { }
+            history.unshift(proposal);
+            history = history.slice(0, 100);
+            localStorage.setItem('proposalHistory', JSON.stringify(history));
 
-    // Auto-create CRM lead
-    const leads = getCrmLeads();
-    if (!leads[customerEmail]) {
-      leads[customerEmail] = {
-        name: customerName,
-        email: customerEmail,
-        phone: customerPhone,
-        city: customerCity,
-        status: 'New',
-        source: 'Vendor Portal',
-        vendor: vendorName,
-        proposalValue: proposal.net_cost_rs,
-        systemSize: recommendedKw,
-        notes: 'AI Proposal Generated',
-        createdAt: new Date().toISOString()
-      };
-      saveCrmLeads(leads);
-      if (typeof renderCrmLeadsTable === 'function') renderCrmLeadsTable();
-      if (typeof refreshCrmDashboardUI === 'function') refreshCrmDashboardUI();
-    }
+            // Save analytics
+            let stats = { proposalCount: 0, proposalValue: 0, proposalSavings: 0, proposalSystemSize: 0 };
+            try {
+              const savedStats = localStorage.getItem('vendorAnalyticsStats');
+              if (savedStats) stats = JSON.parse(savedStats);
+            } catch (e) { }
+            stats.proposalCount = (stats.proposalCount || 0) + 1;
+            stats.proposalValue = (stats.proposalValue || 0) + parseFloat(proposal.net_cost_rs || 0);
+            stats.proposalSavings = (stats.proposalSavings || 0) + parseFloat(proposal.annual_savings_rs || 0);
+            stats.proposalSystemSize = (stats.proposalSystemSize || 0) + parseFloat(proposal.recommendedKw || 0);
+            localStorage.setItem('vendorAnalyticsStats', JSON.stringify(stats));
 
-    // Render Proposal results
-    renderProposal(proposal);
-    refreshProposalHistory();
+            // Create Notification
+            createNotification('reports', 'Proposal Generated', `Proposal generated successfully for ${customerName}`, 'medium');
 
-    showToast('Solar proposal generated successfully!', 'success');
-  })
-  .catch((err) => {
-    console.error('Error generating proposal:', err);
-    showToast('Failed to generate proposal: ' + err.message, 'error');
-    if (loader) loader.style.display = 'none';
-    if (placeholder) placeholder.style.display = 'flex';
-  })
-  .finally(() => {
-    if (generateBtn) generateBtn.disabled = false;
-  });
-}
+            // Activity Log
+            addActivityLog('crm', 'Proposal Generated', `Proposal generated for ${customerName} (${recommendedKw} kW)`);
 
-function renderProposal(proposal) {
-  const loader = document.getElementById('proposalLoaderSkeletons');
-  const placeholder = document.getElementById('proposalPlaceholderInfo');
-  const results = document.getElementById('proposalResultsView');
-  const statusTag = document.getElementById('proposalStatusTag');
+            // Audit Log
+            const currentUser = _getUser() || {};
+            logAuditEvent(currentUser.email || 'system', 'Proposal Generated', 'Vendor Portal', `Generated solar proposal ${proposalId} for ${customerName} (${recommendedKw} kW) with net cost ₹${proposal.net_cost_rs}.`, 'Medium');
 
-  if (loader) loader.style.display = 'none';
-  if (placeholder) placeholder.style.display = 'none';
-  if (results) results.style.display = 'flex';
-  if (statusTag) {
-    statusTag.style.display = 'block';
-    statusTag.textContent = 'READY';
-  }
+            // Auto-create CRM lead
+            const leads = getCrmLeads();
+            if (!leads[customerEmail]) {
+              leads[customerEmail] = {
+                name: customerName,
+                email: customerEmail,
+                phone: customerPhone,
+                city: customerCity,
+                status: 'New',
+                source: 'Vendor Portal',
+                vendor: vendorName,
+                proposalValue: proposal.net_cost_rs,
+                systemSize: recommendedKw,
+                notes: 'AI Proposal Generated',
+                createdAt: new Date().toISOString()
+              };
+              saveCrmLeads(leads);
+              if (typeof renderCrmLeadsTable === 'function') renderCrmLeadsTable();
+              if (typeof refreshCrmDashboardUI === 'function') refreshCrmDashboardUI();
+            }
 
-  // Update KPI displays
-  _setText('resPropId', proposal.proposalId);
-  _setText('resPropDate', new Date(proposal.createdAt).toLocaleDateString());
-  _setText('resPropSystemCost', '₹' + Number(proposal.system_cost_rs).toLocaleString('en-IN'));
-  _setText('resPropSubsidy', '₹' + Number(proposal.subsidy_rs).toLocaleString('en-IN'));
-  _setText('resPropNetCost', '₹' + Number(proposal.net_cost_rs).toLocaleString('en-IN'));
-  _setText('resPropMonthlySavings', '₹' + Number(proposal.monthly_savings_rs).toLocaleString('en-IN'));
-  _setText('resPropAnnualSavings', '₹' + Number(proposal.annual_savings_rs).toLocaleString('en-IN'));
-  _setText('resPropPayback', proposal.payback_years + ' Years');
-  _setText('resProp25YearSavings', '₹' + Number(proposal.savings_25_years_rs).toLocaleString('en-IN'));
-  _setText('resPropCo2', proposal.co2_offset_tons_per_year + ' Tons/Yr');
+            // Render Proposal results
+            renderProposal(proposal);
+            refreshProposalHistory();
 
-  // Hydrate sections
-  _setText('resPropExecSummary', proposal.executive_summary);
-  _setText('resPropSysDesign', proposal.system_overview);
-  _setText('resPropFinBenefits', proposal.financial_highlights);
-  
-  _setText('resPropCostBreakdown', `The overall system cost is calculated at ₹${Number(proposal.system_cost_rs).toLocaleString('en-IN')} for a ${proposal.recommendedKw} kW installation (using ${proposal.panels_required} x 540W solar modules). After deducting the central PM Surya Ghar subsidy of ₹${Number(proposal.subsidy_rs).toLocaleString('en-IN')}, the net out-of-pocket investment for the customer is ₹${Number(proposal.net_cost_rs).toLocaleString('en-IN')}.`);
-  
-  _setText('resPropSubsidyInfo', `Based on the latest guidelines from the Ministry of New and Renewable Energy (MNRE) under the PM Surya Ghar: Muft Bijli Yojana, a grid-connected solar installation of ${proposal.recommendedKw} kW qualifies for a direct cash subsidy of ₹${Number(proposal.subsidy_rs).toLocaleString('en-IN')}, credited directly into the customer's linked bank account after post-installation inspection and net-meter commissioning.`);
-  
-  _setText('resPropPaybackAnalysis', `With average monthly solar generation of ${proposal.monthly_generation_units} kWh, the customer saves approximately ₹${Number(proposal.monthly_savings_rs).toLocaleString('en-IN')} per month, translating to ₹${Number(proposal.annual_savings_rs).toLocaleString('en-IN')} in annual savings. At this rate of generation, the system pays back its net cost of ₹${Number(proposal.net_cost_rs).toLocaleString('en-IN')} in just ${proposal.payback_years} years, leaving 20+ years of free green power with overall lifetime savings of ₹${Number(proposal.savings_25_years_rs).toLocaleString('en-IN')}.`);
-  
-  _setText('resPropEnvImpact', `By transitioning to clean solar energy, a ${proposal.recommendedKw} kW rooftop power plant offsets about ${proposal.co2_offset_tons_per_year} metric tons of Carbon Dioxide (CO₂) emissions every year. Over its 25-year operational lifecycle, this is equivalent to planting over ${_safeNum(proposal.co2_offset_tons_per_year * 40).toFixed(0)} mature trees and avoiding substantial coal burning.`);
+            showToast('Solar proposal generated successfully!', 'success');
+          })
+          .catch((err) => {
+            console.error('Error generating proposal:', err);
+            showToast('Failed to generate proposal: ' + err.message, 'error');
+            if (loader) loader.style.display = 'none';
+            if (placeholder) placeholder.style.display = 'flex';
+          })
+          .finally(() => {
+            if (generateBtn) generateBtn.disabled = false;
+          });
+      }
 
-  const recList = document.getElementById('resPropRecommendations');
-  if (recList && proposal.terms_and_conditions) {
-    recList.innerHTML = proposal.terms_and_conditions.map(term => `<li>${_esc(term)}</li>`).join('');
-  }
-}
+      function renderProposal(proposal) {
+        const loader = document.getElementById('proposalLoaderSkeletons');
+        const placeholder = document.getElementById('proposalPlaceholderInfo');
+        const results = document.getElementById('proposalResultsView');
+        const statusTag = document.getElementById('proposalStatusTag');
 
-function refreshProposalHistory() {
-  const tableBody = document.getElementById('proposalHistoryTableBody');
-  if (!tableBody) return;
+        if (loader) loader.style.display = 'none';
+        if (placeholder) placeholder.style.display = 'none';
+        if (results) results.style.display = 'flex';
+        if (statusTag) {
+          statusTag.style.display = 'block';
+          statusTag.textContent = 'READY';
+        }
 
-  let history = [];
-  try {
-    history = JSON.parse(localStorage.getItem('proposalHistory')) || [];
-  } catch(e) {}
+        // Update KPI displays
+        _setText('resPropId', proposal.proposalId);
+        _setText('resPropDate', new Date(proposal.createdAt).toLocaleDateString());
+        _setText('resPropSystemCost', '₹' + Number(proposal.system_cost_rs).toLocaleString('en-IN'));
+        _setText('resPropSubsidy', '₹' + Number(proposal.subsidy_rs).toLocaleString('en-IN'));
+        _setText('resPropNetCost', '₹' + Number(proposal.net_cost_rs).toLocaleString('en-IN'));
+        _setText('resPropMonthlySavings', '₹' + Number(proposal.monthly_savings_rs).toLocaleString('en-IN'));
+        _setText('resPropAnnualSavings', '₹' + Number(proposal.annual_savings_rs).toLocaleString('en-IN'));
+        _setText('resPropPayback', proposal.payback_years + ' Years');
+        _setText('resProp25YearSavings', '₹' + Number(proposal.savings_25_years_rs).toLocaleString('en-IN'));
+        _setText('resPropCo2', proposal.co2_offset_tons_per_year + ' Tons/Yr');
 
-  if (history.length === 0) {
-    tableBody.innerHTML = `
+        // Hydrate sections
+        _setText('resPropExecSummary', proposal.executive_summary);
+        _setText('resPropSysDesign', proposal.system_overview);
+        _setText('resPropFinBenefits', proposal.financial_highlights);
+
+        _setText('resPropCostBreakdown', `The overall system cost is calculated at ₹${Number(proposal.system_cost_rs).toLocaleString('en-IN')} for a ${proposal.recommendedKw} kW installation (using ${proposal.panels_required} x 540W solar modules). After deducting the central PM Surya Ghar subsidy of ₹${Number(proposal.subsidy_rs).toLocaleString('en-IN')}, the net out-of-pocket investment for the customer is ₹${Number(proposal.net_cost_rs).toLocaleString('en-IN')}.`);
+
+        _setText('resPropSubsidyInfo', `Based on the latest guidelines from the Ministry of New and Renewable Energy (MNRE) under the PM Surya Ghar: Muft Bijli Yojana, a grid-connected solar installation of ${proposal.recommendedKw} kW qualifies for a direct cash subsidy of ₹${Number(proposal.subsidy_rs).toLocaleString('en-IN')}, credited directly into the customer's linked bank account after post-installation inspection and net-meter commissioning.`);
+
+        _setText('resPropPaybackAnalysis', `With average monthly solar generation of ${proposal.monthly_generation_units} kWh, the customer saves approximately ₹${Number(proposal.monthly_savings_rs).toLocaleString('en-IN')} per month, translating to ₹${Number(proposal.annual_savings_rs).toLocaleString('en-IN')} in annual savings. At this rate of generation, the system pays back its net cost of ₹${Number(proposal.net_cost_rs).toLocaleString('en-IN')} in just ${proposal.payback_years} years, leaving 20+ years of free green power with overall lifetime savings of ₹${Number(proposal.savings_25_years_rs).toLocaleString('en-IN')}.`);
+
+        _setText('resPropEnvImpact', `By transitioning to clean solar energy, a ${proposal.recommendedKw} kW rooftop power plant offsets about ${proposal.co2_offset_tons_per_year} metric tons of Carbon Dioxide (CO₂) emissions every year. Over its 25-year operational lifecycle, this is equivalent to planting over ${_safeNum(proposal.co2_offset_tons_per_year * 40).toFixed(0)} mature trees and avoiding substantial coal burning.`);
+
+        const recList = document.getElementById('resPropRecommendations');
+        if (recList && proposal.terms_and_conditions) {
+          recList.innerHTML = proposal.terms_and_conditions.map(term => `<li>${_esc(term)}</li>`).join('');
+        }
+      }
+
+      function refreshProposalHistory() {
+        const tableBody = document.getElementById('proposalHistoryTableBody');
+        if (!tableBody) return;
+
+        let history = [];
+        try {
+          history = JSON.parse(localStorage.getItem('proposalHistory')) || [];
+        } catch (e) { }
+
+        if (history.length === 0) {
+          tableBody.innerHTML = `
       <tr>
         <td colspan="6" style="padding: 30px; text-align: center; color: var(--text-muted);">No proposals generated yet.</td>
       </tr>
     `;
-    return;
-  }
+          return;
+        }
 
-  tableBody.innerHTML = history.map((p, idx) => `
+        tableBody.innerHTML = history.map((p, idx) => `
     <tr style="border-bottom: 1px solid var(--border-color-light);">
       <td style="padding: 10px 8px; font-weight: 700; color: var(--accent-orange);">${p.proposalId}</td>
       <td style="padding: 10px 8px;">
@@ -11292,64 +13327,64 @@ function refreshProposalHistory() {
       </td>
     </tr>
   `).join('');
-}
+      }
 
-window.previewProposalById = function(id) {
-  let history = [];
-  try { history = JSON.parse(localStorage.getItem('proposalHistory')) || []; } catch(e) {}
-  const proposal = history.find(p => p.proposalId === id);
-  if (proposal) showPreviewModal(proposal);
-};
+      window.previewProposalById = function (id) {
+        let history = [];
+        try { history = JSON.parse(localStorage.getItem('proposalHistory')) || []; } catch (e) { }
+        const proposal = history.find(p => p.proposalId === id);
+        if (proposal) showPreviewModal(proposal);
+      };
 
-window.downloadProposalById = function(id) {
-  let history = [];
-  try { history = JSON.parse(localStorage.getItem('proposalHistory')) || []; } catch(e) {}
-  const proposal = history.find(p => p.proposalId === id);
-  if (proposal) downloadProposalPDF(proposal);
-};
+      window.downloadProposalById = function (id) {
+        let history = [];
+        try { history = JSON.parse(localStorage.getItem('proposalHistory')) || []; } catch (e) { }
+        const proposal = history.find(p => p.proposalId === id);
+        if (proposal) downloadProposalPDF(proposal);
+      };
 
-window.deleteProposalById = function(id) {
-  if (!confirm("Are you sure you want to delete this proposal from history?")) return;
+      window.deleteProposalById = function (id) {
+        if (!confirm("Are you sure you want to delete this proposal from history?")) return;
 
-  let history = [];
-  try { history = JSON.parse(localStorage.getItem('proposalHistory')) || []; } catch(e) {}
-  const p = history.find(x => x.proposalId === id);
-  if (!p) return;
+        let history = [];
+        try { history = JSON.parse(localStorage.getItem('proposalHistory')) || []; } catch (e) { }
+        const p = history.find(x => x.proposalId === id);
+        if (!p) return;
 
-  history = history.filter(x => x.proposalId !== id);
-  localStorage.setItem('proposalHistory', JSON.stringify(history));
+        history = history.filter(x => x.proposalId !== id);
+        localStorage.setItem('proposalHistory', JSON.stringify(history));
 
-  // Check if it's the last generated proposal
-  const lastProp = getLastGeneratedProposal();
-  if (lastProp && lastProp.proposalId === id) {
-    localStorage.removeItem('lastGeneratedProposal');
-    const resultsView = document.getElementById('proposalResultsView');
-    const placeholderInfo = document.getElementById('proposalPlaceholderInfo');
-    const statusTag = document.getElementById('proposalStatusTag');
-    if (resultsView) resultsView.style.display = 'none';
-    if (placeholderInfo) placeholderInfo.style.display = 'flex';
-    if (statusTag) statusTag.style.display = 'none';
-  }
+        // Check if it's the last generated proposal
+        const lastProp = getLastGeneratedProposal();
+        if (lastProp && lastProp.proposalId === id) {
+          localStorage.removeItem('lastGeneratedProposal');
+          const resultsView = document.getElementById('proposalResultsView');
+          const placeholderInfo = document.getElementById('proposalPlaceholderInfo');
+          const statusTag = document.getElementById('proposalStatusTag');
+          if (resultsView) resultsView.style.display = 'none';
+          if (placeholderInfo) placeholderInfo.style.display = 'flex';
+          if (statusTag) statusTag.style.display = 'none';
+        }
 
-  // Audit Log
-  const currentUser = _getUser() || {};
-  logAuditEvent(currentUser.email || 'system', 'Proposal Deleted', 'Vendor Portal', `Deleted solar proposal ${id} for customer ${p.customerName}.`, 'Medium');
-  
-  // Activity Log
-  addActivityLog('crm', 'Proposal Deleted', `Deleted proposal ${id}`);
+        // Audit Log
+        const currentUser = _getUser() || {};
+        logAuditEvent(currentUser.email || 'system', 'Proposal Deleted', 'Vendor Portal', `Deleted solar proposal ${id} for customer ${p.customerName}.`, 'Medium');
 
-  refreshProposalHistory();
-  showToast('Proposal deleted from history.', 'info');
-};
+        // Activity Log
+        addActivityLog('crm', 'Proposal Deleted', `Deleted proposal ${id}`);
 
-function showPreviewModal(proposal) {
-  const modal = document.getElementById('proposalPreviewModal');
-  const body = document.getElementById('proposalPreviewBody');
-  if (!modal || !body) return;
+        refreshProposalHistory();
+        showToast('Proposal deleted from history.', 'info');
+      };
 
-  const dateStr = new Date(proposal.createdAt).toLocaleDateString([], { month: 'long', day: 'numeric', year: 'numeric' });
+      function showPreviewModal(proposal) {
+        const modal = document.getElementById('proposalPreviewModal');
+        const body = document.getElementById('proposalPreviewBody');
+        if (!modal || !body) return;
 
-  body.innerHTML = `
+        const dateStr = new Date(proposal.createdAt).toLocaleDateString([], { month: 'long', day: 'numeric', year: 'numeric' });
+
+        body.innerHTML = `
     <!-- Branded Header -->
     <div style="border-bottom: 2px solid rgba(255, 255, 255, 0.08); padding-bottom: 15px; margin-bottom: 20px; display: flex; justify-content: space-between; align-items: start;">
       <div>
@@ -11428,19 +13463,19 @@ function showPreviewModal(proposal) {
     </div>
   `;
 
-  modal.style.display = 'flex';
-}
+        modal.style.display = 'flex';
+      }
 
-function hidePreviewModal() {
-  const modal = document.getElementById('proposalPreviewModal');
-  if (modal) modal.style.display = 'none';
-}
+      function hidePreviewModal() {
+        const modal = document.getElementById('proposalPreviewModal');
+        if (modal) modal.style.display = 'none';
+      }
 
-function downloadProposalPDF(proposal) {
-  const dateStr = new Date(proposal.createdAt).toLocaleDateString([], { month: 'long', day: 'numeric', year: 'numeric' });
-  
-  // Custom print-ready HTML
-  const printContent = `
+      function downloadProposalPDF(proposal) {
+        const dateStr = new Date(proposal.createdAt).toLocaleDateString([], { month: 'long', day: 'numeric', year: 'numeric' });
+
+        // Custom print-ready HTML
+        const printContent = `
 <!DOCTYPE html>
 <html>
 <head>
@@ -11612,417 +13647,417 @@ function downloadProposalPDF(proposal) {
 </html>
   `;
 
-  const printWindow = window.open('', '_blank', 'width=900,height=800');
-  if (printWindow) {
-    printWindow.document.write(printContent);
-    printWindow.document.close();
-    printWindow.focus();
-    setTimeout(() => {
-      printWindow.print();
-      printWindow.close();
-    }, 500);
+        const printWindow = window.open('', '_blank', 'width=900,height=800');
+        if (printWindow) {
+          printWindow.document.write(printContent);
+          printWindow.document.close();
+          printWindow.focus();
+          setTimeout(() => {
+            printWindow.print();
+            printWindow.close();
+          }, 500);
 
-    createNotification('reports', 'Report Downloaded', `Exported proposal PDF for ${proposal.customerName} (${proposal.proposalId})`, 'low');
-    addActivityLog('crm', 'Proposal Exported', `Downloaded PDF for proposal ${proposal.proposalId}`);
-    const currentUser = _getUser() || {};
-    logAuditEvent(currentUser.email || 'system', 'Proposal Downloaded', 'Vendor Portal', `Downloaded proposal PDF ${proposal.proposalId} for ${proposal.customerName}.`, 'Low');
-  } else {
-    showToast("Pop-up blocked! Please allow pop-ups to download PDF proposals.", "error");
-  }
-}
-
-/* ==========================================================================
-   ANNUAL MAINTENANCE CONTRACT (AMC) WORKSPACE
-   ========================================================================== */
-function initAmcWorkspace() {
-  const btnScroll = document.getElementById('btnScrollToAmcForm');
-  const btnAutofill = document.getElementById('btnAutofillAmc');
-  const btnReset = document.getElementById('btnResetAmc');
-  const btnGenerate = document.getElementById('btnGenerateAmc');
-  const btnDownloadSample = document.getElementById('btnDownloadAmcSample');
-  const btnDownloadReport = document.getElementById('btnDownloadAmcReport');
-  const checkboxDamage = document.getElementById('amcDamageObserved');
-  const wrapperDamage = document.getElementById('amcDamageDetailsWrapper');
-
-  if (btnScroll) {
-    btnScroll.addEventListener('click', () => {
-      const container = document.getElementById('amcFormContainer');
-      if (container) {
-        container.scrollIntoView({ behavior: 'smooth' });
+          createNotification('reports', 'Report Downloaded', `Exported proposal PDF for ${proposal.customerName} (${proposal.proposalId})`, 'low');
+          addActivityLog('crm', 'Proposal Exported', `Downloaded PDF for proposal ${proposal.proposalId}`);
+          const currentUser = _getUser() || {};
+          logAuditEvent(currentUser.email || 'system', 'Proposal Downloaded', 'Vendor Portal', `Downloaded proposal PDF ${proposal.proposalId} for ${proposal.customerName}.`, 'Low');
+        } else {
+          showToast("Pop-up blocked! Please allow pop-ups to download PDF proposals.", "error");
+        }
       }
-    });
-  }
 
-  if (btnAutofill) btnAutofill.addEventListener('click', autofillAmcForm);
-  if (btnReset) btnReset.addEventListener('click', resetAmcForm);
-  if (btnGenerate) btnGenerate.addEventListener('click', generateAmcRecommendation);
+      /* ==========================================================================
+         ANNUAL MAINTENANCE CONTRACT (AMC) WORKSPACE
+         ========================================================================== */
+      function initAmcWorkspace() {
+        const btnScroll = document.getElementById('btnScrollToAmcForm');
+        const btnAutofill = document.getElementById('btnAutofillAmc');
+        const btnReset = document.getElementById('btnResetAmc');
+        const btnGenerate = document.getElementById('btnGenerateAmc');
+        const btnDownloadSample = document.getElementById('btnDownloadAmcSample');
+        const btnDownloadReport = document.getElementById('btnDownloadAmcReport');
+        const checkboxDamage = document.getElementById('amcDamageObserved');
+        const wrapperDamage = document.getElementById('amcDamageDetailsWrapper');
 
-  const triggerDownload = (btn) => {
-    const raw = btn.getAttribute('data-report-json');
-    if (raw) {
-      try {
-        downloadAmcReport(JSON.parse(raw));
-      } catch(e) {
-        showToast("Error processing report data for download.", "error");
+        if (btnScroll) {
+          btnScroll.addEventListener('click', () => {
+            const container = document.getElementById('amcFormContainer');
+            if (container) {
+              container.scrollIntoView({ behavior: 'smooth' });
+            }
+          });
+        }
+
+        if (btnAutofill) btnAutofill.addEventListener('click', autofillAmcForm);
+        if (btnReset) btnReset.addEventListener('click', resetAmcForm);
+        if (btnGenerate) btnGenerate.addEventListener('click', generateAmcRecommendation);
+
+        const triggerDownload = (btn) => {
+          const raw = btn.getAttribute('data-report-json');
+          if (raw) {
+            try {
+              downloadAmcReport(JSON.parse(raw));
+            } catch (e) {
+              showToast("Error processing report data for download.", "error");
+            }
+          } else {
+            showToast("No report data generated yet.", "info");
+          }
+        };
+
+        if (btnDownloadSample) btnDownloadSample.addEventListener('click', () => triggerDownload(btnDownloadSample));
+        if (btnDownloadReport) btnDownloadReport.addEventListener('click', () => triggerDownload(btnDownloadReport));
+
+        // Toggle damage details input based on checkbox
+        if (checkboxDamage && wrapperDamage) {
+          const toggleDamageField = () => {
+            wrapperDamage.style.display = checkboxDamage.checked ? 'block' : 'none';
+            const detailsInput = document.getElementById('amcDamageDetails');
+            if (detailsInput && !checkboxDamage.checked) {
+              detailsInput.value = 'None';
+            } else if (detailsInput && checkboxDamage.checked && detailsInput.value === 'None') {
+              detailsInput.value = '';
+            }
+          };
+          checkboxDamage.addEventListener('change', toggleDamageField);
+          toggleDamageField(); // init state
+        }
+
+        // Restore state from localStorage if exists
+        try {
+          const lastAmc = localStorage.getItem('lastGeneratedAmc');
+          if (lastAmc) {
+            const amcData = JSON.parse(lastAmc);
+            restoreAmcState(amcData);
+          }
+        } catch (e) { }
+
+        initAmcFormValidation();
       }
-    } else {
-      showToast("No report data generated yet.", "info");
-    }
-  };
 
-  if (btnDownloadSample) btnDownloadSample.addEventListener('click', () => triggerDownload(btnDownloadSample));
-  if (btnDownloadReport) btnDownloadReport.addEventListener('click', () => triggerDownload(btnDownloadReport));
+      function initAmcFormValidation() {
+        const form = document.getElementById('amcForm');
+        const generateBtn = document.getElementById('btnGenerateAmc');
+        if (!form || !generateBtn) return;
 
-  // Toggle damage details input based on checkbox
-  if (checkboxDamage && wrapperDamage) {
-    const toggleDamageField = () => {
-      wrapperDamage.style.display = checkboxDamage.checked ? 'block' : 'none';
-      const detailsInput = document.getElementById('amcDamageDetails');
-      if (detailsInput && !checkboxDamage.checked) {
-        detailsInput.value = 'None';
-      } else if (detailsInput && checkboxDamage.checked && detailsInput.value === 'None') {
-        detailsInput.value = '';
+        const inputs = form.querySelectorAll('input, select');
+        const checkValidity = () => {
+          const isValid = form.checkValidity();
+          generateBtn.disabled = !isValid;
+        };
+
+        inputs.forEach(input => {
+          input.addEventListener('input', checkValidity);
+          input.addEventListener('change', checkValidity);
+        });
+
+        checkValidity();
       }
-    };
-    checkboxDamage.addEventListener('change', toggleDamageField);
-    toggleDamageField(); // init state
-  }
 
-  // Restore state from localStorage if exists
-  try {
-    const lastAmc = localStorage.getItem('lastGeneratedAmc');
-    if (lastAmc) {
-      const amcData = JSON.parse(lastAmc);
-      restoreAmcState(amcData);
-    }
-  } catch(e) {}
+      function autofillAmcForm() {
+        const fields = {
+          amcCustomerName: "Rajesh Kumar",
+          amcCity: "Lucknow",
+          amcSystemSize: 5.5,
+          amcInstallDate: "2023-04-10",
+          amcLastServiceDate: "2026-01-15",
+          amcCurrentGen: 580,
+          amcExpectedGen: 675,
+          amcInverterErrors: "None",
+          amcPanelCleaning: true,
+          amcDamageObserved: false,
+          amcDamageDetails: "None"
+        };
 
-  initAmcFormValidation();
-}
-
-function initAmcFormValidation() {
-  const form = document.getElementById('amcForm');
-  const generateBtn = document.getElementById('btnGenerateAmc');
-  if (!form || !generateBtn) return;
-
-  const inputs = form.querySelectorAll('input, select');
-  const checkValidity = () => {
-    const isValid = form.checkValidity();
-    generateBtn.disabled = !isValid;
-  };
-
-  inputs.forEach(input => {
-    input.addEventListener('input', checkValidity);
-    input.addEventListener('change', checkValidity);
-  });
-  
-  checkValidity();
-}
-
-function autofillAmcForm() {
-  const fields = {
-    amcCustomerName: "Rajesh Kumar",
-    amcCity: "Lucknow",
-    amcSystemSize: 5.5,
-    amcInstallDate: "2023-04-10",
-    amcLastServiceDate: "2026-01-15",
-    amcCurrentGen: 580,
-    amcExpectedGen: 675,
-    amcInverterErrors: "None",
-    amcPanelCleaning: true,
-    amcDamageObserved: false,
-    amcDamageDetails: "None"
-  };
-
-  for (const [id, val] of Object.entries(fields)) {
-    const el = document.getElementById(id);
-    if (el) {
-      if (el.type === 'checkbox') {
-        el.checked = val;
-      } else {
-        el.value = val;
+        for (const [id, val] of Object.entries(fields)) {
+          const el = document.getElementById(id);
+          if (el) {
+            if (el.type === 'checkbox') {
+              el.checked = val;
+            } else {
+              el.value = val;
+            }
+            el.dispatchEvent(new Event('input', { bubbles: true }));
+            el.dispatchEvent(new Event('change', { bubbles: true }));
+          }
+        }
+        showToast("Autofilled demo AMC data!", "info");
       }
-      el.dispatchEvent(new Event('input', { bubbles: true }));
-      el.dispatchEvent(new Event('change', { bubbles: true }));
-    }
-  }
-  showToast("Autofilled demo AMC data!", "info");
-}
 
-function resetAmcForm() {
-  const form = document.getElementById('amcForm');
-  if (form) form.reset();
+      function resetAmcForm() {
+        const form = document.getElementById('amcForm');
+        if (form) form.reset();
 
-  const placeholder = document.getElementById('amcPlaceholderInfo');
-  const results = document.getElementById('amcResultsView');
-  const dlBtn = document.getElementById('btnDownloadAmcSample');
-  
-  if (placeholder) placeholder.style.display = 'flex';
-  if (results) results.style.display = 'none';
-  if (dlBtn) dlBtn.disabled = true;
+        const placeholder = document.getElementById('amcPlaceholderInfo');
+        const results = document.getElementById('amcResultsView');
+        const dlBtn = document.getElementById('btnDownloadAmcSample');
 
-  // Reset KPIs
-  document.getElementById('amcKpiPlan').textContent = '—';
-  document.getElementById('amcKpiCost').textContent = '₹0';
-  document.getElementById('amcKpiHealth').textContent = '—';
-  document.getElementById('amcKpiNextVisit').textContent = '—';
-  document.getElementById('amcKpiPmScore').textContent = '—';
-  
-  setAmcTimelineProgress(1);
-  showToast("AMC form cleared.", "info");
-}
+        if (placeholder) placeholder.style.display = 'flex';
+        if (results) results.style.display = 'none';
+        if (dlBtn) dlBtn.disabled = true;
 
-function generateAmcRecommendation() {
-  const form = document.getElementById('amcForm');
-  if (!form.reportValidity()) return;
+        // Reset KPIs
+        document.getElementById('amcKpiPlan').textContent = '—';
+        document.getElementById('amcKpiCost').textContent = '₹0';
+        document.getElementById('amcKpiHealth').textContent = '—';
+        document.getElementById('amcKpiNextVisit').textContent = '—';
+        document.getElementById('amcKpiPmScore').textContent = '—';
 
-  const loader = document.getElementById('amcLoaderSkeletons');
-  const placeholder = document.getElementById('amcPlaceholderInfo');
-  const results = document.getElementById('amcResultsView');
-  const generateBtn = document.getElementById('btnGenerateAmc');
+        setAmcTimelineProgress(1);
+        showToast("AMC form cleared.", "info");
+      }
 
-  if (loader) loader.style.display = 'flex';
-  if (placeholder) placeholder.style.display = 'none';
-  if (results) results.style.display = 'none';
-  if (generateBtn) generateBtn.disabled = true;
+      function generateAmcRecommendation() {
+        const form = document.getElementById('amcForm');
+        if (!form.reportValidity()) return;
 
-  const payload = {
-    customer_name: document.getElementById('amcCustomerName').value.trim(),
-    city: document.getElementById('amcCity').value,
-    system_size_kw: parseFloat(document.getElementById('amcSystemSize').value),
-    installation_date: document.getElementById('amcInstallDate').value,
-    last_service_date: document.getElementById('amcLastServiceDate').value,
-    current_generation_units: parseFloat(document.getElementById('amcCurrentGen').value),
-    expected_generation_units: parseFloat(document.getElementById('amcExpectedGen').value),
-    inverter_error_codes: document.getElementById('amcInverterErrors').value.trim(),
-    panel_cleaning_done: document.getElementById('amcPanelCleaning').checked,
-    physical_damage_observed: document.getElementById('amcDamageObserved').checked,
-    damage_details: document.getElementById('amcDamageDetails').value.trim()
-  };
+        const loader = document.getElementById('amcLoaderSkeletons');
+        const placeholder = document.getElementById('amcPlaceholderInfo');
+        const results = document.getElementById('amcResultsView');
+        const generateBtn = document.getElementById('btnGenerateAmc');
 
-  const host = API_BASE;
-  
-  safeFetch(`${host}/api/amc-recommendation`, {
-    method: 'POST',
-    headers: {
-      'Content-Type': 'application/json'
-    },
-    body: JSON.stringify(payload)
-  })
-  .then(async (res) => {
-    if (!res.ok) throw new Error('API server returned error code ' + res.status);
-    return res.json();
-  })
-  .then((result) => {
-    if (!result || result.success !== true || !result.data) {
-      throw new Error(result.error || 'Invalid API response format');
-    }
-    
-    const amcData = result.data;
-    
-    // Save to localStorage
-    localStorage.setItem('lastGeneratedAmc', JSON.stringify(amcData));
+        if (loader) loader.style.display = 'flex';
+        if (placeholder) placeholder.style.display = 'none';
+        if (results) results.style.display = 'none';
+        if (generateBtn) generateBtn.disabled = true;
 
-    // Render KPIs with animations
-    const score = _safeNum(amcData.health_score);
-    let plan = amcData.system_status === 'Healthy' ? 'Premium Annual' : 'Standard Quarterly';
-    if (amcData.urgent_action_required) plan = 'Urgent Remedial';
-    
-    document.getElementById('amcKpiPlan').textContent = plan;
-    animateAdminCounter('amcKpiCost', _safeNum(amcData.estimated_service_cost_rs), true);
-    animateAdminCounter('amcKpiHealth', score, false, false, '%');
-    document.getElementById('amcKpiNextVisit').textContent = amcData.next_service_due || '—';
-    
-    // Preventive maintenance score
-    const pmScore = Math.max(20, Math.min(100, Math.round(100 - _safeNum(amcData.generation_drop_pct) - (payload.panel_cleaning_done ? 0 : 15))));
-    animateAdminCounter('amcKpiPmScore', pmScore, false, false, '/100');
+        const payload = {
+          customer_name: document.getElementById('amcCustomerName').value.trim(),
+          city: document.getElementById('amcCity').value,
+          system_size_kw: parseFloat(document.getElementById('amcSystemSize').value),
+          installation_date: document.getElementById('amcInstallDate').value,
+          last_service_date: document.getElementById('amcLastServiceDate').value,
+          current_generation_units: parseFloat(document.getElementById('amcCurrentGen').value),
+          expected_generation_units: parseFloat(document.getElementById('amcExpectedGen').value),
+          inverter_error_codes: document.getElementById('amcInverterErrors').value.trim(),
+          panel_cleaning_done: document.getElementById('amcPanelCleaning').checked,
+          physical_damage_observed: document.getElementById('amcDamageObserved').checked,
+          damage_details: document.getElementById('amcDamageDetails').value.trim()
+        };
 
-    // Render Result Elements
-    document.getElementById('resAmcCustomerName').textContent = `${amcData.customer_name}'s Solar System`;
-    const statusTag = document.getElementById('resAmcStatusTag');
-    if (statusTag) {
-      statusTag.textContent = (amcData.system_status || 'Needs Attention').toUpperCase();
-      statusTag.style.backgroundColor = amcData.system_status === 'Healthy' ? 'rgba(54, 211, 153, 0.15)' : 'rgba(251, 146, 60, 0.15)';
-      statusTag.style.color = amcData.system_status === 'Healthy' ? 'var(--accent-green)' : 'var(--accent-orange)';
-    }
+        const host = API_BASE;
 
-    document.getElementById('resAmcDiagnosis').textContent = amcData.diagnosis_summary;
-    document.getElementById('resAmcPlan').textContent = plan;
-    document.getElementById('resAmcCost').textContent = `₹${Number(amcData.estimated_service_cost_rs).toLocaleString('en-IN')} / Yr`;
-    document.getElementById('resAmcPeriod').textContent = amcData.urgent_action_required ? 'Immediate Remedial Action' : 'Quarterly Maintenance (4 visits/yr)';
-    document.getElementById('resAmcNextVisit').textContent = amcData.next_service_due;
+        safeFetch(`${host}/api/amc-recommendation`, {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json'
+          },
+          body: JSON.stringify(payload)
+        })
+          .then(async (res) => {
+            if (!res.ok) throw new Error('API server returned error code ' + res.status);
+            return res.json();
+          })
+          .then((result) => {
+            if (!result || result.success !== true || !result.data) {
+              throw new Error(result.error || 'Invalid API response format');
+            }
 
-    // Fault Analysis
-    const faultsList = document.getElementById('resAmcFaults');
-    if (faultsList && amcData.fault_analysis) {
-      faultsList.innerHTML = amcData.fault_analysis.map(f => `<li>${_esc(f)}</li>`).join('');
-    }
-    // Actions
-    const actionsList = document.getElementById('resAmcActions');
-    if (actionsList && amcData.recommended_actions) {
-      actionsList.innerHTML = amcData.recommended_actions.map(a => `<li>${_esc(a)}</li>`).join('');
-    }
-    // Preventive
-    const prevList = document.getElementById('resAmcPreventive');
-    if (prevList && amcData.preventive_measures) {
-      prevList.innerHTML = amcData.preventive_measures.map(p => `<li>${_esc(p)}</li>`).join('');
-    }
+            const amcData = result.data;
 
-    // Enable Download Plan button
-    const dlBtn = document.getElementById('btnDownloadAmcSample');
-    if (dlBtn) {
-      dlBtn.disabled = false;
-      dlBtn.setAttribute('data-report-json', JSON.stringify(amcData));
-    }
-    const dlReportBtn = document.getElementById('btnDownloadAmcReport');
-    if (dlReportBtn) {
-      dlReportBtn.setAttribute('data-report-json', JSON.stringify(amcData));
-    }
+            // Save to localStorage
+            localStorage.setItem('lastGeneratedAmc', JSON.stringify(amcData));
 
-    // Update Visual Timeline based on health score
-    if (score >= 80) setAmcTimelineProgress(6);
-    else if (score >= 50) setAmcTimelineProgress(4);
-    else setAmcTimelineProgress(2);
+            // Render KPIs with animations
+            const score = _safeNum(amcData.health_score);
+            let plan = amcData.system_status === 'Healthy' ? 'Premium Annual' : 'Standard Quarterly';
+            if (amcData.urgent_action_required) plan = 'Urgent Remedial';
 
-    // Update Activity logs, notifications, and audits
-    createNotification('reports', 'AMC Recommendation Generated', `AMC evaluation completed for ${payload.customer_name}`, 'medium');
-    addActivityLog('crm', 'AMC Evaluated', `AMC recommendation generated for ${payload.customer_name}`);
-    const currentUser = _getUser() || {};
-    logAuditEvent(currentUser.email || 'system', 'AMC Recommendation Generated', 'O&M Portal', `Evaluated system health for ${payload.customer_name} (Health Score: ${score}%, Est Cost: ₹${amcData.estimated_service_cost_rs})`, 'Medium');
+            document.getElementById('amcKpiPlan').textContent = plan;
+            animateAdminCounter('amcKpiCost', _safeNum(amcData.estimated_service_cost_rs), true);
+            animateAdminCounter('amcKpiHealth', score, false, false, '%');
+            document.getElementById('amcKpiNextVisit').textContent = amcData.next_service_due || '—';
 
-    // Show Results
-    if (loader) loader.style.display = 'none';
-    if (results) results.style.display = 'flex';
-    showToast('AMC O&M evaluation completed successfully!', 'success');
-  })
-  .catch((err) => {
-    console.error('Error generating AMC recommendation:', err);
-    showToast('O&M evaluation failed: ' + err.message, 'error');
-    if (loader) loader.style.display = 'none';
-    if (placeholder) placeholder.style.display = 'flex';
-  })
-  .finally(() => {
-    if (generateBtn) generateBtn.disabled = false;
-    initAmcFormValidation();
-  });
-}
+            // Preventive maintenance score
+            const pmScore = Math.max(20, Math.min(100, Math.round(100 - _safeNum(amcData.generation_drop_pct) - (payload.panel_cleaning_done ? 0 : 15))));
+            animateAdminCounter('amcKpiPmScore', pmScore, false, false, '/100');
 
-function restoreAmcState(amcData) {
-  if (!amcData) return;
+            // Render Result Elements
+            document.getElementById('resAmcCustomerName').textContent = `${amcData.customer_name}'s Solar System`;
+            const statusTag = document.getElementById('resAmcStatusTag');
+            if (statusTag) {
+              statusTag.textContent = (amcData.system_status || 'Needs Attention').toUpperCase();
+              statusTag.style.backgroundColor = amcData.system_status === 'Healthy' ? 'rgba(54, 211, 153, 0.15)' : 'rgba(251, 146, 60, 0.15)';
+              statusTag.style.color = amcData.system_status === 'Healthy' ? 'var(--accent-green)' : 'var(--accent-orange)';
+            }
 
-  // Restore fields
-  if (document.getElementById('amcCustomerName')) document.getElementById('amcCustomerName').value = amcData.customer_name || '';
-  if (document.getElementById('amcCity')) document.getElementById('amcCity').value = amcData.city || 'Lucknow';
-  if (document.getElementById('amcSystemSize')) document.getElementById('amcSystemSize').value = amcData.system_size_kw || 5.0;
-  
-  const score = _safeNum(amcData.health_score);
-  let plan = amcData.system_status === 'Healthy' ? 'Premium Annual' : 'Standard Quarterly';
-  if (amcData.urgent_action_required) plan = 'Urgent Remedial';
+            document.getElementById('resAmcDiagnosis').textContent = amcData.diagnosis_summary;
+            document.getElementById('resAmcPlan').textContent = plan;
+            document.getElementById('resAmcCost').textContent = `₹${Number(amcData.estimated_service_cost_rs).toLocaleString('en-IN')} / Yr`;
+            document.getElementById('resAmcPeriod').textContent = amcData.urgent_action_required ? 'Immediate Remedial Action' : 'Quarterly Maintenance (4 visits/yr)';
+            document.getElementById('resAmcNextVisit').textContent = amcData.next_service_due;
 
-  document.getElementById('amcKpiPlan').textContent = plan;
-  document.getElementById('amcKpiCost').textContent = `₹${Number(amcData.estimated_service_cost_rs).toLocaleString('en-IN')}`;
-  document.getElementById('amcKpiHealth').textContent = `${score}%`;
-  document.getElementById('amcKpiNextVisit').textContent = amcData.next_service_due || '—';
-  
-  const pmScore = Math.max(20, Math.min(100, Math.round(100 - _safeNum(amcData.generation_drop_pct))));
-  document.getElementById('amcKpiPmScore').textContent = `${pmScore}/100`;
+            // Fault Analysis
+            const faultsList = document.getElementById('resAmcFaults');
+            if (faultsList && amcData.fault_analysis) {
+              faultsList.innerHTML = amcData.fault_analysis.map(f => `<li>${_esc(f)}</li>`).join('');
+            }
+            // Actions
+            const actionsList = document.getElementById('resAmcActions');
+            if (actionsList && amcData.recommended_actions) {
+              actionsList.innerHTML = amcData.recommended_actions.map(a => `<li>${_esc(a)}</li>`).join('');
+            }
+            // Preventive
+            const prevList = document.getElementById('resAmcPreventive');
+            if (prevList && amcData.preventive_measures) {
+              prevList.innerHTML = amcData.preventive_measures.map(p => `<li>${_esc(p)}</li>`).join('');
+            }
 
-  // Render Result Elements
-  document.getElementById('resAmcCustomerName').textContent = `${amcData.customer_name}'s Solar System`;
-  const statusTag = document.getElementById('resAmcStatusTag');
-  if (statusTag) {
-    statusTag.textContent = (amcData.system_status || 'Needs Attention').toUpperCase();
-    statusTag.style.backgroundColor = amcData.system_status === 'Healthy' ? 'rgba(54, 211, 153, 0.15)' : 'rgba(251, 146, 60, 0.15)';
-    statusTag.style.color = amcData.system_status === 'Healthy' ? 'var(--accent-green)' : 'var(--accent-orange)';
-  }
+            // Enable Download Plan button
+            const dlBtn = document.getElementById('btnDownloadAmcSample');
+            if (dlBtn) {
+              dlBtn.disabled = false;
+              dlBtn.setAttribute('data-report-json', JSON.stringify(amcData));
+            }
+            const dlReportBtn = document.getElementById('btnDownloadAmcReport');
+            if (dlReportBtn) {
+              dlReportBtn.setAttribute('data-report-json', JSON.stringify(amcData));
+            }
 
-  document.getElementById('resAmcDiagnosis').textContent = amcData.diagnosis_summary;
-  document.getElementById('resAmcPlan').textContent = plan;
-  document.getElementById('resAmcCost').textContent = `₹${Number(amcData.estimated_service_cost_rs).toLocaleString('en-IN')} / Yr`;
-  document.getElementById('resAmcPeriod').textContent = amcData.urgent_action_required ? 'Immediate Remedial Action' : 'Quarterly Maintenance (4 visits/yr)';
-  document.getElementById('resAmcNextVisit').textContent = amcData.next_service_due;
+            // Update Visual Timeline based on health score
+            if (score >= 80) setAmcTimelineProgress(6);
+            else if (score >= 50) setAmcTimelineProgress(4);
+            else setAmcTimelineProgress(2);
 
-  // Fault Analysis
-  const faultsList = document.getElementById('resAmcFaults');
-  if (faultsList && amcData.fault_analysis) {
-    faultsList.innerHTML = amcData.fault_analysis.map(f => `<li>${_esc(f)}</li>`).join('');
-  }
-  // Actions
-  const actionsList = document.getElementById('resAmcActions');
-  if (actionsList && amcData.recommended_actions) {
-    actionsList.innerHTML = amcData.recommended_actions.map(a => `<li>${_esc(a)}</li>`).join('');
-  }
-  // Preventive
-  const prevList = document.getElementById('resAmcPreventive');
-  if (prevList && amcData.preventive_measures) {
-    prevList.innerHTML = amcData.preventive_measures.map(p => `<li>${_esc(p)}</li>`).join('');
-  }
+            // Update Activity logs, notifications, and audits
+            createNotification('reports', 'AMC Recommendation Generated', `AMC evaluation completed for ${payload.customer_name}`, 'medium');
+            addActivityLog('crm', 'AMC Evaluated', `AMC recommendation generated for ${payload.customer_name}`);
+            const currentUser = _getUser() || {};
+            logAuditEvent(currentUser.email || 'system', 'AMC Recommendation Generated', 'O&M Portal', `Evaluated system health for ${payload.customer_name} (Health Score: ${score}%, Est Cost: ₹${amcData.estimated_service_cost_rs})`, 'Medium');
 
-  // Enable Download buttons
-  const dlBtn = document.getElementById('btnDownloadAmcSample');
-  if (dlBtn) {
-    dlBtn.disabled = false;
-    dlBtn.setAttribute('data-report-json', JSON.stringify(amcData));
-  }
-  const dlReportBtn = document.getElementById('btnDownloadAmcReport');
-  if (dlReportBtn) {
-    dlReportBtn.setAttribute('data-report-json', JSON.stringify(amcData));
-  }
+            // Show Results
+            if (loader) loader.style.display = 'none';
+            if (results) results.style.display = 'flex';
+            showToast('AMC O&M evaluation completed successfully!', 'success');
+          })
+          .catch((err) => {
+            console.error('Error generating AMC recommendation:', err);
+            showToast('O&M evaluation failed: ' + err.message, 'error');
+            if (loader) loader.style.display = 'none';
+            if (placeholder) placeholder.style.display = 'flex';
+          })
+          .finally(() => {
+            if (generateBtn) generateBtn.disabled = false;
+            initAmcFormValidation();
+          });
+      }
 
-  // Update Visual Timeline
-  if (score >= 80) setAmcTimelineProgress(6);
-  else if (score >= 50) setAmcTimelineProgress(4);
-  else setAmcTimelineProgress(2);
+      function restoreAmcState(amcData) {
+        if (!amcData) return;
 
-  const placeholder = document.getElementById('amcPlaceholderInfo');
-  const results = document.getElementById('amcResultsView');
-  if (placeholder) placeholder.style.display = 'none';
-  if (results) results.style.display = 'flex';
-}
+        // Restore fields
+        if (document.getElementById('amcCustomerName')) document.getElementById('amcCustomerName').value = amcData.customer_name || '';
+        if (document.getElementById('amcCity')) document.getElementById('amcCity').value = amcData.city || 'Lucknow';
+        if (document.getElementById('amcSystemSize')) document.getElementById('amcSystemSize').value = amcData.system_size_kw || 5.0;
 
-window.setAmcTimelineProgress = function(step) {
-  const bar = document.getElementById('amcTimelineProgress');
-  if (bar) {
-    const percent = (step * 16.6) + '%';
-    if (window.innerWidth <= 820) {
-      bar.style.width = '100%';
-      bar.style.height = percent;
-    } else {
-      bar.style.width = percent;
-      bar.style.height = '100%';
-    }
-  }
-  const steps = document.querySelectorAll('.amc-timeline-step');
-  steps.forEach((el, idx) => {
-    el.classList.remove('active', 'completed', 'current', 'future');
-    if (idx + 1 < step) {
-      el.classList.add('completed');
-    } else if (idx + 1 === step) {
-      el.classList.add('active', 'current');
-    } else {
-      el.classList.add('future');
-    }
-  });
-};
+        const score = _safeNum(amcData.health_score);
+        let plan = amcData.system_status === 'Healthy' ? 'Premium Annual' : 'Standard Quarterly';
+        if (amcData.urgent_action_required) plan = 'Urgent Remedial';
 
-window.addEventListener('resize', () => {
-  const activeStep = document.querySelector('.amc-timeline-step.current');
-  if (activeStep) {
-    const steps = Array.from(document.querySelectorAll('.amc-timeline-step'));
-    const currentStepIdx = steps.indexOf(activeStep) + 1;
-    if (currentStepIdx > 0) {
-      window.setAmcTimelineProgress(currentStepIdx);
-    }
-  }
-});
+        document.getElementById('amcKpiPlan').textContent = plan;
+        document.getElementById('amcKpiCost').textContent = `₹${Number(amcData.estimated_service_cost_rs).toLocaleString('en-IN')}`;
+        document.getElementById('amcKpiHealth').textContent = `${score}%`;
+        document.getElementById('amcKpiNextVisit').textContent = amcData.next_service_due || '—';
+
+        const pmScore = Math.max(20, Math.min(100, Math.round(100 - _safeNum(amcData.generation_drop_pct))));
+        document.getElementById('amcKpiPmScore').textContent = `${pmScore}/100`;
+
+        // Render Result Elements
+        document.getElementById('resAmcCustomerName').textContent = `${amcData.customer_name}'s Solar System`;
+        const statusTag = document.getElementById('resAmcStatusTag');
+        if (statusTag) {
+          statusTag.textContent = (amcData.system_status || 'Needs Attention').toUpperCase();
+          statusTag.style.backgroundColor = amcData.system_status === 'Healthy' ? 'rgba(54, 211, 153, 0.15)' : 'rgba(251, 146, 60, 0.15)';
+          statusTag.style.color = amcData.system_status === 'Healthy' ? 'var(--accent-green)' : 'var(--accent-orange)';
+        }
+
+        document.getElementById('resAmcDiagnosis').textContent = amcData.diagnosis_summary;
+        document.getElementById('resAmcPlan').textContent = plan;
+        document.getElementById('resAmcCost').textContent = `₹${Number(amcData.estimated_service_cost_rs).toLocaleString('en-IN')} / Yr`;
+        document.getElementById('resAmcPeriod').textContent = amcData.urgent_action_required ? 'Immediate Remedial Action' : 'Quarterly Maintenance (4 visits/yr)';
+        document.getElementById('resAmcNextVisit').textContent = amcData.next_service_due;
+
+        // Fault Analysis
+        const faultsList = document.getElementById('resAmcFaults');
+        if (faultsList && amcData.fault_analysis) {
+          faultsList.innerHTML = amcData.fault_analysis.map(f => `<li>${_esc(f)}</li>`).join('');
+        }
+        // Actions
+        const actionsList = document.getElementById('resAmcActions');
+        if (actionsList && amcData.recommended_actions) {
+          actionsList.innerHTML = amcData.recommended_actions.map(a => `<li>${_esc(a)}</li>`).join('');
+        }
+        // Preventive
+        const prevList = document.getElementById('resAmcPreventive');
+        if (prevList && amcData.preventive_measures) {
+          prevList.innerHTML = amcData.preventive_measures.map(p => `<li>${_esc(p)}</li>`).join('');
+        }
+
+        // Enable Download buttons
+        const dlBtn = document.getElementById('btnDownloadAmcSample');
+        if (dlBtn) {
+          dlBtn.disabled = false;
+          dlBtn.setAttribute('data-report-json', JSON.stringify(amcData));
+        }
+        const dlReportBtn = document.getElementById('btnDownloadAmcReport');
+        if (dlReportBtn) {
+          dlReportBtn.setAttribute('data-report-json', JSON.stringify(amcData));
+        }
+
+        // Update Visual Timeline
+        if (score >= 80) setAmcTimelineProgress(6);
+        else if (score >= 50) setAmcTimelineProgress(4);
+        else setAmcTimelineProgress(2);
+
+        const placeholder = document.getElementById('amcPlaceholderInfo');
+        const results = document.getElementById('amcResultsView');
+        if (placeholder) placeholder.style.display = 'none';
+        if (results) results.style.display = 'flex';
+      }
+
+      window.setAmcTimelineProgress = function (step) {
+        const bar = document.getElementById('amcTimelineProgress');
+        if (bar) {
+          const percent = (step * 16.6) + '%';
+          if (window.innerWidth <= 820) {
+            bar.style.width = '100%';
+            bar.style.height = percent;
+          } else {
+            bar.style.width = percent;
+            bar.style.height = '100%';
+          }
+        }
+        const steps = document.querySelectorAll('.amc-timeline-step');
+        steps.forEach((el, idx) => {
+          el.classList.remove('active', 'completed', 'current', 'future');
+          if (idx + 1 < step) {
+            el.classList.add('completed');
+          } else if (idx + 1 === step) {
+            el.classList.add('active', 'current');
+          } else {
+            el.classList.add('future');
+          }
+        });
+      };
+
+      window.addEventListener('resize', () => {
+        const activeStep = document.querySelector('.amc-timeline-step.current');
+        if (activeStep) {
+          const steps = Array.from(document.querySelectorAll('.amc-timeline-step'));
+          const currentStepIdx = steps.indexOf(activeStep) + 1;
+          if (currentStepIdx > 0) {
+            window.setAmcTimelineProgress(currentStepIdx);
+          }
+        }
+      });
 
 
-function downloadAmcReport(amcData) {
-  if (!amcData) return;
-  const dateStr = new Date().toLocaleDateString([], { month: 'long', day: 'numeric', year: 'numeric' });
-  const plan = amcData.system_status === 'Healthy' ? 'Premium Annual' : 'Standard Quarterly';
+      function downloadAmcReport(amcData) {
+        if (!amcData) return;
+        const dateStr = new Date().toLocaleDateString([], { month: 'long', day: 'numeric', year: 'numeric' });
+        const plan = amcData.system_status === 'Healthy' ? 'Premium Annual' : 'Standard Quarterly';
 
-  const printContent = `
+        const printContent = `
 <!DOCTYPE html>
 <html>
 <head>
@@ -12167,579 +14202,579 @@ function downloadAmcReport(amcData) {
 </html>
   `;
 
-  const printWindow = window.open('', '_blank', 'width=900,height=800');
-  if (printWindow) {
-    printWindow.document.write(printContent);
-    printWindow.document.close();
-    printWindow.focus();
-    setTimeout(() => {
-      printWindow.print();
-      printWindow.close();
-    }, 500);
+        const printWindow = window.open('', '_blank', 'width=900,height=800');
+        if (printWindow) {
+          printWindow.document.write(printContent);
+          printWindow.document.close();
+          printWindow.focus();
+          setTimeout(() => {
+            printWindow.print();
+            printWindow.close();
+          }, 500);
 
-    createNotification('reports', 'Report Downloaded', `Exported AMC Plan PDF for ${amcData.customer_name}`, 'low');
-    addActivityLog('crm', 'AMC PDF Exported', `Downloaded PDF for AMC report`);
-    const currentUser = _getUser() || {};
-    logAuditEvent(currentUser.email || 'system', 'AMC Report Downloaded', 'O&M Portal', `Downloaded AMC report PDF for ${amcData.customer_name}.`, 'Low');
-  } else {
-    showToast("Pop-up blocked! Please allow pop-ups to download PDF reports.", "error");
-  }
-}
-
-/* ==========================================================================
-   SITE SURVEY WORKSPACE
-   ========================================================================== */
-function initSiteSurveyWorkspace() {
-  const btnScroll = document.getElementById('btnScrollToSurveyForm');
-  const btnAutofill = document.getElementById('btnAutofillSurvey');
-  const btnReset = document.getElementById('btnResetSurvey');
-  const btnGenerate = document.getElementById('btnGenerateSurvey');
-  const btnDownloadReport = document.getElementById('btnDownloadSurveyReport');
-  const btnDownloadReportRight = document.getElementById('btnDownloadSurveyReportRight');
-  const checkboxShading = document.getElementById('surveyShadingPresent');
-  const selectShadingLevel = document.getElementById('surveyShadingLevel');
-
-  if (btnScroll) {
-    btnScroll.addEventListener('click', () => {
-      const container = document.getElementById('surveyFormContainer');
-      if (container) {
-        container.scrollIntoView({ behavior: 'smooth' });
-      }
-    });
-  }
-
-  if (btnAutofill) btnAutofill.addEventListener('click', autofillSurveyForm);
-  if (btnReset) btnReset.addEventListener('click', resetSurveyForm);
-  if (btnGenerate) btnGenerate.addEventListener('click', generateSurveyRecommendation);
-
-  const triggerDownload = () => {
-    const lastSurvey = localStorage.getItem('lastGeneratedSiteSurvey');
-    if (lastSurvey) {
-      try {
-        downloadSiteSurveyReport(JSON.parse(lastSurvey));
-      } catch(e) {
-        showToast("Error processing survey data for download.", "error");
-      }
-    } else {
-      showToast("No survey report generated yet.", "info");
-    }
-  };
-
-  if (btnDownloadReport) btnDownloadReport.addEventListener('click', triggerDownload);
-  if (btnDownloadReportRight) btnDownloadReportRight.addEventListener('click', triggerDownload);
-
-  // Sync Shading Level Dropdown and Shading Present Checkbox
-  if (selectShadingLevel && checkboxShading) {
-    selectShadingLevel.addEventListener('change', () => {
-      checkboxShading.checked = selectShadingLevel.value !== 'None';
-      const detailsInput = document.getElementById('surveyShadingDetails');
-      if (detailsInput) {
-        if (!checkboxShading.checked) {
-          detailsInput.value = 'None';
-        } else if (detailsInput.value === 'None') {
-          detailsInput.value = '';
+          createNotification('reports', 'Report Downloaded', `Exported AMC Plan PDF for ${amcData.customer_name}`, 'low');
+          addActivityLog('crm', 'AMC PDF Exported', `Downloaded PDF for AMC report`);
+          const currentUser = _getUser() || {};
+          logAuditEvent(currentUser.email || 'system', 'AMC Report Downloaded', 'O&M Portal', `Downloaded AMC report PDF for ${amcData.customer_name}.`, 'Low');
+        } else {
+          showToast("Pop-up blocked! Please allow pop-ups to download PDF reports.", "error");
         }
       }
-    });
 
-    checkboxShading.addEventListener('change', () => {
-      if (!checkboxShading.checked) {
-        selectShadingLevel.value = 'None';
-        const detailsInput = document.getElementById('surveyShadingDetails');
-        if (detailsInput) detailsInput.value = 'None';
-      } else if (selectShadingLevel.value === 'None') {
-        selectShadingLevel.value = 'Minor';
-        const detailsInput = document.getElementById('surveyShadingDetails');
-        if (detailsInput && detailsInput.value === 'None') detailsInput.value = '';
+      /* ==========================================================================
+         SITE SURVEY WORKSPACE
+         ========================================================================== */
+      function initSiteSurveyWorkspace() {
+        const btnScroll = document.getElementById('btnScrollToSurveyForm');
+        const btnAutofill = document.getElementById('btnAutofillSurvey');
+        const btnReset = document.getElementById('btnResetSurvey');
+        const btnGenerate = document.getElementById('btnGenerateSurvey');
+        const btnDownloadReport = document.getElementById('btnDownloadSurveyReport');
+        const btnDownloadReportRight = document.getElementById('btnDownloadSurveyReportRight');
+        const checkboxShading = document.getElementById('surveyShadingPresent');
+        const selectShadingLevel = document.getElementById('surveyShadingLevel');
+
+        if (btnScroll) {
+          btnScroll.addEventListener('click', () => {
+            const container = document.getElementById('surveyFormContainer');
+            if (container) {
+              container.scrollIntoView({ behavior: 'smooth' });
+            }
+          });
+        }
+
+        if (btnAutofill) btnAutofill.addEventListener('click', autofillSurveyForm);
+        if (btnReset) btnReset.addEventListener('click', resetSurveyForm);
+        if (btnGenerate) btnGenerate.addEventListener('click', generateSurveyRecommendation);
+
+        const triggerDownload = () => {
+          const lastSurvey = localStorage.getItem('lastGeneratedSiteSurvey');
+          if (lastSurvey) {
+            try {
+              downloadSiteSurveyReport(JSON.parse(lastSurvey));
+            } catch (e) {
+              showToast("Error processing survey data for download.", "error");
+            }
+          } else {
+            showToast("No survey report generated yet.", "info");
+          }
+        };
+
+        if (btnDownloadReport) btnDownloadReport.addEventListener('click', triggerDownload);
+        if (btnDownloadReportRight) btnDownloadReportRight.addEventListener('click', triggerDownload);
+
+        // Sync Shading Level Dropdown and Shading Present Checkbox
+        if (selectShadingLevel && checkboxShading) {
+          selectShadingLevel.addEventListener('change', () => {
+            checkboxShading.checked = selectShadingLevel.value !== 'None';
+            const detailsInput = document.getElementById('surveyShadingDetails');
+            if (detailsInput) {
+              if (!checkboxShading.checked) {
+                detailsInput.value = 'None';
+              } else if (detailsInput.value === 'None') {
+                detailsInput.value = '';
+              }
+            }
+          });
+
+          checkboxShading.addEventListener('change', () => {
+            if (!checkboxShading.checked) {
+              selectShadingLevel.value = 'None';
+              const detailsInput = document.getElementById('surveyShadingDetails');
+              if (detailsInput) detailsInput.value = 'None';
+            } else if (selectShadingLevel.value === 'None') {
+              selectShadingLevel.value = 'Minor';
+              const detailsInput = document.getElementById('surveyShadingDetails');
+              if (detailsInput && detailsInput.value === 'None') detailsInput.value = '';
+            }
+          });
+        }
+
+        // Restore state from localStorage if exists
+        try {
+          const lastSurvey = localStorage.getItem('lastGeneratedSiteSurvey');
+          if (lastSurvey) {
+            const surveyData = JSON.parse(lastSurvey);
+            restoreSurveyState(surveyData);
+          }
+        } catch (e) { }
+
+        initSurveyFormValidation();
       }
-    });
-  }
 
-  // Restore state from localStorage if exists
-  try {
-    const lastSurvey = localStorage.getItem('lastGeneratedSiteSurvey');
-    if (lastSurvey) {
-      const surveyData = JSON.parse(lastSurvey);
-      restoreSurveyState(surveyData);
-    }
-  } catch(e) {}
+      function initSurveyFormValidation() {
+        const form = document.getElementById('surveyForm');
+        const generateBtn = document.getElementById('btnGenerateSurvey');
+        if (!form || !generateBtn) return;
 
-  initSurveyFormValidation();
-}
+        const inputs = form.querySelectorAll('input, select, textarea');
+        const checkValidity = () => {
+          const isValid = form.checkValidity();
+          generateBtn.disabled = !isValid;
+        };
 
-function initSurveyFormValidation() {
-  const form = document.getElementById('surveyForm');
-  const generateBtn = document.getElementById('btnGenerateSurvey');
-  if (!form || !generateBtn) return;
+        inputs.forEach(input => {
+          input.addEventListener('input', checkValidity);
+          input.addEventListener('change', checkValidity);
+        });
 
-  const inputs = form.querySelectorAll('input, select, textarea');
-  const checkValidity = () => {
-    const isValid = form.checkValidity();
-    generateBtn.disabled = !isValid;
-  };
-
-  inputs.forEach(input => {
-    input.addEventListener('input', checkValidity);
-    input.addEventListener('change', checkValidity);
-  });
-  
-  checkValidity();
-}
-
-function autofillSurveyForm() {
-  const fields = {
-    surveyCustomerName: "Amit Sharma",
-    surveyCity: "Bangalore",
-    surveyAddress: "Block 4, 303, Prestige Heights",
-    surveyBuildingType: "Residential",
-    surveyRoofType: "RCC Flat",
-    surveyRoofAge: 3,
-    surveyRoofArea: 1500,
-    surveyRoofHeight: 25,
-    surveyNumFloors: 2,
-    surveyProposedSystem: 12.0,
-    surveyPanelDistance: 12.5,
-    surveyElectricPoleDistance: 20.0,
-    surveyMeterLocation: "Ground Floor Main Corridor",
-    surveyStructureCondition: "Good",
-    surveyShadingLevel: "Minor",
-    surveyShadingPresent: true,
-    surveyShadingDetails: "Tree branch shading from east side until 9 AM",
-    surveyParkingAccess: "Good",
-    surveySafetyHazards: "None",
-    surveyObstacles: "Water tank, 2 AC outdoor units",
-    surveyAdditionalNotes: "Ample staging area available for unloading panels."
-  };
-
-  for (const [id, val] of Object.entries(fields)) {
-    const el = document.getElementById(id);
-    if (el) {
-      if (el.type === 'checkbox') {
-        el.checked = val;
-      } else {
-        el.value = val;
+        checkValidity();
       }
-      el.dispatchEvent(new Event('input', { bubbles: true }));
-      el.dispatchEvent(new Event('change', { bubbles: true }));
-    }
-  }
-  showToast("Autofilled demo site survey parameters!", "info");
-}
 
-function resetSurveyForm() {
-  const form = document.getElementById('surveyForm');
-  if (form) form.reset();
+      function autofillSurveyForm() {
+        const fields = {
+          surveyCustomerName: "Amit Sharma",
+          surveyCity: "Bangalore",
+          surveyAddress: "Block 4, 303, Prestige Heights",
+          surveyBuildingType: "Residential",
+          surveyRoofType: "RCC Flat",
+          surveyRoofAge: 3,
+          surveyRoofArea: 1500,
+          surveyRoofHeight: 25,
+          surveyNumFloors: 2,
+          surveyProposedSystem: 12.0,
+          surveyPanelDistance: 12.5,
+          surveyElectricPoleDistance: 20.0,
+          surveyMeterLocation: "Ground Floor Main Corridor",
+          surveyStructureCondition: "Good",
+          surveyShadingLevel: "Minor",
+          surveyShadingPresent: true,
+          surveyShadingDetails: "Tree branch shading from east side until 9 AM",
+          surveyParkingAccess: "Good",
+          surveySafetyHazards: "None",
+          surveyObstacles: "Water tank, 2 AC outdoor units",
+          surveyAdditionalNotes: "Ample staging area available for unloading panels."
+        };
 
-  const placeholder = document.getElementById('surveyPlaceholderInfo');
-  const results = document.getElementById('surveyResultsView');
-  const dlBtn = document.getElementById('btnDownloadSurveyReport');
-  const reportSection = document.getElementById('surveyReportFullSection');
-  
-  if (placeholder) placeholder.style.display = 'flex';
-  if (results) results.style.display = 'none';
-  if (reportSection) reportSection.style.display = 'none';
-  if (dlBtn) dlBtn.disabled = true;
+        for (const [id, val] of Object.entries(fields)) {
+          const el = document.getElementById(id);
+          if (el) {
+            if (el.type === 'checkbox') {
+              el.checked = val;
+            } else {
+              el.value = val;
+            }
+            el.dispatchEvent(new Event('input', { bubbles: true }));
+            el.dispatchEvent(new Event('change', { bubbles: true }));
+          }
+        }
+        showToast("Autofilled demo site survey parameters!", "info");
+      }
 
-  // Reset KPIs
-  document.getElementById('surveyKpiFeasibility').textContent = '—';
-  document.getElementById('surveyKpiAccessibility').textContent = '—';
-  document.getElementById('surveyKpiComplexity').textContent = '—';
-  document.getElementById('surveyKpiSafety').textContent = '—';
-  document.getElementById('surveyKpiTime').textContent = '—';
-  document.getElementById('surveyKpiStatus').textContent = 'Pending';
-  
-  setSurveyTimelineProgress(1);
-  showToast("Site survey form cleared.", "info");
-}
+      function resetSurveyForm() {
+        const form = document.getElementById('surveyForm');
+        if (form) form.reset();
 
-function generateSurveyRecommendation() {
-  const form = document.getElementById('surveyForm');
-  if (!form.reportValidity()) return;
+        const placeholder = document.getElementById('surveyPlaceholderInfo');
+        const results = document.getElementById('surveyResultsView');
+        const dlBtn = document.getElementById('btnDownloadSurveyReport');
+        const reportSection = document.getElementById('surveyReportFullSection');
 
-  const loader = document.getElementById('surveyLoaderSkeletons');
-  const placeholder = document.getElementById('surveyPlaceholderInfo');
-  const results = document.getElementById('surveyResultsView');
-  const reportSection = document.getElementById('surveyReportFullSection');
-  const generateBtn = document.getElementById('btnGenerateSurvey');
+        if (placeholder) placeholder.style.display = 'flex';
+        if (results) results.style.display = 'none';
+        if (reportSection) reportSection.style.display = 'none';
+        if (dlBtn) dlBtn.disabled = true;
 
-  if (loader) loader.style.display = 'flex';
-  if (placeholder) placeholder.style.display = 'none';
-  if (results) results.style.display = 'none';
-  if (reportSection) reportSection.style.display = 'none';
-  if (generateBtn) generateBtn.disabled = true;
+        // Reset KPIs
+        document.getElementById('surveyKpiFeasibility').textContent = '—';
+        document.getElementById('surveyKpiAccessibility').textContent = '—';
+        document.getElementById('surveyKpiComplexity').textContent = '—';
+        document.getElementById('surveyKpiSafety').textContent = '—';
+        document.getElementById('surveyKpiTime').textContent = '—';
+        document.getElementById('surveyKpiStatus').textContent = 'Pending';
 
-  // Read visual-only inputs and compose structural payloads
-  const address = document.getElementById('surveyAddress').value.trim();
-  const bldgType = document.getElementById('surveyBuildingType').value;
-  const roofHeight = parseFloat(document.getElementById('surveyRoofHeight').value);
-  const floors = parseInt(document.getElementById('surveyNumFloors').value);
-  const poleDist = parseFloat(document.getElementById('surveyElectricPoleDistance').value);
-  const meterLoc = document.getElementById('surveyMeterLocation').value.trim();
-  const parkAccess = document.getElementById('surveyParkingAccess').value;
-  const safetyHaz = document.getElementById('surveySafetyHazards').value.trim();
-  const addNotes = document.getElementById('surveyAdditionalNotes').value.trim();
+        setSurveyTimelineProgress(1);
+        showToast("Site survey form cleared.", "info");
+      }
 
-  // Combine UI-only fields into shading_details and obstacles to feed into the API contract strictly
-  const rawShadingDetails = document.getElementById('surveyShadingDetails').value.trim();
-  const shadingDetailsString = `[Shading: ${document.getElementById('surveyShadingLevel').value}] ${rawShadingDetails}`;
-  
-  const rawObstacles = document.getElementById('surveyObstacles').value.trim();
-  const obstaclesString = `[Obstacles: ${rawObstacles}] [Bldg: ${bldgType}, Floors: ${floors}, Height: ${roofHeight}ft] [Meter: ${meterLoc}, Pole: ${poleDist}m] [Access: ${parkAccess}] [Hazards: ${safetyHaz}] [Notes: ${addNotes}]`;
+      function generateSurveyRecommendation() {
+        const form = document.getElementById('surveyForm');
+        if (!form.reportValidity()) return;
 
-  const payload = {
-    customer_name: document.getElementById('surveyCustomerName').value.trim(),
-    city: document.getElementById('surveyCity').value,
-    roof_type: document.getElementById('surveyRoofType').value,
-    roof_age_years: parseInt(document.getElementById('surveyRoofAge').value),
-    total_roof_area_sqft: parseFloat(document.getElementById('surveyRoofArea').value),
-    shading_present: document.getElementById('surveyShadingPresent').checked,
-    shading_details: shadingDetailsString,
-    obstacles: obstaclesString,
-    electrical_panel_distance_m: parseFloat(document.getElementById('surveyPanelDistance').value),
-    structure_condition: document.getElementById('surveyStructureCondition').value,
-    proposed_system_kw: parseFloat(document.getElementById('surveyProposedSystem').value)
-  };
+        const loader = document.getElementById('surveyLoaderSkeletons');
+        const placeholder = document.getElementById('surveyPlaceholderInfo');
+        const results = document.getElementById('surveyResultsView');
+        const reportSection = document.getElementById('surveyReportFullSection');
+        const generateBtn = document.getElementById('btnGenerateSurvey');
 
-  const host = API_BASE;
-  
-  safeFetch(`${host}/api/site-survey`, {
-    method: 'POST',
-    headers: {
-      'Content-Type': 'application/json'
-    },
-    body: JSON.stringify(payload)
-  })
-  .then(async (res) => {
-    if (!res.ok) throw new Error('API server returned error code ' + res.status);
-    return res.json();
-  })
-  .then((result) => {
-    if (!result || result.success !== true || !result.data) {
-      throw new Error(result.error || 'Invalid API response format');
-    }
-    
-    const surveyData = result.data;
-    
-    // Store original UI values for print/restore integrity
-    surveyData._ui_address = address;
-    surveyData._ui_building_type = bldgType;
-    surveyData._ui_roof_height = roofHeight;
-    surveyData._ui_num_floors = floors;
-    surveyData._ui_electric_pole_distance = poleDist;
-    surveyData._ui_meter_location = meterLoc;
-    surveyData._ui_parking_access = parkAccess;
-    surveyData._ui_safety_hazards = safetyHaz;
-    surveyData._ui_additional_notes = addNotes;
-    surveyData._ui_shading_level = document.getElementById('surveyShadingLevel').value;
-    surveyData._ui_proposed_system_kw = payload.proposed_system_kw;
-    surveyData._ui_roof_age_years = payload.roof_age_years;
-    surveyData._ui_roof_type = payload.roof_type;
-    surveyData._ui_structure_condition = payload.structure_condition;
-    surveyData._ui_electrical_panel_distance_m = payload.electrical_panel_distance_m;
+        if (loader) loader.style.display = 'flex';
+        if (placeholder) placeholder.style.display = 'none';
+        if (results) results.style.display = 'none';
+        if (reportSection) reportSection.style.display = 'none';
+        if (generateBtn) generateBtn.disabled = true;
 
-    // Cache to localStorage
-    localStorage.setItem('lastGeneratedSiteSurvey', JSON.stringify(surveyData));
+        // Read visual-only inputs and compose structural payloads
+        const address = document.getElementById('surveyAddress').value.trim();
+        const bldgType = document.getElementById('surveyBuildingType').value;
+        const roofHeight = parseFloat(document.getElementById('surveyRoofHeight').value);
+        const floors = parseInt(document.getElementById('surveyNumFloors').value);
+        const poleDist = parseFloat(document.getElementById('surveyElectricPoleDistance').value);
+        const meterLoc = document.getElementById('surveyMeterLocation').value.trim();
+        const parkAccess = document.getElementById('surveyParkingAccess').value;
+        const safetyHaz = document.getElementById('surveySafetyHazards').value.trim();
+        const addNotes = document.getElementById('surveyAdditionalNotes').value.trim();
 
-    // Render KPIs & Results
-    hydrateSurveyUI(surveyData);
+        // Combine UI-only fields into shading_details and obstacles to feed into the API contract strictly
+        const rawShadingDetails = document.getElementById('surveyShadingDetails').value.trim();
+        const shadingDetailsString = `[Shading: ${document.getElementById('surveyShadingLevel').value}] ${rawShadingDetails}`;
 
-    // Update Activity logs, notifications, and audits
-    createNotification('reports', 'Site Survey Feasibility Generated', `Site survey evaluation completed for ${payload.customer_name}`, 'medium');
-    addActivityLog('crm', 'Site Survey Evaluated', `Site survey generated for ${payload.customer_name} in ${payload.city}`);
-    const currentUser = _getUser() || {};
-    logAuditEvent(currentUser.email || 'system', 'Site Survey Generated', 'O&M Portal', `Evaluated site feasibility for ${payload.customer_name} (Score: ${surveyData.feasibility_score}%, Status: ${surveyData.feasibility_status})`, 'Medium');
+        const rawObstacles = document.getElementById('surveyObstacles').value.trim();
+        const obstaclesString = `[Obstacles: ${rawObstacles}] [Bldg: ${bldgType}, Floors: ${floors}, Height: ${roofHeight}ft] [Meter: ${meterLoc}, Pole: ${poleDist}m] [Access: ${parkAccess}] [Hazards: ${safetyHaz}] [Notes: ${addNotes}]`;
 
-    // Show Results
-    if (loader) loader.style.display = 'none';
-    if (results) results.style.display = 'flex';
-    if (reportSection) reportSection.style.display = 'flex';
-    showToast('Site survey feasibility generated successfully!', 'success');
-  })
-  .catch((err) => {
-    console.error('Error generating site survey feasibility:', err);
-    showToast('Site survey generation failed: ' + err.message, 'error');
-    if (loader) loader.style.display = 'none';
-    if (placeholder) placeholder.style.display = 'flex';
-  })
-  .finally(() => {
-    if (generateBtn) generateBtn.disabled = false;
-    initSurveyFormValidation();
-  });
-}
+        const payload = {
+          customer_name: document.getElementById('surveyCustomerName').value.trim(),
+          city: document.getElementById('surveyCity').value,
+          roof_type: document.getElementById('surveyRoofType').value,
+          roof_age_years: parseInt(document.getElementById('surveyRoofAge').value),
+          total_roof_area_sqft: parseFloat(document.getElementById('surveyRoofArea').value),
+          shading_present: document.getElementById('surveyShadingPresent').checked,
+          shading_details: shadingDetailsString,
+          obstacles: obstaclesString,
+          electrical_panel_distance_m: parseFloat(document.getElementById('surveyPanelDistance').value),
+          structure_condition: document.getElementById('surveyStructureCondition').value,
+          proposed_system_kw: parseFloat(document.getElementById('surveyProposedSystem').value)
+        };
 
-function hydrateSurveyUI(surveyData) {
-  const score = _safeNum(surveyData.feasibility_score);
-  
-  // 1. Animate dynamic numeric KPIs
-  animateAdminCounter('surveyKpiFeasibility', score, false, false, '%');
-  
-  // Roof accessibility derived accessibility
-  let accessibility = 'Standard';
-  if (surveyData._ui_num_floors >= 4 || surveyData._ui_roof_height >= 45 || surveyData._ui_parking_access === 'Difficult') {
-    accessibility = 'Difficult';
-  } else if (surveyData._ui_num_floors === 1) {
-    accessibility = 'Easy';
-  }
-  document.getElementById('surveyKpiAccessibility').textContent = accessibility;
+        const host = API_BASE;
 
-  // Installation Complexity derived
-  let complexity = 'Medium';
-  if (score < 60 || surveyData._ui_num_floors >= 4) complexity = 'High';
-  else if (score >= 85 && surveyData.estimated_additional_cost_rs === 0) complexity = 'Low';
-  document.getElementById('surveyKpiComplexity').textContent = complexity;
+        safeFetch(`${host}/api/site-survey`, {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json'
+          },
+          body: JSON.stringify(payload)
+        })
+          .then(async (res) => {
+            if (!res.ok) throw new Error('API server returned error code ' + res.status);
+            return res.json();
+          })
+          .then((result) => {
+            if (!result || result.success !== true || !result.data) {
+              throw new Error(result.error || 'Invalid API response format');
+            }
 
-  // Safety Score
-  let safetyScore = 100;
-  if (surveyData._ui_safety_hazards && surveyData._ui_safety_hazards.toLowerCase() !== 'none') safetyScore -= 20;
-  if (surveyData._ui_roof_age_years > 15) safetyScore -= 15;
-  if (surveyData._ui_structure_condition !== 'Good') safetyScore -= 15;
-  const finalSafetyVal = Math.max(40, safetyScore);
-  animateAdminCounter('surveyKpiSafety', finalSafetyVal, false, false, '/100');
+            const surveyData = result.data;
 
-  // Estimated Setup Time
-  const systemKw = _safeNum(surveyData._ui_proposed_system_kw || 10.0);
-  const estDays = Math.max(1, Math.round(systemKw * 0.3 + (complexity === 'High' ? 2 : 1)));
-  document.getElementById('surveyKpiTime').textContent = `${estDays} Days`;
+            // Store original UI values for print/restore integrity
+            surveyData._ui_address = address;
+            surveyData._ui_building_type = bldgType;
+            surveyData._ui_roof_height = roofHeight;
+            surveyData._ui_num_floors = floors;
+            surveyData._ui_electric_pole_distance = poleDist;
+            surveyData._ui_meter_location = meterLoc;
+            surveyData._ui_parking_access = parkAccess;
+            surveyData._ui_safety_hazards = safetyHaz;
+            surveyData._ui_additional_notes = addNotes;
+            surveyData._ui_shading_level = document.getElementById('surveyShadingLevel').value;
+            surveyData._ui_proposed_system_kw = payload.proposed_system_kw;
+            surveyData._ui_roof_age_years = payload.roof_age_years;
+            surveyData._ui_roof_type = payload.roof_type;
+            surveyData._ui_structure_condition = payload.structure_condition;
+            surveyData._ui_electrical_panel_distance_m = payload.electrical_panel_distance_m;
 
-  // Status Tag
-  document.getElementById('surveyKpiStatus').textContent = surveyData.feasibility_status;
+            // Cache to localStorage
+            localStorage.setItem('lastGeneratedSiteSurvey', JSON.stringify(surveyData));
 
-  // 2. Hydrate Trend Indicators
-  const feasibilityTrend = document.getElementById('surveyKpiFeasibilityTrend');
-  if (feasibilityTrend) {
-    feasibilityTrend.textContent = score >= 80 ? '🟢 Optimal' : score >= 50 ? '🟡 Moderate' : '🔴 Poor';
-    feasibilityTrend.style.color = score >= 80 ? 'var(--accent-green)' : score >= 50 ? 'var(--color-yellow)' : 'var(--color-red)';
-  }
-  const accessibilityTrend = document.getElementById('surveyKpiAccessibilityTrend');
-  if (accessibilityTrend) {
-    accessibilityTrend.textContent = accessibility === 'Easy' ? '🟢 Easy' : accessibility === 'Standard' ? '🟢 Standard' : '🟡 Hard';
-    accessibilityTrend.style.color = accessibility === 'Difficult' ? 'var(--color-yellow)' : 'var(--accent-green)';
-  }
-  const complexityTrend = document.getElementById('surveyKpiComplexityTrend');
-  if (complexityTrend) {
-    complexityTrend.textContent = complexity === 'Low' ? '🟢 Low Risk' : complexity === 'Medium' ? '🟡 Medium' : '🔴 Complex';
-    complexityTrend.style.color = complexity === 'Low' ? 'var(--accent-green)' : complexity === 'Medium' ? 'var(--color-yellow)' : 'var(--color-red)';
-  }
-  const safetyTrend = document.getElementById('surveyKpiSafetyTrend');
-  if (safetyTrend) {
-    safetyTrend.textContent = finalSafetyVal >= 80 ? '🟢 Secured' : finalSafetyVal >= 60 ? '🟡 Warning' : '🔴 Elevated';
-    safetyTrend.style.color = finalSafetyVal >= 80 ? 'var(--accent-green)' : finalSafetyVal >= 60 ? 'var(--color-yellow)' : 'var(--color-red)';
-  }
-  const timeTrend = document.getElementById('surveyKpiTimeTrend');
-  if (timeTrend) {
-    timeTrend.textContent = estDays <= 3 ? '⏱️ Fast' : '⏱️ Standard';
-    timeTrend.style.color = 'var(--text-secondary)';
-  }
-  const statusTrend = document.getElementById('surveyKpiStatusTrend');
-  if (statusTrend) {
-    statusTrend.textContent = surveyData.feasibility_status === 'Highly Feasible' ? '🟢 Pass' : '🟡 Review';
-    statusTrend.style.color = surveyData.feasibility_status === 'Highly Feasible' ? 'var(--accent-green)' : 'var(--color-yellow)';
-  }
+            // Render KPIs & Results
+            hydrateSurveyUI(surveyData);
 
-  // 3. Recommendation Banner Card Hydration
-  const recBanner = document.getElementById('surveyRecommendationBanner');
-  if (recBanner) {
-    let stars = '★★★★★';
-    let title = 'Site Approved';
-    let sub = 'Ready for Installation';
-    let bannerClass = 'approved';
+            // Update Activity logs, notifications, and audits
+            createNotification('reports', 'Site Survey Feasibility Generated', `Site survey evaluation completed for ${payload.customer_name}`, 'medium');
+            addActivityLog('crm', 'Site Survey Evaluated', `Site survey generated for ${payload.customer_name} in ${payload.city}`);
+            const currentUser = _getUser() || {};
+            logAuditEvent(currentUser.email || 'system', 'Site Survey Generated', 'O&M Portal', `Evaluated site feasibility for ${payload.customer_name} (Score: ${surveyData.feasibility_score}%, Status: ${surveyData.feasibility_status})`, 'Medium');
 
-    if (score < 50) {
-      stars = '★★★☆☆';
-      title = 'Engineering Review Required';
-      sub = 'Structural or safety parameters are outside optimal guidelines. Reinforcement required.';
-      bannerClass = 'review';
-    } else if (score < 80) {
-      stars = '★★★★☆';
-      title = 'Requires Minor Improvements';
-      sub = 'Minor electrical or mounting adjustments required prior to site layout approval.';
-      bannerClass = 'conditional';
-    }
+            // Show Results
+            if (loader) loader.style.display = 'none';
+            if (results) results.style.display = 'flex';
+            if (reportSection) reportSection.style.display = 'flex';
+            showToast('Site survey feasibility generated successfully!', 'success');
+          })
+          .catch((err) => {
+            console.error('Error generating site survey feasibility:', err);
+            showToast('Site survey generation failed: ' + err.message, 'error');
+            if (loader) loader.style.display = 'none';
+            if (placeholder) placeholder.style.display = 'flex';
+          })
+          .finally(() => {
+            if (generateBtn) generateBtn.disabled = false;
+            initSurveyFormValidation();
+          });
+      }
 
-    recBanner.className = `card-base recommendation-banner-card ${bannerClass}`;
-    recBanner.innerHTML = `
+      function hydrateSurveyUI(surveyData) {
+        const score = _safeNum(surveyData.feasibility_score);
+
+        // 1. Animate dynamic numeric KPIs
+        animateAdminCounter('surveyKpiFeasibility', score, false, false, '%');
+
+        // Roof accessibility derived accessibility
+        let accessibility = 'Standard';
+        if (surveyData._ui_num_floors >= 4 || surveyData._ui_roof_height >= 45 || surveyData._ui_parking_access === 'Difficult') {
+          accessibility = 'Difficult';
+        } else if (surveyData._ui_num_floors === 1) {
+          accessibility = 'Easy';
+        }
+        document.getElementById('surveyKpiAccessibility').textContent = accessibility;
+
+        // Installation Complexity derived
+        let complexity = 'Medium';
+        if (score < 60 || surveyData._ui_num_floors >= 4) complexity = 'High';
+        else if (score >= 85 && surveyData.estimated_additional_cost_rs === 0) complexity = 'Low';
+        document.getElementById('surveyKpiComplexity').textContent = complexity;
+
+        // Safety Score
+        let safetyScore = 100;
+        if (surveyData._ui_safety_hazards && surveyData._ui_safety_hazards.toLowerCase() !== 'none') safetyScore -= 20;
+        if (surveyData._ui_roof_age_years > 15) safetyScore -= 15;
+        if (surveyData._ui_structure_condition !== 'Good') safetyScore -= 15;
+        const finalSafetyVal = Math.max(40, safetyScore);
+        animateAdminCounter('surveyKpiSafety', finalSafetyVal, false, false, '/100');
+
+        // Estimated Setup Time
+        const systemKw = _safeNum(surveyData._ui_proposed_system_kw || 10.0);
+        const estDays = Math.max(1, Math.round(systemKw * 0.3 + (complexity === 'High' ? 2 : 1)));
+        document.getElementById('surveyKpiTime').textContent = `${estDays} Days`;
+
+        // Status Tag
+        document.getElementById('surveyKpiStatus').textContent = surveyData.feasibility_status;
+
+        // 2. Hydrate Trend Indicators
+        const feasibilityTrend = document.getElementById('surveyKpiFeasibilityTrend');
+        if (feasibilityTrend) {
+          feasibilityTrend.textContent = score >= 80 ? '🟢 Optimal' : score >= 50 ? '🟡 Moderate' : '🔴 Poor';
+          feasibilityTrend.style.color = score >= 80 ? 'var(--accent-green)' : score >= 50 ? 'var(--color-yellow)' : 'var(--color-red)';
+        }
+        const accessibilityTrend = document.getElementById('surveyKpiAccessibilityTrend');
+        if (accessibilityTrend) {
+          accessibilityTrend.textContent = accessibility === 'Easy' ? '🟢 Easy' : accessibility === 'Standard' ? '🟢 Standard' : '🟡 Hard';
+          accessibilityTrend.style.color = accessibility === 'Difficult' ? 'var(--color-yellow)' : 'var(--accent-green)';
+        }
+        const complexityTrend = document.getElementById('surveyKpiComplexityTrend');
+        if (complexityTrend) {
+          complexityTrend.textContent = complexity === 'Low' ? '🟢 Low Risk' : complexity === 'Medium' ? '🟡 Medium' : '🔴 Complex';
+          complexityTrend.style.color = complexity === 'Low' ? 'var(--accent-green)' : complexity === 'Medium' ? 'var(--color-yellow)' : 'var(--color-red)';
+        }
+        const safetyTrend = document.getElementById('surveyKpiSafetyTrend');
+        if (safetyTrend) {
+          safetyTrend.textContent = finalSafetyVal >= 80 ? '🟢 Secured' : finalSafetyVal >= 60 ? '🟡 Warning' : '🔴 Elevated';
+          safetyTrend.style.color = finalSafetyVal >= 80 ? 'var(--accent-green)' : finalSafetyVal >= 60 ? 'var(--color-yellow)' : 'var(--color-red)';
+        }
+        const timeTrend = document.getElementById('surveyKpiTimeTrend');
+        if (timeTrend) {
+          timeTrend.textContent = estDays <= 3 ? '⏱️ Fast' : '⏱️ Standard';
+          timeTrend.style.color = 'var(--text-secondary)';
+        }
+        const statusTrend = document.getElementById('surveyKpiStatusTrend');
+        if (statusTrend) {
+          statusTrend.textContent = surveyData.feasibility_status === 'Highly Feasible' ? '🟢 Pass' : '🟡 Review';
+          statusTrend.style.color = surveyData.feasibility_status === 'Highly Feasible' ? 'var(--accent-green)' : 'var(--color-yellow)';
+        }
+
+        // 3. Recommendation Banner Card Hydration
+        const recBanner = document.getElementById('surveyRecommendationBanner');
+        if (recBanner) {
+          let stars = '★★★★★';
+          let title = 'Site Approved';
+          let sub = 'Ready for Installation';
+          let bannerClass = 'approved';
+
+          if (score < 50) {
+            stars = '★★★☆☆';
+            title = 'Engineering Review Required';
+            sub = 'Structural or safety parameters are outside optimal guidelines. Reinforcement required.';
+            bannerClass = 'review';
+          } else if (score < 80) {
+            stars = '★★★★☆';
+            title = 'Requires Minor Improvements';
+            sub = 'Minor electrical or mounting adjustments required prior to site layout approval.';
+            bannerClass = 'conditional';
+          }
+
+          recBanner.className = `card-base recommendation-banner-card ${bannerClass}`;
+          recBanner.innerHTML = `
       <div class="recommendation-stars">${stars}</div>
       <div class="recommendation-title">${title}</div>
       <p class="recommendation-text">${sub} (Feasibility Index: ${score}%)</p>
     `;
-  }
+        }
 
-  // 4. Draw Site Layout Preview SVG Diagram
-  drawSiteLayoutPreview(surveyData);
+        // 4. Draw Site Layout Preview SVG Diagram
+        drawSiteLayoutPreview(surveyData);
 
-  // 5. Visual Site Assessment Dashboard Grid Values
-  const spaceUtilPct = Math.round((_safeNum(surveyData.area_required_sqft) / Math.max(1, _safeNum(surveyData.usable_area_sqft))) * 100);
+        // 5. Visual Site Assessment Dashboard Grid Values
+        const spaceUtilPct = Math.round((_safeNum(surveyData.area_required_sqft) / Math.max(1, _safeNum(surveyData.usable_area_sqft))) * 100);
 
-  document.getElementById('resAssRoofArea').textContent = `${surveyData.total_roof_area_sqft || surveyData.usable_area_sqft} sq ft`;
-  document.getElementById('resAssUsableArea').textContent = `${surveyData.usable_area_sqft} sq ft`;
-  document.getElementById('resAssSpaceUtil').textContent = `${spaceUtilPct}%`;
-  document.getElementById('resAssCableRun').textContent = `${surveyData.cable_run_estimate_meters} m`;
-  document.getElementById('resAssStructureCond').textContent = surveyData._ui_structure_condition || 'Good';
-  document.getElementById('resAssElectricalAccess').textContent = `${surveyData._ui_electrical_panel_distance_m} m`;
-  document.getElementById('resAssMountingType').textContent = surveyData.mounting_structure_type || 'RCC Fixed Rack';
+        document.getElementById('resAssRoofArea').textContent = `${surveyData.total_roof_area_sqft || surveyData.usable_area_sqft} sq ft`;
+        document.getElementById('resAssUsableArea').textContent = `${surveyData.usable_area_sqft} sq ft`;
+        document.getElementById('resAssSpaceUtil').textContent = `${spaceUtilPct}%`;
+        document.getElementById('resAssCableRun').textContent = `${surveyData.cable_run_estimate_meters} m`;
+        document.getElementById('resAssStructureCond').textContent = surveyData._ui_structure_condition || 'Good';
+        document.getElementById('resAssElectricalAccess').textContent = `${surveyData._ui_electrical_panel_distance_m} m`;
+        document.getElementById('resAssMountingType').textContent = surveyData.mounting_structure_type || 'RCC Fixed Rack';
 
-  // 6. Risk Profile Hydration
-  const structRiskScore = surveyData._ui_structure_condition === 'Good' ? 10 : surveyData._ui_structure_condition === 'Fair' ? 40 : 80;
-  const elecRiskScore = Math.min(95, Math.round(surveyData._ui_electrical_panel_distance_m * 4));
-  const execRiskScore = complexity === 'High' ? 75 : complexity === 'Medium' ? 45 : 15;
+        // 6. Risk Profile Hydration
+        const structRiskScore = surveyData._ui_structure_condition === 'Good' ? 10 : surveyData._ui_structure_condition === 'Fair' ? 40 : 80;
+        const elecRiskScore = Math.min(95, Math.round(surveyData._ui_electrical_panel_distance_m * 4));
+        const execRiskScore = complexity === 'High' ? 75 : complexity === 'Medium' ? 45 : 15;
 
-  document.getElementById('riskScoreStructural').textContent = `Score: ${structRiskScore}%`;
-  const riskBadgeStructural = document.getElementById('riskBadgeStructural');
-  if (riskBadgeStructural) {
-    riskBadgeStructural.textContent = structRiskScore <= 30 ? '🟢 Low' : structRiskScore <= 60 ? '🟡 Medium' : '🔴 High';
-    riskBadgeStructural.style.color = structRiskScore <= 30 ? 'var(--accent-green)' : structRiskScore <= 60 ? 'var(--color-yellow)' : 'var(--color-red)';
-  }
+        document.getElementById('riskScoreStructural').textContent = `Score: ${structRiskScore}%`;
+        const riskBadgeStructural = document.getElementById('riskBadgeStructural');
+        if (riskBadgeStructural) {
+          riskBadgeStructural.textContent = structRiskScore <= 30 ? '🟢 Low' : structRiskScore <= 60 ? '🟡 Medium' : '🔴 High';
+          riskBadgeStructural.style.color = structRiskScore <= 30 ? 'var(--accent-green)' : structRiskScore <= 60 ? 'var(--color-yellow)' : 'var(--color-red)';
+        }
 
-  document.getElementById('riskScoreElectrical').textContent = `Score: ${elecRiskScore}%`;
-  const riskBadgeElectrical = document.getElementById('riskBadgeElectrical');
-  if (riskBadgeElectrical) {
-    riskBadgeElectrical.textContent = elecRiskScore <= 30 ? '🟢 Low' : elecRiskScore <= 60 ? '🟡 Medium' : '🔴 High';
-    riskBadgeElectrical.style.color = elecRiskScore <= 30 ? 'var(--accent-green)' : elecRiskScore <= 60 ? 'var(--color-yellow)' : 'var(--color-red)';
-  }
+        document.getElementById('riskScoreElectrical').textContent = `Score: ${elecRiskScore}%`;
+        const riskBadgeElectrical = document.getElementById('riskBadgeElectrical');
+        if (riskBadgeElectrical) {
+          riskBadgeElectrical.textContent = elecRiskScore <= 30 ? '🟢 Low' : elecRiskScore <= 60 ? '🟡 Medium' : '🔴 High';
+          riskBadgeElectrical.style.color = elecRiskScore <= 30 ? 'var(--accent-green)' : elecRiskScore <= 60 ? 'var(--color-yellow)' : 'var(--color-red)';
+        }
 
-  document.getElementById('riskScoreInstallation').textContent = `Score: ${execRiskScore}%`;
-  const riskBadgeInstallation = document.getElementById('riskBadgeInstallation');
-  if (riskBadgeInstallation) {
-    riskBadgeInstallation.textContent = execRiskScore <= 30 ? '🟢 Low' : execRiskScore <= 60 ? '🟡 Medium' : '🔴 High';
-    riskBadgeInstallation.style.color = execRiskScore <= 30 ? 'var(--accent-green)' : execRiskScore <= 60 ? 'var(--color-yellow)' : 'var(--color-red)';
-  }
+        document.getElementById('riskScoreInstallation').textContent = `Score: ${execRiskScore}%`;
+        const riskBadgeInstallation = document.getElementById('riskBadgeInstallation');
+        if (riskBadgeInstallation) {
+          riskBadgeInstallation.textContent = execRiskScore <= 30 ? '🟢 Low' : execRiskScore <= 60 ? '🟡 Medium' : '🔴 High';
+          riskBadgeInstallation.style.color = execRiskScore <= 30 ? 'var(--accent-green)' : execRiskScore <= 60 ? 'var(--color-yellow)' : 'var(--color-red)';
+        }
 
-  // 7. Results views text updates
-  document.getElementById('resSurveyCustHeader').textContent = `${surveyData.customer_name}'s Feasibility Report`;
-  
-  const statusTag = document.getElementById('resSurveyStatusTag');
-  if (statusTag) {
-    statusTag.textContent = (surveyData.feasibility_status || 'Feasible').toUpperCase();
-    if (surveyData.feasibility_status === 'Highly Feasible') {
-      statusTag.style.backgroundColor = 'rgba(54, 211, 153, 0.15)';
-      statusTag.style.color = 'var(--accent-green)';
-    } else if (surveyData.feasibility_status === 'Feasible with Conditions') {
-      statusTag.style.backgroundColor = 'rgba(251, 146, 60, 0.15)';
-      statusTag.style.color = 'var(--accent-orange)';
-    } else {
-      statusTag.style.backgroundColor = 'rgba(244, 63, 94, 0.15)';
-      statusTag.style.color = 'var(--color-red)';
-    }
-  }
+        // 7. Results views text updates
+        document.getElementById('resSurveyCustHeader').textContent = `${surveyData.customer_name}'s Feasibility Report`;
 
-  // Summary, structures, lists
-  document.getElementById('resSurveySummary').textContent = surveyData.site_assessment_summary;
+        const statusTag = document.getElementById('resSurveyStatusTag');
+        if (statusTag) {
+          statusTag.textContent = (surveyData.feasibility_status || 'Feasible').toUpperCase();
+          if (surveyData.feasibility_status === 'Highly Feasible') {
+            statusTag.style.backgroundColor = 'rgba(54, 211, 153, 0.15)';
+            statusTag.style.color = 'var(--accent-green)';
+          } else if (surveyData.feasibility_status === 'Feasible with Conditions') {
+            statusTag.style.backgroundColor = 'rgba(251, 146, 60, 0.15)';
+            statusTag.style.color = 'var(--accent-orange)';
+          } else {
+            statusTag.style.backgroundColor = 'rgba(244, 63, 94, 0.15)';
+            statusTag.style.color = 'var(--color-red)';
+          }
+        }
 
-  // Risks list
-  const risksList = document.getElementById('resSurveyRisks');
-  if (risksList && surveyData.identified_risks) {
-    risksList.innerHTML = surveyData.identified_risks.map(r => `<li>${_esc(r)}</li>`).join('');
-  }
-  // Recommendations list
-  const recsList = document.getElementById('resSurveyRecommendations');
-  if (recsList && surveyData.recommendations) {
-    recsList.innerHTML = surveyData.recommendations.map(a => `<li>${_esc(a)}</li>`).join('');
-  }
+        // Summary, structures, lists
+        document.getElementById('resSurveySummary').textContent = surveyData.site_assessment_summary;
 
-  // Detailed Report Section items
-  document.getElementById('repCustomerName').textContent = surveyData.customer_name;
-  document.getElementById('repCity').textContent = surveyData.city;
-  document.getElementById('repAddress').textContent = surveyData._ui_address || '—';
-  document.getElementById('repBuildingType').textContent = surveyData._ui_building_type || '—';
-  document.getElementById('repRoofType').textContent = surveyData._ui_roof_type || '—';
-  document.getElementById('repRoofArea').textContent = `${surveyData.total_roof_area_sqft || surveyData.usable_area_sqft} sq ft`;
-  document.getElementById('repUsableArea').textContent = `${surveyData.usable_area_sqft} sq ft`;
-  document.getElementById('repRequiredArea').textContent = `${surveyData.area_required_sqft} sq ft`;
-  document.getElementById('repStructureCondition').textContent = surveyData._ui_structure_condition || '—';
-  document.getElementById('repRoofAge').textContent = `${surveyData._ui_roof_age_years} years`;
-  document.getElementById('repMountingStructure').textContent = surveyData.mounting_structure_type;
-  document.getElementById('repReinforcementCost').textContent = `₹${Number(surveyData.estimated_additional_cost_rs).toLocaleString('en-IN')}`;
-  document.getElementById('repPanelDistance').textContent = `${surveyData._ui_electrical_panel_distance_m} m`;
-  document.getElementById('repCableRun').textContent = `${surveyData.cable_run_estimate_meters} m`;
-  document.getElementById('repMeterLocation').textContent = surveyData._ui_meter_location || '—';
-  document.getElementById('repParkingAccess').textContent = surveyData._ui_parking_access || '—';
-  document.getElementById('repProposedSize').textContent = `${surveyData._ui_proposed_system_kw} kW`;
-  document.getElementById('repDifficulty').textContent = complexity;
-  
-  // Derived crew recommendations
-  let crewRec = 'Standard Solar Installation Crew';
-  if (complexity === 'High') {
-    crewRec = 'Specialist High-Elevation Crew with safety harnesses';
-  } else if (surveyData.estimated_additional_cost_rs > 0) {
-    crewRec = 'Civil reinforcement specialist + standard crew';
-  }
-  document.getElementById('repCrewRecommendation').textContent = crewRec;
+        // Risks list
+        const risksList = document.getElementById('resSurveyRisks');
+        if (risksList && surveyData.identified_risks) {
+          risksList.innerHTML = surveyData.identified_risks.map(r => `<li>${_esc(r)}</li>`).join('');
+        }
+        // Recommendations list
+        const recsList = document.getElementById('resSurveyRecommendations');
+        if (recsList && surveyData.recommendations) {
+          recsList.innerHTML = surveyData.recommendations.map(a => `<li>${_esc(a)}</li>`).join('');
+        }
 
-  // Specialist equipment derived
-  let specEquip = 'Harnesses, safety ropes, standard assembly tools';
-  if (surveyData._ui_num_floors >= 4) {
-    specEquip = 'Mobile crane for hoisting modules, perimeter netting, harnesses';
-  } else if (surveyData._ui_roof_type === 'Sloped Tin') {
-    specEquip = 'Direct clamp rails, seam clamps, fall arrester blocks';
-  }
-  document.getElementById('repSpecialEquipment').textContent = specEquip;
+        // Detailed Report Section items
+        document.getElementById('repCustomerName').textContent = surveyData.customer_name;
+        document.getElementById('repCity').textContent = surveyData.city;
+        document.getElementById('repAddress').textContent = surveyData._ui_address || '—';
+        document.getElementById('repBuildingType').textContent = surveyData._ui_building_type || '—';
+        document.getElementById('repRoofType').textContent = surveyData._ui_roof_type || '—';
+        document.getElementById('repRoofArea').textContent = `${surveyData.total_roof_area_sqft || surveyData.usable_area_sqft} sq ft`;
+        document.getElementById('repUsableArea').textContent = `${surveyData.usable_area_sqft} sq ft`;
+        document.getElementById('repRequiredArea').textContent = `${surveyData.area_required_sqft} sq ft`;
+        document.getElementById('repStructureCondition').textContent = surveyData._ui_structure_condition || '—';
+        document.getElementById('repRoofAge').textContent = `${surveyData._ui_roof_age_years} years`;
+        document.getElementById('repMountingStructure').textContent = surveyData.mounting_structure_type;
+        document.getElementById('repReinforcementCost').textContent = `₹${Number(surveyData.estimated_additional_cost_rs).toLocaleString('en-IN')}`;
+        document.getElementById('repPanelDistance').textContent = `${surveyData._ui_electrical_panel_distance_m} m`;
+        document.getElementById('repCableRun').textContent = `${surveyData.cable_run_estimate_meters} m`;
+        document.getElementById('repMeterLocation').textContent = surveyData._ui_meter_location || '—';
+        document.getElementById('repParkingAccess').textContent = surveyData._ui_parking_access || '—';
+        document.getElementById('repProposedSize').textContent = `${surveyData._ui_proposed_system_kw} kW`;
+        document.getElementById('repDifficulty').textContent = complexity;
 
-  document.getElementById('repShadingDetails').textContent = surveyData._ui_shading_details || '—';
-  document.getElementById('repShadingNote').textContent = surveyData.shading_impact_note;
-  document.getElementById('repSafetyHazards').textContent = surveyData._ui_safety_hazards || 'None';
-  document.getElementById('repRiskLevel').textContent = complexity === 'High' ? 'Elevated Risk' : 'Standard Risk';
-  document.getElementById('repEngineerNotes').textContent = surveyData.site_assessment_summary;
+        // Derived crew recommendations
+        let crewRec = 'Standard Solar Installation Crew';
+        if (complexity === 'High') {
+          crewRec = 'Specialist High-Elevation Crew with safety harnesses';
+        } else if (surveyData.estimated_additional_cost_rs > 0) {
+          crewRec = 'Civil reinforcement specialist + standard crew';
+        }
+        document.getElementById('repCrewRecommendation').textContent = crewRec;
 
-  // Recommendations detailed bullet
-  const repList = document.getElementById('repRecommendationsList');
-  if (repList && surveyData.recommendations) {
-    repList.innerHTML = surveyData.recommendations.map(r => `<li>${_esc(r)}</li>`).join('');
-  }
+        // Specialist equipment derived
+        let specEquip = 'Harnesses, safety ropes, standard assembly tools';
+        if (surveyData._ui_num_floors >= 4) {
+          specEquip = 'Mobile crane for hoisting modules, perimeter netting, harnesses';
+        } else if (surveyData._ui_roof_type === 'Sloped Tin') {
+          specEquip = 'Direct clamp rails, seam clamps, fall arrester blocks';
+        }
+        document.getElementById('repSpecialEquipment').textContent = specEquip;
 
-  // Enable Download buttons
-  const dlBtn = document.getElementById('btnDownloadSurveyReport');
-  if (dlBtn) dlBtn.disabled = false;
+        document.getElementById('repShadingDetails').textContent = surveyData._ui_shading_details || '—';
+        document.getElementById('repShadingNote').textContent = surveyData.shading_impact_note;
+        document.getElementById('repSafetyHazards').textContent = surveyData._ui_safety_hazards || 'None';
+        document.getElementById('repRiskLevel').textContent = complexity === 'High' ? 'Elevated Risk' : 'Standard Risk';
+        document.getElementById('repEngineerNotes').textContent = surveyData.site_assessment_summary;
 
-  // Set timeline progress based on feasibility score
-  if (score >= 80) setSurveyTimelineProgress(7);
-  else if (score >= 50) setSurveyTimelineProgress(6);
-  else setSurveyTimelineProgress(4);
-}
+        // Recommendations detailed bullet
+        const repList = document.getElementById('repRecommendationsList');
+        if (repList && surveyData.recommendations) {
+          repList.innerHTML = surveyData.recommendations.map(r => `<li>${_esc(r)}</li>`).join('');
+        }
 
-function drawSiteLayoutPreview(surveyData) {
-  const container = document.getElementById('siteLayoutPreviewBox');
-  if (!container) return;
+        // Enable Download buttons
+        const dlBtn = document.getElementById('btnDownloadSurveyReport');
+        if (dlBtn) dlBtn.disabled = false;
 
-  const width = 480;
-  const height = 300;
-  
-  // Extract values with default fallbacks
-  const systemKw = _safeNum(surveyData._ui_proposed_system_kw || surveyData.proposed_system_kw || 10.0);
-  const shading = !!surveyData.shading_present;
-  const shadingLevel = surveyData._ui_shading_level || 'None';
-  const roofType = surveyData._ui_roof_type || 'RCC Flat';
-  const distance = _safeNum(surveyData._ui_electrical_panel_distance_m || surveyData.electrical_panel_distance_m || 15);
-  const obstaclesText = (surveyData._ui_obstacles || '').toLowerCase();
-  
-  // Dynamic panel sizing and layout
-  const panelCount = Math.min(24, Math.max(4, Math.round(systemKw * 2)));
-  let panelsHTML = '';
-  const rows = Math.min(4, Math.ceil(Math.sqrt(panelCount)));
-  const cols = Math.ceil(panelCount / rows);
-  
-  // Array offset inside roof footprint
-  const startX = 140;
-  const startY = 100;
-  
-  for (let r = 0; r < rows; r++) {
-    for (let c = 0; c < cols; c++) {
-      if (r * cols + c >= panelCount) break;
-      const px = startX + c * 16;
-      const py = startY + r * 10;
-      panelsHTML += `<rect x="${px}" y="${py}" width="12" height="7" rx="1" fill="#1e3a8a" stroke="#60a5fa" stroke-width="0.7" opacity="0.95" />`;
-      // Draw grid lines inside panel to look like cell grid
-      panelsHTML += `<line x1="${px + 6}" y1="${py}" x2="${px + 6}" y2="${py + 7}" stroke="#3b82f6" stroke-width="0.3" />`;
-      panelsHTML += `<line x1="${px}" y1="${py + 3.5}" x2="${px + 12}" y2="${py + 3.5}" stroke="#3b82f6" stroke-width="0.3" />`;
-    }
-  }
+        // Set timeline progress based on feasibility score
+        if (score >= 80) setSurveyTimelineProgress(7);
+        else if (score >= 50) setSurveyTimelineProgress(6);
+        else setSurveyTimelineProgress(4);
+      }
 
-  // Draw obstacles based on text detection
-  let acUnitHTML = '';
-  let waterTankHTML = '';
-  
-  if (obstaclesText.includes('tank') || true) { // Always show water tank for rich visual complexity, make it red/cautioned if in text
-    const isExplicit = obstaclesText.includes('tank');
-    waterTankHTML = `
+      function drawSiteLayoutPreview(surveyData) {
+        const container = document.getElementById('siteLayoutPreviewBox');
+        if (!container) return;
+
+        const width = 480;
+        const height = 300;
+
+        // Extract values with default fallbacks
+        const systemKw = _safeNum(surveyData._ui_proposed_system_kw || surveyData.proposed_system_kw || 10.0);
+        const shading = !!surveyData.shading_present;
+        const shadingLevel = surveyData._ui_shading_level || 'None';
+        const roofType = surveyData._ui_roof_type || 'RCC Flat';
+        const distance = _safeNum(surveyData._ui_electrical_panel_distance_m || surveyData.electrical_panel_distance_m || 15);
+        const obstaclesText = (surveyData._ui_obstacles || '').toLowerCase();
+
+        // Dynamic panel sizing and layout
+        const panelCount = Math.min(24, Math.max(4, Math.round(systemKw * 2)));
+        let panelsHTML = '';
+        const rows = Math.min(4, Math.ceil(Math.sqrt(panelCount)));
+        const cols = Math.ceil(panelCount / rows);
+
+        // Array offset inside roof footprint
+        const startX = 140;
+        const startY = 100;
+
+        for (let r = 0; r < rows; r++) {
+          for (let c = 0; c < cols; c++) {
+            if (r * cols + c >= panelCount) break;
+            const px = startX + c * 16;
+            const py = startY + r * 10;
+            panelsHTML += `<rect x="${px}" y="${py}" width="12" height="7" rx="1" fill="#1e3a8a" stroke="#60a5fa" stroke-width="0.7" opacity="0.95" />`;
+            // Draw grid lines inside panel to look like cell grid
+            panelsHTML += `<line x1="${px + 6}" y1="${py}" x2="${px + 6}" y2="${py + 7}" stroke="#3b82f6" stroke-width="0.3" />`;
+            panelsHTML += `<line x1="${px}" y1="${py + 3.5}" x2="${px + 12}" y2="${py + 3.5}" stroke="#3b82f6" stroke-width="0.3" />`;
+          }
+        }
+
+        // Draw obstacles based on text detection
+        let acUnitHTML = '';
+        let waterTankHTML = '';
+
+        if (obstaclesText.includes('tank') || true) { // Always show water tank for rich visual complexity, make it red/cautioned if in text
+          const isExplicit = obstaclesText.includes('tank');
+          waterTankHTML = `
       <g transform="translate(320, 80)">
         <circle cx="12" cy="12" r="10" fill="rgba(30, 41, 59, 0.9)" stroke="${isExplicit ? '#ef4444' : '#64748b'}" stroke-width="1.5" />
         <circle cx="12" cy="12" r="6" fill="none" stroke="${isExplicit ? '#f87171' : '#94a3b8'}" stroke-width="1" />
@@ -12748,11 +14783,11 @@ function drawSiteLayoutPreview(surveyData) {
         <text x="12" y="-4" font-size="8" fill="${isExplicit ? '#f87171' : '#94a3b8'}" text-anchor="middle" font-weight="600">Water Tank</text>
       </g>
     `;
-  }
-  
-  if (obstaclesText.includes('ac') || true) { // Always show AC unit block
-    const isExplicit = obstaclesText.includes('ac');
-    acUnitHTML = `
+        }
+
+        if (obstaclesText.includes('ac') || true) { // Always show AC unit block
+          const isExplicit = obstaclesText.includes('ac');
+          acUnitHTML = `
       <g transform="translate(290, 130)">
         <rect x="0" y="0" width="16" height="12" rx="1" fill="rgba(30, 41, 59, 0.9)" stroke="${isExplicit ? '#ef4444' : '#64748b'}" stroke-width="1.5" />
         <line x1="3" y1="3" x2="13" y2="9" stroke="${isExplicit ? '#f87171' : '#94a3b8'}" stroke-width="1" />
@@ -12760,12 +14795,12 @@ function drawSiteLayoutPreview(surveyData) {
         <text x="8" y="20" font-size="7" fill="${isExplicit ? '#f87171' : '#94a3b8'}" text-anchor="middle">AC Unit</text>
       </g>
     `;
-  }
+        }
 
-  // Shading / Trees representation
-  let treesHTML = '';
-  if (shading || shadingLevel !== 'None') {
-    treesHTML = `
+        // Shading / Trees representation
+        let treesHTML = '';
+        if (shading || shadingLevel !== 'None') {
+          treesHTML = `
       <g transform="translate(60, 180)">
         <!-- Shadow overlay zone -->
         <ellipse cx="25" cy="20" rx="35" ry="25" fill="rgba(251, 191, 36, 0.06)" stroke="rgba(251, 191, 36, 0.15)" stroke-width="1" stroke-dasharray="3,3" />
@@ -12777,23 +14812,23 @@ function drawSiteLayoutPreview(surveyData) {
         <text x="25" y="48" font-size="8" fill="#f59e0b" text-anchor="middle" font-weight="600">Tree (Shade: ${shadingLevel})</text>
       </g>
     `;
-  } else {
-    treesHTML = `
+        } else {
+          treesHTML = `
       <g transform="translate(50, 190)" opacity="0.6">
         <circle cx="20" cy="20" r="10" fill="rgba(34, 197, 94, 0.15)" stroke="rgba(34, 197, 94, 0.3)" stroke-width="0.7" />
         <line x1="20" y1="20" x2="20" y2="30" stroke="#78350f" stroke-width="1.5" />
         <text x="20" y="38" font-size="7" fill="var(--text-muted)" text-anchor="middle">Clear Zone</text>
       </g>
     `;
-  }
+        }
 
-  // Draw access path (Green dashed route to access point)
-  const pathData = `M 40 250 L 370 250 L 370 190`;
+        // Draw access path (Green dashed route to access point)
+        const pathData = `M 40 250 L 370 250 L 370 190`;
 
-  // Draw main DC cable route (Yellow warning line from solar array to meter/panel)
-  const cablePathData = `M 200 135 L 200 180 L 270 180 L 270 215`;
+        // Draw main DC cable route (Yellow warning line from solar array to meter/panel)
+        const cablePathData = `M 200 135 L 200 180 L 270 180 L 270 215`;
 
-  const svg = `
+        const svg = `
     <svg viewBox="0 0 ${width} ${height}" width="100%" height="100%" xmlns="http://www.w3.org/2000/svg" style="background: rgba(6, 17, 31, 0.4); border-radius: 8px; border: 1px solid rgba(255, 255, 255, 0.05); font-family: 'Inter', sans-serif;">
       <!-- Grid Pattern -->
       <defs>
@@ -12864,89 +14899,89 @@ function drawSiteLayoutPreview(surveyData) {
     </svg>
   `;
 
-  container.innerHTML = svg;
-}
+        container.innerHTML = svg;
+      }
 
-function restoreSurveyState(surveyData) {
-  if (!surveyData) return;
+      function restoreSurveyState(surveyData) {
+        if (!surveyData) return;
 
-  // Restore fields
-  if (document.getElementById('surveyCustomerName')) document.getElementById('surveyCustomerName').value = surveyData.customer_name || '';
-  if (document.getElementById('surveyCity')) document.getElementById('surveyCity').value = surveyData.city || 'Lucknow';
-  if (document.getElementById('surveyAddress')) document.getElementById('surveyAddress').value = surveyData._ui_address || '';
-  if (document.getElementById('surveyBuildingType')) document.getElementById('surveyBuildingType').value = surveyData._ui_building_type || 'Residential';
-  if (document.getElementById('surveyRoofType')) document.getElementById('surveyRoofType').value = surveyData._ui_roof_type || 'RCC Flat';
-  if (document.getElementById('surveyRoofAge')) document.getElementById('surveyRoofAge').value = surveyData._ui_roof_age_years || 5;
-  if (document.getElementById('surveyRoofArea')) document.getElementById('surveyRoofArea').value = surveyData.total_roof_area_sqft || 1200;
-  if (document.getElementById('surveyRoofHeight')) document.getElementById('surveyRoofHeight').value = surveyData._ui_roof_height || 30;
-  if (document.getElementById('surveyNumFloors')) document.getElementById('surveyNumFloors').value = surveyData._ui_num_floors || 2;
-  if (document.getElementById('surveyProposedSystem')) document.getElementById('surveyProposedSystem').value = surveyData._ui_proposed_system_kw || 10.0;
-  if (document.getElementById('surveyPanelDistance')) document.getElementById('surveyPanelDistance').value = surveyData._ui_electrical_panel_distance_m || 15.0;
-  if (document.getElementById('surveyElectricPoleDistance')) document.getElementById('surveyElectricPoleDistance').value = surveyData._ui_electric_pole_distance || 25.0;
-  if (document.getElementById('surveyMeterLocation')) document.getElementById('surveyMeterLocation').value = surveyData._ui_meter_location || 'Ground Floor Outer Wall';
-  if (document.getElementById('surveyStructureCondition')) document.getElementById('surveyStructureCondition').value = surveyData._ui_structure_condition || 'Good';
-  if (document.getElementById('surveyShadingLevel')) document.getElementById('surveyShadingLevel').value = surveyData._ui_shading_level || 'None';
-  if (document.getElementById('surveyShadingPresent')) document.getElementById('surveyShadingPresent').checked = (surveyData._ui_shading_level !== 'None');
-  if (document.getElementById('surveyShadingDetails')) document.getElementById('surveyShadingDetails').value = surveyData._ui_shading_details || 'None';
-  if (document.getElementById('surveyParkingAccess')) document.getElementById('surveyParkingAccess').value = surveyData._ui_parking_access || 'Good';
-  if (document.getElementById('surveySafetyHazards')) document.getElementById('surveySafetyHazards').value = surveyData._ui_safety_hazards || 'None';
-  if (document.getElementById('surveyAdditionalNotes')) document.getElementById('surveyAdditionalNotes').value = surveyData._ui_additional_notes || '';
+        // Restore fields
+        if (document.getElementById('surveyCustomerName')) document.getElementById('surveyCustomerName').value = surveyData.customer_name || '';
+        if (document.getElementById('surveyCity')) document.getElementById('surveyCity').value = surveyData.city || 'Lucknow';
+        if (document.getElementById('surveyAddress')) document.getElementById('surveyAddress').value = surveyData._ui_address || '';
+        if (document.getElementById('surveyBuildingType')) document.getElementById('surveyBuildingType').value = surveyData._ui_building_type || 'Residential';
+        if (document.getElementById('surveyRoofType')) document.getElementById('surveyRoofType').value = surveyData._ui_roof_type || 'RCC Flat';
+        if (document.getElementById('surveyRoofAge')) document.getElementById('surveyRoofAge').value = surveyData._ui_roof_age_years || 5;
+        if (document.getElementById('surveyRoofArea')) document.getElementById('surveyRoofArea').value = surveyData.total_roof_area_sqft || 1200;
+        if (document.getElementById('surveyRoofHeight')) document.getElementById('surveyRoofHeight').value = surveyData._ui_roof_height || 30;
+        if (document.getElementById('surveyNumFloors')) document.getElementById('surveyNumFloors').value = surveyData._ui_num_floors || 2;
+        if (document.getElementById('surveyProposedSystem')) document.getElementById('surveyProposedSystem').value = surveyData._ui_proposed_system_kw || 10.0;
+        if (document.getElementById('surveyPanelDistance')) document.getElementById('surveyPanelDistance').value = surveyData._ui_electrical_panel_distance_m || 15.0;
+        if (document.getElementById('surveyElectricPoleDistance')) document.getElementById('surveyElectricPoleDistance').value = surveyData._ui_electric_pole_distance || 25.0;
+        if (document.getElementById('surveyMeterLocation')) document.getElementById('surveyMeterLocation').value = surveyData._ui_meter_location || 'Ground Floor Outer Wall';
+        if (document.getElementById('surveyStructureCondition')) document.getElementById('surveyStructureCondition').value = surveyData._ui_structure_condition || 'Good';
+        if (document.getElementById('surveyShadingLevel')) document.getElementById('surveyShadingLevel').value = surveyData._ui_shading_level || 'None';
+        if (document.getElementById('surveyShadingPresent')) document.getElementById('surveyShadingPresent').checked = (surveyData._ui_shading_level !== 'None');
+        if (document.getElementById('surveyShadingDetails')) document.getElementById('surveyShadingDetails').value = surveyData._ui_shading_details || 'None';
+        if (document.getElementById('surveyParkingAccess')) document.getElementById('surveyParkingAccess').value = surveyData._ui_parking_access || 'Good';
+        if (document.getElementById('surveySafetyHazards')) document.getElementById('surveySafetyHazards').value = surveyData._ui_safety_hazards || 'None';
+        if (document.getElementById('surveyAdditionalNotes')) document.getElementById('surveyAdditionalNotes').value = surveyData._ui_additional_notes || '';
 
-  // Hydrate visual components
-  hydrateSurveyUI(surveyData);
+        // Hydrate visual components
+        hydrateSurveyUI(surveyData);
 
-  const placeholder = document.getElementById('surveyPlaceholderInfo');
-  const results = document.getElementById('surveyResultsView');
-  const reportSection = document.getElementById('surveyReportFullSection');
-  if (placeholder) placeholder.style.display = 'none';
-  if (results) results.style.display = 'flex';
-  if (reportSection) reportSection.style.display = 'flex';
-}
+        const placeholder = document.getElementById('surveyPlaceholderInfo');
+        const results = document.getElementById('surveyResultsView');
+        const reportSection = document.getElementById('surveyReportFullSection');
+        if (placeholder) placeholder.style.display = 'none';
+        if (results) results.style.display = 'flex';
+        if (reportSection) reportSection.style.display = 'flex';
+      }
 
-window.setSurveyTimelineProgress = function(step) {
-  const bar = document.getElementById('surveyTimelineProgress');
-  if (bar) {
-    const percent = (step * 14.2) + '%';
-    if (window.innerWidth <= 820) {
-      bar.style.width = '100%';
-      bar.style.height = percent;
-    } else {
-      bar.style.width = percent;
-      bar.style.height = '100%';
-    }
-  }
-  const steps = document.querySelectorAll('.survey-timeline-step');
-  steps.forEach((el, idx) => {
-    el.classList.remove('active', 'completed', 'current', 'future');
-    if (idx + 1 < step) {
-      el.classList.add('completed');
-    } else if (idx + 1 === step) {
-      el.classList.add('active', 'current');
-    } else {
-      el.classList.add('future');
-    }
-  });
-};
+      window.setSurveyTimelineProgress = function (step) {
+        const bar = document.getElementById('surveyTimelineProgress');
+        if (bar) {
+          const percent = (step * 14.2) + '%';
+          if (window.innerWidth <= 820) {
+            bar.style.width = '100%';
+            bar.style.height = percent;
+          } else {
+            bar.style.width = percent;
+            bar.style.height = '100%';
+          }
+        }
+        const steps = document.querySelectorAll('.survey-timeline-step');
+        steps.forEach((el, idx) => {
+          el.classList.remove('active', 'completed', 'current', 'future');
+          if (idx + 1 < step) {
+            el.classList.add('completed');
+          } else if (idx + 1 === step) {
+            el.classList.add('active', 'current');
+          } else {
+            el.classList.add('future');
+          }
+        });
+      };
 
-// Listen to resizing to update survey progress bar dimensions
-window.addEventListener('resize', () => {
-  const activeStep = document.querySelector('.survey-timeline-step.current');
-  if (activeStep) {
-    const steps = Array.from(document.querySelectorAll('.survey-timeline-step'));
-    const currentStepIdx = steps.indexOf(activeStep) + 1;
-    if (currentStepIdx > 0) {
-      window.setSurveyTimelineProgress(currentStepIdx);
-    }
-  }
-});
+      // Listen to resizing to update survey progress bar dimensions
+      window.addEventListener('resize', () => {
+        const activeStep = document.querySelector('.survey-timeline-step.current');
+        if (activeStep) {
+          const steps = Array.from(document.querySelectorAll('.survey-timeline-step'));
+          const currentStepIdx = steps.indexOf(activeStep) + 1;
+          if (currentStepIdx > 0) {
+            window.setSurveyTimelineProgress(currentStepIdx);
+          }
+        }
+      });
 
-function downloadSiteSurveyReport(surveyData) {
-  if (!surveyData) return;
-  const dateStr = new Date().toLocaleDateString([], { month: 'long', day: 'numeric', year: 'numeric' });
-  const feasibility = (surveyData.feasibility_status || 'Feasible').toUpperCase();
-  const score = _safeNum(surveyData.feasibility_score);
+      function downloadSiteSurveyReport(surveyData) {
+        if (!surveyData) return;
+        const dateStr = new Date().toLocaleDateString([], { month: 'long', day: 'numeric', year: 'numeric' });
+        const feasibility = (surveyData.feasibility_status || 'Feasible').toUpperCase();
+        const score = _safeNum(surveyData.feasibility_score);
 
-  const printContent = `
+        const printContent = `
 <!DOCTYPE html>
 <html>
 <head>
@@ -13187,27 +15222,559 @@ function downloadSiteSurveyReport(surveyData) {
 </html>
   `;
 
-  const printWindow = window.open('', '_blank', 'width=900,height=800');
-  if (printWindow) {
-    printWindow.document.write(printContent);
-    printWindow.document.close();
-    printWindow.focus();
-    setTimeout(() => {
-      printWindow.print();
-      printWindow.close();
-    }, 500);
+        const printWindow = window.open('', '_blank', 'width=900,height=800');
+        if (printWindow) {
+          printWindow.document.write(printContent);
+          printWindow.document.close();
+          printWindow.focus();
+          setTimeout(() => {
+            printWindow.print();
+            printWindow.close();
+          }, 500);
 
-    createNotification('reports', 'Report Downloaded', `Exported Feasibility Report PDF for ${surveyData.customer_name}`, 'low');
-    addActivityLog('crm', 'Site Survey PDF Exported', `Downloaded feasibility report PDF`);
-    const currentUser = _getUser() || {};
-    logAuditEvent(currentUser.email || 'system', 'Site Survey Report Downloaded', 'O&M Portal', `Downloaded feasibility report PDF for ${surveyData.customer_name}.`, 'Low');
-  } else {
-    showToast("Pop-up blocked! Please allow pop-ups to download PDF reports.", "error");
+          createNotification('reports', 'Report Downloaded', `Exported Feasibility Report PDF for ${surveyData.customer_name}`, 'low');
+          addActivityLog('crm', 'Site Survey PDF Exported', `Downloaded feasibility report PDF`);
+          const currentUser = _getUser() || {};
+          logAuditEvent(currentUser.email || 'system', 'Site Survey Report Downloaded', 'O&M Portal', `Downloaded feasibility report PDF for ${surveyData.customer_name}.`, 'Low');
+        } else {
+          showToast("Pop-up blocked! Please allow pop-ups to download PDF reports.", "error");
+        }
+      }
+
+
+/* ==========================================================================
+   PHASE 13.0C — AI INTELLIGENCE ENGINE (Frontend)
+   ========================================================================== */
+
+let _aiAnalysisData = null;
+
+/**
+ * runAIAnalysis() — Execute the full AI analysis pipeline.
+ * Uses bill analysis data already available in the UI context.
+ */
+async function runAIAnalysis() {
+  const btn = document.getElementById('aiAnalyzeBtn');
+  if (btn) {
+    btn.disabled = true;
+    btn.querySelector('span').textContent = 'Analyzing...';
+  }
+
+  try {
+    const billData = _getLastBillAnalysis();
+    if (!billData || !billData.monthly_units) {
+      showToast('Please analyze a bill first before running AI analysis.', 'warning');
+      return;
+    }
+
+    const payload = {
+      monthly_units: billData.monthly_units,
+      city: billData.city || 'Lucknow',
+      billing_period: billData.billing_period || 'JAN',
+      per_unit_rate: billData.per_unit_rate || 7.0,
+      bill_amount: billData.bill_amount || (billData.monthly_units * (billData.per_unit_rate || 7.0)),
+      customer_id: null,
+    };
+
+    // Intentionally leaving payload.customer_id as null,
+    // because user.id is an auth UUID, whereas the backend expects an integer CRM ID.
+
+    const res = await safeFetch(`${API_BASE}/api/ai/analyze`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(payload),
+    });
+    const json = await res.json();
+
+    if (json.success && json.data) {
+      _aiAnalysisData = json.data;
+      renderAIInsights(json.data);
+      renderAIRecommendations(json.data.recommendations || []);
+      renderAITimeline(json.data.timeline || []);
+      showToast('AI analysis complete!', 'success');
+    } else {
+      showToast('AI analysis failed: ' + (json.message || 'Unknown error'), 'error');
+    }
+  } catch (err) {
+    console.error('AI Analysis Error:', err);
+    showToast('AI analysis failed. Please try again.', 'error');
+  } finally {
+    if (btn) {
+      btn.disabled = false;
+      btn.querySelector('span').textContent = 'Run AI Analysis';
+    }
   }
 }
 
+/**
+ * _getLastBillAnalysis() — Get the most recent bill analysis data from session.
+ */
+function _getLastBillAnalysis() {
+  try {
+    const raw = sessionStorage.getItem('lastBillAnalysis') || localStorage.getItem('lastBillAnalysis');
+    if (raw) return JSON.parse(raw);
+  } catch (e) { /* ignore */ }
+  return null;
+}
 
+/**
+ * renderAIInsights(data) — Render the AI insights cards.
+ */
+function renderAIInsights(data) {
+  const confidence = data.confidence || {};
+  const readiness = data.solar_readiness || {};
+  const score = data.customer_score || {};
 
+  // Confidence ring
+  const ringFill = document.getElementById('aiRingFill');
+  const ringText = document.getElementById('aiConfidenceText');
+  if (ringFill && ringText) {
+    const pct = Math.round((confidence.overall || 0) * 100);
+    ringFill.setAttribute('stroke-dasharray', `${pct}, 100`);
+    ringText.textContent = `${pct}%`;
+  }
 
+  // Readiness
+  const readinessVal = document.getElementById('aiReadinessValue');
+  if (readinessVal) {
+    readinessVal.textContent = readiness.overall_score != null ? `${readiness.overall_score}%` : '--';
+  }
 
+  // Summary
+  const summaryText = document.getElementById('aiSummaryText');
+  if (summaryText) {
+    const bill = data.predictions?.bill;
+    const savings = data.predictions?.savings;
+    const parts = [];
+    if (bill?.prediction) parts.push(`Estimated bill: ₹${Number(bill.prediction).toLocaleString()}`);
+    if (savings?.prediction) parts.push(`Potential savings: ₹${Number(savings.prediction).toLocaleString()}/mo`);
+    if (readiness.overall_score) parts.push(`Readiness: ${readiness.overall_score}%`);
+    summaryText.textContent = parts.length > 0 ? parts.join(' | ') : 'Analysis complete.';
+  }
+
+  // Next best action
+  const nextAction = document.getElementById('aiNextActionText');
+  if (nextAction) {
+    nextAction.textContent = data.next_best_action || 'Review analysis results.';
+  }
+
+  // Customer score
+  const csVal = document.getElementById('aiCustomerScoreVal');
+  if (csVal) csVal.textContent = score.overall_score != null ? score.overall_score : '--';
+
+  setScoreBar('aiPurchaseIntentBar', 'aiPurchaseIntentVal', score.purchase_intent);
+  setScoreBar('aiFinancialBar', 'aiFinancialVal', score.financial_readiness);
+  setScoreBar('aiInstallBar', 'aiInstallVal', score.installation_readiness);
+
+  // Solar readiness card
+  const srVal = document.getElementById('aiSolarReadinessVal');
+  if (srVal) srVal.textContent = readiness.overall_score != null ? `${readiness.overall_score}%` : '--';
+
+  setTextSafe('aiRoofSuitVal', readiness.roof_suitability != null ? `${readiness.roof_suitability}%` : '--');
+  setTextSafe('aiConsumptionVal', readiness.consumption_suitability != null ? `${readiness.consumption_suitability}%` : '--');
+  setTextSafe('aiPaybackVal', readiness.roi?.payback_period != null ? `${readiness.roi.payback_period} yrs` : '--');
+  setTextSafe('aiCO2Val', readiness.environmental_impact?.co2_reduction_annual_tons != null ? `${readiness.environmental_impact.co2_reduction_annual_tons} tons/yr` : '--');
+}
+
+function setScoreBar(barId, valId, value) {
+  const bar = document.getElementById(barId);
+  const val = document.getElementById(valId);
+  if (bar) bar.style.width = `${value || 0}%`;
+  if (val) val.textContent = value != null ? value : '--';
+}
+
+function setTextSafe(id, text) {
+  const el = document.getElementById(id);
+  if (el) el.textContent = text;
+}
+
+/**
+ * renderAIRecommendations(recs) — Render recommendation cards.
+ */
+function renderAIRecommendations(recs) {
+  const grid = document.getElementById('aiRecGrid');
+  if (!grid) return;
+
+  if (!recs || recs.length === 0) {
+    grid.innerHTML = '<p class="ai-empty-state">No recommendations at this time.</p>';
+    return;
+  }
+
+  grid.innerHTML = recs.map(function(r) {
+    var priorityClass = r.priority === 'high' ? 'ai-priority-high' : r.priority === 'medium' ? 'ai-priority-medium' : 'ai-priority-low';
+    var categoryIcons = {
+      solar_sizing: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="5"/><line x1="12" y1="1" x2="12" y2="3"/><line x1="12" y1="21" x2="12" y2="23"/></svg>',
+      battery: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="1" y="6" width="18" height="12" rx="2"/><line x1="23" y1="10" x2="23" y2="14"/></svg>',
+      subsidy: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 1v22M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"/></svg>',
+      financing: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="2" y="7" width="20" height="14" rx="2"/><path d="M16 7V5a2 2 0 0 0-2-2h-4a2 2 0 0 0-2 2v2"/></svg>',
+      lead_priority: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>',
+      roof_inspection: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/><path d="M9 22V12h6v10"/></svg>',
+      upsell: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="23 6 13.5 15.5 8.5 10.5 1 18"/><polyline points="17 6 23 6 23 12"/></svg>',
+      amc: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 1 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33"/></svg>',
+      followup: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>',
+    };
+    var icon = categoryIcons[r.category] || categoryIcons.solar_sizing;
+
+    return '<div class="ai-rec-card ' + priorityClass + '" onclick="openExplainDrawer(\'' + r.category + '\')">' +
+      '<div class="ai-rec-icon">' + icon + '</div>' +
+      '<div class="ai-rec-info">' +
+        '<span class="ai-rec-card-title">' + r.title + '</span>' +
+        '<span class="ai-rec-card-desc">' + r.description + '</span>' +
+        '<span class="ai-rec-card-action">' + r.action + '</span>' +
+      '</div>' +
+      '<span class="ai-rec-priority">' + r.priority + '</span>' +
+    '</div>';
+  }).join('');
+}
+
+/**
+ * renderAITimeline(timeline) — Render the prediction timeline.
+ */
+function renderAITimeline(timeline) {
+  var container = document.getElementById('aiTimeline');
+  if (!container) return;
+
+  if (!timeline || timeline.length === 0) {
+    container.innerHTML = '<div class="ai-timeline-empty">No timeline data.</div>';
+    return;
+  }
+
+  container.innerHTML = timeline.map(function(step, i) {
+    var statusClass = step.status === 'completed' ? 'ai-tl-done' : 'ai-tl-pending';
+    var connector = i < timeline.length - 1 ? '<div class="ai-tl-connector"></div>' : '';
+    return '<div class="ai-tl-step ' + statusClass + '">' +
+      '<div class="ai-tl-dot"></div>' +
+      '<span class="ai-tl-label">' + step.label + '</span>' +
+      connector +
+    '</div>';
+  }).join('');
+}
+
+/**
+ * openExplainDrawer(category) — Open the explainability drawer for a category.
+ */
+function openExplainDrawer(category) {
+  var drawer = document.getElementById('aiExplainDrawer');
+  var body = document.getElementById('aiDrawerBody');
+  if (!drawer || !body) return;
+
+  if (!_aiAnalysisData) {
+    body.innerHTML = '<p class="ai-empty-state">No analysis data available.</p>';
+    drawer.classList.add('open');
+    return;
+  }
+
+  var explanation = _aiAnalysisData.explanation || {};
+  var rec = (_aiAnalysisData.recommendations || []).find(function(r) { return r.category === category; });
+
+  var html = '';
+
+  if (rec) {
+    html += '<div class="ai-drawer-section">' +
+      '<h4>' + rec.title + '</h4>' +
+      '<p>' + rec.description + '</p>' +
+      '<div class="ai-drawer-meta">' +
+        '<span class="ai-drawer-badge ' + rec.priority + '">' + rec.priority + ' priority</span>' +
+        '<span class="ai-drawer-badge">Confidence: ' + Math.round((rec.confidence || 0) * 100) + '%</span>' +
+      '</div>' +
+      '<div class="ai-drawer-action">' +
+        '<strong>Recommended Action:</strong> ' + rec.action +
+      '</div>' +
+    '</div>';
+  }
+
+  var billExp = explanation.bill;
+  if (billExp && billExp.contributing_factors && billExp.contributing_factors.length > 0) {
+    html += '<div class="ai-drawer-section">' +
+      '<h4>Key Contributing Factors</h4>' +
+      '<div class="ai-drawer-factors">' +
+        billExp.contributing_factors.map(function(f) {
+          return '<div class="ai-drawer-factor">' +
+            '<span class="ai-factor-name">' + f.name + '</span>' +
+            '<span class="ai-factor-impact ' + f.impact + '">' + f.impact + '</span>' +
+            '<span class="ai-factor-desc">' + f.description + '</span>' +
+          '</div>';
+        }).join('') +
+      '</div>' +
+    '</div>';
+  }
+
+  if (billExp && billExp.business_interpretation) {
+    html += '<div class="ai-drawer-section">' +
+      '<h4>Business Interpretation</h4>' +
+      '<p>' + billExp.business_interpretation + '</p>' +
+    '</div>';
+  }
+
+  var risks = _aiAnalysisData.risk_indicators || [];
+  if (risks.length > 0) {
+    html += '<div class="ai-drawer-section">' +
+      '<h4>Risk Indicators</h4>' +
+      '<div class="ai-drawer-risks">' +
+        risks.map(function(r) {
+          return '<div class="ai-drawer-risk ' + r.severity + '">' +
+            '<span class="ai-risk-severity">' + r.severity + '</span>' +
+            '<span class="ai-risk-msg">' + r.message + '</span>' +
+            '<span class="ai-risk-mitigation">' + r.mitigation + '</span>' +
+          '</div>';
+        }).join('') +
+      '</div>' +
+    '</div>';
+  }
+
+  body.innerHTML = html || '<p class="ai-empty-state">No explanation available for this category.</p>';
+  drawer.classList.add('open');
+}
+
+/**
+ * closeExplainDrawer() — Close the explainability drawer.
+ */
+function closeExplainDrawer() {
+  var drawer = document.getElementById('aiExplainDrawer');
+  if (drawer) drawer.classList.remove('open');
+}
+
+/**
+ * Store bill analysis data for AI consumption.
+ */
+function _storeBillAnalysisForAI(data) {
+  try {
+    sessionStorage.setItem('lastBillAnalysis', JSON.stringify(data));
+  } catch (e) { /* ignore */ }
+}
+
+/* ──────────────────────────────────────────────────────────────
+   MLOps Dashboard Functions (Phase 13.0E.10)
+   ────────────────────────────────────────────────────────────── */
+
+function _mlopsAuth() {
+    try {
+        return localStorage.getItem("token") || "";
+    } catch (e) {
+        return "";
+    }
+}
+
+function _mlopsHeaders() {
+  return { 'Authorization': 'Bearer ' + _mlopsAuth(), 'Content-Type': 'application/json' };
+}
+
+async function _mlopsFetch(url, opts) {
+  opts = opts || {};
+  opts.headers = Object.assign({}, _mlopsHeaders(), opts.headers || {});
+  var token = _mlopsAuth();
+  if (!token) {
+    throw new Error("No authentication token found");
+  }
+  var r = await fetch(API_BASE + url, opts);
+  if (!r.ok) {
+    if (r.status === 401) {
+      if (typeof doLogout === 'function') doLogout();
+      else {
+        localStorage.removeItem('token');
+        localStorage.removeItem('user');
+        window.location.replace('login.html');
+      }
+      return;
+    }
+    var body = await r.text();
+    console.error("MLOps request failed:", r.status, body);
+    throw new Error("MLOps request failed: " + r.status + " " + body);
+  }
+  return r.json();
+}
+
+function _mlopsEscapeHtml(s) {
+  if (s == null) return '';
+  return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
+}
+
+function _mlopsStateColor(state) {
+  var m = {
+    'active': '#10b981', 'deployed': '#3b82f6', 'registered': '#8b5cf6',
+    'deprecated': '#ef4444', 'archived': '#6b7280', 'rollbacked': '#f59e0b'
+  };
+  return m[state] || '#6b7281';
+}
+
+function _mlopsFormatTimestamp(ts) {
+  if (!ts) return '—';
+  try { return new Date(ts).toLocaleString(); } catch(e) { return ts; }
+}
+
+async function _mlopsLoadDashboard() {
+  try {
+    var statusResp = await _mlopsFetch('/api/mlops/status');
+    if (statusResp.success) {
+      var s = statusResp.data;
+      document.getElementById('mlopsKpiStatus').textContent = s.platform_status || 'OK';
+      document.getElementById('mlopsKpiModels').textContent = s.total_models || 0;
+      document.getElementById('mlopsKpiDeployed').textContent = s.deployed_models || 0;
+    }
+  } catch(e) { document.getElementById('mlopsKpiStatus').textContent = '—'; }
+
+  try {
+    var metricsResp = await _mlopsFetch('/api/mlops/metrics');
+    if (metricsResp.success) {
+      var m = metricsResp.data;
+      var avgLat = m.average_latency_ms ? Math.round(m.average_latency_ms) : (m.latency_stats && m.latency_stats.avg_ms ? Math.round(m.latency_stats.avg_ms) : 0);
+      document.getElementById('mlopsKpiLatency').textContent = avgLat + 'ms';
+      _mlopsRenderMetricsPanel(m);
+    }
+  } catch(e) { document.getElementById('mlopsKpiLatency').textContent = '0ms'; }
+
+  try {
+    var healthResp = await _mlopsFetch('/api/mlops/health');
+    if (healthResp.success) {
+      var h = healthResp.data;
+      var score = h.health_score != null ? h.health_score : '—';
+      document.getElementById('mlopsKpiHealth').textContent = score + (typeof score === 'number' ? '%' : '');
+      _mlopsRenderHealthPanel(h);
+    }
+  } catch(e) { document.getElementById('mlopsKpiHealth').textContent = '—'; }
+
+  await _mlopsLoadModels();
+  await _mlopsLoadEvents();
+}
+
+async function _mlopsLoadModels() {
+  try {
+    var resp = await _mlopsFetch('/api/mlops/models');
+    if (!resp.success) return;
+    var models = resp.data.models || [];
+    var tbody = document.getElementById('mlopsModelsTable');
+    if (!models.length) {
+      tbody.innerHTML = '<tr><td colspan="4" style="padding:20px;text-align:center;color:var(--text-muted);">No models registered.</td></tr>';
+      return;
+    }
+    tbody.innerHTML = models.map(function(m) {
+      var name = _mlopsEscapeHtml(m.name);
+      var ver = _mlopsEscapeHtml(m.version || '—');
+      var state = m.lifecycle_state || m.state || 'registered';
+      var col = _mlopsStateColor(state);
+      return '<tr style="border-bottom:1px solid rgba(255,255,255,0.06);">' +
+        '<td style="padding:8px 6px;color:#fff;font-weight:700;">' + name + '</td>' +
+        '<td style="padding:8px 6px;color:var(--text-secondary);">' + ver + '</td>' +
+        '<td style="padding:8px 6px;"><span style="display:inline-block;padding:2px 8px;border-radius:4px;font-size:9px;font-weight:800;text-transform:uppercase;color:#fff;background:' + col + ';">' + _mlopsEscapeHtml(state) + '</span></td>' +
+        '<td style="padding:8px 6px;"><button onclick="mlopsDeployModel(\'' + name + '\')" style="padding:3px 8px;font-size:9px;background:rgba(59,130,246,0.15);color:var(--accent-blue);border:1px solid rgba(59,130,246,0.25);border-radius:4px;cursor:pointer;margin-right:4px;">Deploy</button>' +
+        '<button onclick="mlopsRollbackModel(\'' + name + '\')" style="padding:3px 8px;font-size:9px;background:rgba(245,158,11,0.15);color:var(--accent-orange);border:1px solid rgba(245,158,11,0.25);border-radius:4px;cursor:pointer;">Rollback</button></td>' +
+        '</tr>';
+    }).join('');
+  } catch(e) { document.getElementById('mlopsModelsTable').innerHTML = '<tr><td colspan="4" style="padding:20px;text-align:center;color:var(--text-muted);">Error loading models.</td></tr>'; }
+}
+
+function _mlopsRenderHealthPanel(h) {
+  var el = document.getElementById('mlopsHealthPanel');
+  var rows = [];
+  if (h.system) {
+    rows.push('<div style="margin-bottom:8px;"><strong style="color:#fff;">System Resources</strong></div>');
+    if (h.system.cpu_percent != null) rows.push('<div style="display:flex;justify-content:space-between;margin-bottom:4px;"><span>CPU Usage</span><span style="color:#fff;font-weight:700;">' + h.system.cpu_percent + '%</span></div>');
+    if (h.system.memory_percent != null) rows.push('<div style="display:flex;justify-content:space-between;margin-bottom:4px;"><span>Memory Usage</span><span style="color:#fff;font-weight:700;">' + h.system.memory_percent + '%</span></div>');
+  }
+  if (h.models && Object.keys(h.models).length) {
+    rows.push('<div style="margin-bottom:8px;margin-top:12px;"><strong style="color:#fff;">Model Availability</strong></div>');
+    Object.keys(h.models).forEach(function(name) {
+      var mh = h.models[name];
+      var avail = mh.available ? '✓' : '✗';
+      var acol = mh.available ? '#10b981' : '#ef4444';
+      rows.push('<div style="display:flex;justify-content:space-between;margin-bottom:4px;"><span>' + _mlopsEscapeHtml(name) + '</span><span style="color:' + acol + ';font-weight:700;">' + avail + '</span></div>');
+    });
+  }
+  if (h.timestamp) rows.push('<div style="margin-top:12px;color:var(--text-muted);font-size:9px;">Last check: ' + _mlopsFormatTimestamp(h.timestamp) + '</div>');
+  el.innerHTML = rows.join('') || '<p style="color:var(--text-muted);">No health data available.</p>';
+}
+
+function _mlopsRenderMetricsPanel(m) {
+  var el = document.getElementById('mlopsMetricsPanel');
+  if (!el) return;
+  var rows = [];
+  rows.push('<div style="display:flex;justify-content:space-between;margin-bottom:4px;"><span>Total Predictions</span><span style="color:#fff;font-weight:700;">' + (m.total_predictions || 0) + '</span></div>');
+  rows.push('<div style="display:flex;justify-content:space-between;margin-bottom:4px;"><span>Successful</span><span style="color:#10b981;font-weight:700;">' + (m.successful_predictions || 0) + '</span></div>');
+  rows.push('<div style="display:flex;justify-content:space-between;margin-bottom:4px;"><span>Failed</span><span style="color:#ef4444;font-weight:700;">' + (m.failed_predictions || 0) + '</span></div>');
+  var successRate = m.success_rate != null ? Math.round(m.success_rate * 100) : 0;
+  rows.push('<div style="display:flex;justify-content:space-between;margin-bottom:4px;margin-top:8px;"><span>Success Rate</span><span style="color:#fff;font-weight:700;">' + successRate + '%</span></div>');
+  if (m.p95_latency_ms != null) {
+    rows.push('<div style="display:flex;justify-content:space-between;margin-bottom:4px;"><span>P95 Latency</span><span style="color:#fff;font-weight:700;">' + Math.round(m.p95_latency_ms) + 'ms</span></div>');
+  } else if (m.latency_stats && m.latency_stats.p95_ms) {
+    rows.push('<div style="display:flex;justify-content:space-between;margin-bottom:4px;"><span>P95 Latency</span><span style="color:#fff;font-weight:700;">' + Math.round(m.latency_stats.p95_ms) + 'ms</span></div>');
+  }
+  if (m.timestamp) {
+    rows.push('<div style="margin-top:12px;color:var(--text-muted);font-size:9px;">Updated: ' + _mlopsFormatTimestamp(m.timestamp) + '</div>');
+  }
+  el.innerHTML = rows.join('') || '<p style="color:var(--text-muted);">No metrics data available.</p>';
+}
+
+async function _mlopsLoadEvents() {
+  try {
+    var resp = await _mlopsFetch('/api/mlops/events?limit=20');
+    if (!resp.success) return;
+    var events = resp.data.events || [];
+    var el = document.getElementById('mlopsEventsPanel');
+    if (!events.length) {
+      el.innerHTML = '<p style="color:var(--text-muted);">No events recorded.</p>';
+      return;
+    }
+    el.innerHTML = events.map(function(ev) {
+      var typeCol = { 'deploy': '#3b82f6', 'rollback': '#f59e0b', 'validation': '#8b5cf6', 'health': '#10b981', 'drift': '#ef4444' }[ev.event_type] || '#6b7281';
+      return '<div style="display:flex;align-items:center;gap:8px;padding:6px 0;border-bottom:1px solid rgba(255,255,255,0.04);">' +
+        '<span style="width:6px;height:6px;border-radius:50%;background:' + typeCol + ';flex-shrink:0;"></span>' +
+        '<span style="flex:1;color:#fff;font-weight:600;">' + _mlopsEscapeHtml(ev.event_type) + '</span>' +
+        '<span style="color:var(--text-muted);font-size:9px;">' + _mlopsFormatTimestamp(ev.timestamp) + '</span>' +
+        '</div>';
+    }).join('');
+  } catch(e) { document.getElementById('mlopsEventsPanel').innerHTML = '<p style="color:var(--text-muted);">Error loading events.</p>'; }
+}
+
+async function mlopsDeployModel(name) {
+  if (!confirm('Deploy model "' + name + '"?')) return;
+  try {
+    var resp = await _mlopsFetch('/api/mlops/deploy', { method: 'POST', body: JSON.stringify({ model_name: name }) });
+    if (resp.success) {
+      showToast(resp.message || 'Model deployed', 'success');
+      _mlopsLoadDashboard();
+    } else {
+      showToast(resp.message || 'Deploy failed', 'error');
+    }
+  } catch(e) { showToast('Deploy failed', 'error'); }
+}
+
+async function mlopsRollbackModel(name) {
+  if (!confirm('Rollback model "' + name + '"?')) return;
+  try {
+    var resp = await _mlopsFetch('/api/mlops/rollback', { method: 'POST', body: JSON.stringify({ model_name: name }) });
+    if (resp.success) {
+      showToast(resp.message || 'Model rolled back', 'success');
+      _mlopsLoadDashboard();
+    } else {
+      showToast(resp.message || 'Rollback failed', 'error');
+    }
+  } catch(e) { showToast('Rollback failed', 'error'); }
+}
+
+function _initMlopsRefresh() {
+  var btn = document.getElementById('btnRefreshMlops');
+  if (btn) btn.addEventListener('click', function() { _mlopsLoadDashboard(); });
+}
+
+/* Ensure MLOps dashboard loads when tab activates */
+var _origSwitchTab = window.switchTab;
+if (typeof _origSwitchTab === 'function') {
+  window.switchTab = function(tabId) {
+    _origSwitchTab(tabId);
+    if (tabId === 'mlops-dashboard') {
+      _mlopsLoadDashboard();
+    }
+  };
+}
+
+document.addEventListener('DOMContentLoaded', function() {
+  _initMlopsRefresh();
+  /* Show MLOps menu for admin */
+  try {
+    var user = JSON.parse(localStorage.getItem('user') || '{}');
+    if (user.role === 'Administrator') {
+      var m = document.getElementById('menu-item-mlops');
+      if (m) m.style.display = '';
+    }
+  } catch(e) {}
+});
 

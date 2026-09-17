@@ -28,7 +28,7 @@ def list_alerts(plant_id: int, db: Session = Depends(get_db), current_customer: 
                 "severity": a.severity,
                 "message": a.message,
                 "is_read": a.is_read,
-                "created_at": a.created_at.isoformat()
+                "created_at": a.created_at.isoformat() if a.created_at else None
             } for a in alerts
         ]
     }

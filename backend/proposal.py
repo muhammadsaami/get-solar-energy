@@ -1,13 +1,14 @@
-from fastapi import APIRouter
+from fastapi import APIRouter, Depends, Request
+from security import verify_token
+from auth import auth_rate_limiter
 from pydantic import BaseModel
-from google import genai
-from google.genai import types
+from ai.provider_factory import get_ai_provider
+from ai.provider_base import AIRequest
 from dotenv import load_dotenv
 import os, json
 
 load_dotenv()
-client = genai.Client(api_key=os.getenv("GEMINI_API_KEY"))
-router = APIRouter()
+router = APIRouter(dependencies=[Depends(verify_token)])
 
 
 class ProposalRequest(BaseModel):
@@ -23,7 +24,10 @@ class ProposalRequest(BaseModel):
 
 
 @router.post("/api/generate-proposal")
-async def generate_proposal(data: ProposalRequest):
+async def generate_proposal(data: ProposalRequest, req: Request = None, user_email: str = Depends(verify_token)):
+    client_ip = req.client.host if req else "unknown"
+    if not auth_rate_limiter.is_allowed(user_email, client_ip):
+        return {"success": False, "error": "Rate limit exceeded. Please try again later."}
     try:
         prompt = f"""
         You are a professional solar proposal writer for an Indian solar EPC company.
@@ -80,14 +84,15 @@ async def generate_proposal(data: ProposalRequest):
         }}
         """
 
-        response = client.models.generate_content(
-            model="gemini-2.5-flash",
-            contents=[
-                types.Content(role="user", parts=[types.Part.from_text(text=prompt)])
-            ]
+        provider = get_ai_provider()
+        ai_request = AIRequest(
+            prompt=prompt,
+            temperature=0.3,
+            metadata={"route": "generate-proposal"},
         )
+        ai_response = provider.generate_response(ai_request)
 
-        text = response.text.strip()
+        text = ai_response.content
         if "```json" in text:
             text = text.split("```json")[1].split("```")[0]
         elif "```" in text:

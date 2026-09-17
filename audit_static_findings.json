@@ -1,0 +1,138 @@
+{
+  "styling_issues": [
+    {
+      "file": "amc/components/AMCPrintReport.tsx",
+      "line": 20,
+      "type": "Non-Standard Font-Family",
+      "detail": "'Inter', sans-serif",
+      "code": "font-family: 'Inter', sans-serif;"
+    }
+  ],
+  "a11y_issues": [
+    {
+      "file": "amc/components/AMCAIPromptForm.tsx",
+      "type": "Icon-Only Button Missing ARIA Label",
+      "detail": "type=\"submit\"\n            className=\"calc-btn\"\n            d"
+    },
+    {
+      "file": "components/layout/Topbar.tsx",
+      "type": "Icon-Only Button Missing ARIA Label",
+      "detail": "className=\"location-btn\" aria-haspopup=\"listbox\" aria-expand"
+    },
+    {
+      "file": "components/layout/UserMenu.tsx",
+      "type": "Icon-Only Button Missing ARIA Label",
+      "detail": "className=\"profile-dropdown-item profile-dropdown-logout\"\n  "
+    },
+    {
+      "file": "features/certifications/pages/CertificationsPage.tsx",
+      "type": "Icon-Only Button Missing ARIA Label",
+      "detail": "className=\"btn btn-secondary btn-sm\"\n            onClick={re"
+    },
+    {
+      "file": "features/earnings/components/EarningsEmptyState.tsx",
+      "type": "Icon-Only Button Missing ARIA Label",
+      "detail": "className=\"btn btn-secondary btn-sm\"\n              onClick={"
+    },
+    {
+      "file": "features/earnings/components/EarningsEmptyState.tsx",
+      "type": "Icon-Only Button Missing ARIA Label",
+      "detail": "className=\"btn btn-secondary\" onClick={onRetry}"
+    },
+    {
+      "file": "features/earnings/components/EarningsHero.tsx",
+      "type": "Icon-Only Button Missing ARIA Label",
+      "detail": "className=\"btn btn-secondary\"\n          style={{ display: 'f"
+    },
+    {
+      "file": "features/jobMarketplace/components/JobCard.tsx",
+      "type": "Icon-Only Button Missing ARIA Label",
+      "detail": "className=\"btn btn-secondary btn-sm job-applied-btn\" disable"
+    },
+    {
+      "file": "features/jobMarketplace/components/JobDrawerContent.tsx",
+      "type": "Icon-Only Button Missing ARIA Label",
+      "detail": "className=\"btn btn-secondary job-applied-btn-wide\" disabled"
+    },
+    {
+      "file": "features/jobMarketplace/components/JobMarketplaceEmptyState.tsx",
+      "type": "Icon-Only Button Missing ARIA Label",
+      "detail": "className=\"btn btn-secondary btn-sm\"\n              onClick={"
+    },
+    {
+      "file": "features/jobMarketplace/components/JobMarketplaceEmptyState.tsx",
+      "type": "Icon-Only Button Missing ARIA Label",
+      "detail": "className=\"btn btn-secondary\" onClick={onRetry}"
+    },
+    {
+      "file": "features/jobMarketplace/components/JobMarketplaceHero.tsx",
+      "type": "Icon-Only Button Missing ARIA Label",
+      "detail": "className=\"btn btn-primary\"\n            style={{ display: 'f"
+    },
+    {
+      "file": "features/knowledgeBase/components/FilterBar.jsx",
+      "type": "Icon-Only Button Missing ARIA Label",
+      "detail": "type=\"button\" className=\"btn btn-ghost btn-sm\" onClick={onCl"
+    },
+    {
+      "file": "features/profile/components/ProfileEmptyState.tsx",
+      "type": "Icon-Only Button Missing ARIA Label",
+      "detail": "className=\"btn btn-secondary btn-sm\"\n              onClick={"
+    },
+    {
+      "file": "features/profile/components/ProfileEmptyState.tsx",
+      "type": "Icon-Only Button Missing ARIA Label",
+      "detail": "className=\"btn btn-secondary\" onClick={onRetry}"
+    },
+    {
+      "file": "features/profile/components/ProfileHero.tsx",
+      "type": "Icon-Only Button Missing ARIA Label",
+      "detail": "className=\"btn btn-primary btn-sm\"\n            onClick={hand"
+    },
+    {
+      "file": "features/technicianAi/components/TechnicianAiEmptyState.tsx",
+      "type": "Icon-Only Button Missing ARIA Label",
+      "detail": "className=\"btn btn-secondary btn-sm\"\n              onClick={"
+    },
+    {
+      "file": "features/technicianAi/components/TechnicianAiEmptyState.tsx",
+      "type": "Icon-Only Button Missing ARIA Label",
+      "detail": "className=\"btn btn-secondary\" onClick={onRetry}"
+    },
+    {
+      "file": "features/workOrders/components/WorkOrderCard.tsx",
+      "type": "Icon-Only Button Missing ARIA Label",
+      "detail": "className=\"btn btn-secondary btn-sm\" disabled style={{ color"
+    },
+    {
+      "file": "features/workOrders/components/WorkOrderDrawerContent.tsx",
+      "type": "Icon-Only Button Missing ARIA Label",
+      "detail": "className=\"btn btn-primary\"\n            disabled={isUpdating"
+    },
+    {
+      "file": "features/workOrders/components/WorkOrderDrawerContent.tsx",
+      "type": "Icon-Only Button Missing ARIA Label",
+      "detail": "className=\"btn btn-secondary\" disabled style={{ width: '100%"
+    },
+    {
+      "file": "features/workOrders/components/WorkOrdersEmptyState.tsx",
+      "type": "Icon-Only Button Missing ARIA Label",
+      "detail": "className=\"btn btn-secondary btn-sm\"\n              onClick={"
+    },
+    {
+      "file": "features/workOrders/components/WorkOrdersEmptyState.tsx",
+      "type": "Icon-Only Button Missing ARIA Label",
+      "detail": "className=\"btn btn-secondary\" onClick={onRetry}"
+    },
+    {
+      "file": "features/workOrders/components/WorkOrdersHero.tsx",
+      "type": "Icon-Only Button Missing ARIA Label",
+      "detail": "className=\"btn btn-primary\"\n            style={{ display: 'f"
+    },
+    {
+      "file": "pages/ProjectTracking.jsx",
+      "type": "Icon-Only Button Missing ARIA Label",
+      "detail": "className=\"btn btn-primary btn-with-icon\" onClick={loadAllDa"
+    }
+  ]
+}

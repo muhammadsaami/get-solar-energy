@@ -1,0 +1,535 @@
+/* ── KNOWLEDGE BASE — MINIMAL MODULE CSS ───────────────────────────
+   ONLY: responsive layout adjustments + KB-specific structure.
+   All colors, typography, shadows, buttons, cards, spacing and icons
+   come from the shared design system (tokens.css / design-system.css). */
+
+/* Hero layout — search panel + score card */
+.kb-hero-layout {
+  display: grid;
+  align-items: stretch;
+  grid-template-columns: 1.5fr 1fr;
+  gap: var(--space-5);
+  margin-top: var(--space-5);
+}
+
+.kb-hero-search-card {
+  justify-content: center;
+}
+
+.kb-hero-search-heading {
+  margin-bottom: var(--space-4);
+}
+
+.kb-hero-tag-row {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--space-2);
+  margin-top: var(--space-4);
+}
+
+.kb-search-form {
+  display: flex;
+  flex: 1;
+  min-width: 220px;
+}
+
+/* Quick access strip — horizontal pinned shortcuts */
+.kb-quick-access {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--space-3);
+  margin-bottom: var(--space-6);
+}
+
+.kb-quick-access-item {
+  flex: 1 1 160px;
+  justify-content: center;
+  display: inline-flex;
+  align-items: center;
+  gap: var(--space-2);
+  padding: 10px 14px;
+  font-size: var(--font-size-xs);
+}
+
+.kb-quick-access-item svg {
+  flex-shrink: 0;
+}
+
+/* Filter bar — enterprise responsive layout (4 per row / 2 tablet / 1 mobile) */
+.kb-filter-bar {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: var(--space-4);
+  align-items: end;
+  margin-bottom: var(--space-6);
+}
+
+.kb-filter-group {
+  margin-bottom: 0;
+  min-width: 0;
+}
+
+.kb-filter-actions {
+  display: inline-flex;
+  align-items: center;
+  justify-content: flex-end;
+  align-self: end;
+  padding-bottom: var(--space-2);
+  grid-column: 1 / -1;
+}
+
+.kb-filter-idle {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--space-1);
+  font-size: 11px;
+  color: var(--text-muted);
+}
+
+@media (max-width: 1280px) {
+  .kb-filter-bar { grid-template-columns: repeat(4, minmax(0, 1fr)); }
+}
+
+@media (max-width: 992px) {
+  .kb-filter-bar { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+}
+
+@media (max-width: 540px) {
+  .kb-filter-bar { grid-template-columns: 1fr; }
+}
+
+/* Active filter chips row */
+.kb-active-filters {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: var(--space-2);
+  margin-bottom: var(--space-4);
+}
+
+.kb-active-filters-label {
+  font-size: var(--font-size-xs);
+  color: var(--text-muted);
+  display: inline-flex;
+  align-items: center;
+  gap: var(--space-1);
+}
+
+/* Results header */
+.kb-results-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--space-4);
+  flex-wrap: wrap;
+  margin-bottom: var(--space-5);
+}
+
+.kb-results-count {
+  margin-left: var(--space-2);
+  color: var(--text-muted);
+}
+
+.kb-sort-group {
+  margin-bottom: 0;
+  min-width: 170px;
+}
+
+/* Error card */
+.kb-error-card {
+  text-align: center;
+  padding: var(--space-8);
+  margin-bottom: var(--space-6);
+}
+
+.kb-error-text {
+  font-size: 14px;
+  font-weight: 600;
+  color: var(--color-red);
+  margin: 0 0 10px;
+}
+
+/* Document grid — responsive 2/3-column grid */
+.kb-doc-grid {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: var(--space-5);
+  margin-bottom: var(--space-6);
+}
+
+@media (max-width: 1280px) {
+  .kb-doc-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+}
+
+@media (max-width: 992px) {
+  .kb-hero-layout { grid-template-columns: 1fr; }
+}
+
+@media (max-width: 768px) {
+  .kb-doc-grid { grid-template-columns: 1fr; }
+  .kb-quick-access-item { flex-basis: 45%; }
+}
+
+@media (max-width: 480px) {
+  .kb-quick-access-item { flex-basis: 100%; }
+  .kb-doc-stat-grid { grid-template-columns: 1fr; }
+  .kb-score-body { gap: var(--space-3); }
+  .kb-score-label { font-size: 16px; }
+  .kb-results-header { align-items: flex-start; }
+  .kb-sort-group { min-width: 100%; }
+}
+
+/* Document card — normalized structure */
+.kb-doc-card {
+  display: flex;
+  flex-direction: column;
+}
+
+.kb-doc-card-badges {
+  display: flex;
+  gap: var(--space-2);
+  align-items: center;
+  flex-wrap: wrap;
+}
+
+.kb-doc-card-actions {
+  display: flex;
+  gap: 2px;
+}
+
+.kb-doc-card-title {
+  font-size: 15px;
+  font-weight: 700;
+  color: var(--text-primary);
+  margin: var(--space-1) 0 var(--space-2);
+  line-height: 1.35;
+  text-align: left;
+  background: none;
+  border: none;
+  padding: 0;
+  cursor: pointer;
+  font-family: inherit;
+  width: 100%;
+}
+
+.kb-doc-card-title:hover {
+  color: var(--accent-blue);
+}
+
+.kb-doc-card-summary {
+  font-size: var(--font-size-sm);
+  color: var(--text-secondary);
+  line-height: 1.55;
+  margin: 0 0 var(--space-4);
+  flex: 1;
+}
+
+.kb-doc-meta {
+  display: flex;
+  align-items: center;
+  gap: var(--space-3);
+  font-size: var(--font-size-xs);
+  color: var(--text-muted);
+  margin-bottom: var(--space-4);
+  flex-wrap: wrap;
+}
+
+.kb-doc-meta-item {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--space-1);
+  white-space: nowrap;
+}
+
+.kb-doc-meta-item.difficulty {
+  font-weight: 700;
+}
+
+.kb-doc-card-footer {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: var(--space-2);
+  border-top: 1px solid var(--border-subtle);
+  padding-top: var(--space-3);
+  flex-wrap: wrap;
+}
+
+.kb-doc-tags {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--space-1);
+}
+
+.kb-doc-updated {
+  font-size: 10px;
+  color: var(--text-muted);
+}
+
+/* Drawer content */
+.kb-doc-badge-row {
+  display: flex;
+  gap: var(--space-2);
+  align-items: center;
+  flex-wrap: wrap;
+  margin-bottom: var(--space-4);
+}
+
+.kb-doc-summary {
+  font-size: 13px;
+  color: var(--text-secondary);
+  line-height: 1.6;
+  margin: 0 0 var(--space-5);
+}
+
+.kb-doc-meta-lg {
+  gap: var(--space-4);
+  font-size: var(--font-size-sm);
+  margin-bottom: var(--space-5);
+}
+
+.kb-doc-action-row {
+  display: flex;
+  gap: var(--space-2);
+  flex-wrap: wrap;
+  margin-bottom: var(--space-6);
+}
+
+.kb-btn-icon {
+  margin-right: 6px;
+}
+
+.kb-doc-section {
+  border-top: 1px solid var(--border-subtle);
+  padding-top: var(--space-5);
+  margin-bottom: var(--space-5);
+}
+
+.kb-doc-section-title {
+  font-size: var(--font-size-sm);
+  font-weight: 700;
+  color: var(--text-primary);
+  margin: 0 0 var(--space-4);
+}
+
+.kb-doc-stat-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: var(--space-3);
+}
+
+.kb-doc-stat {
+  background: rgba(255, 255, 255, 0.02);
+  border: 1px solid var(--border-color);
+  padding: 8px 10px;
+  border-radius: var(--radius-sm);
+}
+
+.kb-doc-stat-label {
+  font-size: 9px;
+  color: var(--text-muted);
+  display: block;
+  text-transform: uppercase;
+  font-weight: 700;
+}
+
+.kb-doc-stat-value {
+  font-size: 13px;
+  font-weight: 800;
+  color: var(--text-primary);
+  display: block;
+  margin-top: 2px;
+}
+
+/* Related documents */
+.kb-related {
+  margin-top: 6px;
+}
+
+.kb-related-icon {
+  color: var(--color-blue);
+  vertical-align: -2px;
+  margin-right: 6px;
+}
+
+.kb-related-list {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-2);
+}
+
+.kb-related-item {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--space-3);
+  background: var(--bg-card);
+  border: 1px solid var(--border-color);
+  border-radius: var(--radius-sm);
+  padding: 10px 12px;
+  cursor: pointer;
+  text-align: left;
+  width: 100%;
+  font-family: var(--font-family);
+  color: inherit;
+  transition: border-color var(--transition-fast), background var(--transition-fast);
+}
+
+.kb-related-item:hover {
+  border-color: var(--border-strong);
+  background: var(--bg-card-hover);
+}
+
+.kb-related-item-text {
+  min-width: 0;
+}
+
+.kb-related-item-title {
+  display: block;
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--text-primary);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.kb-related-item-meta {
+  display: block;
+  font-size: 11px;
+  color: var(--text-muted);
+  margin-top: 2px;
+}
+
+.kb-related-item-link {
+  color: var(--text-muted);
+  flex-shrink: 0;
+}
+
+/* Knowledge score card */
+.kb-score-card {
+  justify-content: center;
+}
+
+.kb-score-title {
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
+}
+
+.kb-score-body {
+  display: flex;
+  align-items: center;
+  gap: var(--space-4);
+}
+
+.kb-score-ring {
+  width: 62px;
+  height: 62px;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-width: 3px;
+  border-style: solid;
+  flex-shrink: 0;
+}
+
+.kb-score-ring-value {
+  font-size: 20px;
+  font-weight: 900;
+  color: var(--text-primary);
+}
+
+.kb-score-label {
+  display: block;
+  font-size: 18px;
+  font-weight: 800;
+}
+
+.kb-score-subtext {
+  display: block;
+  font-size: 11px;
+  color: var(--text-muted);
+  margin-top: 2px;
+}
+
+.kb-score-bar {
+  height: 6px;
+  background: var(--border-color);
+  border-radius: 3px;
+  overflow: hidden;
+  margin-top: var(--space-4);
+}
+
+.kb-score-bar-fill {
+  height: 100%;
+  border-radius: 3px;
+  transition: width var(--duration-normal) var(--ease-standard);
+}
+
+/* Document skeleton */
+.kb-skel {
+  display: block;
+  border-radius: 4px;
+}
+
+.kb-skel-badge { width: 90px; height: 16px; }
+.kb-skel-icon { width: 20px; height: 20px; }
+.kb-skel-title { width: 80%; height: 18px; margin-bottom: 10px; }
+.kb-skel-line { width: 100%; height: 12px; margin-bottom: 6px; }
+.kb-skel-line-short { width: 45%; height: 12px; margin-top: 14px; }
+
+/* Empty state */
+.kb-empty-state {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  padding: var(--space-12) var(--space-8);
+  text-align: center;
+  background: var(--bg-card);
+  border: 1px solid var(--border-color);
+  border-radius: var(--radius-lg);
+  margin-bottom: var(--space-6);
+}
+
+.kb-empty-state-icon {
+  width: 64px;
+  height: 64px;
+  border-radius: var(--radius-xl);
+  background: var(--bg-tertiary);
+  border: 1px solid var(--border-subtle);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  margin-bottom: var(--space-5);
+}
+
+.kb-empty-state-title {
+  font-size: var(--font-size-lg);
+  font-weight: 700;
+  margin: 0 0 var(--space-2);
+  color: var(--text-primary);
+}
+
+.kb-empty-state-description {
+  font-size: var(--font-size-sm);
+  color: var(--text-secondary);
+  margin: 0 0 var(--space-6);
+  max-width: 400px;
+  line-height: 1.6;
+}
+
+/* ── DRAWER SIZING (scoped to KB page, generic drawer untouched) ── */
+.kb-page .drawer {
+  width: 640px;
+  max-width: 95vw;
+}
+
+@media (max-width: 768px) {
+  .kb-page .drawer {
+    width: 100vw;
+    max-width: 100vw;
+  }
+}

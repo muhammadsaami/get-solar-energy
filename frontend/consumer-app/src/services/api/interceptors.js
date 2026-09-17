@@ -1,24 +1,18 @@
 // src/services/api/interceptors.js
-import axios from 'axios';
-import { authManager } from './authManager';
+// Infrastructure only: attach tokens, detect auth failures. No business logic.
+import { tokenManager } from '../auth/tokenManager';
+import { authEvents, AuthEventTypes } from '../auth/authEvents';
 import { errorHandler } from './errorHandler';
-
-let isRefreshing = false;
-let failedQueue = [];
-
-const processQueue = (error, token = null) => {
-  failedQueue.forEach(prom => {
-    if (error) prom.reject(error);
-    else prom.resolve(token);
-  });
-  failedQueue = [];
-};
 
 export const requestInterceptors = {
   injectToken(config) {
-    const token = authManager.getAccessToken();
+    const token = tokenManager.getAccessToken();
     if (token) {
       config.headers.Authorization = `Bearer ${token}`;
+    }
+    if (config.data instanceof FormData) {
+      delete config.headers['Content-Type'];
+      delete config.headers['content-type'];
     }
     return config;
   },
@@ -31,33 +25,13 @@ export const responseInterceptors = {
   onSuccess(response) {
     return response;
   },
-  async onError(error) {
-    const originalRequest = error.config;
-    if (error.response?.status === 401 && !originalRequest._retry) {
-      if (isRefreshing) {
-        return new Promise((resolve, reject) => {
-          failedQueue.push({ resolve, reject });
-        }).then(token => {
-          originalRequest.headers.Authorization = `Bearer ${token}`;
-          return axios(originalRequest);
-        }).catch(err => Promise.reject(err));
-      }
+  onError(error) {
+    const url = error.config?.url || '';
+    const isAuthEndpoint = url.includes('/auth/refresh') || url.includes('/refresh') || url.includes('/auth/login') || url.includes('/login') || url.includes('/technician/login');
 
-      originalRequest._retry = true;
-      isRefreshing = true;
-
-      try {
-        const newAccessToken = await authManager.refreshToken();
-        isRefreshing = false;
-        processQueue(null, newAccessToken);
-        originalRequest.headers.Authorization = `Bearer ${newAccessToken}`;
-        return axios(originalRequest);
-      } catch (refreshError) {
-        isRefreshing = false;
-        processQueue(refreshError, null);
-        authManager.logout();
-        return Promise.reject(errorHandler.normalize(refreshError));
-      }
+    if (error.response?.status === 401 && tokenManager.getAccessToken() && !isAuthEndpoint) {
+      // Notify the session layer — it owns the decision (refresh vs logout).
+      authEvents.emit(AuthEventTypes.UNAUTHORIZED, { reason: 'http-401' });
     }
     return Promise.reject(errorHandler.normalize(error));
   }

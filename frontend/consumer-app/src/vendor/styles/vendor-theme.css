@@ -1,0 +1,315 @@
+/* ==========================================================================
+   GET SOLAR ENERGY — VENDOR PORTAL THEME (BILL ANALYZER DESIGN LANGUAGE)
+   ========================================================================== */
+
+:root {
+  /* Bill Analyzer Brand Color Tokens — resolve from canonical design language */
+  --vendor-bg-deep: var(--bg-deep);
+  --vendor-bg-surface: var(--bg-secondary);
+  --vendor-bg-glass: var(--glass-bg);
+  --vendor-bg-card: var(--bg-card);
+  --vendor-bg-card-hover: var(--bg-card-hover);
+
+  --vendor-primary: var(--color-orange);
+  --vendor-primary-hover: var(--color-orange-hover);
+  --vendor-primary-surface: var(--color-orange-surface);
+  --vendor-primary-border: var(--color-orange-border);
+
+  --vendor-secondary: var(--color-blue);
+  --vendor-secondary-surface: var(--color-blue-surface);
+
+  --vendor-accent: var(--color-orange);
+  --vendor-accent-hover: var(--color-orange-hover);
+  --vendor-accent-surface: var(--color-orange-surface);
+  --vendor-accent-border: var(--color-orange-border);
+
+  --vendor-grad-orange: linear-gradient(135deg, var(--color-orange-hover) 0%, var(--color-orange) 100%);
+  --vendor-grad-blue: linear-gradient(135deg, var(--color-blue) 0%, var(--color-blue) 100%);
+  --vendor-grad-glass: linear-gradient(135deg, rgba(255, 255, 255, 0.06) 0%, rgba(255, 255, 255, 0.01) 100%);
+
+  --vendor-success: var(--color-green);
+  --vendor-success-surface: var(--color-green-surface);
+  --vendor-warning: var(--color-yellow);
+  --vendor-warning-surface: var(--color-yellow-surface);
+  --vendor-danger: var(--color-red);
+  --vendor-danger-surface: var(--color-red-surface);
+
+  --vendor-text-primary: var(--text-primary);
+  --vendor-text-secondary: var(--text-secondary);
+  --vendor-text-muted: var(--text-muted);
+
+  --vendor-border: var(--border-subtle);
+  --vendor-border-glow: var(--color-orange-glow);
+  --vendor-glass-blur: blur(24px);
+  --vendor-shadow: var(--shadow-card);
+  --vendor-shadow-lift: var(--shadow-hover);
+  --vendor-radius: var(--radius-md);
+  --vendor-radius-lg: var(--radius-lg);
+  --vendor-radius-sm: var(--radius-sm);
+}
+
+/* Base Body & Layout Reset */
+.vendor-portal-root {
+  min-height: 100vh;
+  background:
+    radial-gradient(circle at 12% 0%, rgba(249, 115, 22, 0.14), transparent 34%),
+    radial-gradient(circle at 88% 8%, rgba(23, 168, 229, 0.16), transparent 38%),
+    linear-gradient(135deg, #060F1F, #081827 52%, #07131d);
+  color: var(--vendor-text-primary);
+  font-family: 'Outfit', sans-serif;
+  display: flex;
+  position: relative;
+  overflow-x: hidden;
+}
+
+.vendor-bg-mesh {
+  position: fixed;
+  inset: 0;
+  pointer-events: none;
+  background-image: 
+    radial-gradient(rgba(23, 168, 229, 0.09) 1px, transparent 1px),
+    radial-gradient(rgba(249, 115, 22, 0.05) 1px, transparent 1px);
+  background-size: 32px 32px;
+  background-position: 0 0, 16px 16px;
+  z-index: 0;
+  opacity: 0.7;
+}
+
+/* Glass Card System (Matching Bill Analyzer .card-base) */
+.vendor-glass-card {
+  background: var(--vendor-bg-card);
+  backdrop-filter: var(--vendor-glass-blur);
+  -webkit-backdrop-filter: var(--vendor-glass-blur);
+  border: 1px solid var(--vendor-border);
+  border-radius: var(--vendor-radius-lg);
+  box-shadow: 0 10px 30px rgba(0, 0, 0, 0.28);
+  transition: all 0.28s cubic-bezier(0.2, 0.8, 0.2, 1);
+  position: relative;
+  overflow: hidden;
+}
+
+.vendor-glass-card::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  height: 2px;
+  background: linear-gradient(90deg, transparent, rgba(23, 168, 229, 0.45), transparent);
+  opacity: 0.6;
+}
+
+.vendor-glass-card:hover {
+  background: var(--vendor-bg-card-hover);
+  border-color: var(--vendor-border-glow);
+  box-shadow: var(--vendor-shadow-lift);
+  transform: translateY(-3px);
+}
+
+/* Bill Analyzer Button System */
+.vendor-btn-primary {
+  background: var(--vendor-grad-orange);
+  color: #FFFFFF;
+  font-weight: 700;
+  font-size: 13px;
+  padding: 10px 20px;
+  border-radius: var(--vendor-radius-sm);
+  border: none;
+  cursor: pointer;
+  box-shadow: 0 4px 16px rgba(249, 115, 22, 0.35);
+  transition: all 0.22s cubic-bezier(0.2, 0.8, 0.2, 1);
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  letter-spacing: 0.02em;
+  font-family: 'Outfit', sans-serif;
+}
+
+.vendor-btn-primary:hover {
+  background: linear-gradient(135deg, #ea580c 0%, #f97316 100%);
+  transform: translateY(-2px);
+  box-shadow: 0 8px 24px rgba(249, 115, 22, 0.5);
+}
+
+.vendor-btn-primary:active {
+  transform: translateY(0);
+}
+
+.vendor-btn-secondary {
+  background: var(--vendor-primary-surface);
+  border: 1px solid var(--vendor-primary-border);
+  color: var(--vendor-primary);
+  font-weight: 700;
+  font-size: 12.5px;
+  padding: 9px 18px;
+  border-radius: var(--vendor-radius-sm);
+  cursor: pointer;
+  transition: all 0.2s ease;
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  font-family: 'Outfit', sans-serif;
+}
+
+.vendor-btn-secondary:hover {
+  background: rgba(23, 168, 229, 0.22);
+  border-color: var(--vendor-primary);
+  color: #FFFFFF;
+  transform: translateY(-1px);
+}
+
+.vendor-btn-ghost {
+  background: rgba(255, 255, 255, 0.04);
+  border: 1px solid var(--vendor-border);
+  color: var(--vendor-text-secondary);
+  font-weight: 600;
+  font-size: 12.5px;
+  padding: 8px 16px;
+  border-radius: var(--vendor-radius-sm);
+  cursor: pointer;
+  transition: all 0.2s ease;
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  font-family: 'Outfit', sans-serif;
+}
+
+.vendor-btn-ghost:hover {
+  background: rgba(255, 255, 255, 0.09);
+  color: #FFFFFF;
+  border-color: rgba(255, 255, 255, 0.18);
+}
+
+.vendor-btn-danger {
+  background: var(--vendor-danger-surface);
+  border: 1px solid rgba(239, 68, 68, 0.35);
+  color: var(--vendor-danger);
+  font-weight: 700;
+  font-size: 11.5px;
+  padding: 7px 14px;
+  border-radius: var(--vendor-radius-sm);
+  cursor: pointer;
+  transition: all 0.2s ease;
+  font-family: 'Outfit', sans-serif;
+}
+
+.vendor-btn-danger:hover {
+  background: rgba(239, 68, 68, 0.25);
+  color: #FFFFFF;
+}
+
+/* Bill Analyzer Table System */
+.vendor-table-container {
+  width: 100%;
+  border-collapse: separate;
+  border-spacing: 0;
+  font-size: 13px;
+  text-align: left;
+}
+
+.vendor-table-container th {
+  padding: 14px 14px;
+  background: rgba(8, 22, 37, 0.85);
+  color: var(--vendor-text-muted);
+  font-size: 11px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.07em;
+  border-bottom: 1px solid var(--vendor-border);
+  position: sticky;
+  top: 0;
+  backdrop-filter: blur(12px);
+  z-index: 2;
+}
+
+.vendor-table-container td {
+  padding: 14px 14px;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.04);
+  color: var(--vendor-text-primary);
+  transition: background 0.15s ease;
+}
+
+.vendor-table-container tr:hover td {
+  background: rgba(23, 168, 229, 0.06);
+}
+
+/* Form Controls */
+.vendor-input {
+  width: 100%;
+  height: 42px;
+  background: rgba(255, 255, 255, 0.04);
+  border: 1px solid var(--vendor-border);
+  border-radius: var(--vendor-radius-sm);
+  padding: 0 14px;
+  font-size: 13px;
+  color: #FFFFFF;
+  outline: none;
+  transition: all 0.2s ease;
+  font-family: 'Outfit', sans-serif;
+}
+
+.vendor-input::placeholder {
+  color: var(--vendor-text-muted);
+}
+
+.vendor-input:hover {
+  border-color: rgba(255, 255, 255, 0.16);
+  background: rgba(255, 255, 255, 0.06);
+}
+
+.vendor-input:focus {
+  border-color: var(--vendor-primary);
+  box-shadow: 0 0 0 3px rgba(23, 168, 229, 0.18);
+  background: rgba(23, 168, 229, 0.05);
+}
+
+/* Animations */
+@keyframes fadeIn {
+  from { opacity: 0; transform: translateY(6px); }
+  to   { opacity: 1; transform: translateY(0); }
+}
+
+@keyframes shimmer {
+  0%   { background-position: -200% 0; }
+  100% { background-position: 200% 0; }
+}
+
+.animate-fade-in {
+  animation: fadeIn 0.35s cubic-bezier(0.2, 0.8, 0.2, 1) forwards;
+}
+
+.vendor-skeleton {
+  background: linear-gradient(90deg, rgba(255,255,255,0.03) 25%, rgba(255,255,255,0.08) 50%, rgba(255,255,255,0.03) 75%);
+  background-size: 200% 100%;
+  animation: shimmer 1.8s infinite;
+  border-radius: 6px;
+}
+
+/* Custom Scrollbar matching Bill Analyzer */
+.vendor-portal-root ::-webkit-scrollbar {
+  width: 6px;
+  height: 6px;
+}
+.vendor-portal-root ::-webkit-scrollbar-track {
+  background: rgba(6, 17, 31, 0.8);
+}
+.vendor-portal-root ::-webkit-scrollbar-thumb {
+  background: rgba(255, 255, 255, 0.15);
+  border-radius: 3px;
+}
+.vendor-portal-root ::-webkit-scrollbar-thumb:hover {
+  background: var(--vendor-primary);
+}
+
+/* Responsive adjustments */
+@media (max-width: 1024px) {
+  .vendor-portal-root {
+    flex-direction: column;
+  }
+}
+
+@media (max-width: 768px) {
+  .vendor-portal-root main {
+    padding: 16px !important;
+  }
+}

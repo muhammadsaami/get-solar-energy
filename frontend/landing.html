@@ -7,9 +7,10 @@
   <!-- GET Solar Energy Design System v1.0.0 -->
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-  <link rel="stylesheet" href="styles/design-system.css">
-  <link rel="stylesheet" href="styles/landing.css">
-  <script src="landing.js" defer></script>
+  <link rel="stylesheet" href="/frontend/styles/design-system.css">
+  <link rel="stylesheet" href="/frontend/styles/landing.css">
+  <script src="/frontend/landing.js" defer></script>
+  <script src="/frontend/auth.js" defer></script>
 </head>
 <body class="dark-theme">
 
@@ -67,6 +68,8 @@
       <div class="nav-auth-buttons">
         <a href="login.html" class="btn-login" onclick="trackCTA('login_nav');">Login</a>
         <a href="signup.html" class="btn-signup" onclick="trackCTA('signup_nav');">Start Free Assessment</a>
+        <a href="/frontend/dashboard.html" class="btn-dashboard" style="display:none;" onclick="trackCTA('dashboard_nav');">Dashboard</a>
+        <a href="#" class="btn-logout" style="display:none;" onclick="handleLandingLogout(); return false;">Logout</a>
       </div>
 
       <!-- Mobile menu toggle -->
@@ -96,6 +99,8 @@
       <hr class="drawer-divider">
       <a href="login.html" class="drawer-btn-login">Login</a>
       <a href="signup.html" class="drawer-btn-signup">Start Free Assessment</a>
+      <a href="/frontend/dashboard.html" class="drawer-btn-dashboard" style="display:none;">Dashboard</a>
+      <a href="#" class="drawer-btn-logout" style="display:none;" onclick="handleLandingLogout(); return false;">Logout</a>
     </div>
   </div>
 
@@ -113,7 +118,7 @@
     <div class="scene-transition-mask top"></div>
     <div class="scene-transition-mask bottom"></div>
     <div class="layer-bg">
-      <img src="assets/Cinematic/Asset 1.webp" alt="Premium solar home" fetchpriority="high">
+      <img src="/frontend/assets/Cinematic/Asset 1.webp" alt="Premium solar home" fetchpriority="high">
     </div>
     <div class="lighting-overlay lighting-warm"></div>
     
@@ -167,7 +172,7 @@
     <div class="cinematic-color-grade"></div>
     <div class="scene-transition-mask top"></div>
     <div class="layer-bg">
-      <img src="assets/Cinematic/Asset 2.webp" alt="Home solar potential" loading="lazy">
+      <img src="/frontend/assets/Cinematic/Asset 2.webp" alt="Home solar potential" loading="lazy">
     </div>
     <div class="lighting-overlay lighting-warm"></div>
 
@@ -298,7 +303,7 @@
     <div class="scene-transition-mask top"></div>
     <div class="scene-transition-mask bottom"></div>
     <div class="layer-bg">
-      <img src="assets/Cinematic/Asset 3.webp" alt="Roof suitability analysis" loading="lazy">
+      <img src="/frontend/assets/Cinematic/Asset 3.webp" alt="Roof suitability analysis" loading="lazy">
     </div>
     <div class="lighting-overlay lighting-warm"></div>
     
@@ -401,7 +406,7 @@
     <div class="scene-transition-mask bottom"></div>
     <div class="layer-bg">
       <!-- Asset 4: Installation focus, documentary pan -->
-      <img src="assets/Cinematic/Asset 4.webp" alt="Professional solar installation" loading="lazy" style="transform-origin: center right;">
+      <img src="/frontend/assets/Cinematic/Asset 4.webp" alt="Professional solar installation" loading="lazy" style="transform-origin: center right;">
     </div>
     <div class="lighting-overlay"></div>
     
@@ -436,7 +441,7 @@
     <div class="scene-transition-mask bottom"></div>
     <div class="layer-bg">
       <!-- Asset 5: QA/Technology focus -->
-      <img src="assets/Cinematic/Asset 5.webp" alt="Technology and QA Inspection" loading="lazy">
+      <img src="/frontend/assets/Cinematic/Asset 5.webp" alt="Technology and QA Inspection" loading="lazy">
     </div>
     <div class="lighting-overlay lighting-cool"></div>
     
@@ -493,7 +498,7 @@
     <div class="scene-transition-mask bottom"></div>
     <div class="layer-bg">
       <!-- Asset 6: Drone View Parallax -->
-      <img src="assets/Cinematic/Asset 6.webp" alt="Neighborhood Solar Scale" loading="lazy" id="savingsParallaxImg">
+      <img src="/frontend/assets/Cinematic/Asset 6.webp" alt="Neighborhood Solar Scale" loading="lazy" id="savingsParallaxImg">
     </div>
     <div class="lighting-overlay lighting-cool"></div>
     
@@ -534,7 +539,7 @@
     <div class="lifestyle-gallery layer-fg scene-element" style="display: grid; grid-template-columns: repeat(3, 1fr); gap: 20px; width: 100%; max-width: 1400px; padding: 0 5%;">
       <!-- Asset 7: Smart Home Integration -->
       <div style="border-radius: 16px; overflow: hidden; position: relative; aspect-ratio: 4/5;">
-        <img src="assets/Cinematic/Asset 7.webp" alt="Smart Home Integration" loading="lazy" style="width: 100%; height: 100%; object-fit: cover;">
+        <img src="/frontend/assets/Cinematic/Asset 7.webp" alt="Smart Home Integration" loading="lazy" style="width: 100%; height: 100%; object-fit: cover;">
         <div style="position: absolute; bottom: 0; width: 100%; padding: 30px; background: linear-gradient(0deg, rgba(6,15,31,0.9) 0%, transparent 100%); text-align: left;">
           <h3 style="font-size: 20px; font-weight: 700; margin-bottom: 8px;">Smart Home Ready</h3>
           <p style="font-size: 14px; color: var(--text-secondary); margin: 0;">Seamlessly integrate with your existing smart devices.</p>
@@ -543,7 +548,7 @@
       
       <!-- Asset 8: Family Comfort -->
       <div style="border-radius: 16px; overflow: hidden; position: relative; aspect-ratio: 4/5;">
-        <img src="assets/Cinematic/Asset 8.webp" alt="Family Comfort" loading="lazy" style="width: 100%; height: 100%; object-fit: cover;">
+        <img src="/frontend/assets/Cinematic/Asset 8.webp" alt="Family Comfort" loading="lazy" style="width: 100%; height: 100%; object-fit: cover;">
         <div style="position: absolute; bottom: 0; width: 100%; padding: 30px; background: linear-gradient(0deg, rgba(6,15,31,0.9) 0%, transparent 100%); text-align: left;">
           <h3 style="font-size: 20px; font-weight: 700; margin-bottom: 8px;">24/7 Comfort</h3>
           <p style="font-size: 14px; color: var(--text-secondary); margin: 0;">Run your heavy appliances without worrying about the bill.</p>
@@ -552,7 +557,7 @@
 
       <!-- Asset 9: Real-time Monitoring -->
       <div style="border-radius: 16px; overflow: hidden; position: relative; aspect-ratio: 4/5;">
-        <img src="assets/Cinematic/Asset 9.webp" alt="Real-time Monitoring" loading="lazy" style="width: 100%; height: 100%; object-fit: cover;">
+        <img src="/frontend/assets/Cinematic/Asset 9.webp" alt="Real-time Monitoring" loading="lazy" style="width: 100%; height: 100%; object-fit: cover;">
         <div style="position: absolute; bottom: 0; width: 100%; padding: 30px; background: linear-gradient(0deg, rgba(6,15,31,0.9) 0%, transparent 100%); text-align: left;">
           <h3 style="font-size: 20px; font-weight: 700; margin-bottom: 8px;">Live Monitoring</h3>
           <p style="font-size: 14px; color: var(--text-secondary); margin: 0;">Track generation and consumption in real-time.</p>
@@ -561,7 +566,7 @@
 
       <!-- Asset 10: Battery Storage -->
       <div style="border-radius: 16px; overflow: hidden; position: relative; aspect-ratio: 4/5;">
-        <img src="assets/Cinematic/Asset 10.webp" alt="Battery Storage" loading="lazy" style="width: 100%; height: 100%; object-fit: cover;">
+        <img src="/frontend/assets/Cinematic/Asset 10.webp" alt="Battery Storage" loading="lazy" style="width: 100%; height: 100%; object-fit: cover;">
         <div style="position: absolute; bottom: 0; width: 100%; padding: 30px; background: linear-gradient(0deg, rgba(6,15,31,0.9) 0%, transparent 100%); text-align: left;">
           <h3 style="font-size: 20px; font-weight: 700; margin-bottom: 8px;">Battery Backup</h3>
           <p style="font-size: 14px; color: var(--text-secondary); margin: 0;">Optional storage solutions for true independence.</p>
@@ -570,7 +575,7 @@
 
       <!-- Asset 11: Weather Resilience -->
       <div style="border-radius: 16px; overflow: hidden; position: relative; aspect-ratio: 4/5;">
-        <img src="assets/Cinematic/Asset 11.webp" alt="Weather Resilience" loading="lazy" style="width: 100%; height: 100%; object-fit: cover;">
+        <img src="/frontend/assets/Cinematic/Asset 11.webp" alt="Weather Resilience" loading="lazy" style="width: 100%; height: 100%; object-fit: cover;">
         <div style="position: absolute; bottom: 0; width: 100%; padding: 30px; background: linear-gradient(0deg, rgba(6,15,31,0.9) 0%, transparent 100%); text-align: left;">
           <h3 style="font-size: 20px; font-weight: 700; margin-bottom: 8px;">Weather Proof</h3>
           <p style="font-size: 14px; color: var(--text-secondary); margin: 0;">Engineered to withstand monsoons and high winds.</p>
@@ -579,7 +584,7 @@
 
       <!-- Asset 13: Evening Transition -->
       <div style="border-radius: 16px; overflow: hidden; position: relative; aspect-ratio: 4/5;">
-        <img src="assets/Cinematic/Asset 13.webp" alt="Evening Transition" loading="lazy" style="width: 100%; height: 100%; object-fit: cover;">
+        <img src="/frontend/assets/Cinematic/Asset 13.webp" alt="Evening Transition" loading="lazy" style="width: 100%; height: 100%; object-fit: cover;">
         <div style="position: absolute; bottom: 0; width: 100%; padding: 30px; background: linear-gradient(0deg, rgba(6,15,31,0.9) 0%, transparent 100%); text-align: left;">
           <h3 style="font-size: 20px; font-weight: 700; margin-bottom: 8px;">Grid Sync</h3>
           <p style="font-size: 14px; color: var(--text-secondary); margin: 0;">Seamless net-metering ensures you never lose power.</p>
@@ -597,7 +602,7 @@
     <div class="scene-transition-mask bottom"></div>
     <div class="layer-bg">
       <!-- Asset 15: Beautiful sunset / evening completion -->
-      <img src="assets/Cinematic/Asset 15.webp" alt="Your Solar Journey" loading="lazy">
+      <img src="/frontend/assets/Cinematic/Asset 15.webp" alt="Your Solar Journey" loading="lazy">
     </div>
     <div class="lighting-overlay lighting-warm" style="background: linear-gradient(0deg, rgba(6,15,31,0.95) 0%, rgba(6,15,31,0.4) 100%);"></div>
     
@@ -683,6 +688,34 @@
       <p>&copy; 2026 GET Solar Energy. All rights reserved.</p>
     </div>
   </footer>
+
+  <!-- Auth-aware navigation: toggles Login/Signup ↔ Dashboard/Logout based on session -->
+  <script>
+  function handleLandingLogout() {
+    if (typeof window.authLogout === 'function') { window.authLogout(); }
+    else {
+      localStorage.removeItem('token');
+      localStorage.removeItem('user');
+      window.location.replace('/frontend/login.html');
+    }
+  }
+  (function(){
+    try {
+      var t = localStorage.getItem('token');
+      var u = localStorage.getItem('user');
+      var authed = t && t !== 'null' && t !== 'undefined' && t.length > 8 && u;
+      if (authed) {
+        try { JSON.parse(u); } catch(e) { authed = false; }
+      }
+      if (authed) {
+        var guest = document.querySelectorAll('.btn-login, .btn-signup, .drawer-btn-login, .drawer-btn-signup');
+        for (var i = 0; i < guest.length; i++) { guest[i].style.display = 'none'; }
+        var authedEls = document.querySelectorAll('.btn-dashboard, .btn-logout, .drawer-btn-dashboard, .drawer-btn-logout');
+        for (var i = 0; i < authedEls.length; i++) { authedEls[i].style.removeProperty('display'); }
+      }
+    } catch(e) {}
+  })();
+  </script>
 
 </body>
 </html>

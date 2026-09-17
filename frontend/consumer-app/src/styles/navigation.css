@@ -401,6 +401,10 @@
   animation: gs-fade-in var(--duration-fast) both;
 }
 
+.drawer-overlay-closing {
+  animation: gs-fade-out var(--duration-fast) var(--ease-accelerate) both;
+}
+
 .drawer {
   position: fixed;
   top: 0;
@@ -415,4 +419,17 @@
   z-index: calc(var(--z-modal) + 1);
   overflow-y: auto;
   animation: gs-slide-left var(--duration-slow) var(--ease-decelerate) both;
+}
+
+.drawer-closing {
+  animation: gs-slide-left-exit var(--duration-slow) var(--ease-accelerate) both;
+}
+
+/* Drawer full-width on small screens */
+@media (max-width: 480px) {
+  .drawer {
+    width: 100vw;
+    max-width: 100vw;
+    border-radius: 0;
+  }
 }

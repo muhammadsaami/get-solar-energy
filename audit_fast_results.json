@@ -1,0 +1,619 @@
+{
+  "responsive": [
+    {
+      "viewport": "Mobile (375x812)",
+      "role": "customer",
+      "route": "/app/dashboard",
+      "has_overflow": true
+    },
+    {
+      "viewport": "Mobile (375x812)",
+      "role": "customer",
+      "route": "/app/account/profile",
+      "has_overflow": true
+    },
+    {
+      "viewport": "Mobile (375x812)",
+      "role": "customer",
+      "route": "/app/proposal",
+      "has_overflow": true
+    },
+    {
+      "viewport": "Mobile (375x812)",
+      "role": "customer",
+      "route": "/app/bill-analyzer",
+      "has_overflow": true
+    },
+    {
+      "viewport": "Mobile (375x812)",
+      "role": "customer",
+      "route": "/app/roof-analysis",
+      "has_overflow": true
+    },
+    {
+      "viewport": "Mobile (375x812)",
+      "role": "customer",
+      "route": "/app/roi-calculator",
+      "has_overflow": true
+    },
+    {
+      "viewport": "Mobile (375x812)",
+      "role": "customer",
+      "route": "/app/rewards",
+      "has_overflow": true
+    },
+    {
+      "viewport": "Mobile (375x812)",
+      "role": "customer",
+      "route": "/app/system-performance",
+      "has_overflow": true
+    },
+    {
+      "viewport": "Mobile (375x812)",
+      "role": "customer",
+      "route": "/app/amc",
+      "has_overflow": true
+    },
+    {
+      "viewport": "Mobile (375x812)",
+      "role": "customer",
+      "route": "/app/account/settings",
+      "has_overflow": true
+    },
+    {
+      "viewport": "Mobile (375x812)",
+      "role": "vendor",
+      "route": "/app/vendor/dashboard",
+      "has_overflow": true
+    },
+    {
+      "viewport": "Mobile (375x812)",
+      "role": "vendor",
+      "route": "/app/vendor/projects",
+      "has_overflow": true
+    },
+    {
+      "viewport": "Mobile (375x812)",
+      "role": "vendor",
+      "route": "/app/vendor/profile",
+      "has_overflow": true
+    },
+    {
+      "viewport": "Mobile (375x812)",
+      "role": "vendor",
+      "route": "/app/vendor/customers",
+      "has_overflow": true
+    },
+    {
+      "viewport": "Mobile (375x812)",
+      "role": "vendor",
+      "route": "/app/vendor/leads",
+      "has_overflow": true
+    },
+    {
+      "viewport": "Mobile (375x812)",
+      "role": "vendor",
+      "route": "/app/vendor/installations",
+      "has_overflow": true
+    },
+    {
+      "viewport": "Mobile (375x812)",
+      "role": "vendor",
+      "route": "/app/vendor/inventory",
+      "has_overflow": true
+    },
+    {
+      "viewport": "Mobile (375x812)",
+      "role": "vendor",
+      "route": "/app/vendor/amc",
+      "has_overflow": true
+    },
+    {
+      "viewport": "Mobile (375x812)",
+      "role": "vendor",
+      "route": "/app/vendor/settings",
+      "has_overflow": true
+    },
+    {
+      "viewport": "Mobile (375x812)",
+      "role": "technician",
+      "route": "/app/technician/dashboard",
+      "has_overflow": true
+    },
+    {
+      "viewport": "Mobile (375x812)",
+      "role": "technician",
+      "route": "/app/technician/profile",
+      "has_overflow": true
+    },
+    {
+      "viewport": "Mobile (375x812)",
+      "role": "technician",
+      "route": "/app/technician/ai-troubleshooting",
+      "has_overflow": true
+    },
+    {
+      "viewport": "Mobile (375x812)",
+      "role": "technician",
+      "route": "/app/technician/work-orders",
+      "has_overflow": true
+    },
+    {
+      "viewport": "Mobile (375x812)",
+      "role": "technician",
+      "route": "/app/technician/training",
+      "has_overflow": true
+    },
+    {
+      "viewport": "Mobile (375x812)",
+      "role": "technician",
+      "route": "/app/technician/certifications",
+      "has_overflow": true
+    },
+    {
+      "viewport": "Mobile (375x812)",
+      "role": "technician",
+      "route": "/app/technician/marketplace",
+      "has_overflow": true
+    },
+    {
+      "viewport": "Mobile (375x812)",
+      "role": "technician",
+      "route": "/app/technician/earnings",
+      "has_overflow": true
+    },
+    {
+      "viewport": "Mobile (375x812)",
+      "role": "admin",
+      "route": "/app/admin/dashboard",
+      "has_overflow": true
+    },
+    {
+      "viewport": "Mobile (375x812)",
+      "role": "admin",
+      "route": "/app/crm/leads",
+      "has_overflow": true
+    },
+    {
+      "viewport": "Mobile (375x812)",
+      "role": "admin",
+      "route": "/app/admin/bi",
+      "has_overflow": true
+    },
+    {
+      "viewport": "Mobile (375x812)",
+      "role": "admin",
+      "route": "/app/admin/monitoring",
+      "has_overflow": true
+    },
+    {
+      "viewport": "Mobile (375x812)",
+      "role": "admin",
+      "route": "/app/admin/mlops",
+      "has_overflow": true
+    },
+    {
+      "viewport": "Tablet (768x1024)",
+      "role": "customer",
+      "route": "/app/dashboard",
+      "has_overflow": false
+    },
+    {
+      "viewport": "Tablet (768x1024)",
+      "role": "customer",
+      "route": "/app/account/profile",
+      "has_overflow": false
+    },
+    {
+      "viewport": "Tablet (768x1024)",
+      "role": "customer",
+      "route": "/app/proposal",
+      "has_overflow": false
+    },
+    {
+      "viewport": "Tablet (768x1024)",
+      "role": "customer",
+      "route": "/app/bill-analyzer",
+      "has_overflow": false
+    },
+    {
+      "viewport": "Tablet (768x1024)",
+      "role": "customer",
+      "route": "/app/roof-analysis",
+      "has_overflow": false
+    },
+    {
+      "viewport": "Tablet (768x1024)",
+      "role": "customer",
+      "route": "/app/roi-calculator",
+      "has_overflow": false
+    },
+    {
+      "viewport": "Tablet (768x1024)",
+      "role": "customer",
+      "route": "/app/rewards",
+      "has_overflow": false
+    },
+    {
+      "viewport": "Tablet (768x1024)",
+      "role": "customer",
+      "route": "/app/system-performance",
+      "has_overflow": false
+    },
+    {
+      "viewport": "Tablet (768x1024)",
+      "role": "customer",
+      "route": "/app/amc",
+      "has_overflow": false
+    },
+    {
+      "viewport": "Tablet (768x1024)",
+      "role": "customer",
+      "route": "/app/account/settings",
+      "has_overflow": false
+    },
+    {
+      "viewport": "Tablet (768x1024)",
+      "role": "vendor",
+      "route": "/app/vendor/dashboard",
+      "has_overflow": false
+    },
+    {
+      "viewport": "Tablet (768x1024)",
+      "role": "vendor",
+      "route": "/app/vendor/projects",
+      "has_overflow": false
+    },
+    {
+      "viewport": "Tablet (768x1024)",
+      "role": "vendor",
+      "route": "/app/vendor/profile",
+      "has_overflow": false
+    },
+    {
+      "viewport": "Tablet (768x1024)",
+      "role": "vendor",
+      "route": "/app/vendor/customers",
+      "has_overflow": false
+    },
+    {
+      "viewport": "Tablet (768x1024)",
+      "role": "vendor",
+      "route": "/app/vendor/leads",
+      "has_overflow": false
+    },
+    {
+      "viewport": "Tablet (768x1024)",
+      "role": "vendor",
+      "route": "/app/vendor/installations",
+      "has_overflow": false
+    },
+    {
+      "viewport": "Tablet (768x1024)",
+      "role": "vendor",
+      "route": "/app/vendor/inventory",
+      "has_overflow": false
+    },
+    {
+      "viewport": "Tablet (768x1024)",
+      "role": "vendor",
+      "route": "/app/vendor/amc",
+      "has_overflow": false
+    },
+    {
+      "viewport": "Tablet (768x1024)",
+      "role": "vendor",
+      "route": "/app/vendor/settings",
+      "has_overflow": false
+    },
+    {
+      "viewport": "Tablet (768x1024)",
+      "role": "technician",
+      "route": "/app/technician/dashboard",
+      "has_overflow": false
+    },
+    {
+      "viewport": "Tablet (768x1024)",
+      "role": "technician",
+      "route": "/app/technician/profile",
+      "has_overflow": false
+    },
+    {
+      "viewport": "Tablet (768x1024)",
+      "role": "technician",
+      "route": "/app/technician/ai-troubleshooting",
+      "has_overflow": false
+    },
+    {
+      "viewport": "Tablet (768x1024)",
+      "role": "technician",
+      "route": "/app/technician/work-orders",
+      "has_overflow": false
+    },
+    {
+      "viewport": "Tablet (768x1024)",
+      "role": "technician",
+      "route": "/app/technician/training",
+      "has_overflow": false
+    },
+    {
+      "viewport": "Tablet (768x1024)",
+      "role": "technician",
+      "route": "/app/technician/certifications",
+      "has_overflow": false
+    },
+    {
+      "viewport": "Tablet (768x1024)",
+      "role": "technician",
+      "route": "/app/technician/marketplace",
+      "has_overflow": false
+    },
+    {
+      "viewport": "Tablet (768x1024)",
+      "role": "technician",
+      "route": "/app/technician/earnings",
+      "has_overflow": false
+    },
+    {
+      "viewport": "Tablet (768x1024)",
+      "role": "admin",
+      "route": "/app/admin/dashboard",
+      "has_overflow": false
+    },
+    {
+      "viewport": "Tablet (768x1024)",
+      "role": "admin",
+      "route": "/app/crm/leads",
+      "has_overflow": false
+    },
+    {
+      "viewport": "Tablet (768x1024)",
+      "role": "admin",
+      "route": "/app/admin/bi",
+      "has_overflow": false
+    },
+    {
+      "viewport": "Tablet (768x1024)",
+      "role": "admin",
+      "route": "/app/admin/monitoring",
+      "has_overflow": false
+    },
+    {
+      "viewport": "Tablet (768x1024)",
+      "role": "admin",
+      "route": "/app/admin/mlops",
+      "has_overflow": false
+    },
+    {
+      "viewport": "Desktop (1440x900)",
+      "role": "customer",
+      "route": "/app/dashboard",
+      "has_overflow": false
+    },
+    {
+      "viewport": "Desktop (1440x900)",
+      "role": "customer",
+      "route": "/app/account/profile",
+      "has_overflow": false
+    },
+    {
+      "viewport": "Desktop (1440x900)",
+      "role": "customer",
+      "route": "/app/proposal",
+      "has_overflow": false
+    },
+    {
+      "viewport": "Desktop (1440x900)",
+      "role": "customer",
+      "route": "/app/bill-analyzer",
+      "has_overflow": false
+    },
+    {
+      "viewport": "Desktop (1440x900)",
+      "role": "customer",
+      "route": "/app/roof-analysis",
+      "has_overflow": false
+    },
+    {
+      "viewport": "Desktop (1440x900)",
+      "role": "customer",
+      "route": "/app/roi-calculator",
+      "has_overflow": false
+    },
+    {
+      "viewport": "Desktop (1440x900)",
+      "role": "customer",
+      "route": "/app/rewards",
+      "has_overflow": false
+    },
+    {
+      "viewport": "Desktop (1440x900)",
+      "role": "customer",
+      "route": "/app/system-performance",
+      "has_overflow": false
+    },
+    {
+      "viewport": "Desktop (1440x900)",
+      "role": "customer",
+      "route": "/app/amc",
+      "has_overflow": false
+    },
+    {
+      "viewport": "Desktop (1440x900)",
+      "role": "customer",
+      "route": "/app/account/settings",
+      "has_overflow": false
+    },
+    {
+      "viewport": "Desktop (1440x900)",
+      "role": "vendor",
+      "route": "/app/vendor/dashboard",
+      "has_overflow": false
+    },
+    {
+      "viewport": "Desktop (1440x900)",
+      "role": "vendor",
+      "route": "/app/vendor/projects",
+      "has_overflow": false
+    },
+    {
+      "viewport": "Desktop (1440x900)",
+      "role": "vendor",
+      "route": "/app/vendor/profile",
+      "has_overflow": false
+    },
+    {
+      "viewport": "Desktop (1440x900)",
+      "role": "vendor",
+      "route": "/app/vendor/customers",
+      "has_overflow": false
+    },
+    {
+      "viewport": "Desktop (1440x900)",
+      "role": "vendor",
+      "route": "/app/vendor/leads",
+      "has_overflow": false
+    },
+    {
+      "viewport": "Desktop (1440x900)",
+      "role": "vendor",
+      "route": "/app/vendor/installations",
+      "has_overflow": false
+    },
+    {
+      "viewport": "Desktop (1440x900)",
+      "role": "vendor",
+      "route": "/app/vendor/inventory",
+      "has_overflow": false
+    },
+    {
+      "viewport": "Desktop (1440x900)",
+      "role": "vendor",
+      "route": "/app/vendor/amc",
+      "has_overflow": false
+    },
+    {
+      "viewport": "Desktop (1440x900)",
+      "role": "vendor",
+      "route": "/app/vendor/settings",
+      "has_overflow": false
+    },
+    {
+      "viewport": "Desktop (1440x900)",
+      "role": "technician",
+      "route": "/app/technician/dashboard",
+      "has_overflow": false
+    },
+    {
+      "viewport": "Desktop (1440x900)",
+      "role": "technician",
+      "route": "/app/technician/profile",
+      "has_overflow": false
+    },
+    {
+      "viewport": "Desktop (1440x900)",
+      "role": "technician",
+      "route": "/app/technician/ai-troubleshooting",
+      "has_overflow": false
+    },
+    {
+      "viewport": "Desktop (1440x900)",
+      "role": "technician",
+      "route": "/app/technician/work-orders",
+      "has_overflow": false
+    },
+    {
+      "viewport": "Desktop (1440x900)",
+      "role": "technician",
+      "route": "/app/technician/training",
+      "has_overflow": false
+    },
+    {
+      "viewport": "Desktop (1440x900)",
+      "role": "technician",
+      "route": "/app/technician/certifications",
+      "has_overflow": false
+    },
+    {
+      "viewport": "Desktop (1440x900)",
+      "role": "technician",
+      "route": "/app/technician/marketplace",
+      "has_overflow": false
+    },
+    {
+      "viewport": "Desktop (1440x900)",
+      "role": "technician",
+      "route": "/app/technician/earnings",
+      "has_overflow": false
+    },
+    {
+      "viewport": "Desktop (1440x900)",
+      "role": "admin",
+      "route": "/app/admin/dashboard",
+      "has_overflow": false
+    },
+    {
+      "viewport": "Desktop (1440x900)",
+      "role": "admin",
+      "route": "/app/crm/leads",
+      "has_overflow": false
+    },
+    {
+      "viewport": "Desktop (1440x900)",
+      "role": "admin",
+      "route": "/app/admin/bi",
+      "has_overflow": false
+    },
+    {
+      "viewport": "Desktop (1440x900)",
+      "role": "admin",
+      "route": "/app/admin/monitoring",
+      "has_overflow": false
+    },
+    {
+      "viewport": "Desktop (1440x900)",
+      "role": "admin",
+      "route": "/app/admin/mlops",
+      "has_overflow": false
+    }
+  ],
+  "role_isolation": [
+    {
+      "role": "customer",
+      "target": "/app/vendor/dashboard",
+      "blocked": false
+    },
+    {
+      "role": "customer",
+      "target": "/app/technician/dashboard",
+      "blocked": false
+    },
+    {
+      "role": "customer",
+      "target": "/app/admin/dashboard",
+      "blocked": false
+    },
+    {
+      "role": "vendor",
+      "target": "/app/technician/dashboard",
+      "blocked": false
+    },
+    {
+      "role": "vendor",
+      "target": "/app/admin/dashboard",
+      "blocked": false
+    },
+    {
+      "role": "technician",
+      "target": "/app/vendor/dashboard",
+      "blocked": false
+    },
+    {
+      "role": "technician",
+      "target": "/app/admin/dashboard",
+      "blocked": false
+    }
+  ],
+  "console_issues": [],
+  "network_issues": []
+}

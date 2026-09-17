@@ -52,3 +52,8 @@
 
 /* 4. Layout Templates */
 @import "./layout.css";
+
+/* 5. Module-specific styles (Phase 14.0+) */
+@import "./project-tracking.css";
+@import "./journey.css";
+@import "./planning.css";

@@ -165,12 +165,27 @@ export function PlanningProvider({ children }) {
       if (proposal) {
         setProposal(prev => ({ ...prev, status: 'Approved' }));
       }
-      // Synchronize journey progression: advance stage to ST-06 (Proposal Approved)
       updateStage('ST-06');
       return { success: true };
     } catch (err) {
       setError(err.message || "Failed to approve proposal.");
       return { success: false };
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const generateProposal = async (formData) => {
+    setLoading(true);
+    setError(null);
+    try {
+      const result = await proposalService.generateProposal(formData);
+      setProposal(result);
+      updateStage('ST-05');
+      return { success: true, data: result };
+    } catch (err) {
+      setError(err.message || "Failed to generate proposal.");
+      return { success: false, error: err.message };
     } finally {
       setLoading(false);
     }
@@ -188,7 +203,8 @@ export function PlanningProvider({ children }) {
     uploadBill,
     uploadRoofImage,
     deleteBill,
-    approveProposal
+    approveProposal,
+    generateProposal,
   };
 
   return (

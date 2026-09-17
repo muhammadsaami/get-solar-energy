@@ -11,3 +11,4 @@ bcrypt>=3.2,<5
 aiosmtplib
 email-validator
 jinja2
+openai
