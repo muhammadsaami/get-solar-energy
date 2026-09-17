@@ -6973,3 +6973,58 @@ div[style*="display: grid"] {
   border-color: rgba(var(--card-theme, 54, 211, 153), 0.35) !important;
   box-shadow: 0 16px 40px rgba(0, 0, 0, 0.45), 0 0 20px rgba(var(--card-theme, 54, 211, 153), 0.12) !important;
 }
+
+/* ==========================================================================
+   BILL ANALYZER DEMO — Scoped Styles
+   ========================================================================== */
+
+.demo-mode-banner {
+  animation: fadeIn 0.3s ease-out;
+  backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(12px);
+}
+
+.demo-pill-badge {
+  display: inline-flex;
+  align-items: center;
+  font-family: 'Outfit', sans-serif;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.2);
+}
+
+.demo-explainer-card {
+  backdrop-filter: blur(16px);
+  -webkit-backdrop-filter: blur(16px);
+  max-height: calc(100vh - 48px);
+  overflow-y: auto;
+  overscroll-behavior: contain;
+}
+
+.demo-explainer-trigger {
+  touch-action: manipulation;
+  user-select: none;
+}
+
+.demo-explainer-wrapper {
+  vertical-align: middle;
+}
+
+.demo-cta-link {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  background: rgba(23, 168, 229, 0.08);
+  border: 1px solid rgba(23, 168, 229, 0.25);
+  color: var(--accent-blue);
+  padding: 5px 12px;
+  border-radius: 6px;
+  font-size: 11px;
+  font-weight: 700;
+  cursor: pointer;
+  transition: all var(--transition-fast);
+}
+
+.demo-cta-link:hover {
+  background: rgba(23, 168, 229, 0.16);
+  border-color: var(--accent-blue);
+  color: #fff;
+}

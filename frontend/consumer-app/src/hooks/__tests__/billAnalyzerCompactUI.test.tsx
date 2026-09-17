@@ -137,10 +137,12 @@ describe('Bill Analyzer Compact UI & Above-The-Fold Layout', () => {
     expect(document.getElementById('billTabUnits')).toHaveTextContent('343 kWh')
     expect(document.getElementById('billTabSavings')).toHaveTextContent('₹330/mo')
 
-    // Compact verified status cards rendered
-    expect(screen.getByText('Bill Verified & Extracted')).toBeInTheDocument()
-    expect(screen.getByText(/2 \/ 3 uploads remaining today/i)).toBeInTheDocument()
-    expect(screen.getByRole('button', { name: /Upload Another Bill/i })).toBeInTheDocument()
+    // Bill Upload card retains original upload UI (no "Bill Verified & Extracted" banner)
+    expect(screen.queryByText('Bill Verified & Extracted')).not.toBeInTheDocument()
+    expect(screen.queryByRole('button', { name: /Upload Another Bill/i })).not.toBeInTheDocument()
+    expect(screen.getByText(/Drag & drop your electricity bill here/i)).toBeInTheDocument()
+    expect(screen.getByText(/2 \/ 3 left today/i)).toBeInTheDocument()
+    expect(document.getElementById('billFileInput')).toBeInTheDocument()
 
     // Solar report compact loaded status with dynamic figures
     expect(screen.getByText('Solar Report Loaded')).toBeInTheDocument()
@@ -219,7 +221,7 @@ describe('Bill Analyzer Compact UI & Above-The-Fold Layout', () => {
     render(<BillAnalyzer />)
 
     // Switch to manual details
-    const manualBtn = screen.getByRole('button', { name: /Manual Details/i })
+    const manualBtn = screen.getByRole('button', { name: /Manual Details|Enter Details Manually/i })
     fireEvent.click(manualBtn)
 
     // Manual bill verified summary shown

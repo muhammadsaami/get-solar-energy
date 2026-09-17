@@ -1,4 +1,4 @@
-import React, { useRef } from 'react'
+import React, { useRef, useState, useEffect, useCallback } from 'react'
 import {
   useBillAnalyzer,
   calculatePlantPerformance,
@@ -7,7 +7,31 @@ import {
   checkPeriodCompatibility,
 } from '../hooks/useBillAnalyzer'
 import type { BillAnalysisData, SolarReportData, UnifiedEnergyData, PlantPerformanceResult, SolarReportState, BillQuotas, ManualBillInput } from '../hooks/billAnalyzer.types'
+import type { ChartConfiguration } from 'chart.js'
+import {
+  Chart as ChartJS,
+  ArcElement,
+  Tooltip as ChartTooltip,
+  Legend,
+  CategoryScale,
+  LinearScale,
+  BarElement,
+  BarController,
+  DoughnutController,
+} from 'chart.js'
+import {
+  COST_BREAKDOWN_CHART_COLORS,
+  HISTORY_CHART_STYLES,
+  CHART_TOOLTIP_THEME,
+  DEFAULT_MONTHS,
+  MONTH_MULTIPLIERS,
+} from '../hooks/billAnalyzer.constants'
 import DashboardSprites from '../components/dashboard/DashboardSprites'
+import { DEMO_BILL_ANALYZER_DATA } from '../data/billAnalyzerDemoData'
+import DemoBanner from '../components/billAnalyzer/DemoBanner'
+import DemoMetricExplainer, { DemoExplainerProvider } from '../components/billAnalyzer/DemoMetricExplainer'
+
+ChartJS.register(ArcElement, ChartTooltip, Legend, CategoryScale, LinearScale, BarElement, BarController, DoughnutController)
 
 export { checkPeriodCompatibility, calculateSpecificYield, calculateAverageDailyGeneration }
 
@@ -68,6 +92,7 @@ function BillUploadCard({
   onFile,
   onRetry,
   onSwitchToManual,
+  onSeeExample,
 }: {
   state: 'idle' | 'uploading' | 'complete' | 'error'
   progress: { percent: number; status: string }
@@ -76,6 +101,7 @@ function BillUploadCard({
   onFile: (file: File) => void
   onRetry: () => void
   onSwitchToManual: () => void
+  onSeeExample?: () => void
 }) {
   const fileInputRef = useRef<HTMLInputElement>(null)
   const [dragOver, setDragOver] = React.useState(false)
@@ -113,95 +139,33 @@ function BillUploadCard({
         </span>
       </div>
 
-      {state === 'complete' ? (
-        <div
-          style={{
-            marginTop: '10px',
-            padding: '12px 14px',
-            borderRadius: '6px',
-            background: 'rgba(54, 211, 153, 0.05)',
-            border: '1px solid rgba(54, 211, 153, 0.25)',
-            display: 'flex',
-            alignItems: 'center',
-            justifyContent: 'space-between',
-            flexWrap: 'wrap',
-            gap: '8px',
-          }}
-        >
-          <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
-            <div
-              style={{
-                width: '26px',
-                height: '26px',
-                borderRadius: '50%',
-                background: 'rgba(54, 211, 153, 0.15)',
-                display: 'flex',
-                alignItems: 'center',
-                justifyContent: 'center',
-                flexShrink: 0,
-              }}
-            >
-              <svg style={{ width: '15px', height: '15px', stroke: 'var(--accent-green)', fill: 'none', strokeWidth: '2.5' }} viewBox="0 0 24 24">
-                <polyline points="20 6 9 17 4 12" />
-              </svg>
-            </div>
-            <div>
-              <span style={{ fontSize: '12px', fontWeight: '700', color: 'var(--accent-green)', display: 'block' }}>
-                Bill Verified & Extracted
-              </span>
-              <span style={{ fontSize: '10px', color: 'var(--text-muted)', display: 'block', marginTop: '1px' }}>
-                {uploadRemaining} / {uploadLimit} uploads remaining today
-              </span>
-            </div>
-          </div>
-          <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-            <button
-              type="button"
-              className="calc-btn"
-              onClick={() => fileInputRef.current?.click()}
-              style={{ padding: '5px 12px', fontSize: '11px', height: 'auto', width: 'auto' }}
-            >
-              Upload Another Bill
-            </button>
-            <button
-              type="button"
-              onClick={onSwitchToManual}
-              style={{
-                background: 'transparent',
-                border: 'none',
-                color: 'var(--accent-blue)',
-                fontSize: '11px',
-                cursor: 'pointer',
-                textDecoration: 'underline',
-              }}
-            >
-              Manual Details
-            </button>
-          </div>
-          <input
-            ref={fileInputRef}
-            type="file"
-            id="billFileInput"
-            accept=".pdf,.png,.jpg,.jpeg,.webp,application/pdf,image/*"
-            style={{ display: 'none' }}
-            onChange={handleChange}
-          />
-        </div>
-      ) : isExhausted ? (
+      {isExhausted ? (
         <div style={{ marginTop: '12px', padding: '16px', borderRadius: '8px', background: 'rgba(23,168,229,0.04)', border: '1px solid var(--border-color)', textAlign: 'center' }}>
           <p style={{ fontSize: '12px', fontWeight: '700', color: 'var(--text-navy)', margin: '0 0 6px' }}>Daily upload limit reached</p>
           <p style={{ fontSize: '11px', color: 'var(--text-muted)', margin: '0 0 12px', lineHeight: '1.5' }}>
             You've used all 3 bill-upload analyses for today.<br />
             You can use Manual Bill Analysis or try again tomorrow.
           </p>
-          <button
-            type="button"
-            className="calc-btn"
-            onClick={onSwitchToManual}
-            style={{ width: 'auto', padding: '6px 16px', fontSize: '11px', height: 'auto', margin: '0 auto' }}
-          >
-            Enter Details Manually
-          </button>
+          <div style={{ display: 'flex', justifyContent: 'center', gap: '8px', marginTop: '10px', flexWrap: 'wrap' }}>
+            <button
+              type="button"
+              className="calc-btn"
+              onClick={onSwitchToManual}
+              style={{ width: 'auto', padding: '6px 16px', fontSize: '11px', height: 'auto', margin: 0 }}
+            >
+              Enter Details Manually
+            </button>
+            {onSeeExample && (
+              <button
+                type="button"
+                id="btnSeeExampleAnalysisExhausted"
+                onClick={onSeeExample}
+                className="demo-cta-link"
+              >
+                See Example Analysis
+              </button>
+            )}
+          </div>
         </div>
       ) : (
         <>
@@ -284,14 +248,30 @@ function BillUploadCard({
             <span style={{ fontSize: '11px', color: 'var(--text-muted)' }}>
               {uploadRemaining} analyses remaining today
             </span>
-            <button
-              type="button"
-              className="calc-btn"
-              onClick={onSwitchToManual}
-              style={{ width: 'auto', padding: '5px 12px', fontSize: '11px', height: 'auto', background: 'transparent', color: 'var(--accent-blue)', border: '1px solid var(--accent-blue)' }}
-            >
-              Can't upload your bill? Enter Details Manually
-            </button>
+            <div style={{ display: 'flex', alignItems: 'center', gap: '8px', flexWrap: 'wrap' }}>
+              {onSeeExample && (
+                <button
+                  type="button"
+                  id="btnSeeExampleAnalysis"
+                  onClick={onSeeExample}
+                  className="demo-cta-link"
+                >
+                  <svg style={{ width: '13px', height: '13px', stroke: 'currentColor', fill: 'none', strokeWidth: '2' }} viewBox="0 0 24 24">
+                    <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z" />
+                    <circle cx="12" cy="12" r="3" />
+                  </svg>
+                  <span>See Example Analysis</span>
+                </button>
+              )}
+              <button
+                type="button"
+                className="calc-btn"
+                onClick={onSwitchToManual}
+                style={{ width: 'auto', padding: '5px 12px', fontSize: '11px', height: 'auto', background: 'transparent', color: 'var(--accent-blue)', border: '1px solid var(--accent-blue)' }}
+              >
+                Can't upload your bill? Enter Details Manually
+              </button>
+            </div>
           </div>
         </>
       )}
@@ -306,6 +286,7 @@ function ManualBillFormCard({
   quotas,
   onSubmit,
   onSwitchToUpload,
+  onSeeExample,
 }: {
   state: 'idle' | 'uploading' | 'complete' | 'error'
   progress: { percent: number; status: string }
@@ -313,6 +294,7 @@ function ManualBillFormCard({
   quotas: BillQuotas | null
   onSubmit: (data: ManualBillInput) => void
   onSwitchToUpload: () => void
+  onSeeExample?: () => void
 }) {
   const [billingPeriod, setBillingPeriod] = React.useState('')
   const [billAmount, setBillAmount] = React.useState('')
@@ -384,13 +366,25 @@ function ManualBillFormCard({
           </svg>
           <span className="kpi-title">Enter Bill Details Manually</span>
         </div>
-        <button
-          type="button"
-          onClick={onSwitchToUpload}
-          style={{ background: 'transparent', border: 'none', color: 'var(--accent-blue)', fontSize: '11px', cursor: 'pointer', textDecoration: 'underline' }}
-        >
-          ← Upload Bill Instead
-        </button>
+        <div style={{ display: 'flex', alignItems: 'center', gap: '8px', flexWrap: 'wrap' }}>
+          {onSeeExample && (
+            <button
+              type="button"
+              onClick={onSeeExample}
+              className="demo-cta-link"
+              style={{ padding: '3px 8px', fontSize: '10px' }}
+            >
+              See Example
+            </button>
+          )}
+          <button
+            type="button"
+            onClick={onSwitchToUpload}
+            style={{ background: 'transparent', border: 'none', color: 'var(--accent-blue)', fontSize: '11px', cursor: 'pointer', textDecoration: 'underline' }}
+          >
+            ← Upload Bill Instead
+          </button>
+        </div>
       </div>
 
       <div style={{ marginTop: '12px' }}>
@@ -663,14 +657,25 @@ function ManualBillFormCard({
               <span style={{ fontSize: '11px', color: 'var(--text-muted)' }}>
                 {manualRemaining} analyses remaining today
               </span>
-              <button
-                type="submit"
-                className="calc-btn"
-                disabled={isLoading}
-                style={{ width: 'auto', padding: '8px 24px', fontSize: '12px', height: 'auto' }}
-              >
-                {isLoading ? (progress.status || 'Analyzing...') : 'Analyze Bill'}
-              </button>
+              <div style={{ display: 'flex', alignItems: 'center', gap: '8px', flexWrap: 'wrap' }}>
+                {onSeeExample && (
+                  <button
+                    type="button"
+                    onClick={onSeeExample}
+                    className="demo-cta-link"
+                  >
+                    See Example Analysis
+                  </button>
+                )}
+                <button
+                  type="submit"
+                  className="calc-btn"
+                  disabled={isLoading}
+                  style={{ width: 'auto', padding: '8px 24px', fontSize: '12px', height: 'auto' }}
+                >
+                  {isLoading ? (progress.status || 'Analyzing...') : 'Analyze Bill'}
+                </button>
+              </div>
             </div>
           </form>
         )}
@@ -1054,10 +1059,12 @@ function AnalysisResults({
   analysis,
   solarReport,
   unifiedEnergy,
+  isDemo = false,
 }: {
   analysis: BillAnalysisData
   solarReport: SolarReportData | null
   unifiedEnergy: UnifiedEnergyData | null
+  isDemo?: boolean
 }) {
   const d = analysis
   const potentialScore = d.payback_years && d.payback_years > 0
@@ -1181,7 +1188,10 @@ function AnalysisResults({
           {/* Card 1: Grid Import */}
           <div className="card-base shadow-lift" style={{ '--card-theme': '23, 168, 229', padding: '12px 14px', background: 'rgba(23, 168, 229, 0.03)', border: '1px solid var(--border-color)' } as React.CSSProperties}>
             <div className="kpi-header-row" style={{ marginBottom: '4px' }}>
-              <span className="kpi-title" style={{ fontSize: '10px', textTransform: 'uppercase', letterSpacing: '0.5px' }}>Grid Import</span>
+              <div style={{ display: 'flex', alignItems: 'center', gap: '4px', flexWrap: 'wrap' }}>
+                <span className="kpi-title" style={{ fontSize: '10px', textTransform: 'uppercase', letterSpacing: '0.5px' }}>Grid Import</span>
+                {isDemo && <DemoMetricExplainer metricKey="gridImport" compact />}
+              </div>
               <span style={{ fontSize: '8px', color: 'var(--accent-blue)', background: 'rgba(23,168,229,0.1)', padding: '1px 5px', borderRadius: '3px', fontWeight: '700' }}>METER</span>
             </div>
             <div className="kpi-value-block">
@@ -1197,7 +1207,10 @@ function AnalysisResults({
           {/* Card 2: Grid Export */}
           <div className="card-base shadow-lift" style={{ '--card-theme': '255, 138, 29', padding: '12px 14px', background: 'rgba(255, 138, 29, 0.03)', border: '1px solid var(--border-color)' } as React.CSSProperties}>
             <div className="kpi-header-row" style={{ marginBottom: '4px' }}>
-              <span className="kpi-title" style={{ fontSize: '10px', textTransform: 'uppercase', letterSpacing: '0.5px' }}>Grid Export</span>
+              <div style={{ display: 'flex', alignItems: 'center', gap: '4px', flexWrap: 'wrap' }}>
+                <span className="kpi-title" style={{ fontSize: '10px', textTransform: 'uppercase', letterSpacing: '0.5px' }}>Grid Export</span>
+                {isDemo && <DemoMetricExplainer metricKey="gridExport" compact />}
+              </div>
               <span style={{ fontSize: '8px', color: 'var(--accent-orange)', background: 'rgba(255,138,29,0.1)', padding: '1px 5px', borderRadius: '3px', fontWeight: '700' }}>METER</span>
             </div>
             <div className="kpi-value-block">
@@ -1213,7 +1226,10 @@ function AnalysisResults({
           {/* Card 3: Solar Generation */}
           <div className="card-base shadow-lift" style={{ '--card-theme': '54, 211, 153', padding: '12px 14px', background: 'rgba(54, 211, 153, 0.03)', border: '1px solid var(--border-color)' } as React.CSSProperties}>
             <div className="kpi-header-row" style={{ marginBottom: '4px' }}>
-              <span className="kpi-title" style={{ fontSize: '10px', textTransform: 'uppercase', letterSpacing: '0.5px' }}>Solar Generation</span>
+              <div style={{ display: 'flex', alignItems: 'center', gap: '4px', flexWrap: 'wrap' }}>
+                <span className="kpi-title" style={{ fontSize: '10px', textTransform: 'uppercase', letterSpacing: '0.5px' }}>Solar Generation</span>
+                {isDemo && <DemoMetricExplainer metricKey="solarGeneration" compact />}
+              </div>
               <span style={{ fontSize: '8px', color: 'var(--accent-green)', background: 'rgba(54,211,153,0.1)', padding: '1px 5px', borderRadius: '3px', fontWeight: '700' }}>REPORT</span>
             </div>
             <div className="kpi-value-block">
@@ -1229,7 +1245,10 @@ function AnalysisResults({
           {/* Card 4: Solar Self-Consumption */}
           <div className="card-base shadow-lift" style={{ '--card-theme': '54, 211, 153', padding: '12px 14px', background: 'rgba(54, 211, 153, 0.03)', border: '1px solid var(--border-color)' } as React.CSSProperties}>
             <div className="kpi-header-row" style={{ marginBottom: '4px' }}>
-              <span className="kpi-title" style={{ fontSize: '10px', textTransform: 'uppercase', letterSpacing: '0.5px' }}>Solar Self-Consumption</span>
+              <div style={{ display: 'flex', alignItems: 'center', gap: '4px', flexWrap: 'wrap' }}>
+                <span className="kpi-title" style={{ fontSize: '10px', textTransform: 'uppercase', letterSpacing: '0.5px' }}>Solar Self-Consumption</span>
+                {isDemo && <DemoMetricExplainer metricKey="solarSelfConsumption" compact />}
+              </div>
               <span style={{ fontSize: '8px', color: 'var(--text-muted)', background: 'rgba(255,255,255,0.06)', padding: '1px 5px', borderRadius: '3px', fontWeight: '700' }}>DERIVED</span>
             </div>
             <div className="kpi-value-block">
@@ -1259,7 +1278,10 @@ function AnalysisResults({
         >
           <div style={{ background: 'rgba(255, 255, 255, 0.02)', border: '1px solid var(--border-color)', borderRadius: '6px', padding: '8px 12px', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
             <div>
-              <span style={{ fontSize: '9px', color: 'var(--text-muted)', display: 'block', textTransform: 'uppercase', fontWeight: '700' }}>Solar Self-Consumption Rate</span>
+              <div style={{ display: 'flex', alignItems: 'center', gap: '4px', flexWrap: 'wrap' }}>
+                <span style={{ fontSize: '9px', color: 'var(--text-muted)', textTransform: 'uppercase', fontWeight: '700' }}>Solar Self-Consumption Rate</span>
+                {isDemo && <DemoMetricExplainer metricKey="selfConsumptionRate" compact />}
+              </div>
               <span style={{ fontSize: '8px', color: 'var(--text-muted)' }}>Calculated (Direct Usage / Generation)</span>
             </div>
             <span id="resDerivedSelfConsumptionRate" style={{ fontSize: '13px', fontWeight: '800', color: selfConsumptionRate != null ? 'var(--accent-green)' : 'var(--text-muted)' }}>
@@ -1269,7 +1291,10 @@ function AnalysisResults({
 
           <div style={{ background: 'rgba(255, 255, 255, 0.02)', border: '1px solid var(--border-color)', borderRadius: '6px', padding: '8px 12px', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
             <div>
-              <span style={{ fontSize: '9px', color: 'var(--text-muted)', display: 'block', textTransform: 'uppercase', fontWeight: '700' }}>Solar Export Rate</span>
+              <div style={{ display: 'flex', alignItems: 'center', gap: '4px', flexWrap: 'wrap' }}>
+                <span style={{ fontSize: '9px', color: 'var(--text-muted)', textTransform: 'uppercase', fontWeight: '700' }}>Solar Export Rate</span>
+                {isDemo && <DemoMetricExplainer metricKey="exportRate" compact />}
+              </div>
               <span style={{ fontSize: '8px', color: 'var(--text-muted)' }}>Calculated (Grid Export / Generation)</span>
             </div>
             <span id="resDerivedExportRate" style={{ fontSize: '13px', fontWeight: '800', color: exportRate != null ? 'var(--accent-orange)' : 'var(--text-muted)' }}>
@@ -1279,7 +1304,10 @@ function AnalysisResults({
 
           <div style={{ background: 'rgba(255, 255, 255, 0.02)', border: '1px solid var(--border-color)', borderRadius: '6px', padding: '8px 12px', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
             <div>
-              <span style={{ fontSize: '9px', color: 'var(--text-muted)', display: 'block', textTransform: 'uppercase', fontWeight: '700' }}>Net Grid Energy</span>
+              <div style={{ display: 'flex', alignItems: 'center', gap: '4px', flexWrap: 'wrap' }}>
+                <span style={{ fontSize: '9px', color: 'var(--text-muted)', textTransform: 'uppercase', fontWeight: '700' }}>Net Grid Energy</span>
+                {isDemo && <DemoMetricExplainer metricKey="netGridEnergy" compact />}
+              </div>
               <span style={{ fontSize: '8px', color: 'var(--text-muted)' }}>Calculated (Grid Import − Grid Export)</span>
             </div>
             <span id="resDerivedNetGridEnergy" style={{ fontSize: '13px', fontWeight: '800', color: netGridEnergyKwh != null ? 'var(--accent-blue)' : 'var(--text-muted)' }}>
@@ -1302,25 +1330,37 @@ function AnalysisResults({
             </div>
             <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: '6px', textAlign: 'center' }}>
               <div style={{ background: 'rgba(255,255,255,0.02)', padding: '6px 4px', borderRadius: '4px' }}>
-                <span style={{ fontSize: '8px', color: 'var(--text-muted)', display: 'block', textTransform: 'uppercase', fontWeight: '700' }}>Opening Surplus</span>
+                <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '3px' }}>
+                  <span style={{ fontSize: '8px', color: 'var(--text-muted)', textTransform: 'uppercase', fontWeight: '700' }}>Opening Surplus</span>
+                  {isDemo && <DemoMetricExplainer metricKey="openingSurplus" compact />}
+                </div>
                 <span id="resNetMeterOpeningSurplus" style={{ fontSize: '12px', fontWeight: '800', color: 'var(--text-navy)', display: 'block', marginTop: '2px' }}>
                   {openingSolarSurplus != null ? `${formatKwhNumber(openingSolarSurplus)} kWh` : '—'}
                 </span>
               </div>
               <div style={{ background: 'rgba(255,255,255,0.02)', padding: '6px 4px', borderRadius: '4px' }}>
-                <span style={{ fontSize: '8px', color: 'var(--text-muted)', display: 'block', textTransform: 'uppercase', fontWeight: '700' }}>Net Grid Energy</span>
+                <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '3px' }}>
+                  <span style={{ fontSize: '8px', color: 'var(--text-muted)', textTransform: 'uppercase', fontWeight: '700' }}>Net Grid Energy</span>
+                  {isDemo && <DemoMetricExplainer metricKey="netGridEnergy" compact />}
+                </div>
                 <span id="resNetMeterNetGridEnergy" style={{ fontSize: '12px', fontWeight: '800', color: 'var(--accent-blue)', display: 'block', marginTop: '2px' }}>
                   {netGridEnergyKwh != null ? `${formatKwhNumber(netGridEnergyKwh)} kWh` : '—'}
                 </span>
               </div>
               <div style={{ background: 'rgba(255,255,255,0.02)', padding: '6px 4px', borderRadius: '4px' }}>
-                <span style={{ fontSize: '8px', color: 'var(--text-muted)', display: 'block', textTransform: 'uppercase', fontWeight: '700' }}>Closing Surplus</span>
+                <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '3px' }}>
+                  <span style={{ fontSize: '8px', color: 'var(--text-muted)', textTransform: 'uppercase', fontWeight: '700' }}>Closing Surplus</span>
+                  {isDemo && <DemoMetricExplainer metricKey="closingSurplus" compact />}
+                </div>
                 <span id="resNetMeterClosingSurplus" style={{ fontSize: '12px', fontWeight: '800', color: 'var(--accent-green)', display: 'block', marginTop: '2px' }}>
                   {closingSolarSurplus != null ? `${formatKwhNumber(closingSolarSurplus)} kWh` : '—'}
                 </span>
               </div>
               <div style={{ background: 'rgba(54,211,153,0.04)', padding: '6px 4px', borderRadius: '4px', border: '1px solid rgba(54,211,153,0.2)' }}>
-                <span style={{ fontSize: '8px', color: 'var(--accent-green)', display: 'block', textTransform: 'uppercase', fontWeight: '700' }}>Net Billed Units</span>
+                <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '3px' }}>
+                  <span style={{ fontSize: '8px', color: 'var(--accent-green)', textTransform: 'uppercase', fontWeight: '700' }}>Net Billed Units</span>
+                  {isDemo && <DemoMetricExplainer metricKey="netBilledUnits" compact />}
+                </div>
                 <span id="resNetMeterBilledUnits" style={{ fontSize: '12px', fontWeight: '900', color: 'var(--accent-green)', display: 'block', marginTop: '2px' }}>
                   {netBilledUnits != null ? `${formatKwhNumber(netBilledUnits)} kWh` : '—'}
                 </span>
@@ -1348,13 +1388,19 @@ function AnalysisResults({
             </div>
             <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '8px', textAlign: 'center' }}>
               <div style={{ background: 'rgba(255, 138, 29, 0.03)', border: '1px solid var(--border-color)', padding: '8px', borderRadius: '6px' }}>
-                <span style={{ fontSize: '8px', color: 'var(--text-muted)', display: 'block', textTransform: 'uppercase', fontWeight: '700' }}>Current Bill</span>
+                <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '3px' }}>
+                  <span style={{ fontSize: '8px', color: 'var(--text-muted)', textTransform: 'uppercase', fontWeight: '700' }}>Current Bill</span>
+                  {isDemo && <DemoMetricExplainer metricKey="billAmount" compact />}
+                </div>
                 <span id="resFinancialCurrentBill" style={{ fontSize: '14px', fontWeight: '900', color: 'var(--text-navy)', display: 'block', marginTop: '2px' }}>
                   {currentBillAmt > 0 ? formatRupees(currentBillAmt) : '—'}
                 </span>
               </div>
               <div style={{ background: 'rgba(54, 211, 153, 0.03)', border: '1px solid var(--border-color)', padding: '8px', borderRadius: '6px' }}>
-                <span style={{ fontSize: '8px', color: 'var(--text-muted)', display: 'block', textTransform: 'uppercase', fontWeight: '700' }}>Solar Savings Potential</span>
+                <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '3px' }}>
+                  <span style={{ fontSize: '8px', color: 'var(--text-muted)', textTransform: 'uppercase', fontWeight: '700' }}>Solar Savings Potential</span>
+                  {isDemo && <DemoMetricExplainer metricKey="potentialSavings" compact />}
+                </div>
                 <span id="resFinancialSavingsPotential" style={{ fontSize: '14px', fontWeight: '900', color: 'var(--accent-green)', display: 'block', marginTop: '2px' }}>
                   {savingsPotential > 0 ? formatCurrencyPerMonth(savingsPotential) : '—'}
                 </span>
@@ -1646,7 +1692,10 @@ function AnalysisResults({
             </div>
             <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: '8px' }}>
               <div className="card-base" style={{ '--card-theme': '54, 211, 153', padding: '10px', background: 'rgba(54,211,153,0.02)', border: '1px solid var(--border-color)' } as React.CSSProperties}>
-                <span style={{ fontSize: '8px', color: 'var(--text-muted)', display: 'block', textTransform: 'uppercase', fontWeight: '700' }}>Specific Yield</span>
+                <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: '4px' }}>
+                  <span style={{ fontSize: '8px', color: 'var(--text-muted)', textTransform: 'uppercase', fontWeight: '700' }}>Specific Yield</span>
+                  {isDemo && <DemoMetricExplainer metricKey="specificYield" compact />}
+                </div>
                 <span style={{ fontSize: '13px', fontWeight: '800', color: 'var(--accent-green)', display: 'block' }} id="resProdSpecificYield">
                   {specificYield != null ? `${specificYield.toFixed(1)} kWh/kWp` : '—'}
                 </span>
@@ -1658,13 +1707,19 @@ function AnalysisResults({
                 </span>
               </div>
               <div className="card-base" style={{ '--card-theme': '255, 138, 29', padding: '10px', background: 'rgba(255,138,29,0.02)', border: '1px solid var(--border-color)' } as React.CSSProperties}>
-                <span style={{ fontSize: '8px', color: 'var(--text-muted)', display: 'block', textTransform: 'uppercase', fontWeight: '700' }}>Expected Generation</span>
+                <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: '4px' }}>
+                  <span style={{ fontSize: '8px', color: 'var(--text-muted)', textTransform: 'uppercase', fontWeight: '700' }}>Expected Generation</span>
+                  {isDemo && <DemoMetricExplainer metricKey="expectedGeneration" compact />}
+                </div>
                 <span style={{ fontSize: '13px', fontWeight: '800', color: 'var(--text-navy)', display: 'block' }} id="resProdExpected">
                   {perfResult?.expected != null ? `${Math.round(perfResult.expected).toLocaleString('en-IN')} kWh` : '—'}
                 </span>
               </div>
               <div className="card-base" style={{ '--card-theme': '54, 211, 153', padding: '10px', background: 'rgba(54,211,153,0.02)', border: '1px solid var(--border-color)', display: 'flex', flexDirection: 'column', justifyContent: 'center' } as React.CSSProperties}>
-                <span style={{ fontSize: '8px', color: 'var(--text-muted)', display: 'block', textTransform: 'uppercase', fontWeight: '700' }}>Performance</span>
+                <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: '4px' }}>
+                  <span style={{ fontSize: '8px', color: 'var(--text-muted)', textTransform: 'uppercase', fontWeight: '700' }}>Performance</span>
+                  {isDemo && <DemoMetricExplainer metricKey="performancePct" compact />}
+                </div>
                 <div style={{ display: 'flex', alignItems: 'center', gap: '6px', marginTop: '2px' }}>
                   <span style={{ fontSize: '18px', fontWeight: '900', color: 'var(--accent-green)', display: 'block' }} id="resPlantPerformancePercent">
                     {perfResult?.pct != null ? `${perfResult.pct}%` : '—'}
@@ -1748,11 +1803,15 @@ function AnalysisResults({
         <div className="chart-insight-box" style={{ marginTop: '10px' }}>
           <div className="chart-insight-item">
             <span className="chart-insight-label">Top Cost Driver:</span>
-            <span className="chart-insight-val" id="resTopCostDriver">-</span>
+            <span className="chart-insight-val" id="resTopCostDriver">
+              {isDemo ? 'Energy Charges (~70%)' : '-'}
+            </span>
           </div>
           <div className="chart-insight-item">
             <span className="chart-insight-label">Potential Savings:</span>
-            <span className="chart-insight-val" id="resPotentialSavingsText">-</span>
+            <span className="chart-insight-val" id="resPotentialSavingsText">
+              {isDemo ? '₹2,835 / month (~82%)' : '-'}
+            </span>
           </div>
         </div>
       </CollapsibleSection>
@@ -1780,17 +1839,174 @@ export default function BillAnalyzer() {
     submitManualBill,
   } = useBillAnalyzer()
 
-  const [inputMode, setInputMode] = React.useState<'upload' | 'manual'>('upload')
-  const d = analysis
+  const [inputMode, setInputMode] = useState<'upload' | 'manual'>('upload')
+  const [isDemoMode, setIsDemoMode] = useState(false)
+
+  const demoCostChartRef = useRef<ChartJS | null>(null)
+  const demoHistoryChartRef = useRef<ChartJS | null>(null)
+
+  const destroyDemoCharts = useCallback(() => {
+    if (demoCostChartRef.current) {
+      demoCostChartRef.current.destroy()
+      demoCostChartRef.current = null
+    }
+    if (demoHistoryChartRef.current) {
+      demoHistoryChartRef.current.destroy()
+      demoHistoryChartRef.current = null
+    }
+  }, [])
+
+  const initDemoCharts = useCallback((billAmount: number, monthlySavings: number) => {
+    destroyDemoCharts()
+
+    // 1. Cost Breakdown Doughnut
+    const costCanvas = document.getElementById('billCostBreakdownChart') as HTMLCanvasElement | null
+    if (costCanvas) {
+      const existingCost = ChartJS.getChart(costCanvas)
+      if (existingCost) existingCost.destroy()
+
+      const ctx = costCanvas.getContext('2d')
+      if (ctx) {
+        const energyCost = Math.round(billAmount * 0.70)
+        const fixedCharges = Math.round(billAmount * 0.15)
+        const taxes = Math.max(0, billAmount - energyCost - fixedCharges)
+
+        const config: ChartConfiguration<'doughnut'> = {
+          type: 'doughnut',
+          data: {
+            labels: ['Energy Charges', 'Fixed Charges', 'Taxes & Cess'],
+            datasets: [{
+              data: [energyCost, fixedCharges, taxes],
+              backgroundColor: COST_BREAKDOWN_CHART_COLORS.backgroundColor,
+              borderWidth: 2,
+              borderColor: '#060f1f',
+            }],
+          },
+          options: {
+            responsive: true,
+            maintainAspectRatio: false,
+            cutout: '70%',
+            plugins: {
+              legend: {
+                position: 'bottom',
+                labels: { color: '#94a3b8', font: { size: 10, family: 'Outfit' }, boxWidth: 10, padding: 8 },
+              },
+              tooltip: CHART_TOOLTIP_THEME,
+            },
+          },
+        }
+        demoCostChartRef.current = new ChartJS(ctx, config)
+      }
+    }
+
+    // 2. History Bar Chart
+    const historyCanvas = document.getElementById('billHistoryChart') as HTMLCanvasElement | null
+    if (historyCanvas) {
+      const existingHistory = ChartJS.getChart(historyCanvas)
+      if (existingHistory) existingHistory.destroy()
+
+      const ctx = historyCanvas.getContext('2d')
+      if (ctx) {
+        const historical = MONTH_MULTIPLIERS.map(m => Math.round(billAmount * m))
+        const withSolar = historical.map(b => Math.round(b * 0.25))
+
+        const config: ChartConfiguration<'bar'> = {
+          type: 'bar',
+          data: {
+            labels: DEFAULT_MONTHS,
+            datasets: [
+              {
+                label: 'Grid Bill Without Solar (₹)',
+                data: historical,
+                backgroundColor: HISTORY_CHART_STYLES.billBackground,
+                borderColor: HISTORY_CHART_STYLES.billBorder,
+                borderWidth: 1,
+                borderRadius: 4,
+              },
+              {
+                label: 'Projected Bill With Solar (₹)',
+                data: withSolar,
+                backgroundColor: HISTORY_CHART_STYLES.savingsBackground,
+                borderColor: HISTORY_CHART_STYLES.savingsBorder,
+                borderWidth: 1,
+                borderRadius: 4,
+              },
+            ],
+          },
+          options: {
+            responsive: true,
+            maintainAspectRatio: false,
+            scales: {
+              x: {
+                grid: { color: 'rgba(255,255,255,0.05)' },
+                ticks: { color: '#94a3b8', font: { size: 10, family: 'Outfit' } },
+              },
+              y: {
+                grid: { color: 'rgba(255,255,255,0.05)' },
+                ticks: {
+                  color: '#94a3b8',
+                  font: { size: 10, family: 'Outfit' },
+                  callback: (val) => `₹${Number(val).toLocaleString('en-IN')}`,
+                },
+              },
+            },
+            plugins: {
+              legend: {
+                position: 'top',
+                labels: { color: '#94a3b8', font: { size: 10, family: 'Outfit' }, boxWidth: 10, padding: 8 },
+              },
+              tooltip: {
+                ...CHART_TOOLTIP_THEME,
+                callbacks: {
+                  label: (item) => ` ${item.dataset.label}: ₹${Number(item.raw).toLocaleString('en-IN')}`,
+                },
+              },
+            },
+          },
+        }
+        demoHistoryChartRef.current = new ChartJS(ctx, config)
+      }
+    }
+  }, [destroyDemoCharts])
+
+  useEffect(() => {
+    if (isDemoMode) {
+      const billAmount = DEMO_BILL_ANALYZER_DATA.analysis.bill_amount
+      const monthlySavings = DEMO_BILL_ANALYZER_DATA.analysis.monthly_savings_rs
+
+      const timer = setTimeout(() => {
+        initDemoCharts(billAmount, monthlySavings)
+      }, 100)
+
+      return () => {
+        clearTimeout(timer)
+        destroyDemoCharts()
+      }
+    } else {
+      destroyDemoCharts()
+    }
+  }, [isDemoMode, initDemoCharts, destroyDemoCharts])
+
+  const effectiveAnalysis = isDemoMode ? DEMO_BILL_ANALYZER_DATA.analysis : analysis
+  const effectiveSolarReport = isDemoMode ? DEMO_BILL_ANALYZER_DATA.solarReport : solarReport
+  const effectiveUnifiedEnergy = isDemoMode ? DEMO_BILL_ANALYZER_DATA.unifiedEnergy : unifiedEnergy
+
+  const d = effectiveAnalysis
 
   return (
     <>
       <DashboardSprites />
-      <div className="tab-content active" role="tabpanel" aria-label="bill analyzer" id="tab-bill-analyzer">
+      <DemoExplainerProvider>
+        <div className="tab-content active" role="tabpanel" aria-label="bill analyzer" id="tab-bill-analyzer">
         <div className="tab-header-block" style={{ marginBottom: '14px' }}>
           <h2 className="tab-heading">Bill Analyzer</h2>
           <p className="tab-subheading">Analyze your electricity bill & discover optimal solar capacity requirements.</p>
         </div>
+
+        {/* DEMO MODE BANNER */}
+        {isDemoMode && (
+          <DemoBanner onExitDemo={() => setIsDemoMode(false)} />
+        )}
 
         {/* PRIMARY CUSTOMER METRICS — IMMEDIATELY VISIBLE ABOVE THE FOLD */}
         <div
@@ -1804,19 +2020,27 @@ export default function BillAnalyzer() {
         >
           <div className="card-base shadow-lift" style={{ '--card-theme': '255, 138, 29', padding: '12px 14px' } as React.CSSProperties}>
             <div className="kpi-header-row" style={{ marginBottom: '6px' }}>
-              <span className="kpi-title">Current Monthly Bill</span>
+              <div style={{ display: 'flex', alignItems: 'center', gap: '6px', flexWrap: 'wrap' }}>
+                <span className="kpi-title">Current Monthly Bill</span>
+                {isDemoMode && <DemoMetricExplainer metricKey="billAmount" compact />}
+              </div>
               <svg className="kpi-title-icon orange"><use href="#icon-electricity-consumption" xlinkHref="#icon-electricity-consumption" /></svg>
             </div>
             <div className="kpi-value-block">
               <span className="kpi-value-text" id="billTabCurrentBill">{d && d.bill_amount > 0 ? formatRupees(d.bill_amount) : '—'}</span>
             </div>
             <p className="kpi-card-subdesc" style={{ fontSize: '10px', color: 'var(--text-muted)', marginTop: '4px' }}>
-              {d && d.bill_amount > 0 ? 'Extracted from latest billing cycle' : 'No bill data available'}
+              {isDemoMode
+                ? 'Sample baseline bill before solar installation'
+                : d && d.bill_amount > 0 ? 'Extracted from latest billing cycle' : 'No bill data available'}
             </p>
           </div>
           <div className="card-base shadow-lift" style={{ '--card-theme': '23, 168, 229', padding: '12px 14px' } as React.CSSProperties}>
             <div className="kpi-header-row" style={{ marginBottom: '6px' }}>
-              <span className="kpi-title">Monthly Units / Grid Import</span>
+              <div style={{ display: 'flex', alignItems: 'center', gap: '6px', flexWrap: 'wrap' }}>
+                <span className="kpi-title">Monthly Units / Grid Import</span>
+                {isDemoMode && <DemoMetricExplainer metricKey="gridImport" compact />}
+              </div>
               <svg className="kpi-title-icon blue"><use href="#icon-bill" xlinkHref="#icon-bill" /></svg>
             </div>
             <div className="kpi-value-block">
@@ -1828,19 +2052,26 @@ export default function BillAnalyzer() {
               </span>
             </div>
             <p className="kpi-card-subdesc" style={{ fontSize: '10px', color: 'var(--text-muted)', marginTop: '4px' }}>
-              {d && (d.importUnits != null || d.monthly_units > 0) ? `Grid import: ${formatKwhNumber(d.importUnits != null ? d.importUnits : d.monthly_units)} kWh` : 'No consumption data'}
+              {isDemoMode
+                ? 'Sample metered grid consumption: 380 kWh'
+                : d && (d.importUnits != null || d.monthly_units > 0) ? `Grid import: ${formatKwhNumber(d.importUnits != null ? d.importUnits : d.monthly_units)} kWh` : 'No consumption data'}
             </p>
           </div>
           <div className="card-base shadow-lift" style={{ '--card-theme': '54, 211, 153', padding: '12px 14px' } as React.CSSProperties}>
             <div className="kpi-header-row" style={{ marginBottom: '6px' }}>
-              <span className="kpi-title">Solar Savings Potential</span>
+              <div style={{ display: 'flex', alignItems: 'center', gap: '6px', flexWrap: 'wrap' }}>
+                <span className="kpi-title">Solar Savings Potential</span>
+                {isDemoMode && <DemoMetricExplainer metricKey="potentialSavings" compact />}
+              </div>
               <svg className="kpi-title-icon green"><use href="#icon-annual-savings" xlinkHref="#icon-annual-savings" /></svg>
             </div>
             <div className="kpi-value-block">
               <span className="kpi-value-text" id="billTabSavings">{d && d.monthly_savings_rs > 0 ? formatCurrencyPerMonth(d.monthly_savings_rs) : '—'}</span>
             </div>
             <p className="kpi-card-subdesc" style={{ fontSize: '10px', color: 'var(--text-muted)', marginTop: '4px' }}>
-              {d && d.monthly_savings_rs > 0
+              {isDemoMode
+                ? 'Sample projected monthly dividend: ₹2,835/mo (~82% reduction)'
+                : d && d.monthly_savings_rs > 0
                 ? (d.bill_amount > 0 ? `Equivalent to ~${Math.round((d.monthly_savings_rs / d.bill_amount) * 100)}% reduction` : 'Solar savings potential calculated')
                 : 'Savings calculated upon bill extraction'}
             </p>
@@ -1848,45 +2079,54 @@ export default function BillAnalyzer() {
         </div>
 
         {/* INPUT / DOCUMENT STATUS — COMPACT SIDE-BY-SIDE GRID */}
-        <div className="tab-grid-layout" style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '14px', marginBottom: '16px', alignItems: 'start' }}>
-          <div>
-            {inputMode === 'upload' ? (
-              <BillUploadCard
-                state={billUploadState}
-                progress={billProgress}
-                error={billError}
-                quotas={quotas}
-                onFile={handleBillFile}
-                onRetry={retryBillUpload}
-                onSwitchToManual={() => setInputMode('manual')}
+        {!isDemoMode && (
+          <div className="tab-grid-layout" style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '14px', marginBottom: '16px', alignItems: 'start' }}>
+            <div>
+              {inputMode === 'upload' ? (
+                <BillUploadCard
+                  state={billUploadState}
+                  progress={billProgress}
+                  error={billError}
+                  quotas={quotas}
+                  onFile={handleBillFile}
+                  onRetry={retryBillUpload}
+                  onSwitchToManual={() => setInputMode('manual')}
+                  onSeeExample={() => setIsDemoMode(true)}
+                />
+              ) : (
+                <ManualBillFormCard
+                  state={billUploadState}
+                  progress={billProgress}
+                  error={billError}
+                  quotas={quotas}
+                  onSubmit={submitManualBill}
+                  onSwitchToUpload={() => setInputMode('upload')}
+                  onSeeExample={() => setIsDemoMode(true)}
+                />
+              )}
+            </div>
+            <div>
+              <SolarReportUploadCard
+                state={solarUploadState}
+                progress={solarProgress}
+                error={solarError}
+                solarReport={solarReport}
+                onFile={handleSolarFile}
+                onRetry={retrySolarUpload}
+                onClear={clearSolarReport}
               />
-            ) : (
-              <ManualBillFormCard
-                state={billUploadState}
-                progress={billProgress}
-                error={billError}
-                quotas={quotas}
-                onSubmit={submitManualBill}
-                onSwitchToUpload={() => setInputMode('upload')}
-              />
-            )}
+            </div>
           </div>
-          <div>
-            <SolarReportUploadCard
-              state={solarUploadState}
-              progress={solarProgress}
-              error={solarError}
-              solarReport={solarReport}
-              onFile={handleSolarFile}
-              onRetry={retrySolarUpload}
-              onClear={clearSolarReport}
-            />
-          </div>
-        </div>
+        )}
 
         {/* DETAILED ANALYSIS */}
-        {analysis ? (
-          <AnalysisResults analysis={analysis} solarReport={solarReport} unifiedEnergy={unifiedEnergy} />
+        {effectiveAnalysis ? (
+          <AnalysisResults
+            analysis={effectiveAnalysis}
+            solarReport={effectiveSolarReport}
+            unifiedEnergy={effectiveUnifiedEnergy}
+            isDemo={isDemoMode}
+          />
         ) : billUploadState === 'uploading' ? (
           <div id="billAnalysisResults" style={{ display: 'block' }}>
             {[
@@ -1913,7 +2153,7 @@ export default function BillAnalyzer() {
         ) : null}
 
         {/* Historical Consumption & Potential Savings Trend */}
-        {analysis && analysis.bill_amount > 0 ? (
+        {effectiveAnalysis && effectiveAnalysis.bill_amount > 0 ? (
           <CollapsibleSection
             id="secBillHistoryCard"
             title="Historical Consumption & Potential Savings Trend"
@@ -1936,7 +2176,39 @@ export default function BillAnalyzer() {
             </div>
           </CollapsibleSection>
         ) : null}
+
+        {/* BOTTOM CALL-TO-ACTION IN DEMO MODE */}
+        {isDemoMode && (
+          <div
+            className="card-base"
+            style={{
+              marginTop: '16px',
+              padding: '16px 20px',
+              background: 'linear-gradient(135deg, rgba(23, 168, 229, 0.08) 0%, rgba(54, 211, 153, 0.05) 100%)',
+              border: '1px solid rgba(23, 168, 229, 0.3)',
+              textAlign: 'center',
+              borderRadius: '8px',
+            }}
+          >
+            <h3 style={{ fontSize: '14px', fontWeight: '800', color: 'var(--text-navy)', margin: '0 0 6px' }}>
+              Ready to analyze your own electricity bill?
+            </h3>
+            <p style={{ fontSize: '11px', color: 'var(--text-muted)', margin: '0 0 12px' }}>
+              Upload your PDF or image bill to receive your custom solar capacity recommendation, tariff breakdown, and 25-year financial projection.
+            </p>
+            <button
+              type="button"
+              id="btnAnalyzeMyBillBottom"
+              className="calc-btn"
+              onClick={() => setIsDemoMode(false)}
+              style={{ margin: '0 auto', width: 'auto', padding: '8px 24px', fontSize: '12px' }}
+            >
+              Analyze My Bill
+            </button>
+          </div>
+        )}
       </div>
+      </DemoExplainerProvider>
     </>
   )
 }
