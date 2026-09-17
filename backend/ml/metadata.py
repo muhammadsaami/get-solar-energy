@@ -83,21 +83,67 @@ def compute_model_metrics(file_path: Path, model_type: str) -> Optional[Dict[str
         return None
 
 
+def _compute_checksum(file_path: Path) -> Optional[str]:
+    if not file_path.exists() or not file_path.is_file():
+        return None
+    sha256_hash = hashlib.sha256()
+    with open(file_path, "rb") as f:
+        for chunk in iter(lambda: f.read(4096), b""):
+            sha256_hash.update(chunk)
+    return sha256_hash.hexdigest()
+
+
 def generate_metadata_file(entry: ModelEntry, metadata_dir: Path) -> Path:
     metadata_dir.mkdir(parents=True, exist_ok=True)
+    metadata_file = metadata_dir / f"{entry.name}.metadata.json"
 
-    metrics = compute_model_metrics(Path(entry.file_path), entry.model_type)
+    model_path = Path(entry.file_path) if entry.file_path else None
+    current_checksum = entry.checksum
+    if not current_checksum and model_path and model_path.exists():
+        current_checksum = _compute_checksum(model_path)
+
+    # Check if an existing metadata file exists and is valid
+    existing = None
+    if metadata_file.exists():
+        try:
+            with open(metadata_file, "r", encoding="utf-8") as f:
+                existing = json.load(f)
+        except Exception as e:
+            print(f"Warning: Corrupt or unreadable metadata file {metadata_file}: {e}")
+            existing = None
+
+    # Idempotency check: if existing metadata has the same checksum, preserve it
+    if existing and isinstance(existing, dict):
+        existing_checksum = existing.get("checksum")
+        if existing_checksum and current_checksum and existing_checksum == current_checksum:
+            # Model artifact is unchanged; do not rewrite the file unnecessarily
+            return metadata_file
+
+    # Generate genuinely new or updated metadata
+    metrics = compute_model_metrics(model_path, entry.model_type) if (model_path and model_path.exists()) else None
 
     metadata = ModelMetadata.from_entry(entry)
+    if current_checksum:
+        metadata.checksum = current_checksum
     metadata.metrics = metrics
 
     try:
-        mtime = Path(entry.file_path).stat().st_mtime
-        metadata.training_date = datetime.utcfromtimestamp(mtime).strftime("%Y-%m-%d")
+        if model_path and model_path.exists():
+            mtime = model_path.stat().st_mtime
+            try:
+                from datetime import timezone
+                metadata.training_date = datetime.fromtimestamp(mtime, timezone.utc).strftime("%Y-%m-%d")
+            except Exception:
+                metadata.training_date = datetime.utcfromtimestamp(mtime).strftime("%Y-%m-%d")
+        else:
+            metadata.training_date = None
     except Exception:
         metadata.training_date = None
 
-    metadata_file = metadata_dir / f"{entry.name}.metadata.json"
+    # Preserve original created_at if updating existing metadata
+    if existing and isinstance(existing, dict) and existing.get("created_at"):
+        metadata.created_at = existing["created_at"]
+
     with open(metadata_file, "w", encoding="utf-8") as f:
         json.dump(metadata.to_dict(), f, indent=2)
 
