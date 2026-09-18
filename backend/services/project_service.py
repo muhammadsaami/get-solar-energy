@@ -4,7 +4,7 @@ import logging
 from datetime import date, datetime
 from typing import Optional, List, Dict, Any
 from sqlalchemy.orm import Session
-from sqlalchemy import func as sql_func, Integer
+from sqlalchemy import func as sql_func, Integer, or_
 
 from project_models import ProjectModel
 from database_sqlite import BaseSqlite
@@ -200,9 +200,18 @@ def get_projects(
     db: Session,
     status: Optional[str] = None,
     priority: Optional[str] = None,
-    stage: Optional[str] = None
+    stage: Optional[str] = None,
+    customer_email: Optional[str] = None,
+    customer_phone: Optional[str] = None,
 ) -> List[ProjectModel]:
     query = db.query(ProjectModel)
+    if customer_email or customer_phone:
+        conds = []
+        if customer_email:
+            conds.append(sql_func.lower(ProjectModel.customer_email) == customer_email.strip().lower())
+        if customer_phone:
+            conds.append(ProjectModel.customer_phone == customer_phone.strip())
+        query = query.filter(or_(*conds))
     if status:
         query = query.filter(ProjectModel.status == status)
     if priority:
@@ -317,8 +326,20 @@ def delete_project(db: Session, project_id: str) -> bool:
     return True
 
 
-def get_project_metrics(db: Session) -> dict:
-    projects = db.query(ProjectModel).all()
+def get_project_metrics(
+    db: Session,
+    customer_email: Optional[str] = None,
+    customer_phone: Optional[str] = None
+) -> dict:
+    query = db.query(ProjectModel)
+    if customer_email or customer_phone:
+        conds = []
+        if customer_email:
+            conds.append(sql_func.lower(ProjectModel.customer_email) == customer_email.strip().lower())
+        if customer_phone:
+            conds.append(ProjectModel.customer_phone == customer_phone.strip())
+        query = query.filter(or_(*conds))
+    projects = query.all()
     total = len(projects)
     if total == 0:
         return {

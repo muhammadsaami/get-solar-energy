@@ -4,6 +4,7 @@ import { useAuth } from '../../contexts/AuthContext'
 import { ROUTES } from '../../config/routes'
 import { ROLES } from '../../config/roles'
 import { getDisplayRole } from '../../utils/role'
+import { resolveAvatarUrl } from '../../utils/avatar'
 
 interface AuthUser {
   name: string
@@ -15,7 +16,14 @@ export default function UserMenu() {
   const { user, logout } = useAuth() as unknown as { user: AuthUser | null; logout: () => void }
   const navigate = useNavigate()
   const [isOpen, setIsOpen] = useState(false)
+  const [imgError, setImgError] = useState(false)
   const ref = useRef<HTMLDivElement>(null)
+
+  const avatarUrl = resolveAvatarUrl(user?.avatar)
+
+  useEffect(() => {
+    setImgError(false)
+  }, [user?.avatar])
 
   const isTechnician = user?.role === ROLES.TECHNICIAN
 
@@ -55,8 +63,17 @@ export default function UserMenu() {
         onClick={() => setIsOpen(prev => !prev)}
         onKeyDown={(e) => { if (e.key === 'Enter' || e.key === ' ') setIsOpen(prev => !prev) }}
       >
-        <div className="profile-avatar profile-avatar-initials" aria-hidden="true">
-          {initials}
+        <div className="profile-avatar profile-avatar-initials" aria-hidden="true" style={{ overflow: 'hidden' }}>
+          {avatarUrl && !imgError ? (
+            <img
+              src={avatarUrl}
+              alt={userName}
+              onError={() => setImgError(true)}
+              style={{ width: '100%', height: '100%', objectFit: 'cover', borderRadius: '50%' }}
+            />
+          ) : (
+            initials
+          )}
         </div>
         <div className="profile-info">
           <span className="profile-name">{userName}</span>
@@ -70,8 +87,17 @@ export default function UserMenu() {
       {isOpen && (
         <div className="profile-dropdown" role="menu" aria-label="Profile menu">
           <div className="profile-dropdown-header">
-            <div className="profile-avatar profile-avatar-initials" style={{ width: 36, height: 36, fontSize: 13 }}>
-              {initials}
+            <div className="profile-avatar profile-avatar-initials" style={{ width: 36, height: 36, fontSize: 13, overflow: 'hidden' }}>
+              {avatarUrl && !imgError ? (
+                <img
+                  src={avatarUrl}
+                  alt={userName}
+                  onError={() => setImgError(true)}
+                  style={{ width: '100%', height: '100%', objectFit: 'cover', borderRadius: '50%' }}
+                />
+              ) : (
+                initials
+              )}
             </div>
             <div>
               <div style={{ fontSize: 12, fontWeight: 700, color: 'var(--text-navy)' }}>{userName}</div>

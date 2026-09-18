@@ -12,6 +12,7 @@ export interface CustomerProfileData {
   accountType: 'Residential' | 'Commercial' | 'Industrial'
   kycStatus: 'Verified' | 'Pending' | 'In Review'
   subsidyEligible: boolean
+  avatar?: string
 }
 
 export interface CustomerProfileUpdatePayload {
@@ -22,4 +23,5 @@ export interface CustomerProfileUpdatePayload {
   consumerNumber?: string
   discom?: string
   sanctionedLoadKw?: string
+  avatar?: string
 }

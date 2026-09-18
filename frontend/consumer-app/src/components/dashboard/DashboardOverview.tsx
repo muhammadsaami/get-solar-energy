@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useState } from 'react';
 import DashboardHeroCard from './DashboardHeroCard';
 import LiveSummaryPanel from './LiveSummaryPanel';
 import KPIGrid from './KPIGrid';
@@ -12,7 +12,8 @@ import { deriveDashboard } from '../../utils/dashboard';
 
 export default function DashboardOverview() {
   const data = useCustomerDashboard();
-  const derived = deriveDashboard(data);
+  const [isDemoMode, setIsDemoMode] = useState(false);
+  const derived = deriveDashboard(data, isDemoMode);
 
   return (
     <>
@@ -25,6 +26,8 @@ export default function DashboardOverview() {
               loading={data.loading}
               derived={derived}
               journey={data.journey}
+              onToggleDemo={() => setIsDemoMode(true)}
+              onExitDemo={() => setIsDemoMode(false)}
             />
           </DashboardHeroCard>
 

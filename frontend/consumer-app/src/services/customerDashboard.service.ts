@@ -1,28 +1,12 @@
 import api from './api/client'
+import { readUserStorage, type IdentifiableUser } from '../utils/userStorage'
 
-interface AnalysisSlots {
+export interface AnalysisSlots {
   bill: Record<string, unknown> | null
   solar: Record<string, unknown> | null
   roof: Record<string, unknown> | null
   roi: Record<string, unknown> | null
   roiChart: Array<Record<string, unknown>>
-}
-
-function safeParse<T>(raw: string | null): T | null {
-  if (!raw) return null
-  try {
-    return JSON.parse(raw) as T
-  } catch {
-    return null
-  }
-}
-
-function readLS<T>(key: string): T | null {
-  try {
-    return safeParse<T>(localStorage.getItem(key))
-  } catch {
-    return null
-  }
 }
 
 export const customerDashboardService = {
@@ -39,15 +23,31 @@ export const customerDashboardService = {
     }
   },
 
-  readLocalAnalysis(): AnalysisSlots {
-    const bill = readLS<Record<string, unknown>>('lastBillAnalysis')
-    const solar = readLS<Record<string, unknown>>('lastSolarProduction')
-    const roof = readLS<Record<string, unknown>>('lastRoofAnalysis')
-    const roiState = readLS<{
+  /**
+   * Reads analysis data strictly scoped to the authenticated customer user.
+   * If the user is unauthenticated or has not completed an analysis,
+   * all slots return null/empty, guaranteeing no cross-user data leakage.
+   */
+  readLocalAnalysis(user?: IdentifiableUser | null): AnalysisSlots {
+    if (!user || (!user.id && !user.email)) {
+      return {
+        bill: null,
+        solar: null,
+        roof: null,
+        roi: null,
+        roiChart: [],
+      }
+    }
+
+    const bill = readUserStorage<Record<string, unknown>>('lastBillAnalysis', user)
+    const solar = readUserStorage<Record<string, unknown>>('lastSolarProduction', user)
+    const roof = readUserStorage<Record<string, unknown>>('lastRoofAnalysis', user)
+    const roiState = readUserStorage<{
       result?: Record<string, unknown> | null
       formData?: Record<string, unknown>
       chartData?: Array<Record<string, unknown>>
-    }>('roiAnalysisState')
+    }>('roiAnalysisState', user)
+
     return {
       bill,
       solar,
@@ -57,11 +57,28 @@ export const customerDashboardService = {
     }
   },
 
+  /**
+   * Derives journey checklist completion strictly from verified customer analysis slots.
+   * Fresh customer without analysis starts at 0/5 (all false).
+   */
   deriveJourney(slots: AnalysisSlots) {
+    const hasValidBill = Boolean(
+      (slots.bill && (Number(slots.bill.bill_amount) > 0 || Number(slots.bill.monthly_units) > 0 || Number(slots.bill.recommended_kw) > 0)) ||
+      (slots.solar && (Number(slots.solar.productionKwh) > 0 || Number(slots.solar.system_size_kw) > 0))
+    )
+
+    const hasValidRoof = Boolean(
+      slots.roof && (Number(slots.roof.recommendedKw) > 0 || Number(slots.roof.system_size_kw) > 0 || Number(slots.roof.roof_area_sqft) > 0 || Number(slots.roof.area_sqft) > 0)
+    )
+
+    const hasValidRoi = Boolean(
+      slots.roi && (Number(slots.roi.annualSavings) > 0 || Number(slots.roi.annual_savings) > 0 || Number(slots.roi.paybackPeriod) > 0 || Number(slots.roi.netCost) > 0)
+    )
+
     return {
-      bill: Boolean(slots.bill || slots.solar),
-      roof: Boolean(slots.roof),
-      roi: Boolean(slots.roi),
+      bill: hasValidBill,
+      roof: hasValidRoof,
+      roi: hasValidRoi,
       proposal: false,
       installation: false,
     }

@@ -100,9 +100,13 @@ def _find_account(db: Session, email: str, password: str):
     """Returns (role, account_dict, technician_id_or_None) or None if no match/bad password."""
     technician = db.query(Technician).filter(Technician.email == email).first()
     if technician and verify_password(password, technician.password):
+        from performance_models import TechnicianProfilePhoto
+        photo = db.query(TechnicianProfilePhoto).filter(TechnicianProfilePhoto.technician_id == technician.id).first()
+        avatar = photo.file_url if photo else ""
         return "technician", {
             "id": technician.id, "name": technician.name, "email": technician.email,
             "city": technician.city, "skill_level": technician.skill_level,
+            "avatar": avatar,
         }, technician.id
 
     customers = _load_customers()
@@ -113,6 +117,7 @@ def _find_account(db: Session, email: str, password: str):
             "id": customer["id"], "name": customer["name"], "email": customer["email"],
             "city": customer.get("city"), "referral_code": customer.get("referral_code"),
             "role": user_role,
+            "avatar": customer.get("avatar", ""),
         }, None
 
     return None
@@ -123,13 +128,16 @@ def _get_account_by_email_role(db: Session, email: str, role: str):
         t = db.query(Technician).filter(Technician.email == email).first()
         if not t:
             return None
-        return {"id": t.id, "name": t.name, "email": t.email, "city": t.city, "skill_level": t.skill_level, "role": "technician"}
+        from performance_models import TechnicianProfilePhoto
+        photo = db.query(TechnicianProfilePhoto).filter(TechnicianProfilePhoto.technician_id == t.id).first()
+        avatar = photo.file_url if photo else ""
+        return {"id": t.id, "name": t.name, "email": t.email, "city": t.city, "skill_level": t.skill_level, "role": "technician", "avatar": avatar}
     customers = _load_customers()
     c = customers.get(email)
     if not c:
         return None
     user_role = c.get("role", "customer")
-    return {"id": c["id"], "name": c["name"], "email": c["email"], "city": c.get("city"), "role": user_role}
+    return {"id": c["id"], "name": c["name"], "email": c["email"], "city": c.get("city"), "role": user_role, "avatar": c.get("avatar", "")}
 
 
 # ---------------------------------------------------------------------------

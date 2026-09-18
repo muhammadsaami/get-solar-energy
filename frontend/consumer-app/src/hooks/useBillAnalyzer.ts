@@ -43,8 +43,18 @@ import {
 
 ChartJS.register(ArcElement, ChartTooltip, Legend, CategoryScale, LinearScale, BarElement, BarController, DoughnutController)
 
-const LS_KEY_BILL = 'lastBillAnalysis'
-const LS_KEY_SOLAR = 'lastSolarProduction'
+import { getUserStorageKey, type IdentifiableUser } from '../utils/userStorage'
+import { tokenManager } from '../services/auth/tokenManager'
+
+function getBillStorageKey(): string {
+  const user = tokenManager.getUser() as IdentifiableUser | null
+  return getUserStorageKey('lastBillAnalysis', user)
+}
+
+function getSolarStorageKey(): string {
+  const user = tokenManager.getUser() as IdentifiableUser | null
+  return getUserStorageKey('lastSolarProduction', user)
+}
 
 function readLS<T>(key: string): T | null {
   try {
@@ -765,7 +775,7 @@ export function useBillAnalyzer(): BillAnalyzerReturn {
       const solarFields = extractSolarFields(apiText, file.name)
       const enriched = enrichAnalysisData(apiData, file.name, false, solarFields)
       setAnalysis(enriched)
-      writeLS(LS_KEY_BILL, enriched)
+      writeLS(getBillStorageKey(), enriched)
       setBillUploadState('complete')
     }
 
@@ -774,7 +784,8 @@ export function useBillAnalyzer(): BillAnalyzerReturn {
       clearBillProgressInterval()
       setAnalysis(null)
       setUnifiedEnergy(null)
-      localStorage.removeItem(LS_KEY_BILL)
+      localStorage.removeItem(getBillStorageKey())
+      localStorage.removeItem('lastBillAnalysis')
       destroyCharts()
       setBillProgress({ percent: 0, status: '' })
       setBillError(err.message || 'Analysis failed. Check the file or try again.')
@@ -817,7 +828,8 @@ export function useBillAnalyzer(): BillAnalyzerReturn {
     clearBillProgressInterval()
     setAnalysis(null)
     setUnifiedEnergy(null)
-    localStorage.removeItem(LS_KEY_BILL)
+    localStorage.removeItem(getBillStorageKey())
+    localStorage.removeItem('lastBillAnalysis')
     destroyCharts()
     setBillError(null)
     setBillUploadState('idle')
@@ -834,7 +846,8 @@ export function useBillAnalyzer(): BillAnalyzerReturn {
     setBillProgress({ percent: 0, status: '' })
     setBillError(null)
     destroyCharts()
-    localStorage.removeItem(LS_KEY_BILL)
+    localStorage.removeItem(getBillStorageKey())
+    localStorage.removeItem('lastBillAnalysis')
   }, [clearBillProgressInterval, destroyCharts])
 
   const clearSolarReport = useCallback(() => {
@@ -842,7 +855,8 @@ export function useBillAnalyzer(): BillAnalyzerReturn {
     clearSolarProgressInterval()
     setSolarReport(null)
     setUnifiedEnergy(null)
-    localStorage.removeItem(LS_KEY_SOLAR)
+    localStorage.removeItem(getSolarStorageKey())
+    localStorage.removeItem('lastSolarProduction')
     setSolarError(null)
     setSolarUploadState('NOT_PROVIDED')
     setSolarProgress({ percent: 0, status: '' })
@@ -874,7 +888,8 @@ export function useBillAnalyzer(): BillAnalyzerReturn {
     clearBillProgressInterval()
     setAnalysis(null)
     setUnifiedEnergy(null)
-    localStorage.removeItem(LS_KEY_BILL)
+    localStorage.removeItem(getBillStorageKey())
+    localStorage.removeItem('lastBillAnalysis')
     destroyCharts()
     setBillError(null)
     setBillUploadState('uploading')
@@ -916,7 +931,7 @@ export function useBillAnalyzer(): BillAnalyzerReturn {
         const solarFields = extractSolarFields(apiText, 'manual_entry')
         const enriched = enrichAnalysisData(apiData, 'manual_entry', false, solarFields)
         setAnalysis(enriched)
-        writeLS(LS_KEY_BILL, enriched)
+        writeLS(getBillStorageKey(), enriched)
         setBillUploadState('complete')
       })
       .catch((err: unknown) => {
@@ -1039,7 +1054,7 @@ export function useBillAnalyzer(): BillAnalyzerReturn {
   }, [clearSolarProgressInterval, updateSolarProgress])
 
   useEffect(() => {
-    const savedBill = readLS<Record<string, unknown>>(LS_KEY_BILL)
+    const savedBill = readLS<Record<string, unknown>>(getBillStorageKey())
     if (savedBill) {
       if (validateBillAnalysisResponse(savedBill as Record<string, unknown>)) {
         const solarFields = extractSolarFields(JSON.stringify(savedBill), (savedBill.filename as string) ?? '')
@@ -1047,15 +1062,15 @@ export function useBillAnalyzer(): BillAnalyzerReturn {
         setAnalysis(enriched)
         setBillUploadState('complete')
       } else {
-        localStorage.removeItem(LS_KEY_BILL)
+        localStorage.removeItem(getBillStorageKey())
       }
     }
-    const savedSolar = readLS<SolarReportData>(LS_KEY_SOLAR)
+    const savedSolar = readLS<SolarReportData>(getSolarStorageKey())
     if (savedSolar && savedSolar.productionKwh != null) {
       setSolarReport(savedSolar)
       setSolarUploadState('EXTRACTED')
     } else {
-      localStorage.removeItem(LS_KEY_SOLAR)
+      localStorage.removeItem(getSolarStorageKey())
       setSolarUploadState('NOT_PROVIDED')
     }
   }, [])

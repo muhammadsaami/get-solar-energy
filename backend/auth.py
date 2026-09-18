@@ -1,7 +1,7 @@
-from fastapi import APIRouter, HTTPException, Request
+from fastapi import APIRouter, HTTPException, Request, Depends
 from pydantic import BaseModel
 from typing import Optional
-from security import hash_password, verify_password, create_access_token, create_reset_token, verify_reset_token, validate_password_strength
+from security import hash_password, verify_password, create_access_token, create_reset_token, verify_reset_token, validate_password_strength, verify_token
 import json
 import os
 import uuid
@@ -23,7 +23,7 @@ load_dotenv()
 logger = logging.getLogger(__name__)
 
 router = APIRouter()
-USERS_FILE = "users.json"
+USERS_FILE = os.path.join(os.path.dirname(os.path.abspath(__file__)), "users.json")
 
 # ==============================================================================
 # AUDIT LOGGING HELPER
@@ -60,7 +60,7 @@ class MemoryRateLimiter(RateLimiter):
         self.window_seconds = window_seconds
         self.max_requests = max_requests
         self.requests = defaultdict(list)
-        
+
     def is_allowed(self, email: str, client_ip: str) -> bool:
         now = time.time()
         self.requests[email] = [t for t in self.requests[email] if now - t < self.window_seconds]
@@ -73,14 +73,14 @@ class PostgresRateLimiter(RateLimiter):
     def __init__(self, window_seconds: int = 60, max_requests: int = 3):
         self.window_seconds = window_seconds
         self.max_requests = max_requests
-        
+
     def is_allowed(self, email: str, client_ip: str) -> bool:
         from database import SessionLocal, AuthRateLimit
         db = SessionLocal()
         try:
             now = datetime.utcnow()
             cutoff = now - timedelta(seconds=self.window_seconds)
-            
+
             record = db.query(AuthRateLimit).filter(AuthRateLimit.email == email).first()
             if record:
                 # Filter/clean requests out of the window
@@ -175,15 +175,15 @@ async def signup(data: SignupRequest, request: Request):
     try:
         # Validate password strength
         validated_password = validate_password_strength(data.password)
-        
+
         users = load_users()
         if data.email in users:
             log_auth_audit(data.email, "SIGNUP_FAILED", client_ip, user_agent, {"error": "Email already registered"})
             raise HTTPException(status_code=400, detail="Email already registered")
-        
+
         user_id = str(uuid.uuid4())
         referral_code = data.name[:3].upper() + user_id[:5].upper()
-        
+
         # Validate requested role - Admin self-registration is strictly forbidden
         requested_role = (data.role or "customer").lower().strip()
         if requested_role == "admin":
@@ -205,10 +205,10 @@ async def signup(data: SignupRequest, request: Request):
             "gst": data.gst or ""
         }
         save_users(users)
-        
+
         token = create_access_token({"sub": data.email, "role": requested_role})
         log_auth_audit(data.email, "SIGNUP_SUCCESS", client_ip, user_agent, {"role": requested_role})
-        
+
         return {
             "success": True,
             "message": "Account created successfully!",
@@ -217,9 +217,12 @@ async def signup(data: SignupRequest, request: Request):
                 "id": user_id,
                 "name": data.name,
                 "email": data.email,
+                "phone": data.phone,
+                "city": data.city,
                 "referral_code": referral_code,
                 "role": requested_role,
-                "gst": data.gst or ""
+                "gst": data.gst or "",
+                "avatar": ""
             }
         }
     except HTTPException as e:
@@ -242,12 +245,12 @@ async def login(data: LoginRequest, request: Request):
         if data.email not in users:
             log_auth_audit(data.email, "LOGIN_FAILED", client_ip, user_agent, {"error": "Email not found"})
             raise HTTPException(status_code=400, detail="Email not found")
-        
+
         user = users[data.email]
         if not verify_password(data.password, user["password"]):
             log_auth_audit(data.email, "LOGIN_FAILED", client_ip, user_agent, {"error": "Wrong password"})
             raise HTTPException(status_code=400, detail="Wrong password")
-        
+
         # Auto-migrate legacy users missing a role field
         if "role" not in user or not user["role"]:
             user["role"] = "customer"
@@ -274,7 +277,7 @@ async def login(data: LoginRequest, request: Request):
 
         token = create_access_token({"sub": data.email, "role": stored_role})
         log_auth_audit(data.email, "LOGIN_SUCCESS", client_ip, user_agent, {"role": stored_role})
-        
+
         return {
             "success": True,
             "message": "Login successful!",
@@ -283,10 +286,13 @@ async def login(data: LoginRequest, request: Request):
                 "id": user["id"],
                 "name": user["name"],
                 "email": user["email"],
+                "phone": user.get("phone", ""),
+                "city": user.get("city", ""),
                 "role": stored_role,
-                "city": user["city"],
-                "referral_code": user["referral_code"],
-                "points": user["points"]
+                "referral_code": user.get("referral_code", ""),
+                "points": user.get("points", 0),
+                "avatar": user.get("avatar", ""),
+                "address": user.get("address", "")
             }
         }
     except HTTPException as e:
@@ -307,33 +313,33 @@ async def forgot_password(data: ForgotPasswordRequest, request: Request):
             logger.warning("Rate limit exceeded for forgot password.")
             log_auth_audit(data.email, "RATE_LIMIT_EXCEEDED", client_ip, user_agent)
             raise HTTPException(status_code=429, detail="Too many password reset requests. Please try again later.")
-            
+
         users = load_users()
         success_message = "If an account exists for this email address, a password reset link has been sent."
-        
+
         # User existence masking: always return success message
         if data.email not in users:
             logger.info("Forgot-password: Email not found (masked response returned).")
             log_auth_audit(data.email, "PASSWORD_RESET_REQUESTED_NONEXISTENT", client_ip, user_agent)
             return {"success": True, "message": success_message}
-            
+
         user = users[data.email]
         customer_name = user.get("name", "Solar Explorer")
-        
+
         # Generate JWT reset token
         token = create_reset_token(data.email)
         token_hash = hashlib.sha256(token.encode('utf-8')).hexdigest()
-        
+
         # Save reset token to PostgreSQL
         from database import SessionLocal, PasswordResetToken
         db = SessionLocal()
         try:
             # Revoke previous tokens
             db.query(PasswordResetToken).filter(
-                PasswordResetToken.email == data.email, 
+                PasswordResetToken.email == data.email,
                 PasswordResetToken.revoked == False
             ).update({"revoked": True})
-            
+
             now = datetime.utcnow()
             reset_token_record = PasswordResetToken(
                 email=data.email,
@@ -350,17 +356,17 @@ async def forgot_password(data: ForgotPasswordRequest, request: Request):
             raise HTTPException(status_code=500, detail="Database persistence error.")
         finally:
             db.close()
-        
+
         # Generate reset link
         frontend_url = os.getenv("FRONTEND_URL", "http://localhost:8080")
         reset_link = f"{frontend_url}/reset-password.html?token={token}"
-        
+
         # Build MIMEMultipart email
         message = MIMEMultipart("alternative")
         message["From"] = os.getenv("SMTP_FROM", "GET Solar Support <devgetsolar@gmail.com>")
         message["To"] = data.email
         message["Subject"] = "GET Solar - Password Reset Request"
-        
+
         # Text version fallback
         text_body = f"""Hello {customer_name},
 
@@ -377,7 +383,7 @@ Best regards,
 GET Solar Energy Support Team
 support@getsolar.in
 """
-        
+
         # HTML version with premium branding
         html_body = f"""
         <html>
@@ -405,20 +411,20 @@ support@getsolar.in
           </body>
         </html>
         """
-        
+
         message.attach(MIMEText(text_body, "plain"))
         message.attach(MIMEText(html_body, "html"))
-        
+
         smtp_host = os.getenv("SMTP_HOST", "smtp.gmail.com")
         smtp_port = int(os.getenv("SMTP_PORT", "465"))
         smtp_user = os.getenv("SMTP_USERNAME", "devgetsolar@gmail.com")
         smtp_pass = os.getenv("SMTP_PASSWORD")
-        
+
         # SMTP robust dispatch with connection timeout & retry
         max_retries = 3
         retry_delay = 1
         success_dispatch = False
-        
+
         for attempt in range(max_retries):
             try:
                 await aiosmtplib.send(
@@ -436,17 +442,17 @@ support@getsolar.in
                 logger.warning("SMTP dispatch attempt %d failed: %s", attempt + 1, str(smtp_err))
                 if attempt < max_retries - 1:
                     time.sleep(retry_delay)
-                    
+
         if not success_dispatch:
             logger.error("SMTP delivery failed completely after %d attempts.", max_retries)
             log_auth_audit(data.email, "PASSWORD_RESET_SMTP_FAILED", client_ip, user_agent)
             # Mask SMTP failures from users to prevent details leakage
             return {"success": True, "message": success_message}
-            
+
         logger.info("Forgot-password: Reset email dispatched successfully.")
         log_auth_audit(data.email, "PASSWORD_RESET_REQUEST", client_ip, user_agent)
         return {"success": True, "message": success_message}
-    
+
     except HTTPException as e:
         raise e
     except Exception as e:
@@ -461,43 +467,89 @@ async def reset_password(data: ResetPasswordRequest, request: Request):
     try:
         # Validate password strength
         validated_password = validate_password_strength(data.new_password)
-        
+
         # Calculate SHA-256 token hash
         token_hash = hashlib.sha256(data.token.encode('utf-8')).hexdigest()
-        
+
         # Validate token against PostgreSQL
         from database import SessionLocal, PasswordResetToken
         db = SessionLocal()
         token_record = db.query(PasswordResetToken).filter(PasswordResetToken.token_hash == token_hash).first()
-        
+
         if not token_record or token_record.used_at is not None or token_record.revoked or token_record.expires_at < datetime.utcnow():
             log_auth_audit("unknown", "PASSWORD_RESET_FAILED", client_ip, user_agent, {"error": "Invalid or expired token"})
             raise HTTPException(status_code=400, detail="Invalid or expired token.")
-            
+
         # Verify JWT signature and claims
         email = verify_reset_token(data.token)
-        
+
         users = load_users()
         if email not in users:
             log_auth_audit(email, "PASSWORD_RESET_FAILED", client_ip, user_agent, {"error": "Subject email not found in user database"})
             raise HTTPException(status_code=400, detail="Invalid token subject.")
-            
+
         # Hash and save new password
         users[email]["password"] = hash_password(validated_password)
         save_users(users)
-        
+
         # Mark token used
         token_record.used_at = datetime.utcnow()
         db.commit()
         db.close()
-        
+
         logger.info("Reset-password: Password reset completed successfully.")
         log_auth_audit(email, "PASSWORD_RESET_SUCCESS", client_ip, user_agent)
         return {"success": True, "message": "Password reset successfully!"}
-        
+
     except HTTPException as e:
         raise e
     except Exception as e:
         logger.error("Reset-password exception: %s", str(e))
         log_auth_audit("unknown", "PASSWORD_RESET_FAILED", client_ip, user_agent, {"error": str(e)})
         raise HTTPException(status_code=500, detail="An error occurred while resetting your password.")
+
+
+class UserProfileUpdateRequest(BaseModel):
+    name: Optional[str] = None
+    phone: Optional[str] = None
+    city: Optional[str] = None
+    address: Optional[str] = None
+    avatar: Optional[str] = None
+
+
+@router.put("/api/user/profile")
+def update_user_profile(
+    data: UserProfileUpdateRequest,
+    user_email: str = Depends(verify_token)
+):
+    users = load_users()
+    if user_email not in users:
+        raise HTTPException(status_code=404, detail="User not found.")
+    user = users[user_email]
+    if data.name is not None:
+        user["name"] = data.name
+    if data.phone is not None:
+        user["phone"] = data.phone
+    if data.city is not None:
+        user["city"] = data.city
+    if data.address is not None:
+        user["address"] = data.address
+    if data.avatar is not None:
+        user["avatar"] = data.avatar
+    save_users(users)
+    return {
+        "success": True,
+        "message": "Profile updated successfully.",
+        "user": {
+            "id": user.get("id"),
+            "name": user.get("name"),
+            "email": user_email,
+            "phone": user.get("phone", ""),
+            "city": user.get("city", ""),
+            "address": user.get("address", ""),
+            "avatar": user.get("avatar", ""),
+            "role": user.get("role", "customer"),
+            "referral_code": user.get("referral_code", ""),
+            "points": user.get("points", 0)
+        }
+    }

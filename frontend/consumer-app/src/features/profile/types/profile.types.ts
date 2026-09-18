@@ -6,6 +6,7 @@ export interface RawBackendTechnicianProfile {
   city: string
   skill_level: string
   kyc_status: string
+  avatar?: string
   created_at?: string
 }
 
@@ -36,6 +37,7 @@ export interface CanonicalTechnicianProfile {
   id: number
   name: string
   initials?: string
+  avatar?: string
   email: string
   phone: string
   city: string

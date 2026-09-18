@@ -40,7 +40,7 @@ export default function Topbar() {
       </div>
 
       <div className="header-right headerbar-toolbar">
-        <LocationSelector />
+        <LocationSelector user={user} />
 
         <NotificationMenu />
 

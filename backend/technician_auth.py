@@ -53,9 +53,10 @@ class TechnicianLoginRequest(BaseModel):
 
 
 class TechnicianProfileUpdateRequest(BaseModel):
-    name: str = None
-    phone: str = None
-    city: str = None
+    name: Optional[str] = None
+    phone: Optional[str] = None
+    city: Optional[str] = None
+    avatar: Optional[str] = None
 
 
 # ==============================================================================
@@ -249,7 +250,12 @@ def login_technician(req: TechnicianLoginRequest, db: Session = Depends(get_db))
 
 
 @router.get("/profile")
-def get_profile(current_technician: Technician = Depends(get_current_technician)):
+def get_profile(
+    current_technician: Technician = Depends(get_current_technician),
+    db: Session = Depends(get_db)
+):
+    from performance_models import TechnicianProfilePhoto
+    photo = db.query(TechnicianProfilePhoto).filter(TechnicianProfilePhoto.technician_id == current_technician.id).first()
     return {
         "success": True,
         "technician": {
@@ -260,6 +266,7 @@ def get_profile(current_technician: Technician = Depends(get_current_technician)
             "city": current_technician.city,
             "skill_level": current_technician.skill_level,
             "kyc_status": current_technician.kyc_status,
+            "avatar": photo.file_url if photo else None,
             "created_at": current_technician.created_at.isoformat() if current_technician.created_at else None
         }
     }
@@ -271,14 +278,28 @@ def update_profile(
     db: Session = Depends(get_db),
     current_technician: Technician = Depends(get_current_technician)
 ):
+    from performance_models import TechnicianProfilePhoto
     if data.name:
         current_technician.name = data.name
     if data.phone:
         current_technician.phone = data.phone
     if data.city:
         current_technician.city = data.city
+    if data.avatar is not None:
+        photo = db.query(TechnicianProfilePhoto).filter(TechnicianProfilePhoto.technician_id == current_technician.id).first()
+        if data.avatar:
+            if photo:
+                photo.file_url = data.avatar
+                photo.updated_at = datetime.utcnow()
+            else:
+                photo = TechnicianProfilePhoto(technician_id=current_technician.id, file_url=data.avatar)
+                db.add(photo)
+        else:
+            if photo:
+                db.delete(photo)
     db.commit()
     db.refresh(current_technician)
+    photo = db.query(TechnicianProfilePhoto).filter(TechnicianProfilePhoto.technician_id == current_technician.id).first()
     return {
         "success": True,
         "message": "Profile updated successfully.",
@@ -289,6 +310,7 @@ def update_profile(
             "phone": current_technician.phone,
             "city": current_technician.city,
             "skill_level": current_technician.skill_level,
-            "kyc_status": current_technician.kyc_status
+            "kyc_status": current_technician.kyc_status,
+            "avatar": photo.file_url if photo else None
         }
     }

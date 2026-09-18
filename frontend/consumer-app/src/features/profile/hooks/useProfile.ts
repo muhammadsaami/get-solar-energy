@@ -49,7 +49,7 @@ export function useProfile() {
   }, [])
 
   const handleUpdateProfile = useCallback(
-    async (updateFields: { name?: string; phone?: string; city?: string }) => {
+    async (updateFields: { name?: string; phone?: string; city?: string; avatar?: string }) => {
       setIsUpdating(true)
       try {
         const res = await profileApi.updateProfile(updateFields)

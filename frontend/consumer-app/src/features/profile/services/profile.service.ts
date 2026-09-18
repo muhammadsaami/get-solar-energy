@@ -58,16 +58,26 @@ export const profileService = {
         certifiedPassed: (perfData.skill_level || raw.skill_level) === 'Certified',
         totalCertificates: perfData.badges_earned ?? 0,
       },
+      avatar: raw.avatar || '',
       serviceRegions: TECH_SERVICE_REGIONS,
       bio: '',
     }
   },
 
-  async updateProfile(data: { name?: string; phone?: string; city?: string }): Promise<{ success: boolean; message?: string }> {
+  async updateProfile(data: { name?: string; phone?: string; city?: string; avatar?: string }): Promise<{ success: boolean; message?: string }> {
     const res = await api.put('/technician/profile', data)
     return {
       success: Boolean(res.data?.success),
       message: res.data?.message || 'Profile updated successfully.',
     }
+  },
+
+  async uploadAvatar(file: File): Promise<string> {
+    const form = new FormData()
+    form.append('file', file)
+    const res = await api.post<{ photo_url?: string; file_url?: string }>('/upload', form, {
+      headers: { 'Content-Type': 'multipart/form-data' },
+    })
+    return (res.data?.file_url || res.data?.photo_url || '') as string
   },
 }

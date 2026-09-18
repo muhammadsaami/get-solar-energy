@@ -14,8 +14,19 @@ from services.project_service import (
 )
 from schemas.project import ProjectCreateSchema, ProjectUpdateSchema, ProjectStageSchema
 
+from auth import load_users
+
 router = APIRouter(tags=["Project Tracking"])
 logger = logging.getLogger(__name__)
+
+
+def _get_customer_scope(user_email: str):
+    users = load_users()
+    user_info = users.get(user_email, {})
+    role = user_info.get("role", "customer").lower().strip()
+    if role == "customer":
+        return user_email, user_info.get("phone")
+    return None, None
 
 
 @router.get("/api/projects")
@@ -35,7 +46,11 @@ def list_projects(
         "page": page, "limit": limit, "search": search, "sort_by": sort_by,
     })
     try:
-        projects = get_projects(db, status=status, priority=priority, stage=stage)
+        cust_email, cust_phone = _get_customer_scope(user_email)
+        projects = get_projects(
+            db, status=status, priority=priority, stage=stage,
+            customer_email=cust_email, customer_phone=cust_phone
+        )
         data = [_to_frontend_dict(p) for p in projects]
         return ok(data=data, message=f"{len(data)} projects retrieved")
     except Exception:
@@ -50,7 +65,8 @@ def project_metrics(
 ):
     log_api_request(logger, "GET", "/api/projects/metrics")
     try:
-        metrics = get_project_metrics(db)
+        cust_email, cust_phone = _get_customer_scope(user_email)
+        metrics = get_project_metrics(db, customer_email=cust_email, customer_phone=cust_phone)
         return ok(data=metrics, message="Project metrics retrieved")
     except Exception:
         logger.error("project_metrics failed", exc_info=True)
@@ -68,6 +84,12 @@ def get_project_by_id(
         project = get_project(db, project_id)
         if not project:
             return not_found("Project", project_id)
+        cust_email, cust_phone = _get_customer_scope(user_email)
+        if cust_email:
+            p_email = (project.customer_email or "").strip().lower()
+            p_phone = (project.customer_phone or "").strip()
+            if p_email != cust_email.strip().lower() and (not cust_phone or p_phone != cust_phone.strip()):
+                return not_found("Project", project_id)
         return ok(data=_to_frontend_dict(project), message="Project retrieved")
     except Exception:
         logger.error("get_project_by_id failed", exc_info=True)

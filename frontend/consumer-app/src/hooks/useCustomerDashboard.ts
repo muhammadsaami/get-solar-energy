@@ -1,6 +1,9 @@
 import { useEffect, useState } from 'react'
 import { customerDashboardService } from '../services/customerDashboard.service'
 import { useNotificationStore } from '../stores/notificationStore'
+import { useAuth } from '../contexts/AuthContext'
+import { tokenManager } from '../services/auth/tokenManager'
+import type { IdentifiableUser } from '../utils/userStorage'
 
 export interface CustomerDashboardData {
   ready: boolean
@@ -42,11 +45,14 @@ const EMPTY: CustomerDashboardData = {
 export function useCustomerDashboard(refreshKey = 0): CustomerDashboardData {
   const [state, setState] = useState<CustomerDashboardData>(EMPTY)
   const addToast = useNotificationStore((s) => s.addToast)
+  const auth = useAuth() as unknown as { user?: IdentifiableUser | null } | null
+  const authUser = auth?.user || (tokenManager.getUser() as IdentifiableUser | null)
 
   useEffect(() => {
     let active = true
     async function load() {
-      const slots = customerDashboardService.readLocalAnalysis()
+      // Strictly scope local analysis to authenticated user
+      const slots = customerDashboardService.readLocalAnalysis(authUser)
       const journey = customerDashboardService.deriveJourney(slots)
       setState((prev) => ({ ...prev, loading: true, ready: false, error: null }))
       try {
@@ -76,7 +82,7 @@ export function useCustomerDashboard(refreshKey = 0): CustomerDashboardData {
     return () => {
       active = false
     }
-  }, [refreshKey, addToast])
+  }, [refreshKey, addToast, authUser?.id, authUser?.email])
 
   return state
 }

@@ -2,11 +2,16 @@ import api from '../../../services/api/client'
 import { tokenManager } from '../../../services/auth/tokenManager'
 import type { CustomerProfileData, CustomerProfileUpdatePayload } from '../types/customerProfile.types'
 
-const CUSTOMER_EXTRA_PROFILE_KEY = 'gse_customer_profile_extras'
+const CUSTOMER_EXTRA_PROFILE_PREFIX = 'gse_customer_profile_extras_'
 
-function loadStoredExtras(): Partial<CustomerProfileData> {
+function getUserKey(user?: Record<string, unknown> | null): string {
+  if (!user) return 'default'
+  return String(user.email || user.id || 'default').toLowerCase().replace(/[^a-z0-9_]/g, '_')
+}
+
+function loadStoredExtras(userKey: string): Partial<CustomerProfileData> {
   try {
-    const raw = localStorage.getItem(CUSTOMER_EXTRA_PROFILE_KEY)
+    const raw = localStorage.getItem(`${CUSTOMER_EXTRA_PROFILE_PREFIX}${userKey}`)
     if (!raw) return {}
     return JSON.parse(raw)
   } catch {
@@ -14,18 +19,19 @@ function loadStoredExtras(): Partial<CustomerProfileData> {
   }
 }
 
-function saveStoredExtras(extras: Partial<CustomerProfileData>): void {
+function saveStoredExtras(userKey: string, extras: Partial<CustomerProfileData>): void {
   try {
-    localStorage.setItem(CUSTOMER_EXTRA_PROFILE_KEY, JSON.stringify(extras))
+    localStorage.setItem(`${CUSTOMER_EXTRA_PROFILE_PREFIX}${userKey}`, JSON.stringify(extras))
   } catch {
     // Best-effort local storage
   }
 }
 
 export const customerProfileService = {
-  getProfile(authUser: Record<string, unknown> | null): CustomerProfileData {
+  getProfile(authUser?: Record<string, unknown> | null): CustomerProfileData {
     const user = authUser || (tokenManager.getUser() as Record<string, unknown>) || {}
-    const extras = loadStoredExtras()
+    const userKey = getUserKey(user)
+    const extras = loadStoredExtras(userKey)
 
     const rawCreatedAt = (user.created_at || user.createdAt) as string | undefined
     const createdDate = rawCreatedAt ? new Date(rawCreatedAt) : new Date()
@@ -34,16 +40,27 @@ export const customerProfileService = {
       year: 'numeric',
     })
 
+    const name = String(user.name || user.full_name || extras.name || '').trim() || 'Solar Consumer'
+    const email = String(user.email || extras.email || '').trim()
+    const phone = String(user.phone || extras.phone || '').trim()
+    const city = String(user.city || extras.city || '').trim()
+    const address = String(user.address || extras.address || '').trim()
+    const consumerNumber = extras.consumerNumber || (user.consumer_number as string) || (user.consumerNumber as string) || undefined
+    const discom = extras.discom || (user.discom as string) || undefined
+    const sanctionedLoadKw = extras.sanctionedLoadKw || (user.sanctioned_load as string) || (user.sanctionedLoadKw as string) || undefined
+    const avatar = String(extras.avatar || user.avatar || user.avatarUrl || user.profile_image || '').trim() || undefined
+
     return {
-      id: String(user.id || user.user_id || 'CUST-001'),
-      name: String(user.name || user.full_name || extras.name || 'Solar Consumer'),
-      email: String(user.email || extras.email || 'customer@getsolar.in'),
-      phone: String(user.phone || extras.phone || '9876543210'),
-      city: String(user.city || extras.city || 'Jaipur'),
-      address: String(user.address || extras.address || '42, Sunshine Enclave, MG Road'),
-      consumerNumber: String(extras.consumerNumber || user.consumer_number || 'JVVNL-987241-01'),
-      discom: String(extras.discom || user.discom || 'Jaipur Vidyut Vitran Nigam (JVVNL)'),
-      sanctionedLoadKw: String(extras.sanctionedLoadKw || user.sanctioned_load || '5 kW'),
+      id: user.id ? String(user.id) : undefined,
+      name,
+      email,
+      phone,
+      city,
+      address,
+      consumerNumber,
+      discom,
+      sanctionedLoadKw,
+      avatar,
       joinedDateFormatted,
       accountType: 'Residential',
       kycStatus: 'Verified',
@@ -51,20 +68,54 @@ export const customerProfileService = {
     }
   },
 
+  saveProfileExtras(authUser: Record<string, unknown> | null, extras: Partial<CustomerProfileData>): void {
+    const user = authUser || (tokenManager.getUser() as Record<string, unknown>) || {}
+    const userKey = getUserKey(user)
+    const existing = loadStoredExtras(userKey)
+    saveStoredExtras(userKey, { ...existing, ...extras })
+  },
+
+  async uploadAvatar(file: File): Promise<string> {
+    const formData = new FormData()
+    formData.append('file', file)
+    const res = await api.post('/upload', formData, {
+      headers: { 'Content-Type': 'multipart/form-data' },
+    })
+    if (res.data?.file_url) {
+      return res.data.file_url
+    }
+    throw new Error(res.data?.detail || 'Failed to upload image')
+  },
+
   async updateProfile(
     payload: CustomerProfileUpdatePayload,
     currentAuthUser: Record<string, unknown> | null,
     onSessionUpdate?: (updatedUser: Record<string, unknown>) => void
   ): Promise<{ success: boolean; message?: string }> {
-    const email = currentAuthUser?.email ? String(currentAuthUser.email) : ''
+    const user = currentAuthUser || (tokenManager.getUser() as Record<string, unknown>) || {}
+    const userKey = getUserKey(user)
+    const email = user?.email ? String(user.email) : ''
     let backendSaved = false
 
-    // Attempt real backend persistence via PUT /api/customers/{id}
+    // Attempt backend user profile update via PUT /api/user/profile
     try {
-      let customerId: number | null = typeof currentAuthUser?.id === 'number' ? currentAuthUser.id : null
+      await api.put('/user/profile', {
+        name: payload.name,
+        phone: payload.phone,
+        city: payload.city,
+        address: payload.address,
+        avatar: payload.avatar,
+      })
+      backendSaved = true
+    } catch {
+      // Best-effort backend call
+    }
+
+    // Also attempt CRM customer update via PUT /api/customers/{id} if linked
+    try {
+      let customerId: number | null = typeof user?.id === 'number' ? user.id : null
 
       if (!customerId && email) {
-        // Search customer by email
         const searchRes = await api.get('/customers/search', { params: { q: email } })
         if (Array.isArray(searchRes.data) && searchRes.data.length > 0) {
           const matched = searchRes.data.find(
@@ -86,16 +137,15 @@ export const customerProfileService = {
         if (payload.discom) {
           updateBody.discom = payload.discom
         }
-
         await api.put(`/customers/${customerId}`, updateBody)
         backendSaved = true
       }
     } catch {
-      // Backend CRM lead record might not exist yet for this auth account; keep fallback extras intact
+      // Backend CRM lead record might not exist yet for this auth account; keep extras intact
     }
 
-    // Persist non-backend and supplementary metadata in client extras
-    saveStoredExtras({
+    // Persist scoped extras locally per user
+    saveStoredExtras(userKey, {
       name: payload.name,
       phone: payload.phone,
       city: payload.city,
@@ -103,16 +153,18 @@ export const customerProfileService = {
       consumerNumber: payload.consumerNumber,
       discom: payload.discom,
       sanctionedLoadKw: payload.sanctionedLoadKw,
+      avatar: payload.avatar,
     })
 
     // Update session user identity if callback provided
-    if (currentAuthUser && onSessionUpdate) {
+    if (onSessionUpdate) {
       const updatedUser = {
-        ...currentAuthUser,
+        ...user,
         name: payload.name,
         phone: payload.phone,
         city: payload.city,
         address: payload.address,
+        avatar: payload.avatar,
       }
       onSessionUpdate(updatedUser)
     }

@@ -1,4 +1,6 @@
 import type { AMCRecommendationRequest } from '../types/amc.types'
+import { readUserStorage, type IdentifiableUser } from '../../utils/userStorage'
+import { tokenManager } from '../../services/auth/tokenManager'
 
 interface BillAnalysis {
   customer_name?: string
@@ -10,6 +12,7 @@ interface BillAnalysis {
 interface RoofAnalysis {
   customer_name?: string
   city?: string
+  system_size_kw?: number
 }
 
 interface InstallData {
@@ -25,63 +28,57 @@ interface UserProfile {
   city?: string
 }
 
-function loadFromLocalStorage<T>(key: string): T | null {
-  try {
-    const raw = localStorage.getItem(key)
-    return raw ? (JSON.parse(raw) as T) : null
-  } catch {
-    return null
-  }
-}
-
 export function buildAutofillRequest(): Partial<AMCRecommendationRequest> {
-  const billAnalysis = loadFromLocalStorage<BillAnalysis>('lastBillAnalysis')
-  const roofAnalysis = loadFromLocalStorage<RoofAnalysis>('lastRoofAnalysis')
-  const installData = loadFromLocalStorage<InstallData>('lastInstallationData')
+  const user = tokenManager.getUser() as IdentifiableUser | null
+  const billAnalysis = readUserStorage<BillAnalysis>('lastBillAnalysis', user)
+  const roofAnalysis = readUserStorage<RoofAnalysis>('lastRoofAnalysis', user)
+  const installData = readUserStorage<InstallData>('lastInstallationData', user)
 
   let profile: UserProfile | null = null
   try {
-    const raw = localStorage.getItem('user') || localStorage.getItem('authUser')
-    if (raw) profile = JSON.parse(raw) as UserProfile
+    const raw = tokenManager.getUser()
+    if (raw && typeof raw === 'object') profile = raw as UserProfile
   } catch {
     /* noop */
   }
 
   const request: Partial<AMCRecommendationRequest> = {}
 
-  // Priority chain: billAnalysis > roofAnalysis > installData > profile > fallback
-
   request.customer_name =
     billAnalysis?.customer_name ||
     roofAnalysis?.customer_name ||
     installData?.customer_name ||
     profile?.name ||
-    'Rajesh Kumar'
+    ''
 
   request.city =
     billAnalysis?.city ||
     roofAnalysis?.city ||
     installData?.city ||
     profile?.city ||
-    'Lucknow'
+    ''
 
-  request.system_size_kw =
+  const systemKw =
     billAnalysis?.system_size_kw ||
-    installData?.system_size_kw ||
-    5.5
+    roofAnalysis?.system_size_kw ||
+    installData?.system_size_kw
+
+  if (systemKw && systemKw > 0) {
+    request.system_size_kw = systemKw
+  }
 
   if (billAnalysis?.monthly_generation_units) {
     request.current_generation_units = billAnalysis.monthly_generation_units
     request.expected_generation_units = Math.round(billAnalysis.monthly_generation_units * 1.1)
-  } else {
-    request.current_generation_units = 580
-    request.expected_generation_units = 675
   }
 
-  request.installation_date = installData?.install_date || '2023-04-10'
+  if (installData?.install_date) {
+    request.installation_date = installData.install_date
+  }
+
   request.last_service_date = ''
   request.inverter_error_codes = 'None'
-  request.panel_cleaning_done = true
+  request.panel_cleaning_done = false
   request.physical_damage_observed = false
   request.damage_details = 'None'
 

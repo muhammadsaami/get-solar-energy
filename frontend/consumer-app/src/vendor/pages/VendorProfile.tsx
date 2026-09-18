@@ -3,8 +3,9 @@ import DashboardHeader from '../components/DashboardHeader'
 import StatusBadge from '../components/StatusBadge'
 import { useAuth } from '../../contexts/AuthContext'
 import { useVendorNotify } from '../hooks/useVendorNotify'
-
-const VENDOR_STORAGE_EXTRAS = 'gse_vendor_profile_extras'
+import api from '../../services/api/client'
+import { resolveAvatarUrl } from '../../utils/avatar'
+import AvatarCropModal from '../../components/avatar/AvatarCropModal'
 
 interface VendorProfileState {
   businessName: string
@@ -16,20 +17,26 @@ interface VendorProfileState {
   empaneledDiscoms: string
   capacityLimit: string
   complianceStatus: 'Verified' | 'Pending' | 'In Review'
+  avatar?: string
 }
 
-function loadVendorExtras(): Partial<VendorProfileState> {
+function getVendorStorageKey(userEmail?: string): string {
+  const safe = (userEmail || 'guest').toLowerCase().replace(/[^a-z0-9_-]/g, '_')
+  return `gse_vendor_profile_extras_${safe}`
+}
+
+function loadVendorExtras(userEmail?: string): Partial<VendorProfileState> {
   try {
-    const raw = localStorage.getItem(VENDOR_STORAGE_EXTRAS)
+    const raw = localStorage.getItem(getVendorStorageKey(userEmail))
     return raw ? JSON.parse(raw) : {}
   } catch {
     return {}
   }
 }
 
-function saveVendorExtras(extras: Partial<VendorProfileState>) {
+function saveVendorExtras(userEmail: string | undefined, extras: Partial<VendorProfileState>) {
   try {
-    localStorage.setItem(VENDOR_STORAGE_EXTRAS, JSON.stringify(extras))
+    localStorage.setItem(getVendorStorageKey(userEmail), JSON.stringify(extras))
   } catch {
     // Best-effort storage
   }
@@ -38,7 +45,7 @@ function saveVendorExtras(extras: Partial<VendorProfileState>) {
 export function VendorProfile() {
   const notify = useVendorNotify()
   const auth = useAuth() as unknown as {
-    user?: { name?: string; email?: string; phone?: string }
+    user?: { name?: string; email?: string; phone?: string; avatar?: string }
     token?: string | null
     setSession?: (token: string | null, user: Record<string, unknown>) => void
   }
@@ -46,10 +53,14 @@ export function VendorProfile() {
 
   const [isEditing, setIsEditing] = useState(false)
   const [saving, setSaving] = useState(false)
+  const [uploadingPhoto, setUploadingPhoto] = useState(false)
+  const [avatarError, setAvatarError] = useState(false)
+  const [cropFile, setCropFile] = useState<File | null>(null)
+  const [isCropOpen, setIsCropOpen] = useState(false)
   const [errors, setErrors] = useState<Record<string, string>>({})
 
   const [profile, setProfile] = useState<VendorProfileState>(() => {
-    const extras = loadVendorExtras()
+    const extras = loadVendorExtras(user?.email)
     return {
       businessName: String(extras.businessName || user?.name || 'Solar EPC Partner'),
       email: String(extras.email || user?.email || ''),
@@ -60,23 +71,101 @@ export function VendorProfile() {
       empaneledDiscoms: String(extras.empaneledDiscoms || 'State DISCOM Interconnection'),
       capacityLimit: String(extras.capacityLimit || 'Rooftop & Commercial Projects'),
       complianceStatus: 'Verified',
+      avatar: extras.avatar || user?.avatar || '',
     }
   })
 
   const [formData, setFormData] = useState<VendorProfileState>(profile)
+  const resolvedAvatar = resolveAvatarUrl(profile.avatar)
+
+  useEffect(() => {
+    setAvatarError(false)
+  }, [profile.avatar])
 
   useEffect(() => {
     if (user?.name || user?.email) {
       setProfile((prev) => {
-        const extras = loadVendorExtras()
+        const extras = loadVendorExtras(user?.email)
         return {
           ...prev,
           businessName: String(extras.businessName || user?.name || prev.businessName),
           email: String(extras.email || user?.email || prev.email),
+          avatar: extras.avatar || user?.avatar || prev.avatar,
         }
       })
     }
   }, [user])
+
+  const handleAvatarFileSelect = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0]
+    if (!file) return
+    if (!['image/jpeg', 'image/png', 'image/webp'].includes(file.type)) {
+      notify('Please choose a valid JPG, PNG, or WEBP image')
+      e.target.value = ''
+      return
+    }
+    if (file.size > 5 * 1024 * 1024) {
+      notify('Photo size must be less than 5MB')
+      e.target.value = ''
+      return
+    }
+    setCropFile(file)
+    setIsCropOpen(true)
+    e.target.value = ''
+  }
+
+  const handleCropSave = async (croppedFile: File) => {
+    try {
+      setUploadingPhoto(true)
+      const form = new FormData()
+      form.append('file', croppedFile)
+      const res = await api.post<{ photo_url?: string; file_url?: string }>('/upload', form, {
+        headers: { 'Content-Type': 'multipart/form-data' },
+      })
+      const photoUrl = res.data?.file_url || res.data?.photo_url
+      if (photoUrl) {
+        const nextExtras = { ...loadVendorExtras(user?.email), avatar: photoUrl }
+        saveVendorExtras(user?.email, nextExtras)
+        setProfile((prev) => ({ ...prev, avatar: photoUrl }))
+        setFormData((prev) => ({ ...prev, avatar: photoUrl }))
+        if (auth.setSession && auth.token && user) {
+          auth.setSession(auth.token, { ...user, avatar: photoUrl })
+        }
+        api.put('/user/profile', { avatar: photoUrl }).catch(() => {})
+        notify('Profile photo updated successfully')
+        setIsCropOpen(false)
+        setCropFile(null)
+      } else {
+        throw new Error('Upload did not return an avatar URL.')
+      }
+    } catch (err: unknown) {
+      const msg = err instanceof Error ? err.message : 'Failed to upload photo. Please try again.'
+      notify(msg)
+      throw err
+    } finally {
+      setUploadingPhoto(false)
+    }
+  }
+
+  const handleCropClose = () => {
+    if (!uploadingPhoto) {
+      setIsCropOpen(false)
+      setCropFile(null)
+    }
+  }
+
+  const handleAvatarRemove = () => {
+    const nextExtras = { ...loadVendorExtras(user?.email), avatar: '' }
+    saveVendorExtras(user?.email, nextExtras)
+    setProfile((prev) => ({ ...prev, avatar: '' }))
+    setFormData((prev) => ({ ...prev, avatar: '' }))
+    setAvatarError(false)
+    if (auth.setSession && auth.token && user) {
+      auth.setSession(auth.token, { ...user, avatar: '' })
+    }
+    api.put('/user/profile', { avatar: '' }).catch(() => {})
+    notify('Profile photo removed')
+  }
 
   const handleInputChange = (field: keyof VendorProfileState, value: string) => {
     setFormData((prev) => ({ ...prev, [field]: value }))
@@ -113,7 +202,7 @@ export function VendorProfile() {
 
     setSaving(true)
     setTimeout(() => {
-      saveVendorExtras(formData)
+      saveVendorExtras(user?.email, formData)
       setProfile(formData)
       if (auth.setSession && auth.token && user) {
         auth.setSession(auth.token, {
@@ -121,6 +210,7 @@ export function VendorProfile() {
           name: formData.businessName,
           email: formData.email,
           phone: formData.phone,
+          avatar: formData.avatar,
         })
       }
       setSaving(false)
@@ -193,24 +283,76 @@ export function VendorProfile() {
             flexWrap: 'wrap',
           }}
         >
-          <div
-            style={{
-              width: '64px',
-              height: '64px',
-              borderRadius: '50%',
-              backgroundColor: 'rgba(23, 168, 229, 0.15)',
-              border: '2px solid var(--vendor-primary-border)',
-              display: 'flex',
-              alignItems: 'center',
-              justifyContent: 'center',
-              fontSize: '22px',
-              fontWeight: 800,
-              color: 'var(--vendor-primary)',
-              boxShadow: '0 0 24px rgba(23, 168, 229, 0.35)',
-              flexShrink: 0,
-            }}
-          >
-            {initials}
+          <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '8px' }}>
+            <div
+              style={{
+                width: '68px',
+                height: '68px',
+                borderRadius: '50%',
+                backgroundColor: 'rgba(23, 168, 229, 0.15)',
+                border: '2px solid var(--vendor-primary-border)',
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'center',
+                fontSize: '22px',
+                fontWeight: 800,
+                color: 'var(--vendor-primary)',
+                boxShadow: '0 0 24px rgba(23, 168, 229, 0.35)',
+                flexShrink: 0,
+                overflow: 'hidden',
+              }}
+            >
+              {resolvedAvatar && !avatarError ? (
+                <img
+                  src={resolvedAvatar}
+                  alt={profile.businessName}
+                  onError={() => setAvatarError(true)}
+                  style={{ width: '100%', height: '100%', objectFit: 'cover' }}
+                />
+              ) : (
+                initials
+              )}
+            </div>
+            <div style={{ display: 'flex', gap: '6px' }}>
+              <label
+                htmlFor="vendorAvatarInput"
+                className="vendor-btn-secondary"
+                style={{
+                  fontSize: '11px',
+                  padding: '3px 8px',
+                  cursor: uploadingPhoto ? 'wait' : 'pointer',
+                  borderRadius: '6px',
+                  border: '1px solid rgba(255,255,255,0.15)',
+                  margin: 0,
+                }}
+              >
+                {uploadingPhoto ? 'Uploading…' : profile.avatar ? 'Change' : 'Add Photo'}
+              </label>
+              <input
+                id="vendorAvatarInput"
+                type="file"
+                accept="image/jpeg,image/png,image/webp"
+                style={{ display: 'none' }}
+                disabled={uploadingPhoto}
+                onChange={handleAvatarFileSelect}
+              />
+              {profile.avatar && (
+                <button
+                  type="button"
+                  onClick={handleAvatarRemove}
+                  className="vendor-btn-secondary"
+                  style={{
+                    fontSize: '11px',
+                    padding: '3px 8px',
+                    borderRadius: '6px',
+                    border: '1px solid rgba(239,68,68,0.3)',
+                    color: '#f87171',
+                  }}
+                >
+                  Remove
+                </button>
+              )}
+            </div>
           </div>
           <div style={{ flex: 1 }}>
             <div style={{ display: 'flex', alignItems: 'center', gap: '10px', flexWrap: 'wrap' }}>
@@ -500,6 +642,14 @@ export function VendorProfile() {
           </form>
         )}
       </div>
+
+      <AvatarCropModal
+        isOpen={isCropOpen}
+        imageFile={cropFile}
+        onClose={handleCropClose}
+        onSave={handleCropSave}
+        isSaving={uploadingPhoto}
+      />
     </div>
   )
 }

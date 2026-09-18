@@ -3,6 +3,7 @@ import { authEvents, AuthEventTypes, type AuthEventPayload, type AuthEventType }
 import { createIdleMonitor, type IdleMonitor } from './idleSession'
 import { proactiveRefreshScheduler, refreshManager } from './refreshManager'
 import { authService } from './auth.service'
+import { clearActiveUserStorage, clearLegacyGlobalAnalysisKeys, type IdentifiableUser } from '../../utils/userStorage'
 
 export interface BootstrapResult {
   hasSession: boolean
@@ -134,13 +135,19 @@ export const sessionManager = {
     tokenManager.setUser(user)
   },
 
-  /** Clear all persisted auth artifacts. */
+  /** Clear all persisted auth artifacts and purge analysis caches. */
   clearSession(): void {
+    const user = tokenManager.getUser() as IdentifiableUser | null
+    clearActiveUserStorage(user)
+    clearLegacyGlobalAnalysisKeys()
     tokenManager.clearTokens()
   },
 
   /** Local logout — clears storage and notifies this tab. */
   logout(reason = 'user'): void {
+    const user = tokenManager.getUser() as IdentifiableUser | null
+    clearActiveUserStorage(user)
+    clearLegacyGlobalAnalysisKeys()
     tokenManager.clearTokens()
     authEvents.emit(AuthEventTypes.LOGOUT, { reason })
     emitLocal(AuthEventTypes.LOGOUT, { reason })
@@ -149,6 +156,9 @@ export const sessionManager = {
 
   /** Session invalidated (expired/401) — clears storage and notifies this tab. */
   sessionExpired(reason = 'unauthorized'): void {
+    const user = tokenManager.getUser() as IdentifiableUser | null
+    clearActiveUserStorage(user)
+    clearLegacyGlobalAnalysisKeys()
     tokenManager.clearTokens()
     authEvents.emit(AuthEventTypes.SESSION_EXPIRED, { reason })
     emitLocal(AuthEventTypes.SESSION_EXPIRED, { reason })
@@ -157,6 +167,9 @@ export const sessionManager = {
 
   /** Admin-initiated remote logout (logout-all / device revoke). */
   forceLogout(reason = 'force'): void {
+    const user = tokenManager.getUser() as IdentifiableUser | null
+    clearActiveUserStorage(user)
+    clearLegacyGlobalAnalysisKeys()
     tokenManager.clearTokens()
     authEvents.emit(AuthEventTypes.FORCE_LOGOUT, { reason })
     emitLocal(AuthEventTypes.FORCE_LOGOUT, { reason })
@@ -165,6 +178,9 @@ export const sessionManager = {
 
   /** Password changed — terminate all other sessions. */
   passwordChanged(): void {
+    const user = tokenManager.getUser() as IdentifiableUser | null
+    clearActiveUserStorage(user)
+    clearLegacyGlobalAnalysisKeys()
     tokenManager.clearTokens()
     authEvents.emit(AuthEventTypes.PASSWORD_CHANGED, {})
     emitLocal(AuthEventTypes.PASSWORD_CHANGED, {})

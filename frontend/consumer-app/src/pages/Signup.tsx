@@ -69,6 +69,15 @@ export default function Signup() {
   const [email, setEmail] = useState('')
   const [password, setPassword] = useState('')
   const [confirm, setConfirm] = useState('')
+  const [city, setCity] = useState(() => {
+    return (
+      searchParams.get('city') ||
+      localStorage.getItem('solar_estimate_city') ||
+      localStorage.getItem('gse_selected_city') ||
+      localStorage.getItem('selected_city') ||
+      ''
+    )
+  })
   const [gst, setGst] = useState('')
   const [category, setCategory] = useState('Solar Installation & Mounting')
   const [certNum, setCertNum] = useState('')
@@ -251,12 +260,13 @@ export default function Signup() {
 
 
       const est = ((window as unknown as Record<string, { city?: string }>).__solarEstimate)
+      const signupCity = (city && city.trim()) || est?.city || searchParams.get('city') || localStorage.getItem('solar_estimate_city') || ''
       const result = await authService.signup({
         name: trimmedName,
         phone: trimmedMobile,
         email: trimmedEmail,
         password: pwd,
-        city: est?.city || 'Lucknow',
+        city: signupCity,
       })
 
       if (result.token) {
@@ -457,6 +467,29 @@ export default function Signup() {
                 </div>
                 {getFeedback('email')}
               </div>
+
+              {signupMode === 'customer' && (
+                <div className="form-group">
+                  <label className="form-label" htmlFor="signupCity">City (Optional)</label>
+                  <div className="input-wrapper">
+                    <svg className="input-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                      <path d="M12 2a8 8 0 0 0-8 8c0 5.25 8 12 8 12s8-6.75 8-12a8 8 0 0 0-8-8z" />
+                      <circle cx="12" cy="10" r="3" />
+                    </svg>
+                    <input
+                      className="form-input"
+                      type="text"
+                      id="signupCity"
+                      name="city"
+                      disabled={loading}
+                      placeholder="Enter your city (e.g. Agra, Lucknow, Delhi)"
+                      autoComplete="address-level2"
+                      value={city}
+                      onChange={(e) => setCity(e.target.value)}
+                    />
+                  </div>
+                </div>
+              )}
 
               {signupMode === 'vendor' && (
                 <div className="form-group">

@@ -16,3 +16,4 @@ export {
   formatNumber,
   formatUnits,
 } from './formatters'
+export { resolveAvatarUrl } from './avatar'

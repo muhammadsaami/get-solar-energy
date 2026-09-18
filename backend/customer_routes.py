@@ -5,10 +5,36 @@ from typing import List, Optional
 from datetime import datetime
 from pydantic import BaseModel
 
-from database_sqlite import get_sqlite_db
+from database_sqlite import get_sqlite_db, CustomerModel
+from sqlalchemy import func, or_
+from auth import load_users
 import customer_service
 
 router = APIRouter(dependencies=[Depends(verify_token)], tags=["Customer Data Platform"])
+
+def _get_customer_scope_ids(db: Session, user_email: str) -> Optional[List[int]]:
+    """
+    Returns a list of customer IDs scoped to the authenticated user.
+    If the user has role 'customer', returns all CustomerModel IDs matching their email (or phone).
+    If no customer record exists for this customer in the database, returns [] (isolated fresh state).
+    If the user has an operational role (admin, vendor, technician), returns None (unscoped aggregate data).
+    """
+    users = load_users()
+    user_info = users.get(user_email, {})
+    role = user_info.get("role", "customer").lower().strip()
+
+    if role in ("admin", "vendor", "technician"):
+        return None
+
+    phone = user_info.get("phone")
+    query = db.query(CustomerModel.id).filter(
+        or_(
+            func.lower(CustomerModel.email) == user_email.strip().lower(),
+            CustomerModel.phone == phone.strip() if phone else False
+        )
+    )
+    customer_ids = [c[0] for c in query.all()]
+    return customer_ids
 
 # ═════════════════════════════════════════════════════════════
 # PYDANTIC SCHEMAS
@@ -152,20 +178,24 @@ def delete_customer(
 
 @router.get("/api/dashboard/stats")
 def get_dashboard_stats(
+    user_email: str = Depends(verify_token),
     db: Session = Depends(get_sqlite_db)
 ):
-    """Calculate and return SQL-aggregated KPIs for the O&M dashboard."""
-    return customer_service.get_dashboard_stats(db)
+    """Calculate and return SQL-aggregated KPIs for the dashboard, scoped to customer when applicable."""
+    scoped_ids = _get_customer_scope_ids(db, user_email)
+    return customer_service.get_dashboard_stats(db, customer_ids=scoped_ids)
 
 
 @router.get("/api/dashboard/recent-bills", response_model=List[BillResponse])
 def get_recent_bills(
     skip: int = Query(0, ge=0),
     limit: int = Query(10, ge=1, le=50),
+    user_email: str = Depends(verify_token),
     db: Session = Depends(get_sqlite_db)
 ):
-    """Retrieve the most recently uploaded or processed billing records."""
-    return customer_service.get_recent_bills(db, skip=skip, limit=limit)
+    """Retrieve the most recently uploaded or processed billing records for authenticated customer."""
+    scoped_ids = _get_customer_scope_ids(db, user_email)
+    return customer_service.get_recent_bills(db, skip=skip, limit=limit, customer_ids=scoped_ids)
 
 
 @router.get("/api/dashboard/analytics")

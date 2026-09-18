@@ -5,11 +5,14 @@ import { customerProfileService } from '../services/customerProfile.service'
 import type { CustomerProfileData, CustomerProfileUpdatePayload } from '../types/customerProfile.types'
 
 export function useCustomerProfile() {
-  const { user, token, setSession } = useAuth() as unknown as {
-    user: Record<string, unknown> | null
-    token: string | null
-    setSession: (token: string | null, user: Record<string, unknown>) => void
-  }
+  const auth = (useAuth ? useAuth() : null) as unknown as {
+    user?: Record<string, unknown> | null
+    token?: string | null
+    setSession?: (token: string | null, user: Record<string, unknown>) => void
+  } | null
+  const user = auth?.user || null
+  const token = auth?.token || null
+  const setSession = auth?.setSession
 
   const addToast = useNotificationStore((s) => s.addToast)
 
@@ -128,10 +131,97 @@ export function useCustomerProfile() {
     setIsEditing(false)
   }
 
+  const [uploadingAvatar, setUploadingAvatar] = useState(false)
+
+  const handleAvatarChange = async (file: File): Promise<boolean> => {
+    const validTypes = ['image/jpeg', 'image/png', 'image/webp']
+    if (!validTypes.includes(file.type)) {
+      addToast({
+        type: 'error',
+        message: 'Only JPG, PNG, or WEBP images are supported.',
+      })
+      return false
+    }
+    if (file.size > 5 * 1024 * 1024) {
+      addToast({
+        type: 'error',
+        message: 'File size must be less than 5MB.',
+      })
+      return false
+    }
+
+    setUploadingAvatar(true)
+    try {
+      let fileUrl = ''
+      try {
+        fileUrl = await customerProfileService.uploadAvatar(file)
+      } catch {
+        fileUrl = await new Promise<string>((resolve) => {
+          const reader = new FileReader()
+          reader.onload = () => resolve(reader.result as string)
+          reader.readAsDataURL(file)
+        })
+      }
+
+      await customerProfileService.updateProfile(
+        { ...formData, avatar: fileUrl },
+        user,
+        (updatedUser) => {
+          if (token) setSession(token, updatedUser)
+        }
+      )
+
+      setProfile((prev) => (prev ? { ...prev, avatar: fileUrl } : null))
+      setFormData((prev) => ({ ...prev, avatar: fileUrl }))
+      addToast({
+        type: 'success',
+        message: 'Profile picture updated successfully.',
+      })
+      return true
+    } catch {
+      addToast({
+        type: 'error',
+        message: 'Failed to update profile picture.',
+      })
+      return false
+    } finally {
+      setUploadingAvatar(false)
+    }
+  }
+
+  const handleAvatarRemove = async (): Promise<boolean> => {
+    setUploadingAvatar(true)
+    try {
+      await customerProfileService.updateProfile(
+        { ...formData, avatar: '' },
+        user,
+        (updatedUser) => {
+          if (token) setSession(token, { ...updatedUser, avatar: '' })
+        }
+      )
+      setProfile((prev) => (prev ? { ...prev, avatar: undefined } : null))
+      setFormData((prev) => ({ ...prev, avatar: '' }))
+      addToast({
+        type: 'success',
+        message: 'Profile picture removed.',
+      })
+      return true
+    } catch {
+      addToast({
+        type: 'error',
+        message: 'Failed to remove profile picture.',
+      })
+      return false
+    } finally {
+      setUploadingAvatar(false)
+    }
+  }
+
   return {
     profile,
     loading,
     saving,
+    uploadingAvatar,
     isEditing,
     formData,
     errors,
@@ -139,6 +229,8 @@ export function useCustomerProfile() {
     handleInputChange,
     handleSave,
     handleCancel,
+    handleAvatarChange,
+    handleAvatarRemove,
     reload: loadProfile,
   }
 }

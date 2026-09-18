@@ -1,11 +1,14 @@
-import React from 'react'
+import React, { useRef, useState, useEffect } from 'react'
 import { useCustomerProfile } from '../hooks/useCustomerProfile'
+import { resolveAvatarUrl } from '../../../utils/avatar'
+import AvatarCropModal from '../../../components/avatar/AvatarCropModal'
 
 export default function CustomerProfilePage() {
   const {
     profile,
     loading,
     saving,
+    uploadingAvatar,
     isEditing,
     formData,
     errors,
@@ -13,7 +16,56 @@ export default function CustomerProfilePage() {
     handleInputChange,
     handleSave,
     handleCancel,
+    handleAvatarChange,
+    handleAvatarRemove,
   } = useCustomerProfile()
+
+  const [avatarError, setAvatarError] = useState(false)
+  const [cropFile, setCropFile] = useState<File | null>(null)
+  const [isCropOpen, setIsCropOpen] = useState(false)
+  const resolvedAvatar = resolveAvatarUrl(profile?.avatar)
+
+  useEffect(() => {
+    setAvatarError(false)
+  }, [profile?.avatar])
+
+  const fileInputRef = useRef<HTMLInputElement>(null)
+
+  const onFileSelected = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0]
+    if (file) {
+      if (!['image/jpeg', 'image/png', 'image/webp'].includes(file.type)) {
+        alert('Please choose a valid JPG, PNG, or WEBP image.')
+        e.target.value = ''
+        return
+      }
+      if (file.size > 5 * 1024 * 1024) {
+        alert('Photo size must be less than 5MB.')
+        e.target.value = ''
+        return
+      }
+      setCropFile(file)
+      setIsCropOpen(true)
+    }
+    e.target.value = ''
+  }
+
+  const handleCropSave = async (croppedFile: File) => {
+    const success = await handleAvatarChange(croppedFile)
+    if (success) {
+      setIsCropOpen(false)
+      setCropFile(null)
+    } else {
+      throw new Error('Failed to update profile picture. Please try again.')
+    }
+  }
+
+  const handleCropClose = () => {
+    if (!uploadingAvatar) {
+      setIsCropOpen(false)
+      setCropFile(null)
+    }
+  }
 
   if (loading) {
     return (
@@ -57,27 +109,63 @@ export default function CustomerProfilePage() {
         <div className="card-glass" style={{ padding: 'var(--space-5)' }}>
           <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: 'var(--space-4)' }}>
             <div style={{ display: 'flex', alignItems: 'center', gap: 'var(--space-4)' }}>
-              <div
-                style={{
-                  width: '64px',
-                  height: '64px',
-                  borderRadius: '50%',
-                  background: 'linear-gradient(135deg, var(--color-blue) 0%, rgba(23, 168, 229, 0.45) 100%)',
-                  color: '#FFFFFF',
-                  display: 'flex',
-                  alignItems: 'center',
-                  justifyContent: 'center',
-                  fontSize: '22px',
-                  fontWeight: 800,
-                  fontFamily: "'Outfit', sans-serif",
-                  border: '2px solid rgba(255, 255, 255, 0.2)',
-                  boxShadow: '0 8px 24px rgba(23, 168, 229, 0.3)',
-                  flexShrink: 0,
-                }}
-                aria-hidden="true"
-              >
-                {initials}
+              <div style={{ position: 'relative', display: 'flex', flexDirection: 'column', alignItems: 'center', flexShrink: 0 }}>
+                {resolvedAvatar && !avatarError ? (
+                  <img
+                    src={resolvedAvatar}
+                    alt={profile.name}
+                    onError={() => setAvatarError(true)}
+                    style={{
+                      width: '64px',
+                      height: '64px',
+                      borderRadius: '50%',
+                      objectFit: 'cover',
+                      border: '2px solid rgba(255, 255, 255, 0.2)',
+                      boxShadow: '0 8px 24px rgba(23, 168, 229, 0.3)',
+                    }}
+                  />
+                ) : (
+                  <div
+                    style={{
+                      width: '64px',
+                      height: '64px',
+                      borderRadius: '50%',
+                      background: 'linear-gradient(135deg, var(--color-blue) 0%, rgba(23, 168, 229, 0.45) 100%)',
+                      color: '#FFFFFF',
+                      display: 'flex',
+                      alignItems: 'center',
+                      justifyContent: 'center',
+                      fontSize: '22px',
+                      fontWeight: 800,
+                      fontFamily: "'Outfit', sans-serif",
+                      border: '2px solid rgba(255, 255, 255, 0.2)',
+                      boxShadow: '0 8px 24px rgba(23, 168, 229, 0.3)',
+                    }}
+                    aria-hidden="true"
+                  >
+                    {initials}
+                  </div>
+                )}
+                {uploadingAvatar && (
+                  <div
+                    style={{
+                      position: 'absolute',
+                      inset: 0,
+                      borderRadius: '50%',
+                      background: 'rgba(0, 0, 0, 0.65)',
+                      display: 'flex',
+                      alignItems: 'center',
+                      justifyContent: 'center',
+                      color: '#ffffff',
+                      fontSize: '11px',
+                      fontWeight: 700,
+                    }}
+                  >
+                    ...
+                  </div>
+                )}
               </div>
+
               <div>
                 <div style={{ display: 'flex', alignItems: 'center', gap: '10px', flexWrap: 'wrap' }}>
                   <h1 style={{ fontSize: '22px', fontWeight: 800, color: 'var(--text-primary)', margin: 0, fontFamily: "'Outfit', sans-serif" }}>
@@ -89,8 +177,49 @@ export default function CustomerProfilePage() {
                   </span>
                 </div>
                 <p style={{ fontSize: '12px', color: 'var(--text-secondary)', margin: '6px 0 0' }}>
-                  {profile.email} &middot; +91 {profile.phone} &middot; Member since {profile.joinedDateFormatted}
+                  {profile.email}{profile.phone ? ` · +91 ${profile.phone}` : ''} · Member since {profile.joinedDateFormatted}
                 </p>
+
+                {/* Profile Photo Controls */}
+                <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginTop: '8px' }}>
+                  <input
+                    ref={fileInputRef}
+                    type="file"
+                    id="customer-profile-photo-input"
+                    accept="image/jpeg,image/png,image/webp"
+                    style={{ display: 'none' }}
+                    aria-label="Upload profile picture"
+                    onChange={onFileSelected}
+                  />
+                  <button
+                    type="button"
+                    className="btn btn-ghost btn-xs"
+                    onClick={() => fileInputRef.current?.click()}
+                    disabled={uploadingAvatar}
+                    style={{
+                      fontSize: '11px',
+                      padding: '4px 10px',
+                      color: 'var(--color-cyan)',
+                      border: '1px solid rgba(23, 168, 229, 0.3)',
+                      borderRadius: '6px',
+                    }}
+                    aria-label={profile.avatar ? 'Change profile photo' : 'Add profile photo'}
+                  >
+                    {uploadingAvatar ? 'Uploading...' : profile.avatar ? '📷 Change Photo' : '📷 Add Photo'}
+                  </button>
+                  {profile.avatar && (
+                    <button
+                      type="button"
+                      className="btn btn-ghost btn-xs"
+                      onClick={handleAvatarRemove}
+                      disabled={uploadingAvatar}
+                      style={{ fontSize: '11px', padding: '4px 8px', color: 'var(--text-muted)' }}
+                      aria-label="Remove profile photo"
+                    >
+                      Remove
+                    </button>
+                  )}
+                </div>
               </div>
             </div>
 
@@ -150,7 +279,7 @@ export default function CustomerProfilePage() {
                       Full Name
                     </span>
                     <span style={{ fontSize: '13px', fontWeight: 600, color: 'var(--text-primary)' }}>
-                      {profile.name}
+                      {profile.name || <span style={{ color: 'var(--text-muted)' }}>Not provided</span>}
                     </span>
                   </div>
 
@@ -158,8 +287,8 @@ export default function CustomerProfilePage() {
                     <span style={{ fontSize: '11px', textTransform: 'uppercase', color: 'var(--text-muted)', fontWeight: 700, display: 'block', marginBottom: 2 }}>
                       Mobile Phone
                     </span>
-                    <span style={{ fontSize: '13px', fontWeight: 600, color: 'var(--color-blue)' }}>
-                      +91 {profile.phone}
+                    <span style={{ fontSize: '13px', fontWeight: 600, color: profile.phone ? 'var(--color-blue)' : 'var(--text-muted)' }}>
+                      {profile.phone ? `+91 ${profile.phone}` : 'Not provided'}
                     </span>
                   </div>
                 </div>
@@ -169,7 +298,7 @@ export default function CustomerProfilePage() {
                     Email Address
                   </span>
                   <span style={{ fontSize: '13px', fontWeight: 600, color: 'var(--text-primary)' }}>
-                    {profile.email}
+                    {profile.email || <span style={{ color: 'var(--text-muted)' }}>Not provided</span>}
                   </span>
                 </div>
 
@@ -179,7 +308,7 @@ export default function CustomerProfilePage() {
                       City / Region
                     </span>
                     <span style={{ fontSize: '13px', fontWeight: 600, color: 'var(--text-primary)' }}>
-                      {profile.city}
+                      {profile.city || <span style={{ color: 'var(--text-muted)' }}>Not provided</span>}
                     </span>
                   </div>
 
@@ -188,7 +317,7 @@ export default function CustomerProfilePage() {
                       Account ID
                     </span>
                     <span style={{ fontSize: '13px', fontWeight: 600, color: 'var(--text-muted)' }}>
-                      {profile.id || 'CUST-001'}
+                      {profile.id ? profile.id : 'Not assigned'}
                     </span>
                   </div>
                 </div>
@@ -197,8 +326,8 @@ export default function CustomerProfilePage() {
                   <span style={{ fontSize: '11px', textTransform: 'uppercase', color: 'var(--text-muted)', fontWeight: 700, display: 'block', marginBottom: 2 }}>
                     Installation &amp; Residential Address
                   </span>
-                  <span style={{ fontSize: '13px', fontWeight: 500, color: 'var(--text-secondary)', lineHeight: 1.5 }}>
-                    {profile.address}
+                  <span style={{ fontSize: '13px', fontWeight: 500, color: profile.address ? 'var(--text-secondary)' : 'var(--text-muted)', lineHeight: 1.5 }}>
+                    {profile.address || 'Not provided'}
                   </span>
                 </div>
               </div>
@@ -281,8 +410,8 @@ export default function CustomerProfilePage() {
                 <span style={{ fontSize: '11px', textTransform: 'uppercase', color: 'var(--text-muted)', fontWeight: 700, display: 'block', marginBottom: 2 }}>
                   DISCOM Provider
                 </span>
-                <span style={{ fontSize: '13px', fontWeight: 600, color: 'var(--text-primary)' }}>
-                  {profile.discom || 'Jaipur Vidyut Vitran Nigam (JVVNL)'}
+                <span style={{ fontSize: '13px', fontWeight: 600, color: profile.discom ? 'var(--text-primary)' : 'var(--text-muted)' }}>
+                  {profile.discom ?? 'Not linked yet'}
                 </span>
               </div>
 
@@ -291,8 +420,8 @@ export default function CustomerProfilePage() {
                   <span style={{ fontSize: '11px', textTransform: 'uppercase', color: 'var(--text-muted)', fontWeight: 700, display: 'block', marginBottom: 2 }}>
                     Consumer Account (K-No)
                   </span>
-                  <span style={{ fontSize: '13px', fontWeight: 700, color: 'var(--color-cyan)' }}>
-                    {profile.consumerNumber || 'JVVNL-987241-01'}
+                  <span style={{ fontSize: '13px', fontWeight: 700, color: profile.consumerNumber ? 'var(--color-cyan)' : 'var(--text-muted)' }}>
+                    {profile.consumerNumber ?? 'Not linked yet'}
                   </span>
                 </div>
 
@@ -300,8 +429,10 @@ export default function CustomerProfilePage() {
                   <span style={{ fontSize: '11px', textTransform: 'uppercase', color: 'var(--text-muted)', fontWeight: 700, display: 'block', marginBottom: 2 }}>
                     Sanctioned Grid Load
                   </span>
-                  <span style={{ fontSize: '13px', fontWeight: 600, color: 'var(--text-primary)' }}>
-                    {profile.sanctionedLoadKw || '5.0 kW'}
+                  <span style={{ fontSize: '13px', fontWeight: 600, color: profile.sanctionedLoadKw ? 'var(--text-primary)' : 'var(--text-muted)' }}>
+                    {profile.sanctionedLoadKw
+                      ? (profile.sanctionedLoadKw.toLowerCase().includes('kw') ? profile.sanctionedLoadKw : `${profile.sanctionedLoadKw} kW`)
+                      : 'Not linked yet'}
                   </span>
                 </div>
               </div>
@@ -312,8 +443,7 @@ export default function CustomerProfilePage() {
                     PM Surya Ghar Scheme
                   </span>
                   <span className="badge badge-success badge-sm">Eligible</span>
-                </div>
-                <span style={{ fontSize: '12px', color: 'var(--text-secondary)', lineHeight: 1.4, display: 'block' }}>
+                            <span style={{ fontSize: '12px', color: 'var(--text-secondary)', lineHeight: 1.4, display: 'block' }}>
                   Qualifies for up to ₹78,000 direct DBT government capital subsidy on residential solar rooftop systems.
                 </span>
               </div>
@@ -322,6 +452,15 @@ export default function CustomerProfilePage() {
 
         </div>
       </div>
+
+      <AvatarCropModal
+        isOpen={isCropOpen}
+        imageFile={cropFile}
+        onClose={handleCropClose}
+        onSave={handleCropSave}
+        isSaving={uploadingAvatar}
+      />
     </div>
+  </div>
   )
 }

@@ -80,19 +80,8 @@ import types as builtin_types
 
 def _load_bill_validator():
     """
-    Load only the _is_valid_bill_analysis function from main.py without
-    executing the full FastAPI startup or importing google.genai.
+    Validator function used to verify bill analysis dictionaries.
     """
-    # Stub heavy imports so main.py can be partially introspected
-    for mod_name in [
-        "database", "technician_models", "monitoring_models",
-        "performance_models", "knowledge_base_models", "ai_troubleshoot_models",
-        "notifications_models", "session_auth", "vendor_models",
-        "vendor_payments_models", "vendor_teams_models", "vendor_documents_models",
-        "security", "auth",
-    ]:
-        if mod_name not in sys.modules:
-            sys.modules[mod_name] = builtin_types.ModuleType(mod_name)
 
     # Inline the validator to avoid importing the full FastAPI app
     def _is_valid_bill_analysis(data: dict) -> bool:

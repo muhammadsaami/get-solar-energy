@@ -2,6 +2,7 @@ import csv
 import os
 import logging
 from datetime import datetime
+from typing import Optional, List
 from sqlalchemy.orm import Session
 from sqlalchemy import func
 from database_sqlite import CustomerModel, BillModel
@@ -153,31 +154,64 @@ def delete_customer(db: Session, customer_id: int):
     db.commit()
     return True
 
-def get_dashboard_stats(db: Session):
-    # Total unique customers count
+def get_dashboard_stats(db: Session, customer_ids: Optional[List[int]] = None):
+    # If customer_ids filter is provided (customer role)
+    if customer_ids is not None:
+        if not customer_ids:
+            return {
+                "customers": 0,
+                "bills_analyzed": 0,
+                "avg_bill": 0.0,
+                "avg_units": 0.0,
+                "avg_payback": 0.0,
+                "avg_system_size": 0.0,
+                "total_system_value": 0.0,
+                "total_25yr_savings": 0.0,
+                "cities": 0,
+                "last_import": None,
+                "last_bill_uploaded": None
+            }
+
+        bill_q = db.query(BillModel).filter(BillModel.customer_id.in_(customer_ids))
+        total_bills = bill_q.count()
+        avg_bill = db.query(func.avg(BillModel.bill_amount)).filter(BillModel.customer_id.in_(customer_ids)).scalar() or 0.0
+        avg_units = db.query(func.avg(BillModel.monthly_units)).filter(BillModel.customer_id.in_(customer_ids)).scalar() or 0.0
+        avg_payback = db.query(func.avg(BillModel.payback_years)).filter(BillModel.customer_id.in_(customer_ids), BillModel.payback_years > 0).scalar() or 0.0
+        avg_system_size = db.query(func.avg(BillModel.recommended_kw)).filter(BillModel.customer_id.in_(customer_ids), BillModel.recommended_kw > 0).scalar() or 0.0
+        total_system_value = db.query(func.sum(BillModel.system_cost)).filter(BillModel.customer_id.in_(customer_ids)).scalar() or 0.0
+        total_25yr_savings = db.query(func.sum(BillModel.savings_25yr)).filter(BillModel.customer_id.in_(customer_ids)).scalar() or 0.0
+        last_bill_rec = bill_q.order_by(BillModel.created_at.desc()).first()
+        last_bill_uploaded = last_bill_rec.created_at.isoformat() if last_bill_rec else None
+
+        return {
+            "customers": len(customer_ids),
+            "bills_analyzed": total_bills,
+            "avg_bill": round(float(avg_bill), 2),
+            "avg_units": round(float(avg_units), 2),
+            "avg_payback": round(float(avg_payback), 2),
+            "avg_system_size": round(float(avg_system_size), 2),
+            "total_system_value": float(total_system_value),
+            "total_25yr_savings": float(total_25yr_savings),
+            "cities": 1,
+            "last_import": None,
+            "last_bill_uploaded": last_bill_uploaded
+        }
+
+    # Global aggregates (admin / vendor / management roles)
     total_customers = db.query(func.count(CustomerModel.id)).scalar() or 0
-    # Total bills analyzed count
     total_bills = db.query(func.count(BillModel.id)).scalar() or 0
     
-    # Averages
     avg_bill = db.query(func.avg(BillModel.bill_amount)).scalar() or 0.0
     avg_units = db.query(func.avg(BillModel.monthly_units)).scalar() or 0.0
-    # Average payback years (only counting non-zero systems)
     avg_payback = db.query(func.avg(BillModel.payback_years)).filter(BillModel.payback_years > 0).scalar() or 0.0
-    # Average recommended kW
     avg_system_size = db.query(func.avg(BillModel.recommended_kw)).filter(BillModel.recommended_kw > 0).scalar() or 0.0
     
-    # Sums
     total_system_value = db.query(func.sum(BillModel.system_cost)).scalar() or 0.0
     total_25yr_savings = db.query(func.sum(BillModel.savings_25yr)).scalar() or 0.0
-    
-    # Cities list/count
     cities_count = db.query(func.count(func.distinct(CustomerModel.city))).scalar() or 0
     
-    # Timestamps
     last_bill_rec = db.query(BillModel).order_by(BillModel.created_at.desc()).first()
     last_bill_uploaded = last_bill_rec.created_at.isoformat() if last_bill_rec else None
-    
     last_import_iso = _last_import_time.isoformat() if _last_import_time else (last_bill_rec.created_at.isoformat() if last_bill_rec else None)
 
     return {
@@ -194,7 +228,13 @@ def get_dashboard_stats(db: Session):
         "last_bill_uploaded": last_bill_uploaded
     }
 
-def get_recent_bills(db: Session, skip: int = 0, limit: int = 10):
+def get_recent_bills(db: Session, skip: int = 0, limit: int = 10, customer_ids: Optional[List[int]] = None):
+    if customer_ids is not None:
+        if not customer_ids:
+            return []
+        return db.query(BillModel).filter(
+            BillModel.customer_id.in_(customer_ids)
+        ).order_by(BillModel.created_at.desc()).offset(skip).limit(limit).all()
     return db.query(BillModel).order_by(BillModel.created_at.desc()).offset(skip).limit(limit).all()
 
 def get_dashboard_analytics(db: Session):

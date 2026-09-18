@@ -2,8 +2,9 @@ import { useState, useRef, useCallback, useEffect } from 'react'
 import { sendSolarAdvisorMessage } from '../services/chat.service'
 import { usePlanning } from '../contexts/PlanningContext'
 import type { ChatMessage, GroundingSource } from '../types/chat'
+import { readUserStorage, getUserStorageKey, type IdentifiableUser } from '../utils/userStorage'
+import { tokenManager } from '../services/auth/tokenManager'
 
-const LS_KEY = 'solarChatHistory'
 const MAX_HISTORY = 20
 
 function formatTime(): string {
@@ -45,66 +46,45 @@ export function formatContextLabel(context?: {
   return 'General AI guidance'
 }
 
-function getActiveContext(planning: ReturnType<typeof usePlanning>) {
+function getActiveContext(_planning: ReturnType<typeof usePlanning>) {
+  const user = tokenManager.getUser() as IdentifiableUser | null
   const context: {
     bill_analysis?: Record<string, unknown>
     roof_analysis?: Record<string, unknown>
     roi_analysis?: Record<string, unknown>
   } = {}
 
-  // Bill analysis
-  const bill = planning?.activeBillOcr || (planning?.bills && planning.bills.length > 0 ? planning.bills[0] : null) || (() => {
-    try {
-      const raw = localStorage.getItem('solar_bill_analysis')
-      return raw ? JSON.parse(raw) : null
-    } catch {
-      return null
-    }
-  })()
+  if (!user || (!user.id && !user.email)) {
+    return context
+  }
+
+  // Strictly user-scoped analyses: fresh user receives empty context
+  const bill = readUserStorage<Record<string, unknown>>('lastBillAnalysis', user)
   if (bill && typeof bill === 'object' && Object.keys(bill).length > 0) {
     context.bill_analysis = bill
   }
 
-  // Roof analysis
-  const roof = planning?.roofAnalysis || (() => {
-    try {
-      const raw = localStorage.getItem('solar_roof_analysis')
-      return raw ? JSON.parse(raw) : null
-    } catch {
-      return null
-    }
-  })()
+  const roof = readUserStorage<Record<string, unknown>>('lastRoofAnalysis', user)
   if (roof && typeof roof === 'object' && Object.keys(roof).length > 0) {
     context.roof_analysis = roof
   }
 
-  // ROI analysis
-  const roi = (() => {
-    try {
-      const raw = localStorage.getItem('roiAnalysisState')
-      if (raw) {
-        const parsed = JSON.parse(raw)
-        if (parsed?.result && Object.keys(parsed.result).length > 0) return parsed.result
-        if (parsed && typeof parsed === 'object' && Object.keys(parsed).length > 0 && !parsed.result) return parsed
-      }
-    } catch {
-      // fallback
-    }
-    if (planning?.proposal && typeof planning.proposal === 'object' && Object.keys(planning.proposal).length > 0) {
-      return planning.proposal
-    }
-    return null
-  })()
-  if (roi && typeof roi === 'object' && Object.keys(roi).length > 0) {
-    context.roi_analysis = roi
+  const roiState = readUserStorage<{ result?: Record<string, unknown> }>('roiAnalysisState', user)
+  if (roiState?.result && Object.keys(roiState.result).length > 0) {
+    context.roi_analysis = roiState.result
   }
 
   return context
 }
 
+function getChatStorageKey(): string {
+  const user = tokenManager.getUser() as IdentifiableUser | null
+  return getUserStorageKey('solarChatHistory', user)
+}
+
 function loadHistory(): ChatMessage[] {
   try {
-    const raw = localStorage.getItem(LS_KEY)
+    const raw = localStorage.getItem(getChatStorageKey())
     if (!raw) return []
     const parsed = JSON.parse(raw)
     if (!Array.isArray(parsed)) return []
@@ -116,7 +96,7 @@ function loadHistory(): ChatMessage[] {
 
 function saveHistory(messages: ChatMessage[]) {
   try {
-    localStorage.setItem(LS_KEY, JSON.stringify(messages))
+    localStorage.setItem(getChatStorageKey(), JSON.stringify(messages))
   } catch {
     // localStorage write failed silently
   }
@@ -172,90 +152,52 @@ export function useSolarAdvisor() {
         content: m.content,
       }))
 
-      const res = await sendSolarAdvisorMessage({
+      const response = await sendSolarAdvisorMessage({
         message: trimmed,
-        history: contextHistory,
         context: activeContext,
+        history: contextHistory,
       })
 
-      setIsTyping(false)
-
-      if (res && res.success && res.response) {
-        const reply: ChatMessage = {
-          role: 'assistant',
-          content: res.response,
-          time: formatTime(),
-          contextUsed: contextLabel,
-          sources: res.sources as GroundingSource[] | undefined,
-        }
-
-        setMessages((prev) => {
-          const updated = [...prev, reply]
-          return updated.slice(-MAX_HISTORY)
-        })
-      } else {
-        const errorDetail = res?.message || res?.error || 'Solar AI service was unable to generate a response. Please try again.'
-        setError(errorDetail)
-
-        const errorReply: ChatMessage = {
-          role: 'assistant',
-          content: errorDetail,
-          time: formatTime(),
-          contextUsed: contextLabel,
-          isError: true,
-        }
-
-        setMessages((prev) => {
-          const updated = [...prev, errorReply]
-          return updated.slice(-MAX_HISTORY)
-        })
-      }
-    } catch (err: unknown) {
-      setIsTyping(false)
-
-      let errorMsg = 'Unable to reach the Solar AI service. Please check your connection.'
-      if (err && typeof err === 'object' && 'response' in err) {
-        const response = (err as { response?: { status?: number; data?: { detail?: string; error?: string; message?: string } } }).response
-        const status = response?.status
-        const detail = response?.data?.detail || response?.data?.message || response?.data?.error
-
-        if (status === 401 || status === 403) {
-          errorMsg = 'Your session has expired. Please sign in again.'
-        } else if (status === 429) {
-          errorMsg = 'Solar AI is currently experiencing high demand. Please try again shortly.'
-        } else if (status === 408 || status === 504) {
-          errorMsg = 'Solar AI request timed out. Please try again.'
-        } else if (status && status >= 500) {
-          errorMsg = detail || 'Solar AI is temporarily unavailable. Please try again later.'
-        } else if (detail) {
-          errorMsg = detail
-        }
-      }
-
-      setError(errorMsg)
-
-      const errorReply: ChatMessage = {
+      const botMessage: ChatMessage = {
         role: 'assistant',
-        content: errorMsg,
+        content: response.reply,
         time: formatTime(),
         contextUsed: contextLabel,
-        isError: true,
+        groundingSources: response.grounding_sources as GroundingSource[],
+        confidence: response.confidence,
       }
 
       setMessages((prev) => {
-        const updated = [...prev, errorReply]
-        return updated.slice(-MAX_HISTORY)
+        const next = [...prev, botMessage]
+        return next.length > MAX_HISTORY
+          ? [next[0], ...next.slice(next.length - (MAX_HISTORY - 1))]
+          : next
       })
+    } catch {
+      setError('Could not connect to the Solar Assistant. Please try again.')
+      const errorMessage: ChatMessage = {
+        role: 'assistant',
+        content: 'I am having trouble connecting to the advisory service right now. Please try again in a moment.',
+        time: formatTime(),
+      }
+      setMessages((prev) => [...prev, errorMessage])
     } finally {
+      setIsTyping(false)
       sendingRef.current = false
     }
   }, [messages, planning])
 
-  const clearConversation = useCallback(() => {
-    setMessages([WELCOME_MESSAGE])
+  const clearHistory = useCallback(() => {
+    try {
+      localStorage.removeItem(getChatStorageKey())
+      localStorage.removeItem('solarChatHistory')
+    } catch {
+      // ignore
+    }
+    const fresh: ChatMessage = { ...WELCOME_MESSAGE, time: formatTime() }
+    setMessages([fresh])
+    saveHistory([fresh])
     setError(null)
-    localStorage.removeItem(LS_KEY)
-    saveHistory([WELCOME_MESSAGE])
   }, [])
 
   return {
@@ -263,6 +205,6 @@ export function useSolarAdvisor() {
     isTyping,
     error,
     sendMessage,
-    clearConversation,
+    clearHistory,
   }
 }

@@ -23,7 +23,13 @@ import {
   SEARCH_DEBOUNCE_MS,
 } from './roofAnalyzer.constants'
 
-const LS_KEY_ROOF = 'lastRoofAnalysis'
+import { getUserStorageKey, type IdentifiableUser } from '../utils/userStorage'
+import { tokenManager } from '../services/auth/tokenManager'
+
+function getRoofStorageKey(): string {
+  const user = tokenManager.getUser() as IdentifiableUser | null
+  return getUserStorageKey('lastRoofAnalysis', user)
+}
 
 const CAPTURE_SCALE = 2
 const LOCATION_TIMEOUT_MS = 15000
@@ -463,9 +469,10 @@ export function useRoofAnalyzer(): RoofAnalyzerReturn {
     const formData = new FormData()
     formData.append('image', file, filename)
     formData.append('length_ft', lengthFt && Number(lengthFt) > 0 ? String(lengthFt) : '40')
-    formData.append('width_ft', widthFt && Number(widthFt) > 0 ? String(widthFt) : '30')
-    formData.append('city', city && city.trim() ? city.trim() : (selectedLocation?.label?.split(',')[0]?.trim() || 'Jaipur'))
-    formData.append('source', isSatellite ? 'satellite' : 'camera')
+    const effectiveCity = city && city.trim()
+      ? city.trim()
+      : (selectedLocation?.label && selectedLocation.label !== 'Location Not Set' ? selectedLocation.label.split(',')[0]?.trim() : '')
+    formData.append('city', effectiveCity)
 
     api.post('/analyze-roof', formData)
       .then((res) => {
@@ -476,7 +483,7 @@ export function useRoofAnalyzer(): RoofAnalyzerReturn {
         const apiData = result?.data || result || {}
         const enriched = enrichRoofData(apiData as Record<string, unknown>, filename, isSatellite)
         setAnalysis(enriched)
-        writeLS(LS_KEY_ROOF, enriched)
+        writeLS(getRoofStorageKey(), enriched)
         setRoofUploadState('complete')
       })
       .catch((err: unknown) => {
@@ -520,12 +527,13 @@ export function useRoofAnalyzer(): RoofAnalyzerReturn {
     setRoofError(null)
     setCameraFile(null)
     setCaptureData(null)
-    localStorage.removeItem(LS_KEY_ROOF)
+    localStorage.removeItem(getRoofStorageKey())
+    localStorage.removeItem('lastRoofAnalysis')
   }, [])
 
   // Restore state on initial mount
   useEffect(() => {
-    const saved = readLS<Record<string, unknown>>(LS_KEY_ROOF)
+    const saved = readLS<Record<string, unknown>>(getRoofStorageKey())
     if (saved) {
       const enriched = enrichRoofData(saved, saved.filename as string ?? 'roof_analysis.png', Boolean(saved.satellite_analysis))
       setAnalysis(enriched)

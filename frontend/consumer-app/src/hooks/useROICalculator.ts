@@ -12,7 +12,13 @@ import {
   type ROIPersistence,
 } from './roiCalculator.types'
 
-const STORAGE_KEY = 'roiAnalysisState'
+import { getUserStorageKey, type IdentifiableUser } from '../utils/userStorage'
+import { tokenManager } from '../services/auth/tokenManager'
+
+function getRoiStorageKey(): string {
+  const user = tokenManager.getUser() as IdentifiableUser | null
+  return getUserStorageKey('roiAnalysisState', user)
+}
 
 const DEFAULT_FORM: ROIFormData = {
   monthlyBill: 0,
@@ -34,15 +40,17 @@ function generateChartData(result: ROIResult): ChartDataPoint[] {
 
 function loadPersistence(): ROIState | null {
   try {
-    const raw = localStorage.getItem(STORAGE_KEY)
+    const raw = localStorage.getItem(getRoiStorageKey())
     if (!raw) return null
     const parsed: ROIPersistence = JSON.parse(raw)
     if (!parsed || parsed.version !== 1) {
-      localStorage.removeItem(STORAGE_KEY)
+      localStorage.removeItem(getRoiStorageKey())
+      localStorage.removeItem('roiAnalysisState')
       return null
     }
     if (!parsed.formData || typeof parsed.formData.monthlyBill !== 'number') {
-      localStorage.removeItem(STORAGE_KEY)
+      localStorage.removeItem(getRoiStorageKey())
+      localStorage.removeItem('roiAnalysisState')
       return null
     }
     if (!parsed.result) return null
@@ -56,7 +64,8 @@ function loadPersistence(): ROIState | null {
       (f) => typeof f === 'number' && isFinite(f) && f >= 0,
     )
     if (!valid) {
-      localStorage.removeItem(STORAGE_KEY)
+      localStorage.removeItem(getRoiStorageKey())
+      localStorage.removeItem('roiAnalysisState')
       return null
     }
     const chartData = generateChartData(r)
@@ -68,7 +77,10 @@ function loadPersistence(): ROIState | null {
       chartData,
     }
   } catch {
-    try { localStorage.removeItem(STORAGE_KEY) } catch { /* noop */ }
+    try {
+      localStorage.removeItem(getRoiStorageKey())
+      localStorage.removeItem('roiAnalysisState')
+    } catch { /* noop */ }
     return null
   }
 }
@@ -81,7 +93,7 @@ function savePersistence(formData: ROIFormData, result: ROIResult | null): void 
       result,
       lastUpdated: new Date().toISOString(),
     }
-    localStorage.setItem(STORAGE_KEY, JSON.stringify(data))
+    localStorage.setItem(getRoiStorageKey(), JSON.stringify(data))
   } catch {
     /* noop */
   }
@@ -192,7 +204,10 @@ export function useROICalculator(): UseROICalculatorReturn {
     setHasCalculated(false)
     setError(null)
     setChartData([])
-    try { localStorage.removeItem(STORAGE_KEY) } catch { /* noop */ }
+    try {
+      localStorage.removeItem(getRoiStorageKey())
+      localStorage.removeItem('roiAnalysisState')
+    } catch { /* noop */ }
   }, [])
 
   return {

@@ -7,7 +7,8 @@ import logging
 
 _log = logging.getLogger("database_sqlite")
 
-DATABASE_URL_SQLITE = "sqlite:///./customer_platform.db"
+_DB_PATH = os.path.join(os.path.dirname(os.path.abspath(__file__)), "customer_platform.db")
+DATABASE_URL_SQLITE = os.getenv("DATABASE_URL_SQLITE", f"sqlite:///{_DB_PATH}")
 
 engine_sqlite = create_engine(
     DATABASE_URL_SQLITE, connect_args={"check_same_thread": False}

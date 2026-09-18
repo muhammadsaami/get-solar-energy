@@ -1,14 +1,22 @@
-import React, { useState } from 'react'
+import React, { useState, useEffect } from 'react'
 import { useLocation, useNavigate } from 'react-router-dom'
 import { useAuth } from '../../contexts/AuthContext'
 import { ROUTES } from '../../config/routes'
+import { resolveAvatarUrl } from '../../utils/avatar'
 
 export function VendorTopbar() {
   const location = useLocation()
   const navigate = useNavigate()
-  const auth = useAuth() as unknown as { user?: { name?: string; email?: string }; logout?: () => void }
+  const auth = useAuth() as unknown as { user?: { name?: string; email?: string; avatar?: string }; logout?: () => void }
   const user = auth?.user
   const logout = auth?.logout || (() => {})
+
+  const [avatarError, setAvatarError] = useState(false)
+  const resolvedAvatar = resolveAvatarUrl(user?.avatar)
+
+  useEffect(() => {
+    setAvatarError(false)
+  }, [user?.avatar])
 
   const [showNotifications, setShowNotifications] = useState(false)
   const [showUserMenu, setShowUserMenu] = useState(false)
@@ -144,9 +152,19 @@ export function VendorTopbar() {
               width: '34px', height: '34px', borderRadius: '50%',
               backgroundColor: 'rgba(23, 168, 229, 0.15)', border: '1px solid var(--vendor-primary-border)',
               display: 'flex', alignItems: 'center', justifyContent: 'center',
-              color: 'var(--vendor-primary)', fontWeight: 800, fontSize: '13px'
+              color: 'var(--vendor-primary)', fontWeight: 800, fontSize: '13px',
+              overflow: 'hidden'
             }}>
-              {user?.name ? user.name.slice(0, 2).toUpperCase() : 'VE'}
+              {resolvedAvatar && !avatarError ? (
+                <img
+                  src={resolvedAvatar}
+                  alt={user?.name || 'Vendor'}
+                  onError={() => setAvatarError(true)}
+                  style={{ width: '100%', height: '100%', objectFit: 'cover', borderRadius: '50%' }}
+                />
+              ) : (
+                user?.name ? user.name.slice(0, 2).toUpperCase() : 'VE'
+              )}
             </div>
           </button>
 
