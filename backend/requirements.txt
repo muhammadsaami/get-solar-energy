@@ -12,3 +12,4 @@ aiosmtplib
 email-validator
 jinja2
 openai
+scikit-learn==1.9.0

@@ -5,14 +5,14 @@
   "framework": "sklearn",
   "task": "regression",
   "status": "active",
-  "checksum": "28223288f95b13715d6d439dd7e559aacb269ddb76311aa6c0f6b6bafd7d9497",
-  "file_size": 119897,
+  "checksum": "03d5ca208ac650d4f4f10bd281613f3b32c46637c6717fd4b873697031b79edd",
+  "file_size": 118153,
   "file_path": "E:\\GET SOLAR ENERGY\\get-solar-energy\\ml-models\\bill_model.pkl",
   "model_type": "pkl",
-  "training_date": "2026-08-04",
+  "training_date": "2026-09-19",
   "metrics": {
     "n_estimators": 100
   },
   "created_at": "2026-09-02T17:06:00.010070Z",
-  "updated_at": "2026-09-02T17:06:00.010070Z"
+  "updated_at": "2026-09-19T07:04:36.135874Z"
 }
