@@ -138,6 +138,7 @@ from notifications import router as notifications_router
 
 # ── Phase 4: Session / Refresh Token Auth (Access + Refresh + Sessions) ──
 from session_auth import router as session_auth_router
+from oauth import router as oauth_router
 
 app.include_router(roof_router)
 app.include_router(roi_router)
@@ -196,6 +197,7 @@ app.include_router(notifications_router)
 
 # ── Phase 4: Session / Refresh Token Auth ─────────────────────────────────
 app.include_router(session_auth_router)
+app.include_router(oauth_router)
 
 @app.on_event("startup")
 async def startup_event():

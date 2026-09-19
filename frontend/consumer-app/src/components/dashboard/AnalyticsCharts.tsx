@@ -72,7 +72,7 @@ export default function AnalyticsCharts({ data, derived, loading = false }: Prop
                 <button
                   type="button"
                   className="btn btn-sm btn-secondary"
-                  onClick={() => navigate(ROUTES.SITE_SURVEY)}
+                  onClick={() => navigate(ROUTES.ROOF_ANALYSIS)}
                   style={{ fontSize: '12px', padding: '8px 16px', borderRadius: '8px' }}
                 >
                   View Assessment →

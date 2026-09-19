@@ -9,6 +9,7 @@ import AuthLogo from '../components/auth/AuthLogo'
 import TrustBadges from '../components/auth/TrustBadges'
 import PasswordStrengthMeter from '../components/auth/PasswordStrengthMeter'
 import ToastHost from '../components/auth/ToastHost'
+import SocialAuthButtons from '../components/auth/SocialAuthButtons'
 import { authService } from '../services/auth/auth.service'
 import { calcPasswordStrength } from '../utils/password'
 
@@ -666,6 +667,28 @@ export default function Signup() {
               </svg>
             </button>
           </form>
+
+          {signupMode === 'customer' && (
+            <>
+              <div
+                style={{
+                  display: 'flex',
+                  alignItems: 'center',
+                  margin: '20px 0 6px',
+                  color: '#64748b',
+                  fontSize: '11.5px',
+                  fontWeight: 600,
+                  textTransform: 'uppercase',
+                  letterSpacing: '0.06em',
+                }}
+              >
+                <div style={{ flex: 1, height: '1px', backgroundColor: 'rgba(255, 255, 255, 0.1)' }} />
+                <span style={{ padding: '0 12px' }}>or create with</span>
+                <div style={{ flex: 1, height: '1px', backgroundColor: 'rgba(255, 255, 255, 0.1)' }} />
+              </div>
+              <SocialAuthButtons mode="signup" role="customer" disabled={loading} onError={(msg) => setError(msg)} />
+            </>
+          )}
 
           <TrustBadges />
 

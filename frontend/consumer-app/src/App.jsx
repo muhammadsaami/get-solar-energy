@@ -30,6 +30,7 @@ const Landing = lazy(() => import('./pages/Landing'));
 const Login = lazy(() => import('./pages/Login'));
 const Signup = lazy(() => import('./pages/Signup'));
 const ResetPassword = lazy(() => import('./pages/ResetPassword'));
+const OAuthCallback = lazy(() => import('./pages/OAuthCallback'));
 const NotFound = lazy(() => import('./pages/NotFound'));
 const Home = lazy(() => import('./pages/Home'));
 const Journey = lazy(() => import('./pages/Journey'));
@@ -87,6 +88,8 @@ function AppRoutes() {
         <Route path="/login" element={<PageSuspense><Login /></PageSuspense>} />
         <Route path="/signup" element={<PageSuspense><Signup /></PageSuspense>} />
         <Route path="/reset-password" element={<PageSuspense><ResetPassword /></PageSuspense>} />
+        <Route path="/auth/callback" element={<PageSuspense><OAuthCallback /></PageSuspense>} />
+        <Route path="/auth/callback/:provider" element={<PageSuspense><OAuthCallback /></PageSuspense>} />
 
         {/* Customer Portal - Authenticated */}
         <Route path={ROUTES.HOME} element={<AppRoute><PermissionGuard feature="dashboard"><PageSuspense><Home /></PageSuspense></PermissionGuard></AppRoute>} />

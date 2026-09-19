@@ -1,8 +1,9 @@
-import { useState, useRef, type FormEvent, type KeyboardEvent } from 'react'
-import { useNavigate, Link, useSearchParams } from 'react-router-dom'
+import { useState, useRef, useEffect, type FormEvent, type KeyboardEvent } from 'react'
+import { useNavigate, Link, useSearchParams, useLocation } from 'react-router-dom'
 import { useAuth } from '../contexts/AuthContext'
 import { AUTH_PROVIDERS, PUBLIC_AUTH_ROLES, type PublicAuthRole } from '../config/auth'
 import type { Role } from '../config/roles'
+import SocialAuthButtons from '../components/auth/SocialAuthButtons'
 
 type AuthContextType = {
   login: (email: string, password: string, roleHint?: string, rememberMe?: boolean) => Promise<{ success: boolean; error?: string; role?: string }>
@@ -25,6 +26,7 @@ const EMAIL_REGEX = /^[^\s@]+@[^\s@]+\.[^\s@]+$/
 export default function Login() {
   const { login, technicianLogin } = useAuth() as unknown as AuthContextType
   const navigate = useNavigate()
+  const location = useLocation()
 
   const [searchParams] = useSearchParams()
   const roleParam = searchParams.get('role')
@@ -34,7 +36,7 @@ export default function Login() {
   )
   const [email, setEmail] = useState('')
   const [password, setPassword] = useState('')
-  const [error, setError] = useState('')
+  const [error, setError] = useState<string>(() => (location.state as any)?.error || '')
   const [loading, setLoading] = useState(false)
   const [successMsg, setSuccessMsg] = useState('')
   const [showPassword, setShowPassword] = useState(false)
@@ -364,6 +366,28 @@ export default function Login() {
               )}
             </button>
           </form>
+
+          {authMode === 'customer' && (
+            <>
+              <div
+                style={{
+                  display: 'flex',
+                  alignItems: 'center',
+                  margin: '20px 0 6px',
+                  color: '#64748b',
+                  fontSize: '11.5px',
+                  fontWeight: 600,
+                  textTransform: 'uppercase',
+                  letterSpacing: '0.06em',
+                }}
+              >
+                <div style={{ flex: 1, height: '1px', backgroundColor: 'rgba(255, 255, 255, 0.1)' }} />
+                <span style={{ padding: '0 12px' }}>or continue with</span>
+                <div style={{ flex: 1, height: '1px', backgroundColor: 'rgba(255, 255, 255, 0.1)' }} />
+              </div>
+              <SocialAuthButtons mode="login" role="customer" disabled={loading} onError={(msg) => setError(msg)} />
+            </>
+          )}
 
           <div className="auth-footer-text" style={{ marginTop: '20px' }}>
             {authMode === 'vendor' ? (
