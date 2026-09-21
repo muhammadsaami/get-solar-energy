@@ -7,6 +7,9 @@ import { tokenManager } from '../services/auth/tokenManager'
 
 const MAX_HISTORY = 20
 
+const NO_REPLY_FALLBACK =
+  'Please upload your electricity bill in the Bill Analyzer first, then I can analyze it. You can also ask me general solar questions.'
+
 function formatTime(): string {
   return new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })
 }
@@ -88,7 +91,10 @@ function loadHistory(): ChatMessage[] {
     if (!raw) return []
     const parsed = JSON.parse(raw)
     if (!Array.isArray(parsed)) return []
-    return parsed
+    // Drop any previously saved messages that have no text (they crash/blank the UI)
+    return parsed.filter(
+      (m) => m && typeof m.content === 'string' && m.content.trim() !== ''
+    )
   } catch {
     return []
   }
@@ -147,10 +153,13 @@ export function useSolarAdvisor() {
     const contextLabel = formatContextLabel(activeContext)
 
     try {
-      const contextHistory = messages.map((m) => ({
-        role: m.role,
-        content: m.content,
-      }))
+      // Never send empty messages to the backend
+      const contextHistory = messages
+        .filter((m) => m.content && m.content.trim() !== '')
+        .map((m) => ({
+          role: m.role,
+          content: m.content,
+        }))
 
       const response = await sendSolarAdvisorMessage({
         message: trimmed,
@@ -158,13 +167,19 @@ export function useSolarAdvisor() {
         history: contextHistory,
       })
 
+      // If the backend sends no reply text, show a helpful fallback instead of an empty bubble
+      const replyText =
+        typeof response?.reply === 'string' && response.reply.trim() !== ''
+          ? response.reply
+          : NO_REPLY_FALLBACK
+
       const botMessage: ChatMessage = {
         role: 'assistant',
-        content: response.reply,
+        content: replyText,
         time: formatTime(),
         contextUsed: contextLabel,
-        groundingSources: response.grounding_sources as GroundingSource[],
-        confidence: response.confidence,
+        groundingSources: (response?.grounding_sources ?? []) as GroundingSource[],
+        confidence: response?.confidence,
       }
 
       setMessages((prev) => {

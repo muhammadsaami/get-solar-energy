@@ -1,7 +1,7 @@
 import React from 'react'
 
 interface MarkdownRendererProps {
-  content: string
+  content?: string
 }
 
 function escapeHtml(text: string): string {
@@ -72,8 +72,10 @@ function isTableSeparator(cells: string[]): boolean {
   return cells.every(c => /^:?-+:?$/.test(c))
 }
 
-function parseMarkdown(content: string): React.ReactNode {
-  const lines = content.split('\n')
+function parseMarkdown(content?: string): React.ReactNode {
+  // Guard: content can be undefined/null if the backend sends no reply
+  const text = typeof content === 'string' ? content : ''
+  const lines = text.split('\n')
   const elements: React.ReactNode[] = []
   let inTable = false
   let tableHeaders: string[] = []
@@ -239,7 +241,7 @@ function parseMarkdown(content: string): React.ReactNode {
       continue
     }
 
-    if (trimmed.startsWith('- ') || trimmed.startsWith('* ') || trimmed.startsWith('- ')) {
+    if (trimmed.startsWith('- ') || trimmed.startsWith('* ')) {
       flushTable()
       if (listType !== 'ul') {
         flushList()
@@ -273,5 +275,5 @@ function parseMarkdown(content: string): React.ReactNode {
 }
 
 export default function MarkdownRenderer({ content }: MarkdownRendererProps) {
-  return <>{parseMarkdown(content)}</>
+  return <>{parseMarkdown(content ?? '')}</>
 }
