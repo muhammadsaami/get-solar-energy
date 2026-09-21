@@ -1,7 +1,8 @@
-import React from 'react';
+import React, { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { ROUTES } from '../../config/routes';
 import { getUser, copyReferralCode, copyReferralLink } from '../../utils/referral';
+import { fetchAnalytics } from '../../services/reward.service';
 import { useNotificationStore } from '../../stores/notificationStore';
 import type { CustomerDashboardData } from '../../hooks/useCustomerDashboard';
 
@@ -9,11 +10,56 @@ interface Props {
   data?: CustomerDashboardData;
 }
 
+interface ReferralSummary {
+  totalReferrals: number;
+  totalPoints: number;
+}
+
+const REFERRAL_STEPS = [
+  { label: 'Refer', hint: 'Use your referral code' },
+  { label: 'Share', hint: 'Share your referral link' },
+  { label: 'Verified Installation', hint: 'Eligible installation is verified' },
+  { label: 'Reward', hint: 'Receive applicable rewards' },
+];
+
 export default function FooterGrid({ data }: Props) {
   const navigate = useNavigate();
   const addToast = useNotificationStore((s) => s.addToast);
   const user = getUser();
   const code = user?.referral_code || '';
+  const email = user?.email || '';
+
+  // Real referral summary — fetched once per customer email.
+  // Any failure falls back to the static explanatory flow below; the
+  // dashboard never shows an error for analytics alone.
+  const [summary, setSummary] = useState<ReferralSummary | null>(null);
+
+  useEffect(() => {
+    if (!email) return;
+    let cancelled = false;
+    fetchAnalytics(email)
+      .then((res) => {
+        if (cancelled) return;
+        const totals = res?.summary;
+        if (
+          res?.success !== false &&
+          totals &&
+          typeof totals.total_referrals === 'number' &&
+          typeof totals.total_points === 'number'
+        ) {
+          setSummary({
+            totalReferrals: totals.total_referrals,
+            totalPoints: totals.total_points,
+          });
+        }
+      })
+      .catch(() => {
+        // Silent fallback — static referral flow remains informative.
+      });
+    return () => {
+      cancelled = true;
+    };
+  }, [email]);
 
   const handleCopyCode = async () => {
     if (!code) {
@@ -59,11 +105,13 @@ export default function FooterGrid({ data }: Props) {
           display: 'grid',
           gridTemplateColumns: 'repeat(auto-fit, minmax(320px, 1fr))',
           gap: '16px',
+          alignItems: 'stretch',
         }}
       >
-        {/* Card 1: Solar Expansion / Roof Plan */}
-        <section className="footer-card footer-banner-card" style={{ minHeight: '220px', display: 'flex', flexDirection: 'column', justifyContent: 'space-between' }}>
+        {/* Card 1: Solar Journey / Next Step */}
+        <section className="footer-card footer-banner-card footer-journey-card" aria-label="Your solar journey">
           <div>
+            <span className="footer-eyebrow">Your Solar Journey</span>
             <h4 className="footer-banner-text" style={{ fontSize: '18px', lineHeight: 1.3 }}>
               Your roof has potential.<br />Your future has more.
             </h4>
@@ -71,7 +119,10 @@ export default function FooterGrid({ data }: Props) {
               Take the next step towards energy independence and zero electricity bills.
             </p>
           </div>
-          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-end', marginTop: '16px' }}>
+          <div className="footer-journey-media">
+            <div className="footer-journey-img-wrap">
+              <img className="footer-banner-img footer-journey-img" src="/assets/solar_roof_banner.png" alt="Rooftop solar panel installation" />
+            </div>
             <button
               className="footer-banner-btn"
               id="getPlanBtn"
@@ -79,18 +130,17 @@ export default function FooterGrid({ data }: Props) {
               style={{ padding: '8px 16px', borderRadius: '8px', fontSize: '12px', fontWeight: 700 }}
             >
               <span>Get My Solar Plan</span>
-              <svg><use href="#icon-arrow-right"></use></svg>
+              <svg aria-hidden="true"><use href="#icon-arrow-right"></use></svg>
             </button>
-            <img className="footer-banner-img" src="/assets/solar_roof_banner.png" alt="Solar roof installation banner details" style={{ maxHeight: '80px', objectFit: 'contain' }} />
           </div>
         </section>
 
         {/* Card 2: Customer-Specific Refer & Earn */}
-        <section className="footer-card refer-card" style={{ minHeight: '220px', display: 'flex', flexDirection: 'column', justifyContent: 'space-between' }}>
+        <section className="footer-card refer-card" aria-label="Refer and earn rewards">
           <div>
-            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '6px' }}>
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '6px', gap: '8px' }}>
               <h4 className="refer-title" style={{ fontSize: '16px', margin: 0 }}>Refer &amp; Earn</h4>
-              <span style={{ fontSize: '9px', fontWeight: 800, color: '#ff8a1d', background: 'rgba(255, 138, 29, 0.1)', padding: '2px 7px', borderRadius: '999px', border: '1px solid rgba(255, 138, 29, 0.25)' }}>
+              <span style={{ fontSize: '9px', fontWeight: 800, color: '#ff8a1d', background: 'rgba(255, 138, 29, 0.1)', padding: '2px 7px', borderRadius: '999px', border: '1px solid rgba(255, 138, 29, 0.25)', whiteSpace: 'nowrap' }}>
                 BONUS REWARDS
               </span>
             </div>
@@ -113,7 +163,7 @@ export default function FooterGrid({ data }: Props) {
                 onClick={handleCopyCode}
                 style={{ fontSize: '11px', padding: '7px 12px', borderRadius: '8px', display: 'flex', alignItems: 'center', gap: '5px' }}
               >
-                <span>📋</span> Copy Code
+                <span aria-hidden="true">📋</span> Copy Code
               </button>
               <button
                 className="btn btn-sm btn-secondary"
@@ -122,13 +172,39 @@ export default function FooterGrid({ data }: Props) {
                 onClick={handleCopyLink}
                 style={{ fontSize: '11px', padding: '7px 12px', borderRadius: '8px', background: 'rgba(255, 255, 255, 0.06)', color: '#ffffff', border: '1px solid rgba(255, 255, 255, 0.15)', display: 'flex', alignItems: 'center', gap: '5px' }}
               >
-                <span>🔗</span> Copy Link
+                <span aria-hidden="true">🔗</span> Copy Link
               </button>
             </div>
+
+            {summary && (
+              <div className="refer-summary" role="status" aria-label="Your referral summary">
+                <div className="refer-summary-item">
+                  <span className="refer-summary-value">{summary.totalReferrals}</span>
+                  <span className="refer-summary-label">Total Referrals</span>
+                </div>
+                <div className="refer-summary-item">
+                  <span className="refer-summary-value">{summary.totalPoints}</span>
+                  <span className="refer-summary-label">Reward Points</span>
+                </div>
+              </div>
+            )}
+
+            <ol className="refer-steps" aria-label="How referrals work">
+              {REFERRAL_STEPS.map((step, i) => (
+                <li key={step.label} className="refer-step">
+                  <span className="refer-step-index" aria-hidden="true">{i + 1}</span>
+                  <span className="refer-step-text">
+                    <strong>{step.label}</strong>
+                    <span>{step.hint}</span>
+                  </span>
+                </li>
+              ))}
+            </ol>
           </div>
 
-          <div style={{ display: 'flex', justifyContent: 'flex-end', marginTop: '12px' }}>
-            <img className="refer-gift-img" src="/assets/gift_box.png" alt="Clean minimalist gift box with ribbon" style={{ maxHeight: '54px', objectFit: 'contain' }} />
+          <div className="refer-card-foot">
+            <span className="refer-foot-note">Rewards are issued when an eligible installation is verified.</span>
+            <img className="refer-gift-img" src="/assets/gift_box.png" alt="" aria-hidden="true" />
           </div>
         </section>
       </footer>

@@ -5,11 +5,12 @@ import GalleryOverlay from './GalleryOverlay'
 interface GalleryCardProps {
   image: string
   alt: string
-  title: string
+  title?: string
   description: string
+  footer?: string
 }
 
-export default function GalleryCard({ image, alt, title, description }: GalleryCardProps) {
+export default function GalleryCard({ image, alt, title, description, footer }: GalleryCardProps) {
   const shouldReduceMotion = useReducedMotion()
 
   return (
@@ -29,7 +30,7 @@ export default function GalleryCard({ image, alt, title, description }: GalleryC
         loading="lazy"
         style={{ width: '100%', height: '100%', objectFit: 'cover' }}
       />
-      <GalleryOverlay title={title} description={description} />
+      <GalleryOverlay title={title} description={description} footer={footer} />
     </motion.div>
   )
 }

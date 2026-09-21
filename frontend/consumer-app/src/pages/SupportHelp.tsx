@@ -1,4 +1,6 @@
-import React, { useState } from 'react'
+import React, { useRef, useState } from 'react'
+import api from '../services/api/client'
+import { getUser } from '../utils/referral'
 
 const FAQS = [
   {
@@ -25,23 +27,49 @@ export default function SupportHelp() {
   const [ticketSubject, setTicketSubject] = useState('')
   const [ticketMsg, setTicketMsg] = useState('')
   const [ticketSubmitted, setTicketSubmitted] = useState(false)
+  const [ticketId, setTicketId] = useState<string | null>(null)
+  const [sending, setSending] = useState(false)
+  const [ticketError, setTicketError] = useState<string | null>(null)
+  // Ref guard (in addition to state) so double-clicks in the same tick
+  // can never fire a second request while the first is still pending.
+  const sendingRef = useRef(false)
 
   const filteredFaqs = FAQS.filter(f =>
     f.q.toLowerCase().includes(search.toLowerCase()) ||
     f.a.toLowerCase().includes(search.toLowerCase())
   )
 
-  const handleSubmitTicket = (e: React.FormEvent) => {
+  const handleSubmitTicket = async (e: React.FormEvent) => {
     e.preventDefault()
+    if (sendingRef.current) return
     if (!ticketSubject.trim() || !ticketMsg.trim()) return
-    const subject = encodeURIComponent(`[GET Solar Support] ${ticketSubject}`)
-    const body = encodeURIComponent(ticketMsg)
-    window.location.href = `mailto:support@getsolar.in?subject=${subject}&body=${body}`
-    setTicketSubmitted(true)
+    sendingRef.current = true
+    setSending(true)
+    setTicketError(null)
+    try {
+      const sessionUser = getUser()
+      const { data } = await api.post('/support/tickets', {
+        subject: ticketSubject.trim(),
+        message: ticketMsg.trim(),
+        name: sessionUser?.name || '',
+      })
+      if (!data || data.success !== true) {
+        throw new Error('Support request was not accepted.')
+      }
+      setTicketId(data.ticket_id || null)
+      setTicketSubmitted(true)
+    } catch {
+      setTicketError('Unable to send your support request right now. Please try again.')
+    } finally {
+      sendingRef.current = false
+      setSending(false)
+    }
   }
 
   const resetTicket = () => {
     setTicketSubmitted(false)
+    setTicketId(null)
+    setTicketError(null)
     setTicketSubject('')
     setTicketMsg('')
   }
@@ -104,14 +132,19 @@ export default function SupportHelp() {
           {ticketSubmitted ? (
             <div style={{ padding: '20px', textAlign: 'center', background: 'rgba(54, 211, 153, 0.08)', borderRadius: '6px', border: '1px solid rgba(54, 211, 153, 0.25)' }}>
               <div style={{ fontSize: '24px', marginBottom: '8px' }}>✓</div>
-              <h4 style={{ fontSize: '14px', fontWeight: 700, color: 'var(--color-green)', margin: '0 0 4px' }}>Ticket Dispatched</h4>
-              <p style={{ fontSize: '12px', color: 'var(--text-secondary)', margin: '0 0 12px' }}>Your default email client has been opened with your inquiry.</p>
+              <h4 style={{ fontSize: '14px', fontWeight: 700, color: 'var(--color-green)', margin: '0 0 4px' }}>Support request sent successfully.</h4>
+              <p style={{ fontSize: '12px', color: 'var(--text-secondary)', margin: '0 0 12px' }}>Your request has been sent to the GET Solar Energy support team.{ticketId ? ` Reference: ${ticketId}.` : ''}</p>
               <button className="btn btn-ghost btn-sm" onClick={resetTicket}>
                 Submit Another Request
               </button>
             </div>
           ) : (
             <form onSubmit={handleSubmitTicket} style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
+              {ticketError && (
+                <div role="alert" style={{ padding: '10px 12px', borderRadius: '6px', background: 'rgba(248, 113, 113, 0.08)', border: '1px solid rgba(248, 113, 113, 0.3)', fontSize: '12px', color: 'var(--text-primary)' }}>
+                  {ticketError}
+                </div>
+              )}
               <div>
                 <label style={{ fontSize: '10px', color: 'var(--text-muted)', fontWeight: 700, textTransform: 'uppercase', display: 'block', marginBottom: 4 }}>Subject / Issue Category *</label>
                 <input
@@ -119,6 +152,7 @@ export default function SupportHelp() {
                   required
                   placeholder="e.g. Inverter Error Code F24, Net-Meter delay"
                   value={ticketSubject}
+                  disabled={sending}
                   onChange={(e) => setTicketSubject(e.target.value)}
                   style={{ width: '100%', padding: '8px 10px', borderRadius: '6px', background: 'var(--bg-input)', border: '1px solid var(--border-color)', color: 'var(--text-primary)', fontSize: '12px' }}
                 />
@@ -131,13 +165,14 @@ export default function SupportHelp() {
                   rows={4}
                   placeholder="Please describe your system symptoms, DISCOM consumer number, or inspection questions..."
                   value={ticketMsg}
+                  disabled={sending}
                   onChange={(e) => setTicketMsg(e.target.value)}
                   style={{ width: '100%', padding: '8px 10px', borderRadius: '6px', background: 'var(--bg-input)', border: '1px solid var(--border-color)', color: 'var(--text-primary)', fontSize: '12px', resize: 'vertical' }}
                 />
               </div>
 
-              <button type="submit" className="btn btn-primary" style={{ padding: '9px 16px', fontSize: '12px' }}>
-                ✉ Dispatch to Engineering Support
+              <button type="submit" className="btn btn-primary" disabled={sending} style={{ padding: '9px 16px', fontSize: '12px' }}>
+                {sending ? 'Sending...' : '✉ Send to Engineering Support'}
               </button>
             </form>
           )}

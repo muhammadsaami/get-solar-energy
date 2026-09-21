@@ -3,8 +3,9 @@ import GalleryCard from './GalleryCard'
 interface GalleryItem {
   image: string
   alt: string
-  title: string
+  title?: string
   description: string
+  footer?: string
 }
 
 interface GalleryGridProps {
@@ -17,20 +18,21 @@ export default function GalleryGrid({ items }: GalleryGridProps) {
       className="lifestyle-gallery layer-fg scene-element"
       style={{
         display: 'grid',
-        gridTemplateColumns: 'repeat(3, 1fr)',
+        gridTemplateColumns: 'repeat(auto-fit, minmax(min(100%, 300px), 1fr))',
         gap: 20,
         width: '100%',
         maxWidth: 1400,
         padding: '0 5%',
       }}
     >
-      {items.map((item) => (
+      {items.map((item, index) => (
         <GalleryCard
-          key={item.title}
+          key={item.image || item.title || index}
           image={item.image}
           alt={item.alt}
           title={item.title}
           description={item.description}
+          footer={item.footer}
         />
       ))}
     </div>

@@ -1,5 +1,6 @@
 import api from '../../services/api/client'
 import { getUser } from '../../utils/referral'
+import { getUserKey, readUserStorage, type IdentifiableUser } from '../../utils/userStorage'
 import type {
   AMCApiContract,
   AMCRecommendationApiResponse,
@@ -76,31 +77,25 @@ async function safeFetch<T>(
   }
 }
 
-function readLocalStorageAnalysis<T>(key: string): T | null {
-  try {
-    const raw = localStorage.getItem(key)
-    if (!raw) return null
-    return JSON.parse(raw) as T
-  } catch {
-    return null
-  }
-}
-
 function getDefaultRecommendationRequest(): Partial<AMCRecommendationRequest> {
-  const billAnalysis = readLocalStorageAnalysis<{
+  // User-scoped bill analysis only. Never fall back to fabricated identity
+  // ('Customer') or system size (5.0): missing values stay empty and the
+  // caller decides whether generation can proceed.
+  const user = getUser() as IdentifiableUser | null
+  const billAnalysis = readUserStorage<{
     customer_name?: string
     city?: string
     system_size_kw?: number
     monthly_generation_units?: number
     [key: string]: unknown
-  }>('lastBillAnalysis')
+  }>('lastBillAnalysis', user)
 
-  const user = getUser() as { email: string; name: string; referral_code: string; city?: string } | null
+  const sessionUser = getUser() as { email: string; name: string; referral_code: string; city?: string } | null
 
   return {
-    customer_name: user?.name || billAnalysis?.customer_name || 'Customer',
-    city: user?.city || billAnalysis?.city || '',
-    system_size_kw: billAnalysis?.system_size_kw || 5.0,
+    customer_name: sessionUser?.name || billAnalysis?.customer_name || '',
+    city: sessionUser?.city || billAnalysis?.city || '',
+    system_size_kw: billAnalysis?.system_size_kw,
     current_generation_units: billAnalysis?.monthly_generation_units || 0,
     expected_generation_units: billAnalysis?.monthly_generation_units
       ? Math.round(billAnalysis.monthly_generation_units * 1.1)
@@ -112,7 +107,10 @@ export async function fetchAMCRecommendation(
   request: AMCRecommendationRequest,
   signal?: AbortSignal,
 ): Promise<AMCRecommendationApiResponse | null> {
-  const cacheKey = `amc-recommendation-${request.customer_name}-${request.system_size_kw}`
+  // Cache key includes the authenticated account so one customer's
+  // recommendation can never be served to another customer.
+  const userKey = getUserKey(getUser() as IdentifiableUser | null)
+  const cacheKey = `amc-recommendation-${userKey}-${request.customer_name}-${request.system_size_kw}`
 
   try {
     const cached = getCached<AMCRecommendationApiResponse>(cacheKey)

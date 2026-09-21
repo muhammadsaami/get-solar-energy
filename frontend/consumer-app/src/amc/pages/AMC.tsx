@@ -21,6 +21,8 @@ import { AMCPrintReport } from '../components/AMCPrintReport'
 import { saveAMCToLocalStorage, loadAMCFromLocalStorage, clearAMCFromLocalStorage } from '../utils/amcLocalStorage'
 import { buildAutofillRequest } from '../utils/amcAutofill'
 import { useNotificationStore } from '../../stores/notificationStore'
+import { getUserKey, type IdentifiableUser } from '../../utils/userStorage'
+import { tokenManager } from '../../services/auth/tokenManager'
 import type { AMCRecommendationResult as AMCRecommendationDataType } from '../types/amc.types'
 
 function computeKpiData(recommendation: AMCRecommendationDataType): AMCRecommendationKpiData {
@@ -42,6 +44,14 @@ function computeKpiData(recommendation: AMCRecommendationDataType): AMCRecommend
     warrantyStatus: warranty,
     nextScheduledVisit: nextVisit,
     preventiveScore: pmScore,
+  }
+}
+
+function currentAccountKey(): string {
+  try {
+    return getUserKey(tokenManager.getUser() as IdentifiableUser | null)
+  } catch {
+    return 'anon'
   }
 }
 
@@ -76,21 +86,28 @@ export default function AMC() {
 
   const [restoredRecommendation, setRestoredRecommendation] = useState<AMCRecommendationDataType | null>(null)
   const [timelineStep, setTimelineStep] = useState(1)
-  const [initialized, setInitialized] = useState(false)
+  const [initializedFor, setInitializedFor] = useState<string | null>(null)
 
   const activeRecommendation = recommendation || restoredRecommendation
   const kpiData = activeRecommendation ? computeKpiData(activeRecommendation) : null
+  const accountKey = currentAccountKey()
 
   useEffect(() => {
-    if (!initialized) {
+    // (Re)hydrate only from the current account's scoped storage. When the
+    // signed-in account changes, the previous account's restored state is
+    // discarded and the new account starts from its own persisted state.
+    if (initializedFor !== accountKey) {
       const saved = loadAMCFromLocalStorage<AMCRecommendationDataType>()
       if (saved) {
         setRestoredRecommendation(saved)
         setTimelineStep(computeTimelineStep(saved))
+      } else {
+        setRestoredRecommendation(null)
+        setTimelineStep(1)
       }
-      setInitialized(true)
+      setInitializedFor(accountKey)
     }
-  }, [initialized])
+  }, [initializedFor, accountKey])
 
   useEffect(() => {
     if (recommendation) {
@@ -134,7 +151,7 @@ export default function AMC() {
     if (formRef.current) {
       formRef.current.setFormValues(values)
     }
-    addToast({ type: 'info', message: 'Autofilled demo AMC data!' })
+    addToast({ type: 'info', message: 'Form filled from your saved bill, roof, and profile data.' })
   }, [addToast])
 
   const handleReset = useCallback(() => {
