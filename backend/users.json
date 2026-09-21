@@ -56,16 +56,14 @@
   },
   "demo@getsolar.in": {
     "id": "9ca2538e-0274-4264-97e7-7e900c132860",
-    "name": "Muhammad Hammaad Haque",
-    "phone": "9696875012",
+    "name": "Muhammad Haq",
+    "phone": "9876543210",
     "email": "demo@getsolar.in",
-    "password": "$2b$12$V.h1L0hf3gmQNE0rp/7u1.d3grqlCxXXnw0zuHHXDUv2O.StZiR7u",
+    "password": "$2b$12$hXpFEmBZEXrDMNYHzoCGZu3vRhzs8utxD1fWXEPn4W5vfR1bExkUy",
     "city": "Lucknow",
     "referral_code": "MUH9CA25",
     "points": 50,
-    "role": "customer",
-    "address": "89,talab",
-    "avatar": "/uploads/c79e3ad9c85243669bc53de22acd024e.jpg"
+    "role": "customer"
   },
   "admin@getsolar.in": {
     "id": "admin-session-id-00000",
@@ -669,6 +667,18 @@
     "password": "$2b$12$2LVRfYLigWYuuMZ/Zub/PO7BBLpfCR48oNPoRoHKOphx.pSK9pR3i",
     "city": "Jaipur",
     "referral_code": "ISH997C7",
+    "points": 0,
+    "role": "customer",
+    "gst": ""
+  },
+  "khansaami2131@gmail.com": {
+    "id": "8c9d96e9-1b7a-4cd5-b208-ae9c8bfa4bc6",
+    "name": "Muhammad Saami",
+    "phone": "7310543798",
+    "email": "khansaami2131@gmail.com",
+    "password": "$2b$12$sKjrY.rk0l7OxW8Cs5729OGk59AUUD8Jcto2RT9QZcOGRwpbnY6v6",
+    "city": "Lucknow",
+    "referral_code": "MUH8C9D9",
     "points": 0,
     "role": "customer",
     "gst": ""

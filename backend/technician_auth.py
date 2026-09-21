@@ -7,6 +7,7 @@ Also supports seamless Admin RBAC cross-portal authorization.
 from fastapi import APIRouter, HTTPException, Depends
 from fastapi.security import HTTPBearer, HTTPAuthorizationCredentials
 from pydantic import BaseModel
+from typing import Optional
 from sqlalchemy.orm import Session
 from database import get_db
 from technician_models import Technician
@@ -83,7 +84,7 @@ def get_current_technician(
         role = payload.get("role")
         if not email:
             raise HTTPException(status_code=401, detail="Invalid token claims.")
-        
+
         if role != "technician" and role != "admin":
             raise HTTPException(status_code=403, detail="Forbidden: Not authorized for technician portal.")
 
@@ -111,7 +112,7 @@ def get_current_technician(
             raise HTTPException(status_code=401, detail="Technician account not found.")
         if not technician.is_active:
             raise HTTPException(status_code=403, detail="Technician account is deactivated.")
-        
+
         return technician
     except jwt.ExpiredSignatureError:
         raise HTTPException(status_code=401, detail="Token has expired. Please log in again.")
