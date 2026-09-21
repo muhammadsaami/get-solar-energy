@@ -91,7 +91,7 @@ export function useSettings() {
       savePreferences(preferences)
       setInitialPreferences({ ...preferences })
 
-      addToast({ type: 'success', message: 'Preferences saved successfully!' })
+      addToast({ type: 'success', message: 'Device preferences saved on this device.' })
 
       addActivityLog(
         'settings',

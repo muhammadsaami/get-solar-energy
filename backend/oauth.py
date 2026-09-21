@@ -1,7 +1,7 @@
 """
 OAuth 2.0 / OpenID Connect Authentication Module for GET Solar Energy.
 Provides production-grade, hardened social authentication for Customers
-via Google and Microsoft Entra ID.
+via Google.
 
 Endpoints:
   GET  /api/auth/oauth/{provider}/url       -> Returns authorization URL with state, PKCE, and nonce
@@ -89,32 +89,10 @@ def _get_provider_config(provider: str) -> Dict[str, str]:
             "scope": "openid email profile",
             "issuer_aliases": ["https://accounts.google.com", "accounts.google.com"],
         }
-    elif p == "microsoft":
-        client_id = os.getenv("MICROSOFT_CLIENT_ID", "").strip()
-        client_secret = os.getenv("MICROSOFT_CLIENT_SECRET", "").strip()
-        redirect_uri = os.getenv("MICROSOFT_REDIRECT_URI", "").strip()
-        tenant_id = os.getenv("MICROSOFT_TENANT_ID", "common").strip() or "common"
-        if not client_id or not client_secret or not redirect_uri:
-            raise HTTPException(
-                status_code=status.HTTP_503_SERVICE_UNAVAILABLE,
-                detail="Microsoft authentication is not configured in this environment. Please configure provider credentials in .env or sign in with your email/password.",
-            )
-        return {
-            "provider": "microsoft",
-            "client_id": client_id,
-            "client_secret": client_secret,
-            "redirect_uri": redirect_uri,
-            "tenant_id": tenant_id,
-            "auth_endpoint": f"https://login.microsoftonline.com/{tenant_id}/oauth2/v2.0/authorize",
-            "token_endpoint": f"https://login.microsoftonline.com/{tenant_id}/oauth2/v2.0/token",
-            "userinfo_endpoint": "https://graph.microsoft.com/v1.0/me",
-            "scope": "openid email profile User.Read",
-            "issuer_aliases": [f"https://login.microsoftonline.com/{tenant_id}/v2.0"],
-        }
     else:
         raise HTTPException(
             status_code=status.HTTP_400_BAD_REQUEST,
-            detail=f"Unsupported OAuth provider '{provider}'. Supported providers: google, microsoft.",
+            detail=f"Unsupported OAuth provider '{provider}'. Supported providers: google.",
         )
 
 
@@ -324,7 +302,7 @@ async def handle_oauth_callback(
 
         profile = userinfo_res.json()
 
-    # 5. Extract Identity Claims
+    # 5. Extract Identity Claims (Google is the only supported social provider)
     if cfg["provider"] == "google":
         email = profile.get("email", "").lower().strip()
         email_verified = profile.get("email_verified", False)
@@ -336,11 +314,11 @@ async def handle_oauth_callback(
                 status_code=status.HTTP_400_BAD_REQUEST,
                 detail="Google account email is not verified.",
             )
-    else:  # microsoft
-        email = (profile.get("mail") or profile.get("userPrincipalName", "")).lower().strip()
-        name = profile.get("displayName", "").strip() or email.split("@")[0].capitalize()
-        provider_id = profile.get("id", "")
-        avatar = ""  # Microsoft Graph photo requires separate binary fetch; start with clean empty avatar
+    else:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail=f"Unsupported OAuth provider '{cfg['provider']}'.",
+        )
 
     if not email or "@" not in email:
         raise HTTPException(

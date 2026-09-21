@@ -39,17 +39,32 @@ export default function ROICalculatorPage() {
   } = useROICalculator()
 
   const handleMonthlyBillChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const v = parseFloat(e.target.value)
+    const raw = e.target.value.trim()
+    if (raw === '') {
+      setMonthlyBill('')
+      return
+    }
+    const v = parseFloat(raw)
     if (!isNaN(v)) setMonthlyBill(v)
   }
 
   const handleSunHoursChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const v = parseFloat(e.target.value)
+    const raw = e.target.value.trim()
+    if (raw === '') {
+      setSunHours('')
+      return
+    }
+    const v = parseFloat(raw)
     if (!isNaN(v)) setSunHours(v)
   }
 
   const handleSystemSizeChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const v = parseFloat(e.target.value)
+    const raw = e.target.value.trim()
+    if (raw === '') {
+      setSystemSize('')
+      return
+    }
+    const v = parseFloat(raw)
     if (!isNaN(v)) setSystemSize(v)
   }
 
@@ -99,6 +114,7 @@ export default function ROICalculatorPage() {
                 <input
                   type="number"
                   id="tabMonthlyBill"
+                  placeholder="e.g. 6500"
                   value={formData.monthlyBill}
                   onChange={handleMonthlyBillChange}
                   min="500"
@@ -120,6 +136,7 @@ export default function ROICalculatorPage() {
                 <input
                   type="number"
                   id="tabSunHours"
+                  placeholder="e.g. 5.0"
                   value={formData.sunHours}
                   onChange={handleSunHoursChange}
                   min="1"
@@ -142,6 +159,7 @@ export default function ROICalculatorPage() {
                 <input
                   type="number"
                   id="tabSystemSize"
+                  placeholder="e.g. 3.0"
                   value={formData.systemSize}
                   onChange={handleSystemSizeChange}
                   min="1"

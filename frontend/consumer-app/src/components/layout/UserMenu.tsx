@@ -26,6 +26,10 @@ export default function UserMenu() {
   }, [user?.avatar])
 
   const isTechnician = user?.role === ROLES.TECHNICIAN
+  const isVendor = user?.role === ROLES.VENDOR
+  // Vendors own a dedicated settings workspace; technicians have no
+  // 'settings' feature permission, so hide the item to avoid AccessDenied.
+  const settingsTarget = isVendor ? ROUTES.VENDOR_SETTINGS : ROUTES.ACCOUNT_SETTINGS
 
   useEffect(() => {
     function handleClickOutside(e: MouseEvent) {
@@ -122,12 +126,14 @@ export default function UserMenu() {
             </svg>
             Profile
           </button>
-          <button className="profile-dropdown-item" role="menuitem" tabIndex={0} onClick={() => { navigate(ROUTES.ACCOUNT_SETTINGS); setIsOpen(false); }}>
+          {!isTechnician && (
+          <button className="profile-dropdown-item" role="menuitem" tabIndex={0} onClick={() => { navigate(settingsTarget); setIsOpen(false); }}>
             <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round">
               <circle cx="12" cy="12" r="3" /><path d="M19.07 4.93a10 10 0 0 1 0 14.14M4.93 4.93a10 10 0 0 0 0 14.14" />
             </svg>
             Account Settings
           </button>
+          )}
           <button className="profile-dropdown-item" role="menuitem" tabIndex={0} onClick={() => { navigate(ROUTES.SUPPORT_NOTIFICATIONS); setIsOpen(false); }}>
             <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round">
               <path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9" /><path d="M13.73 21a2 2 0 0 1-3.46 0" />

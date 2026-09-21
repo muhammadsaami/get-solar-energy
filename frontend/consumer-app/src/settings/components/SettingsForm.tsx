@@ -71,7 +71,7 @@ function SettingsFormComponent({
           disabled={saving || !isDirty}
           style={{ marginTop: 0, width: 'auto' }}
         >
-          {saving ? 'Saving...' : 'Save Preferences'}
+          {saving ? 'Saving...' : 'Save Device Preferences'}
         </button>
       </div>
     </form>

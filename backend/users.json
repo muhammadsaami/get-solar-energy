@@ -63,7 +63,9 @@
     "city": "Lucknow",
     "referral_code": "MUH9CA25",
     "points": 50,
-    "role": "customer"
+    "role": "customer",
+    "address": "89,talab",
+    "avatar": "/uploads/ad3c2a3b9f9740ad96e98a3797ae5835.jpg"
   },
   "admin@getsolar.in": {
     "id": "admin-session-id-00000",
