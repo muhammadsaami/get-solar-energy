@@ -3,9 +3,9 @@ export type PanelQuality = 'mono' | 'poly' | 'bifacial'
 export type CalcStatus = 'idle' | 'loading' | 'success' | 'error'
 
 export interface ROIFormData {
-  monthlyBill: number
-  sunHours: number
-  systemSize: number
+  monthlyBill: number | ''
+  sunHours: number | ''
+  systemSize: number | ''
   panelQuality: PanelQuality
 }
 
@@ -44,9 +44,9 @@ export interface ROIPersistence {
 }
 
 export interface UseROICalculatorReturn extends ROIState {
-  setMonthlyBill: (v: number) => void
-  setSunHours: (v: number) => void
-  setSystemSize: (v: number) => void
+  setMonthlyBill: (v: number | '') => void
+  setSunHours: (v: number | '') => void
+  setSystemSize: (v: number | '') => void
   setPanelQuality: (v: PanelQuality) => void
   calculate: () => Promise<void>
   reset: () => void

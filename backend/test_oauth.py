@@ -56,15 +56,15 @@ def test_google_url_unconfigured(monkeypatch):
     assert "Google authentication is not configured in this environment" in data["detail"]
 
 
-def test_microsoft_url_unconfigured(monkeypatch):
-    monkeypatch.delenv("MICROSOFT_CLIENT_ID", raising=False)
-    monkeypatch.delenv("MICROSOFT_CLIENT_SECRET", raising=False)
-    monkeypatch.delenv("MICROSOFT_REDIRECT_URI", raising=False)
-
+def test_microsoft_provider_removed():
+    """Microsoft OAuth was removed: both the URL and callback endpoints must reject it."""
     res = client.get("/api/auth/oauth/microsoft/url")
-    assert res.status_code == 503
-    data = res.json()
-    assert "Microsoft authentication is not configured in this environment" in data["detail"]
+    assert res.status_code == 400
+    assert "Unsupported OAuth provider" in res.json()["detail"]
+
+    res = client.post("/api/auth/oauth/microsoft/callback", json={"code": "fake-code", "state": "fake-state"})
+    assert res.status_code == 400
+    assert "Unsupported OAuth provider" in res.json()["detail"]
 
 
 def test_unsupported_provider():
@@ -106,25 +106,8 @@ def test_google_url_configured(monkeypatch):
     assert "code_verifier" in decoded_state
 
 
-def test_microsoft_url_configured(monkeypatch):
-    monkeypatch.setenv("MICROSOFT_CLIENT_ID", "test-ms-client-id")
-    monkeypatch.setenv("MICROSOFT_CLIENT_SECRET", "test-ms-client-secret")
-    monkeypatch.setenv("MICROSOFT_REDIRECT_URI", "http://localhost:5173/auth/callback/microsoft")
-    monkeypatch.setenv("MICROSOFT_TENANT_ID", "common")
-
-    res = client.get("/api/auth/oauth/microsoft/url")
-    assert res.status_code == 200
-    data = res.json()
-
-    auth_url = data["url"]
-    assert "login.microsoftonline.com/common/oauth2/v2.0/authorize" in auth_url
-    assert "client_id=test-ms-client-id" in auth_url
-    assert "code_challenge_method=S256" in auth_url
-    assert "scope=openid+email+profile+User.Read" in auth_url or "User.Read" in auth_url
-
-
 # ==============================================================================
-# 3. STATE INTEGRITY, EXPIRATION, PROVIDER MISMATCH, REPLAY PROTECTION
+# 3. STATE INTEGRITY, EXPIRATION, REPLAY PROTECTION
 # ==============================================================================
 
 def test_callback_expired_state(monkeypatch):
@@ -160,17 +143,17 @@ def test_callback_forged_state(monkeypatch):
 
 
 def test_callback_provider_mismatch(monkeypatch):
-    monkeypatch.setenv("MICROSOFT_CLIENT_ID", "test-ms-id")
-    monkeypatch.setenv("MICROSOFT_CLIENT_SECRET", "test-ms-secret")
-    monkeypatch.setenv("MICROSOFT_REDIRECT_URI", "http://localhost:5173/auth/callback/microsoft")
+    monkeypatch.setenv("GOOGLE_CLIENT_ID", "test-id")
+    monkeypatch.setenv("GOOGLE_CLIENT_SECRET", "test-secret")
+    monkeypatch.setenv("GOOGLE_REDIRECT_URI", "http://localhost:5173/auth/callback/google")
 
     # Create state for Google
     sec = _generate_state_and_pkce("google")
 
-    # Send Google state to Microsoft callback
-    res = client.post("/api/auth/oauth/microsoft/callback", json={"code": "fake-code", "state": sec["signed_state"]})
+    # Send Google state to an unsupported provider callback
+    res = client.post("/api/auth/oauth/github/callback", json={"code": "fake-code", "state": sec["signed_state"]})
     assert res.status_code == 400
-    assert "mismatch" in res.json()["detail"].lower()
+    assert "unsupported oauth provider" in res.json()["detail"].lower()
 
 
 # ==============================================================================

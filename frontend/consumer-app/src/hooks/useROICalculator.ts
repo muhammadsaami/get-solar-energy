@@ -20,10 +20,10 @@ function getRoiStorageKey(): string {
   return getUserStorageKey('roiAnalysisState', user)
 }
 
-const DEFAULT_FORM: ROIFormData = {
-  monthlyBill: 0,
-  sunHours: 5,
-  systemSize: 3,
+const EMPTY_FORM: ROIFormData = {
+  monthlyBill: '',
+  sunHours: '',
+  systemSize: '',
   panelQuality: 'mono',
 }
 
@@ -48,7 +48,13 @@ function loadPersistence(): ROIState | null {
       localStorage.removeItem('roiAnalysisState')
       return null
     }
-    if (!parsed.formData || typeof parsed.formData.monthlyBill !== 'number') {
+    if (!parsed.formData) {
+      localStorage.removeItem(getRoiStorageKey())
+      localStorage.removeItem('roiAnalysisState')
+      return null
+    }
+    const bill = parsed.formData.monthlyBill
+    if (typeof bill !== 'number' || bill <= 0) {
       localStorage.removeItem(getRoiStorageKey())
       localStorage.removeItem('roiAnalysisState')
       return null
@@ -103,7 +109,7 @@ export function useROICalculator(): UseROICalculatorReturn {
   const persisted = loadPersistence()
 
   const [formData, setFormData] = useState<ROIFormData>(
-    persisted?.formData ?? DEFAULT_FORM,
+    persisted?.formData ?? EMPTY_FORM,
   )
   const [result, setResult] = useState<ROIResult | null>(
     persisted?.result ?? null,
@@ -130,15 +136,15 @@ export function useROICalculator(): UseROICalculatorReturn {
   }, [])
 
   const setMonthlyBill = useCallback(
-    (v: number) => updateForm('monthlyBill', v),
+    (v: number | '') => updateForm('monthlyBill', v),
     [updateForm],
   )
   const setSunHours = useCallback(
-    (v: number) => updateForm('sunHours', v),
+    (v: number | '') => updateForm('sunHours', v),
     [updateForm],
   )
   const setSystemSize = useCallback(
-    (v: number) => updateForm('systemSize', v),
+    (v: number | '') => updateForm('systemSize', v),
     [updateForm],
   )
   const setPanelQuality = useCallback(
@@ -147,6 +153,18 @@ export function useROICalculator(): UseROICalculatorReturn {
   )
 
   const calculate = useCallback(async () => {
+    const rawBill = formData.monthlyBill
+    const rawSize = formData.systemSize
+
+    const bill = typeof rawBill === 'number' ? rawBill : parseFloat(String(rawBill || ''))
+    const size = typeof rawSize === 'number' ? rawSize : parseFloat(String(rawSize || ''))
+
+    if (isNaN(bill) || bill <= 0 || isNaN(size) || size <= 0) {
+      setError('Please enter your monthly electricity bill and target system capacity.')
+      setStatus('error')
+      return
+    }
+
     const count = ++calcCount.current
     setStatus('loading')
     setError(null)
@@ -155,10 +173,10 @@ export function useROICalculator(): UseROICalculatorReturn {
 
     try {
       const apiResponse = await calculateROI({
-        monthly_bill: formData.monthlyBill,
+        monthly_bill: bill,
         state: 'Uttar Pradesh',
         roof_type: 'flat',
-        system_size: formData.systemSize,
+        system_size: size,
       })
 
       if (!apiResponse.success || !apiResponse.data) {
@@ -181,8 +199,8 @@ export function useROICalculator(): UseROICalculatorReturn {
       }
     } catch {
       const fallback = calculateFallbackROI({
-        monthlyBill: formData.monthlyBill,
-        systemSize: formData.systemSize,
+        monthlyBill: bill,
+        systemSize: size,
       })
       roiResult = fallback
     }
@@ -198,7 +216,7 @@ export function useROICalculator(): UseROICalculatorReturn {
   }, [formData])
 
   const reset = useCallback(() => {
-    setFormData(DEFAULT_FORM)
+    setFormData(EMPTY_FORM)
     setResult(null)
     setStatus('idle')
     setHasCalculated(false)

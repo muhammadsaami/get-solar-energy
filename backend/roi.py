@@ -1,4 +1,4 @@
-from fastapi import APIRouter, Depends
+from fastapi import APIRouter, Depends, HTTPException
 from security import verify_token
 from pydantic import BaseModel
 import logging
@@ -15,10 +15,13 @@ class ROIRequest(BaseModel):
 
 @router.post("/api/calculate-roi")
 async def calculate_roi(data: ROIRequest):
-    try:
-        if data.monthly_bill <= 0 or data.system_size <= 0:
-            raise ValueError("Input parameters must be greater than zero")
+    if data.monthly_bill <= 0 or data.system_size <= 0:
+        raise HTTPException(
+            status_code=400,
+            detail="Monthly bill and target system capacity must be greater than zero."
+        )
 
+    try:
         system_size = data.system_size
         recommended_kw = system_size
 
@@ -74,39 +77,11 @@ async def calculate_roi(data: ROIRequest):
             }
         }
 
+    except HTTPException:
+        raise
     except Exception as e:
-        logger.warning(f"ROI calculation failed: {e}. Returning fallback mock response.")
-        
-        # Fallback values calculation
-        size = data.system_size if data.system_size > 0 else 3.0
-        bill = data.monthly_bill if data.monthly_bill > 0 else 6500.0
-        
-        f_cost = size * 55000
-        f_subsidy = 78000.0 if size >= 3.0 else (60000.0 + (size - 2.0) * 18000.0 if size >= 2.0 else size * 30000.0)
-        f_net = f_cost - f_subsidy
-        f_msavings = bill * 0.9
-        f_asavings = f_msavings * 12
-        f_agen = size * 4.5 * 30 * 12
-        
-        f_payback = round(f_net / f_asavings, 1) if f_asavings > 0 else 0.0
-        f_lifetime = round(f_asavings * 25 - f_net, 0)
-        f_roi = round(((f_lifetime - f_net) / f_net) * 100, 1) if f_net > 0 else 0.0
-        f_co2 = round(f_agen * 0.82 / 1000, 2)
-
-        return {
-            "success": True,
-            "fallback": True,
-            "data": {
-                "recommended_kw": size,
-                "system_cost": f_cost,
-                "government_subsidy": f_subsidy,
-                "net_cost": f_net,
-                "monthly_savings": round(f_msavings, 0),
-                "annual_savings": round(f_asavings, 0),
-                "annual_generation": round(f_agen, 0),
-                "payback_period": f_payback,
-                "lifetime_savings": f_lifetime,
-                "roi_percentage": f_roi,
-                "co2_reduction": f_co2
-            }
-        }
+        logger.error(f"ROI calculation failed: {e}")
+        raise HTTPException(
+            status_code=500,
+            detail="Failed to calculate ROI. Please verify inputs."
+        )

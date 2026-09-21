@@ -494,12 +494,9 @@ function initLoginPage() {
     }
   });
 
-  // Google / Microsoft social buttons (mock)
+  // Google social button (mock)
   document.getElementById('googleBtn')?.addEventListener('click', () => {
     showToast('Google login coming soon! Use credentials for now.', 'info', 4000);
-  });
-  document.getElementById('microsoftBtn')?.addEventListener('click', () => {
-    showToast('Microsoft login coming soon! Use credentials for now.', 'info', 4000);
   });
 
   // Form submit

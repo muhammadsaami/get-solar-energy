@@ -14,7 +14,7 @@ export default function SocialAuthButtons({
   disabled = false,
   onError,
 }: SocialAuthButtonsProps) {
-  const [loadingProvider, setLoadingProvider] = useState<'google' | 'microsoft' | null>(null)
+  const [loadingProvider, setLoadingProvider] = useState<'google' | null>(null)
   const [localError, setLocalError] = useState<string>('')
 
   // Strictly Customer Only — do not render for vendor or technician
@@ -22,7 +22,7 @@ export default function SocialAuthButtons({
     return null
   }
 
-  const handleOAuthClick = async (provider: 'google' | 'microsoft') => {
+  const handleOAuthClick = async (provider: 'google') => {
     if (disabled || loadingProvider) return
     setLocalError('')
     setLoadingProvider(provider)
@@ -37,7 +37,7 @@ export default function SocialAuthButtons({
       }
     } catch (err: any) {
       setLoadingProvider(null)
-      const providerLabel = provider === 'google' ? 'Google' : 'Microsoft'
+      const providerLabel = 'Google'
       let errorMessage = `${providerLabel} authentication is not configured in this environment. Please configure provider credentials in .env or sign in with your email/password.`
 
       if (err?.response?.data?.detail) {
@@ -123,47 +123,6 @@ export default function SocialAuthButtons({
             </svg>
           )}
           <span>{mode === 'signup' ? 'Sign up with Google' : 'Continue with Google'}</span>
-        </button>
-
-        {/* Microsoft Button */}
-        <button
-          type="button"
-          className="btn-social-auth"
-          id={`btn${providerTitle('microsoft')}${mode === 'signup' ? 'Signup' : 'Login'}`}
-          disabled={isBusy}
-          onClick={() => handleOAuthClick('microsoft')}
-          aria-label={`${mode === 'signup' ? 'Sign up' : 'Continue'} with Microsoft`}
-          style={{
-            display: 'flex',
-            alignItems: 'center',
-            justifyContent: 'center',
-            gap: '12px',
-            width: '100%',
-            height: '44px',
-            padding: '0 16px',
-            backgroundColor: 'rgba(255, 255, 255, 0.05)',
-            border: '1px solid rgba(255, 255, 255, 0.12)',
-            borderRadius: '10px',
-            color: '#f1f5f9',
-            fontSize: '13.5px',
-            fontWeight: 600,
-            cursor: isBusy ? 'not-allowed' : 'pointer',
-            transition: 'all 0.2s ease',
-            position: 'relative',
-            outline: 'none',
-          }}
-        >
-          {loadingProvider === 'microsoft' ? (
-            <div className="btn-spinner" style={{ width: 18, height: 18, border: '2px solid rgba(255,255,255,0.2)', borderTopColor: '#fff', borderRadius: '50%', animation: 'spin 0.8s linear infinite' }} />
-          ) : (
-            <svg width="18" height="18" viewBox="0 0 23 23" aria-hidden="true" style={{ flexShrink: 0 }}>
-              <rect x="1" y="1" width="10" height="10" fill="#f25022" />
-              <rect x="12" y="1" width="10" height="10" fill="#7fba00" />
-              <rect x="1" y="12" width="10" height="10" fill="#00a4ef" />
-              <rect x="12" y="12" width="10" height="10" fill="#ffb900" />
-            </svg>
-          )}
-          <span>{mode === 'signup' ? 'Sign up with Microsoft' : 'Continue with Microsoft'}</span>
         </button>
       </div>
     </div>

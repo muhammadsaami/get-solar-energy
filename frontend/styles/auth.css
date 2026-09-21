@@ -759,19 +759,6 @@ html, body {
   box-shadow: 0 8px 16px rgba(255, 255, 255, 0.1);
 }
 
-.btn-social#microsoftBtn {
-  background: #2f2f2f;
-  border: 1px solid #3f3f3f;
-  color: #ffffff;
-}
-
-.btn-social#microsoftBtn:hover {
-  background: #3f3f3f;
-  border-color: #555555;
-  transform: translateY(-2px);
-  box-shadow: 0 8px 16px rgba(0, 0, 0, 0.35);
-}
-
 /* ── TRUST BADGES ─────────────────────────────────────────────────────────── */
 .trust-badges {
   display: flex;
