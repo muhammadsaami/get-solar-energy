@@ -135,3 +135,63 @@ def test_non_admin_denied_admin_routes(two_customers):
         "consumer_number": "CRM-X", "customer_name": "X",
         "discom": "DVVNL", "city": "Lucknow",
     }, headers=ha).status_code == 403
+
+
+def test_owner_timeline_loads_success(two_customers):
+    ids = two_customers
+    res = client.get(f"/api/crm/timeline/{ids['a']}", headers=headers(EMAIL_A))
+    assert res.status_code == 200
+    body = res.json()
+    assert body.get("success") is True
+    assert isinstance(body.get("data"), list)
+
+
+def test_empty_timeline_is_valid_success(monkeypatch):
+    monkeypatch.setattr(crm_routes, "has_admin_access", lambda email: email == EMAIL_ADMIN)
+    monkeypatch.setattr(customer_routes, "has_admin_access", lambda email: email == EMAIL_ADMIN)
+    db = SessionLocal()
+    cust = CustomerModel(
+        consumer_number=f"CRM-EMPTY-{uuid.uuid4().hex[:8]}", customer_name="Empty Owner",
+        discom="DVVNL", city="Lucknow", email="crm.empty@getsolar.in",
+    )
+    db.add(cust)
+    db.commit()
+    db.refresh(cust)
+    cid = cust.id
+    try:
+        # Remove any orphaned timeline rows for this id (id reuse in dev DBs)
+        # so the test proves a genuinely empty timeline is valid success.
+        from crm_models import CRMActivityTimelineModel
+        db.query(CRMActivityTimelineModel).filter(
+            CRMActivityTimelineModel.customer_id == cid
+        ).delete()
+        db.commit()
+        res = client.get(
+            f"/api/crm/timeline/{cid}",
+            headers=headers("crm.empty@getsolar.in"),
+        )
+        assert res.status_code == 200
+        body = res.json()
+        assert body.get("success") is True
+        assert body.get("data") == []
+    finally:
+        from crm_models import CRMActivityTimelineModel
+        db.query(CRMActivityTimelineModel).filter(
+            CRMActivityTimelineModel.customer_id == cid
+        ).delete()
+        db.query(CustomerModel).filter(CustomerModel.id == cid).delete()
+        db.commit()
+        db.close()
+
+
+def test_cross_customer_timeline_denied(two_customers):
+    ids = two_customers
+    res = client.get(f"/api/crm/timeline/{ids['a']}", headers=headers(EMAIL_B))
+    assert res.status_code == 404
+
+
+def test_admin_timeline_loads(two_customers):
+    ids = two_customers
+    res = client.get(f"/api/crm/timeline/{ids['a']}", headers=ADMIN_HEADERS)
+    assert res.status_code == 200
+    assert res.json().get("success") is True

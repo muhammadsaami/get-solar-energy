@@ -102,6 +102,27 @@ export async function fetchCrmTimeline(
   )
 }
 
+/**
+ * Resolve the authenticated customer's own CRM record ID via the existing
+ * customer list contract (same pattern as the AMC service). Returns null
+ * when the customer has no CRM record yet — callers must treat that as an
+ * honest empty timeline, never as an error and never with another ID.
+ */
+export async function lookupCustomerId(email: string): Promise<number | null> {
+  if (!email) return null
+
+  const { data: customers } = await api.get<Array<{ id: number; email?: string }>>('/customers', {
+    params: { skip: 0, limit: 100 },
+  })
+
+  if (!customers || !Array.isArray(customers)) return null
+
+  const match = customers.find(
+    (c) => c.email?.toLowerCase() === email.toLowerCase(),
+  )
+  return match?.id ?? null
+}
+
 export async function fetchCrmTasks(
   customerId?: number,
   signal?: AbortSignal,
@@ -281,8 +302,28 @@ export async function fetchAllSources(
     errors[source] = result === null ? 'Failed to load' : null
   }
 
+  // Resolve the caller's OWN CRM record by their own email, then fetch
+  // only that record's timeline. No record -> honest empty timeline.
+  // Lookup failure -> honest timeline error. Never a hardcoded ID.
+  const timelinePromise: Promise<CrmTimelineEvent[] | null> = (async () => {
+    let customerId: number | null
+    try {
+      customerId = await lookupCustomerId(email)
+    } catch {
+      recordError('timeline', null)
+      return null
+    }
+    if (customerId === null) {
+      errors['timeline'] = null
+      return []
+    }
+    const timeline = await fetchCrmTimeline(customerId, signal)
+    recordError('timeline', timeline)
+    return timeline
+  })()
+
   const results = await Promise.allSettled([
-    fetchCrmTimeline(1, signal).then((r) => { recordError('timeline', r); return r }),
+    timelinePromise,
     fetchCrmTasks(undefined, signal).then((r) => { recordError('tasks', r); return r }),
     fetchCrmMeetings(undefined, signal).then((r) => { recordError('meetings', r); return r }),
     fetchCrmFollowups(undefined, signal).then((r) => { recordError('followups', r); return r }),
