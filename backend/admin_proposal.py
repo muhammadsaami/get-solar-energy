@@ -195,7 +195,6 @@ def build_proposal_email(*, customer_name: str, customer_email: str, proposal: d
     """Server-rendered text+HTML proposal email from authoritative proposal data."""
     system_kw = proposal.get("system_size_kw") or proposal.get("recommended_kw") or "—"
     net_cost = proposal.get("net_cost_rs", "—")
-    subsidy = proposal.get("subsidy_rs", "—")
     savings = proposal.get("annual_savings_rs", "—")
     payback = proposal.get("payback_years", "—")
 
@@ -206,7 +205,7 @@ def build_proposal_email(*, customer_name: str, customer_email: str, proposal: d
 Your solar proposal ({reference}) from GET Solar Energy is ready.
 
 Proposed system: {system_kw} kW
-Net investment: Rs {net_cost} (after subsidy of Rs {subsidy})
+Net investment: Rs {net_cost}
 Estimated annual savings: Rs {savings}
 Estimated payback: {payback} years
 
@@ -227,7 +226,6 @@ GET Solar Energy
 <ul>
 <li><strong>Proposed system:</strong> {html.escape(str(system_kw))} kW</li>
 <li><strong>Net investment:</strong> Rs {html.escape(str(net_cost))}</li>
-<li><strong>Subsidy:</strong> Rs {html.escape(str(subsidy))}</li>
 <li><strong>Estimated annual savings:</strong> Rs {html.escape(str(savings))}</li>
 <li><strong>Estimated payback:</strong> {html.escape(str(payback))} years</li>
 </ul>

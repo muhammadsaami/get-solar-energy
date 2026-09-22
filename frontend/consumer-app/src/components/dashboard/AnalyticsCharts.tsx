@@ -77,14 +77,6 @@ export default function AnalyticsCharts({ data, derived, loading = false }: Prop
                 >
                   View Assessment →
                 </button>
-                <button
-                  type="button"
-                  className="btn btn-sm btn-primary"
-                  onClick={() => navigate(ROUTES.PROPOSAL)}
-                  style={{ fontSize: '12px', padding: '8px 16px', borderRadius: '8px' }}
-                >
-                  View AI Proposal →
-                </button>
               </div>
             </div>
 

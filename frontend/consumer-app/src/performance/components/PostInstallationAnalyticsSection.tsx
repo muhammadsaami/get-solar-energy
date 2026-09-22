@@ -78,7 +78,7 @@ function PostInstallationAnalyticsSectionComponent({
           <button
             type="button"
             className="btn btn-sm btn-primary"
-            onClick={() => navigate(ROUTES.PROPOSAL)}
+            onClick={() => navigate(ROUTES.ROOF_ANALYSIS)}
             style={{ marginTop: '6px', fontSize: '12px', padding: '8px 18px', borderRadius: '8px' }}
           >
             View System Setup →

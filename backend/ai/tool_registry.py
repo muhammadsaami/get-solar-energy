@@ -100,7 +100,7 @@ class ToolRegistry:
 
         self.register(Tool(
             name="roi_calculate",
-            description="Calculate solar ROI: system cost, subsidy, payback, lifetime savings, CO2 reduction",
+            description="Calculate solar ROI: system cost, payback, lifetime savings, CO2 reduction",
             category="Analysis",
             permissions=_ALL,
             input_schema={

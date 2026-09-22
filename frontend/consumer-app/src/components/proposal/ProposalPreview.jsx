@@ -28,7 +28,6 @@ export default function ProposalPreview({
   const kwSize = insights.kw ? `${insights.kw} kWp` : (form.recommendedKw ? `${form.recommendedKw} kWp` : '—');
   const billAmount = form.monthlyBill ? `₹${parseFloat(form.monthlyBill).toLocaleString('en-IN')}` : '—';
   const annualKwh = insights.annualGen ? `${Math.round(insights.annualGen).toLocaleString('en-IN')} kWh` : '—';
-  const subsidyAmount = formatCurrency(insights.subsidy);
   const netOutlay = formatCurrency(insights.netCost);
 
   const hasData = Boolean(insights.kw || form.customerName || form.monthlyBill);
@@ -193,7 +192,7 @@ export default function ProposalPreview({
                   Executive Summary
                 </h2>
                 <p style={{ fontSize: '12.5px', lineHeight: 1.65, color: '#334155', margin: 0 }}>
-                  This customized engineering proposal has been developed for <strong>{customerName}</strong> located in <strong>{customerCity}</strong>. Based on your monthly grid electricity expenditure of <strong>{billAmount}</strong> ({safeValue(form.monthlyUnits, ' kWh')}), we recommend an optimized <strong>{kwSize} On-Grid Rooftop Solar Power Plant</strong>. Under standard meteorological conditions, the proposed system is estimated to generate approximately <strong>{annualKwh}</strong> of clean electricity annually. Under the Ministry of New and Renewable Energy (MNRE) <strong>PM Surya Ghar: Muft Bijli Yojana</strong>, this installation qualifies for an upfront direct government subsidy of <strong>{subsidyAmount}</strong>, resulting in a net customer investment outlay of <strong>{netOutlay}</strong>.
+                  This customized engineering proposal has been developed for <strong>{customerName}</strong> located in <strong>{customerCity}</strong>. Based on your monthly grid electricity expenditure of <strong>{billAmount}</strong> ({safeValue(form.monthlyUnits, ' kWh')}), we recommend an optimized <strong>{kwSize} On-Grid Rooftop Solar Power Plant</strong>. Under standard meteorological conditions, the proposed system is estimated to generate approximately <strong>{annualKwh}</strong> of clean electricity annually, resulting in a net customer investment outlay of <strong>{netOutlay}</strong>.
                 </p>
               </div>
 
@@ -206,12 +205,11 @@ export default function ProposalPreview({
                   marginBottom: '24px',
                 }}
               >
-                {[
-                  { label: 'Recommended System', val: kwSize, sub: `${safeValue(insights.panels, ' Panels')}`, color: '#17A8E5' },
-                  { label: 'PM Surya Ghar Subsidy', val: subsidyAmount, sub: 'Direct Govt Benefit', color: '#10B981' },
-                  { label: 'Net Capital Outlay', val: netOutlay, sub: 'After MNRE Subsidy', color: '#FF8A1D' },
-                  { label: 'Estimated Payback', val: safeValue(insights.payback, ' Yrs'), sub: `Life: ${formatCurrency(insights.lifetimeSavings)}`, color: '#17A8E5' },
-                ].map((k, i) => (
+                  {[
+                    { label: 'Recommended System', val: kwSize, sub: `${safeValue(insights.panels, ' Panels')}`, color: '#17A8E5' },
+                    { label: 'Net Capital Outlay', val: netOutlay, sub: 'Turnkey system price', color: '#FF8A1D' },
+                    { label: 'Estimated Payback', val: safeValue(insights.payback, ' Yrs'), sub: `Life: ${formatCurrency(insights.lifetimeSavings)}`, color: '#17A8E5' },
+                  ].map((k, i) => (
                   <div
                     key={i}
                     style={{
@@ -398,11 +396,11 @@ export default function ProposalPreview({
               <span>Proposal ID: {proposalId}</span>
             </div>
 
-            {/* Section 3: Financial Breakdown */}
-            <div style={{ marginBottom: '24px' }}>
-              <h3 style={{ fontSize: '13px', fontWeight: 800, color: '#0A2540', marginBottom: '8px' }}>
-                3. Financial Breakdown &amp; PM Surya Ghar Subsidy Schedule
-              </h3>
+              {/* Section 3: Financial Breakdown */}
+              <div style={{ marginBottom: '24px' }}>
+                <h3 style={{ fontSize: '13px', fontWeight: 800, color: '#0A2540', marginBottom: '8px' }}>
+                  3. Financial Breakdown
+                </h3>
               <table
                 style={{
                   width: '100%',
@@ -424,15 +422,10 @@ export default function ProposalPreview({
                     <td style={{ padding: '6px 10px', textAlign: 'right', fontWeight: 700, color: '#0A2540', border: '1px solid #e2e8f0' }}>{formatCurrency(insights.systemCost)}</td>
                     <td style={{ padding: '6px 10px', fontSize: '10.5px', color: '#64748b', border: '1px solid #e2e8f0' }}>Includes Tier-1 Hardware, Mounting, Civil Work &amp; Commissioning</td>
                   </tr>
-                  <tr>
-                    <td style={{ padding: '6px 10px', fontWeight: 700, border: '1px solid #e2e8f0' }}>PM Surya Ghar: Muft Bijli Subsidy</td>
-                    <td style={{ padding: '6px 10px', textAlign: 'right', fontWeight: 800, color: '#10B981', border: '1px solid #e2e8f0' }}>- {formatCurrency(insights.subsidy)}</td>
-                    <td style={{ padding: '6px 10px', fontSize: '10.5px', color: '#64748b', border: '1px solid #e2e8f0' }}>Direct DBT subsidy credited to customer bank account post-inspection</td>
-                  </tr>
                   <tr style={{ backgroundColor: '#fff7ed' }}>
                     <td style={{ padding: '6px 10px', fontWeight: 800, color: '#c2410c', border: '1px solid #e2e8f0' }}>Net Customer Investment Outlay</td>
                     <td style={{ padding: '6px 10px', textAlign: 'right', fontWeight: 900, color: '#ea580c', border: '1px solid #e2e8f0' }}>{formatCurrency(insights.netCost)}</td>
-                    <td style={{ padding: '6px 10px', fontSize: '10.5px', color: '#9a3412', border: '1px solid #e2e8f0' }}>Effective net capital expenditure after direct government subsidy</td>
+                    <td style={{ padding: '6px 10px', fontSize: '10.5px', color: '#9a3412', border: '1px solid #e2e8f0' }}>Total turnkey system price payable by the customer</td>
                   </tr>
                   <tr>
                     <td style={{ padding: '6px 10px', fontWeight: 700, border: '1px solid #e2e8f0' }}>Estimated Monthly Electricity Savings</td>
@@ -568,7 +561,6 @@ export default function ProposalPreview({
               <ul style={{ fontSize: '10.5px', color: '#475569', margin: 0, paddingLeft: '16px', lineHeight: 1.6 }}>
                 <li>System performance estimations assume unshaded rooftop conditions with orientation aligned to local optimal azimuth.</li>
                 <li>Solar PV panels include a 10-year product warranty and 25-year linear performance warranty guaranteeing &gt;= 84.8% output.</li>
-                <li>Government subsidy disbursement is subject to MNRE national portal guidelines and local DISCOM inspection compliance.</li>
                 <li>Milestone payment terms: 10% on proposal approval, 70% upon equipment dispatch, 20% post-commissioning net-meter sync.</li>
               </ul>
             </div>

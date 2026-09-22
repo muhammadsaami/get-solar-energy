@@ -12,7 +12,7 @@ const CARDS = [
   {
     title: 'End-to-End Guidance',
     description:
-      'We handle DISCOM approvals, net metering setup, and PM Surya Ghar subsidies on your behalf.',
+      'We handle DISCOM approvals, net metering setup, and installation paperwork on your behalf.',
   },
 ]
 

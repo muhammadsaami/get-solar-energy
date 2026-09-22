@@ -87,7 +87,7 @@ Halt the pilot immediately and fail closed if any of the following occur:
 2. Environment is detected as `production`, `prod`, or `live`.
 3. An unredacted API key signature (`AIzaSy...`) appears in logs or error traces.
 4. Latency exceeds 15,000ms on 3 consecutive cases.
-5. DISCOM tariff or PM Surya Ghar subsidy hallucinations occur without uncertainty disclaimers.
+5. DISCOM tariff hallucinations occur without uncertainty disclaimers, or any subsidy provision/calculation is offered.
 6. Any request attempts to route toward Luna or an unverified endpoint.
 
 ---

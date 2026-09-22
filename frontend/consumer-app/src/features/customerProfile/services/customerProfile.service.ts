@@ -64,7 +64,6 @@ export const customerProfileService = {
       joinedDateFormatted,
       accountType: 'Residential',
       kycStatus: 'Verified',
-      subsidyEligible: true,
     }
   },
 

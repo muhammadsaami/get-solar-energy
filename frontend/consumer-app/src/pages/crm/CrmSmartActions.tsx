@@ -46,7 +46,7 @@ export default function CrmSmartActions({ data, customerId }: Props) {
       list.push({ id: 'complete-survey', label: 'Complete Survey', icon: <MdVerified size={16} />, route: ROUTES.SITE_SURVEY, priority: 'high' })
     }
     if (surveyDone && !hasProposal) {
-      list.push({ id: 'generate-proposal', label: 'Generate Proposal', icon: <MdDescription size={16} />, route: ROUTES.PLANNING_PROPOSAL, priority: 'high' })
+      list.push({ id: 'generate-proposal', label: 'Generate Proposal', icon: <MdDescription size={16} />, route: ROUTES.ADMIN_PROPOSALS, priority: 'high' })
     }
     if (hasProposal && !isWon) {
       list.push({ id: 'follow-up', label: 'Follow Up', icon: <MdSend size={16} />, priority: 'medium' })

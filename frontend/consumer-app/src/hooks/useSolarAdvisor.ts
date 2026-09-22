@@ -110,7 +110,7 @@ function saveHistory(messages: ChatMessage[]) {
 
 const WELCOME_MESSAGE: ChatMessage = {
   role: 'assistant',
-  content: 'Hello! I can help explain your bill analysis, roof assessment, ROI calculations, subsidy eligibility, and solar recommendations. How can I help you today?',
+  content: 'Hello! I can help explain your bill analysis, roof assessment, ROI calculations, and solar recommendations. How can I help you today?',
   time: formatTime(),
   contextUsed: 'General AI guidance',
 }

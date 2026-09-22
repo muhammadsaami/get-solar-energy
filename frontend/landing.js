@@ -40,18 +40,6 @@ function trackCTA(payload) {
    ========================================================================== */
 
 /**
- * PM Surya Ghar Subsidy Calculator (Central Government scheme, 2024 rates)
- * - 1–2 kW: ₹30,000/kW
- * - 2–3 kW: ₹60,000 + ₹18,000 for the 3rd kW
- * - >3 kW: fixed cap at ₹78,000
- */
-function calculateSubsidy(kW) {
-  if (kW <= 2) return Math.round(kW * 30000);
-  if (kW <= 3) return 60000 + Math.round((kW - 2) * 18000);
-  return 78000;
-}
-
-/**
  * Format a number as Indian currency (compact if ≥ 1 lakh)
  */
 function formatInrCompact(amount) {
@@ -93,7 +81,6 @@ function initQuickEstimate() {
   const outEstAnnualSavings = document.getElementById('outEstAnnualSavings');
   const outEstPayback       = document.getElementById('outEstPayback');
   const outEstLifetime      = document.getElementById('outEstLifetime');
-  const outSubsidyAmount    = document.getElementById('outSubsidyAmount');
   const resultCityEl        = document.getElementById('estimateResultCity');
   const resultSubtitleEl    = document.getElementById('estimateResultSubtitle');
   const insightNoteEl       = document.getElementById('calcInsightText');
@@ -161,8 +148,6 @@ function initQuickEstimate() {
       // --- Core calculation (unchanged) ---
       const result = calculateEstimate(cityVal, billVal);
 
-      // --- Extended calculations ---
-      const subsidy       = calculateSubsidy(result.recommendedSize);
       // 25-yr lifetime return: annualSavings × 25 × degradation factor (0.82)
       const lifetimeReturn = Math.round(result.annualSavings * 25 * 0.82);
 
@@ -180,18 +165,13 @@ function initQuickEstimate() {
       animateEstimateValue(outEstPayback,       0, result.paybackYears,     ' Yrs', 1, 900);
       animateEstimateValue(outEstLifetime,      0, lifetimeReturn,          '₹', 0, 1200, true);
 
-      // --- Subsidy card ---
-      if (outSubsidyAmount) {
-        outSubsidyAmount.textContent = formatInrCompact(subsidy);
-      }
-
       // --- Insight note ---
       if (insightNoteEl) {
         const paybackDisplay = parseFloat(result.paybackYears).toFixed(1);
         const sizeDisplay = parseFloat(result.recommendedSize).toFixed(1);
         insightNoteEl.textContent =
-          `A ${sizeDisplay} kW system in ${cityLabel} can offset ~90% of your bill. ` +
-          `After the ₹${subsidy.toLocaleString('en-IN')} government subsidy, your net payback is under ${paybackDisplay} years.`;
+          `A ${sizeDisplay} kW system in ${cityLabel} can offset ~90% of your bill ` +
+          `with payback in under ${paybackDisplay} years.`;
       }
 
 
@@ -506,7 +486,6 @@ function initDynamicBanner() {
 
   const facts = [
     "Analyzing over 25,000 electricity bills and rooftop assessments across India.",
-    "Real-time integration active with Surya Ghar national subsidy guidelines.",
     "Average consumer bill reduction estimated at 84% post install.",
     "Over 120 MW of solar capacity potential scanned in UP, NCR & Gujarat."
   ];

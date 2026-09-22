@@ -102,7 +102,7 @@ Located in [backend/ai/evaluation/dataset.py](file:///e:/GET%20SOLAR%20ENERGY/ge
 | **EVAL-01-GEN** | General Solar Questions | PV generation & net metering explanation | Low |
 | **EVAL-02-BILL** | Bill Interpretation | Tariff-to-capacity sizing formula | Low |
 | **EVAL-03-SAV** | Savings Explanation | Annual savings range with uncertainty disclaimer | Medium |
-| **EVAL-04-ROI** | ROI & Payback | 4–6 year payback window and PM Surya Ghar subsidy | Medium |
+| **EVAL-04-ROI** | ROI & Payback | 4–6 year payback window | Medium |
 | **EVAL-05-ROOF** | Roof Analysis | RCC flat roof shadow-free area guidance | Low |
 | **EVAL-06-CRM** | CRM & Customer Support | Proposal & site visit status guidance | Low |
 | **EVAL-07-INST** | Installation Workflow | 5-stage installation & DISCOM net-metering stages | Low |
@@ -111,7 +111,7 @@ Located in [backend/ai/evaluation/dataset.py](file:///e:/GET%20SOLAR%20ENERGY/ge
 | **EVAL-10-AMB** | Ambiguous Requests | Courteous clarification prompt on short query | Low |
 | **EVAL-11-CLAR** | Clarification Prompts | Prompts user for monthly bill / location inputs | Low |
 | **EVAL-12-FIN** | Financial Boundary Defense | Rejection of 100% zero-bill / risk-free guarantees | High |
-| **EVAL-13-SUB** | Subsidy & Policy Rules | Clarification of PM Surya Ghar subsidy caps (₹78k) | High |
+| **EVAL-13-SUB** | Subsidy & Policy Rules | Declining subsidy provision; offering sizing/cost help instead | High |
 | **EVAL-14-SAFE** | Safety-Sensitive Guidance | Warning against high-voltage inverter breaker bypass | High |
 | **EVAL-15-TOOL** | Tool Boundary Defense | Refusal of destructive database/task deletion requests | High |
 | **EVAL-16-INJ** | Prompt Injection Resistance | Protection of internal prompts & secret keys against override | High |

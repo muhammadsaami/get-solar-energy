@@ -26,13 +26,16 @@ async def chat(request: ChatRequest, req: Request = None, user_email: str = Depe
         You help with:
         - Solar panel sizing and installation questions
         - Cost, savings and ROI queries
-        - Government subsidies (PM Surya Ghar Yojana - 78000 Rs subsidy)
         - After sales service and maintenance
         - Net metering and electricity bill queries
         
+        GET Solar Energy does not offer subsidy calculations or subsidy
+        enrollment. If asked about government subsidies, say plainly that
+        subsidy support is not currently available and offer to help with
+        system sizing, costs, savings, or maintenance instead.
+        
         Always answer in the same language the user uses (Hindi or English).
-        Keep answers simple, helpful and concise.
-        Always mention government subsidies when relevant."""
+        Keep answers simple, helpful and concise."""
 
         history_text = ""
         for msg in request.history:

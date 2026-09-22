@@ -68,7 +68,6 @@ class BillResponse(BaseModel):
     monthly_savings: float
     annual_savings: Optional[float] = None
     system_cost: float
-    subsidy: Optional[float] = None
     net_cost: Optional[float] = None
     payback_years: float
     savings_25yr: float

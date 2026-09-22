@@ -102,7 +102,7 @@
     ],
     "validation": "Positive numeric values",
     "submit_api": "POST /api/calculate-roi",
-    "success_handling": "Calculates PM Surya Ghar subsidy, payback period, and 25-yr cashflow",
+    "success_handling": "Calculates payback period and 25-yr cashflow from full system cost",
     "failure_handling": "Inline error banner",
     "persistence_type": "Live Computation (In-session)",
     "status": "LIVE COMPUTED"

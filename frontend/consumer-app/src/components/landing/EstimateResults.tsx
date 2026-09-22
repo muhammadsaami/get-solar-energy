@@ -2,8 +2,7 @@ import React, { useEffect, useState } from 'react'
 import { motion, useReducedMotion } from 'motion/react'
 import { useAnimatedCounter } from '../../hooks/useAnimatedCounter'
 import type { EstimateResult } from '../../utils/solar'
-import { calculateSubsidy, calculateLifetimeReturn } from '../../utils/solar'
-import SubsidyCard from './SubsidyCard'
+import { calculateLifetimeReturn } from '../../utils/solar'
 import InsightCard from './InsightCard'
 import { trackCTA } from '../../utils/analytics'
 
@@ -41,7 +40,6 @@ export default function EstimateResults({
     return () => cancelAnimationFrame(id)
   }, [])
 
-  const subsidy = calculateSubsidy(result.recommendedSize)
   const lifetimeReturn = calculateLifetimeReturn(result.annualSavings)
   const label = getCityLabel(city)
 
@@ -84,11 +82,11 @@ export default function EstimateResults({
   })
 
   const systemPrice = result.systemCost || Math.round(result.recommendedSize * 55000)
-  const netOutlay = result.netCost || Math.max(0, systemPrice - subsidy)
+  const netOutlay = result.netCost || systemPrice
 
   const insightText =
     `A ${result.recommendedSize.toFixed(1)} kW system in ${label} can offset ~90% of your bill. ` +
-    `Estimated turnkey pricing is \u20B9${systemPrice.toLocaleString('en-IN')}. After the \u20B9${subsidy.toLocaleString('en-IN')} government subsidy, your net outlay is \u20B9${netOutlay.toLocaleString('en-IN')} with payback in ${result.paybackYears.toFixed(1)} years.`
+    `Estimated turnkey pricing is \u20B9${systemPrice.toLocaleString('en-IN')} with payback in ${result.paybackYears.toFixed(1)} years.`
 
   return (
     <motion.div
@@ -168,21 +166,10 @@ export default function EstimateResults({
           <span>Turnkey System Price:</span>
           <span style={{ color: 'var(--text-primary)', fontWeight: 600 }}>₹{systemPrice.toLocaleString('en-IN')}</span>
         </div>
-        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', fontSize: '11px', color: 'var(--color-green)', marginBottom: 4 }}>
-          <span>PM Surya Ghar Direct Subsidy:</span>
-          <span style={{ fontWeight: 700 }}>- ₹{subsidy.toLocaleString('en-IN')}</span>
-        </div>
         <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', fontSize: '12px', color: 'var(--color-orange)', paddingTop: 4, borderTop: '1px solid var(--border-color, rgba(255,255,255,0.08))' }}>
           <span style={{ fontWeight: 700 }}>Net Capital Outlay:</span>
           <span style={{ fontWeight: 800 }}>₹{netOutlay.toLocaleString('en-IN')}</span>
         </div>
-      </div>
-
-      <div
-        className={`result-reveal${revealed ? ' is-visible' : ''}`}
-        style={{ transitionDelay: '0.34s' }}
-      >
-        <SubsidyCard amount={subsidy} />
       </div>
 
       <div

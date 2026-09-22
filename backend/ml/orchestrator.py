@@ -179,14 +179,8 @@ class AIOrchestrator:
         recommended_kw = round(monthly_units / 135.0, 1) if monthly_units > 0 else 0
         system_cost = recommended_kw * 55000
 
-        if recommended_kw >= 3:
-            subsidy = 78000
-        elif recommended_kw >= 2:
-            subsidy = 60000
-        else:
-            subsidy = recommended_kw * 30000
-
-        net_cost = max(0, system_cost - subsidy)
+        # Net cost equals the full system cost (no subsidy program).
+        net_cost = max(0, system_cost)
         monthly_savings = bill_amount * 0.9
         annual_savings = monthly_savings * 12
         payback_period = round(net_cost / annual_savings, 1) if annual_savings > 0 else 0
@@ -197,7 +191,6 @@ class AIOrchestrator:
         return {
             "recommended_kw": recommended_kw,
             "system_cost": system_cost,
-            "subsidy": subsidy,
             "net_cost": net_cost,
             "monthly_savings": round(monthly_savings, 0),
             "annual_savings": round(annual_savings, 0),

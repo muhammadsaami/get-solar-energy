@@ -42,7 +42,7 @@ const LockSvg = () => (
 const badges: TrustBadge[] = [
   { label: 'Secure Login', svg: <ShieldSvg /> },
   { label: 'Solar Intelligence', svg: <SunSvg /> },
-  { label: 'Govt Subsidy Ready', svg: <BuildingSvg /> },
+  { label: '5-Year Workmanship Warranty', svg: <BuildingSvg /> },
   { label: '24/7 Support', svg: <PhoneSvg /> },
   { label: 'Enterprise Security', svg: <LockSvg /> },
 ]

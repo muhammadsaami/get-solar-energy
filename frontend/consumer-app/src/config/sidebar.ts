@@ -25,7 +25,6 @@ export const SIDEBAR_ITEMS: SidebarGroupConfig[] = [
       { id: 'bill-analyzer', label: 'Bill Analyzer', route: ROUTES.BILL_ANALYZER, color: 'cyan', symbolId: 'bill', visible: true, requiredFeature: 'bill-analyzer' },
       { id: 'roof-analysis', label: 'Roof Vision AI', route: ROUTES.ROOF_ANALYSIS, color: 'orange', symbolId: 'roof', visible: true, requiredFeature: 'roof-analysis' },
       { id: 'roi-calculator', label: 'ROI Calculator', route: ROUTES.ROI_CALCULATOR, color: 'green', symbolId: 'calculator', visible: true, requiredFeature: 'roi-calculator' },
-      { id: 'proposal', label: 'AI Proposal', route: ROUTES.PLANNING_PROPOSAL, color: 'orange', symbolId: 'reports', visible: true, requiredFeature: 'proposal-generator' },
     ],
   },
   {

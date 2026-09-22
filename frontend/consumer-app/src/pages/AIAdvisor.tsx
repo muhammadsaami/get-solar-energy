@@ -25,7 +25,7 @@ export default function AIAdvisor() {
       <div className="tab-header-block">
         <h2 className="tab-heading">AI Solar Advisor</h2>
         <p className="tab-subheading">
-          Ask questions about solar technology, PM-Surya Ghar subsidies, net metering,
+          Ask questions about solar technology, system costs, net metering,
           installation requirements, or maintenance logs.
         </p>
       </div>

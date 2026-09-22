@@ -62,7 +62,7 @@ PROJECT_DATA = [
 
 TASK_NAMES = [
     "Site Survey", "Load Analysis", "Panel Layout Design", "Electrical Diagram Review",
-    "Subsidy Application", "Customer Approval", "Material Procurement", "Roof Preparation",
+    "Documentation", "Customer Approval", "Material Procurement", "Roof Preparation",
     "Panel Installation", "Inverter Setup", "Wiring and Cabling", "System Testing",
     "Commissioning", "Customer Handover"
 ]

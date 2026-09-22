@@ -130,7 +130,6 @@ export default function ROIDetailedSpecs({ result }: ROIDetailedSpecsProps) {
       <div style={{ display: 'grid', gridTemplateColumns: 'repeat(2, 1fr)', gap: '8px' }}>
         <SpecItem label="Recommended Size" value={`${result.recommendedKw} kW`} />
         <SpecItem label="System Cost" value={fmtCurrency(result.systemCost)} />
-        <SpecItem label="Subsidy Amount" value={fmtCurrency(result.governmentSubsidy)} />
         <SpecItem label="Net Cost" value={fmtCurrency(result.netCost)} />
         <SpecItem label="Annual Generation" value={`${fmtNumber(result.annualGeneration)} kWh`} />
         <SpecItem label="Monthly Savings" value={fmtCurrency(result.monthlySavings)} />

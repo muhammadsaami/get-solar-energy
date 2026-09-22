@@ -1,5 +1,5 @@
 const METRICS = [
-  'PM Surya Ghar Standardized',
+  'Tier-1 Solar Modules',
   'DISCOM Net-Metering Compliant',
   '25-Year Linear Output Warranty',
 ]

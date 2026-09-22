@@ -66,7 +66,7 @@ export const FEATURE_PERMISSIONS: Record<FeatureId, FeaturePermission> = {
   'reports-center': { roles: [ROLES.CUSTOMER, ROLES.ADMIN] },
   amc: { roles: [ROLES.CUSTOMER, ROLES.ADMIN] },
   'site-survey': { roles: [ROLES.VENDOR, ROLES.ADMIN] },
-  'proposal-generator': { roles: [ROLES.CUSTOMER, ROLES.ADMIN] },
+  'proposal-generator': { roles: [ROLES.ADMIN] },
   settings: { roles: [ROLES.CUSTOMER, ROLES.VENDOR, ROLES.ADMIN, ROLES.ENGINEER] },
   'settings-admin': { roles: [ROLES.ADMIN] },
   'account-profile': { roles: [ROLES.CUSTOMER, ROLES.ADMIN] },

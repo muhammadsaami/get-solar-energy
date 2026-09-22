@@ -21,10 +21,9 @@ const METRICS: MetricConfig[] = [
     delay: 150,
   },
   {
-    key: 'discomCoverage',
-    endValue: 100,
-    label: 'MNRE / PM Surya Ghar',
-    suffix: '% Ready',
+    key: 'inverterWarranty',
+    endValue: 10,
+    label: 'Year Inverter Warranty',
     delay: 300,
   },
 ]
@@ -118,8 +117,8 @@ export default function HeroScene() {
           </motion.h1>
 
           <motion.p variants={itemVariants} className="hero-description-paragraph">
-            Design your custom solar layout, calculate your exact savings, and verify
-            government subsidies.
+            Design your custom solar layout, calculate your exact savings, and plan
+            your installation.
           </motion.p>
 
           <motion.div variants={itemVariants} className="hero-action-ctas">
@@ -146,8 +145,8 @@ export default function HeroScene() {
           </motion.div>
 
           <motion.div variants={itemVariants} className="hero-trust-pills">
-            <span className="trust-pill">{'\u{1F1EE}\u{1F1F3}'} PM Surya Ghar Ready</span>
-            <span className="trust-pill">Government Subsidy Support</span>
+            <span className="trust-pill">{'\u{1F1EE}\u{1F1F3}'} Tier-1 Solar Modules</span>
+            <span className="trust-pill">5-Year Workmanship Warranty</span>
             <span className="trust-pill">PAN India Coverage</span>
           </motion.div>
 
@@ -171,10 +170,10 @@ export default function HeroScene() {
               <span className="stat-lbl">Typical Bill Reduction</span>
             </div>
             <div className="hero-stat-item" id="metricCard3">
-              <span className="stat-num" id="metricDiscomCoverage">
-                {values.discomCoverage}
+              <span className="stat-num" id="metricInverterWarranty">
+                {values.inverterWarranty}
               </span>
-              <span className="stat-lbl">PM Surya Ghar Ready</span>
+              <span className="stat-lbl">Year Inverter Warranty</span>
             </div>
           </motion.div>
         </motion.div>

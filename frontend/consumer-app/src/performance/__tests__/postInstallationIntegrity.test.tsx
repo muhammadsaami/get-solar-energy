@@ -77,7 +77,8 @@ describe('Post-Installation Data Integrity & Gatekeeper', () => {
     expect(screen.getByText('ASSESSMENT MODE')).toBeInTheDocument()
     expect(screen.getByText(/Your solar system has not been commissioned yet/i)).toBeInTheDocument()
     expect(screen.getByRole('button', { name: /View Assessment/i })).toBeInTheDocument()
-    expect(screen.getByRole('button', { name: /View AI Proposal/i })).toBeInTheDocument()
+    // Proposal generation is admin-only: customers must not see a proposal CTA.
+    expect(screen.queryByRole('button', { name: /View AI Proposal/i })).not.toBeInTheDocument()
 
     // Verify NOT INSTALLED badge on post-installation analytics
     expect(screen.getByText('NOT INSTALLED')).toBeInTheDocument()

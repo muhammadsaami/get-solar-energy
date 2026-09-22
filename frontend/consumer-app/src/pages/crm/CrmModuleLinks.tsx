@@ -26,7 +26,7 @@ export default function CrmModuleLinks({ data }: Props) {
     { label: 'Bill Analyzer', icon: <MdReceipt size={16} />, route: ROUTES.BILL_ANALYZER, enabled: hasBill },
     { label: 'Roof Analysis', icon: <MdRoofing size={16} />, route: ROUTES.ROOF_ANALYSIS, enabled: hasRoof },
     { label: 'Site Survey', icon: <MdCalendarMonth size={16} />, route: ROUTES.SITE_SURVEY, enabled: hasSurvey },
-    { label: 'Proposal', icon: <MdDescription size={16} />, route: ROUTES.PLANNING_PROPOSAL, enabled: hasProposal },
+    { label: 'Proposal', icon: <MdDescription size={16} />, route: ROUTES.ADMIN_PROPOSALS, enabled: hasProposal },
     { label: 'ROI Calculator', icon: <MdCalculate size={16} />, route: ROUTES.ROI_CALCULATOR, enabled: hasBill },
     { label: 'Installation', icon: <MdBuild size={16} />, route: ROUTES.INSTALLATION_PROGRESS, enabled: data.installation !== null },
     { label: 'AMC', icon: <MdVerified size={16} />, route: ROUTES.AMC, enabled: data.amc !== null },

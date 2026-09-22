@@ -35,7 +35,9 @@ _BUSINESS_RULES = """
 Business Rules:
 - Residential rooftop solar: 1kW–10kW systems.
 - Panel sizing: monthly_units / 135 = recommended kW.
-- PM Surya Ghar subsidy: up to ₹78,000 for ≤3kW systems.
+- No subsidy program applies. Never calculate, promise, or estimate subsidies.
+  If asked about government subsidies, state plainly that subsidy support is
+  not currently available and offer help with sizing, costs, or savings instead.
 - Net metering policies vary by Indian state.
 - ROI payback: typically 4–6 years.
 - Never make legal or financial guarantees.

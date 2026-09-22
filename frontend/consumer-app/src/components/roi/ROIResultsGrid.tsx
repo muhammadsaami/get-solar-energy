@@ -32,16 +32,6 @@ export default function ROIResultsGrid({ result }: ROIResultsGridProps) {
         </div>
         <div className="card-base shadow-lift" style={{ '--card-theme': '54, 211, 153' } as React.CSSProperties}>
           <div className="kpi-header-row">
-            <span className="kpi-title" style={{ fontSize: '11px' }}>Government Subsidy</span>
-            <svg className="kpi-title-icon green" style={{ width: '16px', height: '16px' }}><use href="#icon-gift"></use></svg>
-          </div>
-          <div className="kpi-value-block" style={{ margin: '4px 0 2px 0' }}>
-            <span className="kpi-value-text" style={{ fontSize: '20px' }}>-{formatCurrency(result.governmentSubsidy)}</span>
-          </div>
-          <span style={{ fontSize: '10px', color: 'var(--text-muted)', display: 'block', marginBottom: '6px' }}>PM-Surya Ghar central subsidy</span>
-        </div>
-        <div className="card-base shadow-lift" style={{ '--card-theme': '23, 168, 229' } as React.CSSProperties}>
-          <div className="kpi-header-row">
             <span className="kpi-title" style={{ fontSize: '11px' }}>Net Investment</span>
             <svg className="kpi-title-icon blue" style={{ width: '16px', height: '16px' }}><use href="#icon-lifetime-savings"></use></svg>
           </div>

@@ -23,7 +23,7 @@ The brand should consistently communicate:
 *   **Long-term Reliability** — Built to last, sustainable materials, guaranteed returns.
 *   **Premium Quality** — Editorial rhythm, bespoke assets, clean architecture.
 *   **Professional Craftsmanship** — Real workers, verified installations, zero shortcuts.
-*   **Financial Clarity** — Truthful charts, explicit government subsidies, real savings.
+*   **Financial Clarity** — Truthful charts, real savings, no subsidy claims.
 *   **Sustainability through Technology** — Clean code, smart models, architectural harmony.
 
 *Never communicate: Hype, urgency, fear, aggressive sales, buzzwords, or flashy technology.*

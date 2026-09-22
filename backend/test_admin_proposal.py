@@ -82,7 +82,7 @@ def ai_success(monkeypatch):
             class Resp:
                 content = (
                     '{"customer_name": "Proposal Customer", "vendor_name": "Get Solar Energy", '
-                    '"system_cost_rs": 150000, "subsidy_rs": 78000, "net_cost_rs": 72000, '
+                    '"system_cost_rs": 150000, "net_cost_rs": 150000, '
                     '"monthly_generation_units": 405, "monthly_savings_rs": 3240, '
                     '"annual_savings_rs": 38880, "payback_years": 1.9, '
                     '"savings_25_years_rs": 900000, "co2_offset_tons_per_year": 3.89, '

@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <meta name="description" content="GET Solar Energy Dashboard - India's Solar Intelligence &amp; Service Ecosystem. Access Roof analysis, Bill analyzer, ROI calculations, and central subsidies.">
+  <meta name="description" content="GET Solar Energy Dashboard - India's Solar Intelligence &amp; Service Ecosystem. Access Roof analysis, Bill analyzer, and ROI calculations.">
   <title>GET Solar Energy - Advanced Solar Analytics Dashboard</title>
   <!-- GET Solar Energy Design System v1.0.0 -->
   <link rel="preconnect" href="https://fonts.googleapis.com">
@@ -627,7 +627,7 @@
               <div class="hero-trust-indicators-row">
                 <div class="trust-pill">
                   <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="11" width="18" height="11" rx="2" ry="2"></rect><path d="M12 2L2 7l10 5 10-5-10-5zM12 17V12"></path></svg>
-                  <span>Government Subsidy Assistance</span>
+                  <span>25-Year Performance Warranty</span>
                 </div>
                 <div class="trust-pill">
                   <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"></path><polyline points="22 4 12 14.01 9 11.01"></polyline></svg>
@@ -918,7 +918,7 @@
           </div>
         </section>
 
-        <!-- --- BOTTOM GRID: ANALYTICS & SUBSIDIES (4 Columns) --- -->
+        <!-- --- BOTTOM GRID: ANALYTICS (3 Columns) --- -->
         <div class="analytics-grid">
           
           <!-- Energy Production (Column 1) -->
@@ -961,46 +961,6 @@
             <div class="chart-canvas-box">
               <canvas id="consumptionChart"></canvas>
             </div>
-          </section>
-
-          <!-- Government Subsidy (Column 3) -->
-          <section class="analytics-card subsidy-card">
-            <div class="analytics-header-row">
-              <h4 class="analytics-title" style="color: #15803d;">Government Subsidy</h4>
-              <span class="subsidy-tag">Eligible for Central & State Subsidy</span>
-            </div>
-            <div class="subsidy-hero-row">
-              <div class="subsidy-val">₹78,000</div>
-              <span class="subsidy-hero-label">Eligible Amount</span>
-            </div>
-            <div class="subsidy-divider"></div>
-            <div class="subsidy-breakdown">
-              <div class="subsidy-item">
-                <svg class="subsidy-check-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg>
-                <span class="subsidy-item-label">Central Subsidy (MNRE)</span>
-                <span class="subsidy-item-amount">₹30,000</span>
-              </div>
-              <div class="subsidy-item">
-                <svg class="subsidy-check-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg>
-                <span class="subsidy-item-label">State Subsidy</span>
-                <span class="subsidy-item-amount">₹30,000</span>
-              </div>
-              <div class="subsidy-item">
-                <svg class="subsidy-check-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg>
-                <span class="subsidy-item-label">Additional Incentives</span>
-                <span class="subsidy-item-amount">₹18,000</span>
-              </div>
-            </div>
-            <div class="subsidy-progress-row">
-              <div class="subsidy-progress-track">
-                <div class="subsidy-progress-fill" style="width: 75%;"></div>
-              </div>
-              <span class="subsidy-progress-label">75% Eligible</span>
-            </div>
-            <button class="subsidy-btn" id="subsidyBtn" onclick="switchTab('roi-calculator')">
-              <span>Check Eligibility</span>
-              <svg><use href="#icon-arrow-right"></use></svg>
-            </button>
           </section>
 
           <!-- System Performance (Column 4) -->
@@ -2035,7 +1995,7 @@
       <div class="tab-content" role="tabpanel" aria-label="roi calculator" id="tab-roi-calculator">
         <div class="tab-header-block">
           <h2 class="tab-heading">Financial Savings & ROI Simulator</h2>
-          <p class="tab-subheading">Simulate your payback period, investment metrics, and cumulative returns based on government subsidy guidelines.</p>
+          <p class="tab-subheading">Simulate your payback period, investment metrics, and cumulative returns.</p>
         </div>
         
         <div class="tab-grid-layout" style="display: grid; grid-template-columns: 1.2fr 1.8fr; gap: 20px; margin-bottom: 20px;">
@@ -2094,17 +2054,6 @@
                 </div>
                 <span style="font-size: 10px; color: var(--text-muted); display: block; margin-bottom: 6px;">Total solar installation setup cost</span>
                 <span class="api-tag" style="margin-top: 0; font-size: 7px; padding: 1px 4px;">API: calculate-roi</span>
-              </div>
-              <div class="card-base shadow-lift" style="--card-theme: 54, 211, 153;">
-                <div class="kpi-header-row">
-                  <span class="kpi-title" style="font-size: 11px;">Govt. Subsidy Applied</span>
-                  <svg class="kpi-title-icon green" style="width:16px; height:16px;"><use href="#icon-gift"></use></svg>
-                </div>
-                <div class="kpi-value-block" style="margin: 4px 0 2px 0;">
-                  <span class="kpi-value-text" id="tabOutSubsidy" style="font-size: 20px;">-₹78,000</span>
-                </div>
-                <span style="font-size: 10px; color: var(--text-muted); display: block; margin-bottom: 6px;">PM-Surya Ghar central subsidy</span>
-                <span class="api-tag" style="margin-top: 0; font-size: 7px; padding: 1px 4px; --card-theme: 54, 211, 153;">API: calculate-roi</span>
               </div>
               <div class="card-base shadow-lift" style="--card-theme: 23, 168, 229;">
                 <div class="kpi-header-row">
@@ -2206,10 +2155,6 @@
               <span style="font-size: 11px; font-weight: 800; color: var(--text-navy);" id="resRoiSystemCost">-</span>
             </div>
             <div style="background: rgba(255, 255, 255, 0.02); border: 1px solid var(--border-color); padding: 6px 10px; border-radius: 4px;">
-              <span style="font-size: 8px; color: var(--text-muted); display: block; text-transform: uppercase; font-weight: 700;">Subsidy Amount</span>
-              <span style="font-size: 11px; font-weight: 800; color: var(--text-navy);" id="resRoiSubsidy">-</span>
-            </div>
-            <div style="background: rgba(255, 255, 255, 0.02); border: 1px solid var(--border-color); padding: 6px 10px; border-radius: 4px;">
               <span style="font-size: 8px; color: var(--text-muted); display: block; text-transform: uppercase; font-weight: 700;">Net Cost</span>
               <span style="font-size: 11px; font-weight: 800; color: var(--text-navy);" id="resRoiNetCost">-</span>
             </div>
@@ -2259,7 +2204,7 @@
       <div class="tab-content" role="tabpanel" aria-label="ai assistant" id="tab-ai-assistant">
         <div class="tab-header-block">
           <h2 class="tab-heading">AI Solar Advisor</h2>
-          <p class="tab-subheading">Ask questions about solar technology, PM-Surya Ghar subsidies, net metering, installation requirements, or maintenance logs.</p>
+          <p class="tab-subheading">Ask questions about solar technology, system costs, net metering, installation requirements, or maintenance logs.</p>
         </div>
         
         <div class="card-base chat-assistant-card" style="--card-theme: 23, 168, 229;">
@@ -2275,7 +2220,7 @@
           <div class="chat-conversation-log" id="aiChatConversationLog" style="height: 280px; overflow-y: auto; display: flex; flex-direction: column; gap: 12px; padding: 10px; background: rgba(0,0,0,0.15); border-radius: 6px; border: 1px solid var(--border-color); margin-bottom: 12px;">
             <div class="chat-message assistant" style="display: flex; flex-direction: column; align-items: flex-start; max-width: 80%;">
               <div class="message-bubble" style="background: rgba(255,255,255,0.08); border: 1px solid var(--border-color); padding: 10px 14px; border-radius: 8px 8px 8px 0; font-size: 12px; color: var(--text-navy); line-height: 1.4;">
-                Hello! I can help explain your bill analysis, roof assessment, ROI calculations, subsidy eligibility, and solar recommendations. How can I help you today?
+                Hello! I can help explain your bill analysis, roof assessment, ROI calculations, and solar recommendations. How can I help you today?
               </div>
               <span class="message-time" style="font-size: 9px; color: var(--text-muted); margin-top: 4px; margin-left: 4px;">15:40</span>
             </div>
@@ -2283,7 +2228,7 @@
 
           <!-- Suggested queries chips -->
           <div class="chat-suggestion-chips-row" style="display: flex; flex-wrap: wrap; gap: 8px; margin-bottom: 15px;">
-            <button class="chat-suggest-chip" style="font-size: 11px; background: rgba(23,168,229,0.08); border: 1px solid rgba(23,168,229,0.25); color: var(--accent-blue); padding: 6px 12px; border-radius: 14px; cursor: pointer; transition: all 0.2s;">How do I apply for the Surya Ghar subsidy?</button>
+            <button class="chat-suggest-chip" style="font-size: 11px; background: rgba(23,168,229,0.08); border: 1px solid rgba(23,168,229,0.25); color: var(--accent-blue); padding: 6px 12px; border-radius: 14px; cursor: pointer; transition: all 0.2s;">What system size do I need?</button>
             <button class="chat-suggest-chip" style="font-size: 11px; background: rgba(23,168,229,0.08); border: 1px solid rgba(23,168,229,0.25); color: var(--accent-blue); padding: 6px 12px; border-radius: 14px; cursor: pointer; transition: all 0.2s;">Is 3kW enough for a 450 units monthly load?</button>
             <button class="chat-suggest-chip" style="font-size: 11px; background: rgba(23,168,229,0.08); border: 1px solid rgba(23,168,229,0.25); color: var(--accent-blue); padding: 6px 12px; border-radius: 14px; cursor: pointer; transition: all 0.2s;">How does net metering work in Uttar Pradesh?</button>
           </div>
@@ -2649,7 +2594,7 @@
                   <h4 style="font-size: 13px; font-weight: 800; color: var(--text-navy); margin: 0;">ROI &amp; Financial Report</h4>
                   <span id="badgeRoi" class="status-badge badge-gray">Not Available</span>
                 </div>
-                <p style="font-size: 10px; color: var(--text-secondary); line-height: 1.4; margin: 0 0 12px 0;">System costs, central PM-Surya Ghar subsidy calculations, net cash flows, payback timelines, and 25-year returns projections.</p>
+                <p style="font-size: 10px; color: var(--text-secondary); line-height: 1.4; margin: 0 0 12px 0;">System costs, net cash flows, payback timelines, and 25-year returns projections.</p>
                 <div style="font-size: 9px; color: var(--text-muted); margin-bottom: 15px;">
                   <div style="margin-bottom: 4px;">📂 <span style="font-weight: 700;">Includes:</span> Break-even chart, net cost, lifetime ROI</div>
                   <div id="dateRoi" style="font-style: italic;">Last Run: Never</div>
@@ -4374,10 +4319,6 @@
                   <span class="vendor-kpi-title">System Cost</span>
                   <span class="vendor-kpi-value" style="color: var(--text-navy);" id="resPropSystemCost">-</span>
                 </div>
-                <div class="card-base vendor-kpi-card" style="--card-theme: 54, 211, 153;">
-                  <span class="vendor-kpi-title">Subsidy</span>
-                  <span class="vendor-kpi-value" style="color: var(--accent-green);" id="resPropSubsidy">-</span>
-                </div>
                 <div class="card-base vendor-kpi-card" style="--card-theme: 255, 138, 29;">
                   <span class="vendor-kpi-title">Net Cost</span>
                   <span class="vendor-kpi-value" style="color: var(--accent-orange);" id="resPropNetCost">-</span>
@@ -4433,13 +4374,6 @@
                     Cost Breakdown
                   </h4>
                   <p id="resPropCostBreakdown" style="font-size: 11px; line-height: 1.5; color: var(--text-navy); margin: 0;"></p>
-                </div>
-                <div style="border-top: 1px solid var(--border-color-light); padding-top: 8px;">
-                  <h4 class="section-header-title blue">
-                    <svg viewBox="0 0 24 24" class="section-header-icon"><circle cx="12" cy="8" r="7"/><polyline points="8.21 13.89 7 23 12 20 17 23 15.79 13.88"/></svg>
-                    Subsidy Information
-                  </h4>
-                  <p id="resPropSubsidyInfo" style="font-size: 11px; line-height: 1.5; color: var(--text-navy); margin: 0;"></p>
                 </div>
                 <div style="border-top: 1px solid var(--border-color-light); padding-top: 8px;">
                   <h4 class="section-header-title blue">
@@ -7450,13 +7384,9 @@
           <span class="calc-result-label">Approx. System Cost:</span>
           <span class="calc-result-val blue" id="outCost">₹1,80,000</span>
         </div>
-        <div class="calc-result-row">
-          <span class="calc-result-label">Govt. Subsidy Applied:</span>
-          <span class="calc-result-val" id="outSubsidy">-₹78,000</span>
-        </div>
         <div class="calc-result-row" style="border-top: 1px solid var(--border-color); padding-top: 8px; margin-top: 4px;">
           <span class="calc-result-label" style="font-weight: 700;">Net Investment:</span>
-          <span class="calc-result-val blue" id="outNet" style="font-weight: 800;">₹1,02,000</span>
+          <span class="calc-result-val blue" id="outNet" style="font-weight: 800;">₹1,65,000</span>
         </div>
         <div class="calc-result-row">
           <span class="calc-result-label">Annual Savings:</span>

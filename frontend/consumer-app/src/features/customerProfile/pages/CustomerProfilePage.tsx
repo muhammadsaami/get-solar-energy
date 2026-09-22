@@ -402,7 +402,7 @@ export default function CustomerProfilePage() {
               <h2 className="ew-divider-title" style={{ fontSize: '15px', margin: 0, fontWeight: 700 }}>
                 Utility &amp; Grid Linkage
               </h2>
-              <span className="ew-divider-sub">DISCOM interconnection &amp; PM Surya Ghar government scheme</span>
+              <span className="ew-divider-sub">DISCOM interconnection &amp; net metering</span>
             </div>
 
             <div style={{ display: 'flex', flexDirection: 'column', gap: 'var(--space-3)' }}>
@@ -437,14 +437,13 @@ export default function CustomerProfilePage() {
                 </div>
               </div>
 
-              <div style={{ padding: '12px 14px', borderRadius: '8px', background: 'rgba(54, 211, 153, 0.08)', border: '1px solid rgba(54, 211, 153, 0.25)', marginTop: 'var(--space-1)' }}>
+              <div style={{ padding: '12px 14px', borderRadius: '8px', background: 'rgba(23, 168, 229, 0.08)', border: '1px solid rgba(23, 168, 229, 0.25)', marginTop: 'var(--space-1)' }}>
                 <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 4 }}>
-                  <span style={{ fontSize: '11px', textTransform: 'uppercase', color: 'var(--color-green)', fontWeight: 800, letterSpacing: '0.04em' }}>
-                    PM Surya Ghar Scheme
+                  <span style={{ fontSize: '11px', textTransform: 'uppercase', color: 'var(--color-blue)', fontWeight: 800, letterSpacing: '0.04em' }}>
+                    Net Metering
                   </span>
-                  <span className="badge badge-success badge-sm">Eligible</span>
                             <span style={{ fontSize: '12px', color: 'var(--text-secondary)', lineHeight: 1.4, display: 'block' }}>
-                  Qualifies for up to ₹78,000 direct DBT government capital subsidy on residential solar rooftop systems.
+                  Bi-directional metering lets exported solar units offset your grid bill as per your DISCOM policy.
                 </span>
               </div>
             </div>

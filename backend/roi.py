@@ -25,23 +25,11 @@ async def calculate_roi(data: ROIRequest):
         system_size = data.system_size
         recommended_kw = system_size
 
-        # Cost: ₹55,000 per kW (aligned cross-platform)
+        # Cost: ₹55,000 per kW (aligned cross-platform).
+        # Net cost equals the full system cost (no subsidy program).
         system_cost = system_size * 55000
 
-        # Subsidy rules under PM-Surya Ghar Scheme:
-        # Capped at ₹78,000 max.
-        # - Up to 2kW: ₹30,000 per kW
-        # - 2kW to 3kW: ₹60,000 + ₹18,000 * (size - 2)
-        # - 3kW and above: ₹78,000
-        government_subsidy = 0.0
-        if system_size >= 3.0:
-            government_subsidy = 78000.0
-        elif system_size >= 2.0:
-            government_subsidy = 60000.0 + (system_size - 2.0) * 18000.0
-        else:
-            government_subsidy = system_size * 30000.0
-
-        net_cost = system_cost - government_subsidy
+        net_cost = system_cost
         
         # Monthly savings: solar offsets 90% of electricity bill
         monthly_savings = data.monthly_bill * 0.9
@@ -65,7 +53,6 @@ async def calculate_roi(data: ROIRequest):
             "data": {
                 "recommended_kw": recommended_kw,
                 "system_cost": system_cost,
-                "government_subsidy": government_subsidy,
                 "net_cost": net_cost,
                 "monthly_savings": round(monthly_savings, 0),
                 "annual_savings": round(annual_savings, 0),

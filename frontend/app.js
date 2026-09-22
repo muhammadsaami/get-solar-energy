@@ -1469,15 +1469,12 @@ function initROICalculator() {
 
 function updateModalResultsUI(data) {
   const systemCost = data.system_cost || 0;
-  const subsidy = data.government_subsidy || 0;
   const netCost = data.net_cost || 0;
   const annualSavings = data.annual_savings || 0;
   const paybackYears = data.payback_period || data.payback_years || 0;
 
   const outCost = document.getElementById('outCost');
   if (outCost) outCost.textContent = `₹${systemCost.toLocaleString('en-IN')}`;
-  const outSubsidy = document.getElementById('outSubsidy');
-  if (outSubsidy) outSubsidy.textContent = `-₹${subsidy.toLocaleString('en-IN')}`;
   const outNet = document.getElementById('outNet');
   if (outNet) outNet.textContent = `₹${netCost.toLocaleString('en-IN')}`;
   const outSavings = document.getElementById('outSavings');
@@ -1595,7 +1592,7 @@ function initTestimonialCarousel() {
       avatar: 'assets/user_avatar.png'
     },
     {
-      text: '"Highly professional team. The subsidy approval process was managed entirely by GET Solar, and the money was credited directly to my account in 4 weeks."',
+      text: '"Highly professional team. The installation was completed on schedule and the system has been running smoothly ever since."',
       author: 'Rohan Das',
       loc: 'Noida',
       avatar: 'assets/customer_avatar.png'
@@ -1698,13 +1695,6 @@ function initReferralCopy() {
   if (getPlanBtn) {
     getPlanBtn.addEventListener('click', () => {
       showToast('Redirecting to Get My Solar Plan portal...');
-    });
-  }
-
-  const subsidyBtn = document.getElementById('subsidyBtn');
-  if (subsidyBtn) {
-    subsidyBtn.addEventListener('click', () => {
-      showToast('Loading government subsidy calculator parameters...');
     });
   }
 
@@ -3880,7 +3870,6 @@ function initAIAdvisorChat() {
       "Is solar worth it for me?",
       "Explain my roof assessment",
       "How much can I save?",
-      "What subsidy am I eligible for?",
       "Why was this system size recommended?",
       "How does net metering work?",
       "What affects my payback period?",
@@ -3959,7 +3948,7 @@ function initAIAdvisorChat() {
   if (historyList.length === 0) {
     historyList.push({
       role: 'assistant',
-      content: "Hello! I can help explain your bill analysis, roof assessment, ROI calculations, subsidy eligibility, and solar recommendations. How can I help you today?",
+      content: "Hello! I can help explain your bill analysis, roof assessment, ROI calculations, and solar recommendations. How can I help you today?",
       time: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })
     });
     localStorage.setItem('solarChatHistory', JSON.stringify(historyList));
@@ -4018,7 +4007,7 @@ function initAIAdvisorChat() {
           tabTarget = "roof-analysis";
           trackingEventName = "roof_analysis_action";
         } else if (msg.showActionCard === 'roi') {
-          cardDesc = "Simulate solar system lifecycle savings, initial setup investment cost, and government subsidy payback periods.";
+          cardDesc = "Simulate solar system lifecycle savings, initial setup investment cost, and payback periods.";
           cardBtnText = "Calculate ROI";
           tabTarget = "roi-calculator";
           trackingEventName = "roi_action";
@@ -4216,7 +4205,7 @@ function initAIAdvisorChat() {
       if (!localStorage.getItem('lastROIAnalysis')) {
         setTimeout(() => {
           showTyping(false);
-          const replyText = "Your bill consumption and rooftop size look promising. The next step is calculating your net installation investment, government subsidies, and payback timeline.";
+          const replyText = "Your bill consumption and rooftop size look promising. The next step is calculating your net installation investment and payback timeline.";
           const replyTimeStr = new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
           historyList.push({ role: 'assistant', content: replyText, time: replyTimeStr, showActionCard: 'roi' });
           if (historyList.length > 20) historyList = historyList.slice(-20);
@@ -5039,14 +5028,13 @@ function getReportRecommendations() {
     recs.push({ text: "Complete Roof Satellite Scan", desc: "Scan your building rooftop surface to map usable placement area and assess shadow blockage penalties." });
   }
   if (!roiData) {
-    recs.push({ text: "Calculate Financial ROI & Payback", desc: "Simulate solar system investment costs, payback schedules, and central PM Surya Ghar subsidies." });
+    recs.push({ text: "Calculate Financial ROI & Payback", desc: "Simulate solar system investment costs and payback schedules." });
   } else {
     const payback = roiData.data?.payback_period || roiData.payback_period || 5.0;
     if (payback > 4.5) {
       recs.push({ text: "Review Low-Interest Financing & Loans", desc: "Explore attractive solar loan options with partner banks like SBI or Tata Capital to minimize upfront capital." });
     }
   }
-  recs.push({ text: "Apply for PM Surya Ghar Subsidy", desc: "Submit application for government subsidies (up to ₹78,000 for residential systems ≤ 3 kW)." });
   recs.push({ text: "Request Installer Consultation", desc: "Schedule a free technical inspection with an certified local installer to confirm roof structures and wiring layout." });
   return recs;
 }
@@ -5115,18 +5103,17 @@ function exportReportCSV(type) {
       showToast("No ROI Analysis data available to export.", "warning");
       return;
     }
-    headers = ['Project Cost', 'Subsidy', 'Payback', 'ROI'];
+    headers = ['Project Cost', 'Payback', 'ROI'];
     const cost = roiData.data?.system_cost || roiData.data?.system_cost_rs || 0;
-    const sub = roiData.data?.government_subsidy || 0;
     const payback = roiData.data?.payback_period || roiData.data?.payback_years || 0.0;
     const roi = roiData.data?.roi_percentage || 0;
-    row = [cost, sub, payback, roi];
+    row = [cost, payback, roi];
   }
   else if (type === 'combined') {
     headers = [
       'Monthly Bill', 'Units Consumed', 'Recommended Size', 'Annual Savings',
       'Roof Suitability Score', 'Roof Area', 'Panel Count',
-      'Project Cost', 'Subsidy', 'Payback', 'ROI'
+      'Project Cost', 'Payback', 'ROI'
     ];
 
     let billAmt = '', units = '', kw = '', annualSavings = '';
@@ -5154,10 +5141,9 @@ function exportReportCSV(type) {
       }
     }
 
-    let cost = '', sub = '', payback = '', roi = '';
+    let cost = '', payback = '', roi = '';
     if (roiData) {
       cost = roiData.data?.system_cost || roiData.data?.system_cost_rs || '';
-      sub = roiData.data?.government_subsidy || '';
       payback = roiData.data?.payback_period || roiData.data?.payback_years || '';
       roi = roiData.data?.roi_percentage || '';
     }
@@ -5165,7 +5151,7 @@ function exportReportCSV(type) {
     row = [
       billAmt, units, kw, annualSavings,
       suitabilityScore, totalArea, panels,
-      cost, sub, payback, roi
+      cost, payback, roi
     ];
   }
 
@@ -5201,7 +5187,6 @@ function buildReportHTMLContent(entry, forPrinting = false) {
   const recommendedKw = roiData ? roiData.system_size : (roofData ? roofData.recommended_kw : (billData ? billData.recommended_kw : 5.0));
   const annualSavings = roiData ? (roiData.data?.annual_savings || roiData.annual_savings || 0) : 0;
   const payback = roiData ? (roiData.data?.payback_period || roiData.payback_period || 0.0) : 0.0;
-  const subsidy = roiData ? (roiData.data?.government_subsidy || 0) : 0;
   const netCost = roiData ? (roiData.data?.net_cost || 0) : 0;
   const systemCost = roiData ? (roiData.data?.system_cost || 0) : 0;
   const roiPct = roiData ? (roiData.data?.roi_percentage || 0) : 0;
@@ -5314,8 +5299,8 @@ function buildReportHTMLContent(entry, forPrinting = false) {
             The recommended capacity is a <strong>${_safeNum(recommendedKw).toFixed(1)} kW</strong> solar plant which can offset up to 90% of electricity bills.
           </p>
           <div style="margin-top: 15px;">
-            <strong style="color: #00B5E2;">PM Surya Ghar Subsidy: </strong>
-            <span>${subsidy > 0 ? `Eligible for a central subsidy of ₹${subsidy.toLocaleString('en-IN')}, reducing net costs to ₹${netCost.toLocaleString('en-IN')}.` : 'Subsidies up to ₹78,000 are available for ≤ 3 kW systems.'}</span>
+            <strong style="color: #00B5E2;">Net Investment: </strong>
+            <span>₹${netCost.toLocaleString('en-IN')} turnkey system price.</span>
           </div>
         </div>
         
@@ -5444,7 +5429,6 @@ function buildReportHTMLContent(entry, forPrinting = false) {
               <strong style="color: #ffffff; font-size: 12px; display: block; margin-bottom: 8px;">Capital Expenditure Overview</strong>
               <table style="width: 100%; border-collapse: collapse; text-align: left;">
                 <tr style="border-bottom: 1px solid rgba(255,255,255,0.04);"><td style="padding: 6px 0; color: #94a3b8;">Total Plant Cost:</td><td style="padding: 6px 0; text-align: right; color: #ffffff; font-weight: 600;">₹${systemCost.toLocaleString('en-IN')}</td></tr>
-                <tr style="border-bottom: 1px solid rgba(255,255,255,0.04);"><td style="padding: 6px 0; text-align: right; color: #22c55e; font-weight: 600;">-₹${subsidy.toLocaleString('en-IN')}</td></tr>
                 <tr style="border-bottom: 1px solid rgba(255,255,255,0.04);"><td style="padding: 6px 0; color: #94a3b8; font-weight: 700;">Net Capex Cost:</td><td style="padding: 6px 0; text-align: right; color: #00B5E2; font-weight: 800; font-size: 12px;">₹${netCost.toLocaleString('en-IN')}</td></tr>
                 <tr style="border-bottom: 1px solid rgba(255,255,255,0.04);"><td style="padding: 6px 0; color: #94a3b8;">Payback Schedule:</td><td style="padding: 6px 0; text-align: right; color: #F59E0B; font-weight: 700;">${_safeNum(payback).toFixed(1)} Years</td></tr>
               </table>
@@ -5478,7 +5462,7 @@ function buildReportHTMLContent(entry, forPrinting = false) {
     const inverterSize = recommendedKw;
     systemConfigSectionHtml = `
       <div style="background: #060F1F; border: 1px solid rgba(255,255,255,0.08); border-radius: 8px; padding: 30px; margin-bottom: 30px;" class="page-break">
-        <h2 style="font-size: 14px; font-weight: 800; color: #ffffff; margin: 0 0 15px 0; border-bottom: 1px solid rgba(255,255,255,0.08); padding-bottom: 8px;">5. Recommended System Configuration &amp; Subsidy Specifications</h2>
+          <h2 style="font-size: 14px; font-weight: 800; color: #ffffff; margin: 0 0 15px 0; border-bottom: 1px solid rgba(255,255,255,0.08); padding-bottom: 8px;">5. Recommended System Configuration</h2>
         
         <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 20px; font-size: 11px; line-height: 1.5; color: #cbd5e1;">
           <div>
@@ -5491,13 +5475,10 @@ function buildReportHTMLContent(entry, forPrinting = false) {
             </table>
           </div>
           <div>
-            <strong style="color: #ffffff; font-size: 12px; display: block; margin-bottom: 8px;">Government PM-Surya Ghar Subsidy Details</strong>
+            <strong style="color: #ffffff; font-size: 12px; display: block; margin-bottom: 8px;">System Cost Summary</strong>
             <table style="width: 100%; border-collapse: collapse; text-align: left;">
               <tr style="border-bottom: 1px solid rgba(255,255,255,0.04);"><td style="padding: 6px 0; color: #94a3b8;">Plant Solar Capacity:</td><td style="padding: 6px 0; text-align: right; color: #ffffff; font-weight: 600;">${_safeNum(recommendedKw).toFixed(1)} kW</td></tr>
-              <tr style="border-bottom: 1px solid rgba(255,255,255,0.04);"><td style="padding: 6px 0; color: #94a3b8;">First 2 kW Subsidy:</td><td style="padding: 6px 0; text-align: right; color: #ffffff; font-weight: 600;">₹60,000 (₹30,000 / kW)</td></tr>
-              <tr style="border-bottom: 1px solid rgba(255,255,255,0.04);"><td style="padding: 6px 0; color: #94a3b8;">Next 1 kW Subsidy:</td><td style="padding: 6px 0; text-align: right; color: #ffffff; font-weight: 600;">₹18,000 (For 3rd kW)</td></tr>
-              <tr style="border-bottom: 1px solid rgba(255,255,255,0.04);"><td style="padding: 6px 0; color: #94a3b8;">Max Gov Subsidy Cap:</td><td style="padding: 6px 0; text-align: right; color: #22c55e; font-weight: 700;">₹78,000</td></tr>
-              <tr style="border-bottom: 1px solid rgba(255,255,255,0.04);"><td style="padding: 6px 0; color: #94a3b8; font-weight: 700;">Your Calculated Subsidy:</td><td style="padding: 6px 0; text-align: right; color: #22c55e; font-weight: 800;">₹${subsidy.toLocaleString('en-IN')}</td></tr>
+              <tr style="border-bottom: 1px solid rgba(255,255,255,0.04);"><td style="padding: 6px 0; color: #94a3b8; font-weight: 700;">Turnkey System Price:</td><td style="padding: 6px 0; text-align: right; color: #22c55e; font-weight: 800;">₹${netCost.toLocaleString('en-IN')}</td></tr>
             </table>
           </div>
         </div>
@@ -5680,16 +5661,7 @@ function executeROICalculation() {
 function runClientSideROIFallback(monthlyBill, systemSize) {
   const system_cost = systemSize * 55000;
 
-  let government_subsidy = 0.0;
-  if (systemSize >= 3.0) {
-    government_subsidy = 78000.0;
-  } else if (systemSize >= 2.0) {
-    government_subsidy = 60000.0 + (systemSize - 2.0) * 18000.0;
-  } else {
-    government_subsidy = systemSize * 30000.0;
-  }
-
-  const net_cost = system_cost - government_subsidy;
+  const net_cost = system_cost;
   const monthly_savings = monthlyBill * 0.9;
   const annual_savings = monthly_savings * 12;
   const monthly_generation = systemSize * 4.5 * 30;
@@ -5703,7 +5675,6 @@ function runClientSideROIFallback(monthlyBill, systemSize) {
   return {
     recommended_kw: systemSize,
     system_cost: system_cost,
-    government_subsidy: government_subsidy,
     net_cost: net_cost,
     monthly_savings: Math.round(monthly_savings),
     annual_savings: Math.round(annual_savings),
@@ -5720,7 +5691,6 @@ function renderTabROIData(stateObj) {
 
   const recommendedKw = Number(data.recommended_kw) || 0;
   const systemCost = Number(data.system_cost) || 0;
-  const subsidy = Number(data.government_subsidy) || 0;
   const netCost = Number(data.net_cost) || 0;
   const monthlySavings = Number(data.monthly_savings) || 0;
   const annualSavings = Number(data.annual_savings) || 0;
@@ -5743,8 +5713,6 @@ function renderTabROIData(stateObj) {
   // Update Tab KPI Cards
   const tabOutCost = document.getElementById('tabOutCost');
   if (tabOutCost) tabOutCost.textContent = `₹${systemCost.toLocaleString('en-IN')}`;
-  const tabOutSubsidy = document.getElementById('tabOutSubsidy');
-  if (tabOutSubsidy) tabOutSubsidy.textContent = `-₹${subsidy.toLocaleString('en-IN')}`;
   const tabOutNet = document.getElementById('tabOutNet');
   if (tabOutNet) tabOutNet.textContent = `₹${netCost.toLocaleString('en-IN')}`;
   const tabOutPayback = document.getElementById('tabOutPayback');
@@ -5769,8 +5737,6 @@ function renderTabROIData(stateObj) {
   if (resRoiRecommendedSize) resRoiRecommendedSize.textContent = `${recommendedKw} kW`;
   const resRoiSystemCost = document.getElementById('resRoiSystemCost');
   if (resRoiSystemCost) resRoiSystemCost.textContent = `₹${systemCost.toLocaleString('en-IN')}`;
-  const resRoiSubsidy = document.getElementById('resRoiSubsidy');
-  if (resRoiSubsidy) resRoiSubsidy.textContent = `₹${subsidy.toLocaleString('en-IN')}`;
   const resRoiNetCost = document.getElementById('resRoiNetCost');
   if (resRoiNetCost) resRoiNetCost.textContent = `₹${netCost.toLocaleString('en-IN')}`;
   const resRoiAnnualGen = document.getElementById('resRoiAnnualGen');
@@ -7386,7 +7352,6 @@ function compileLocalSessionAverages() {
       total_messages: 5,
       avg_messages_per_conversation: 5.0,
       question_categories: {
-        "Subsidies": 1,
         "Solar Size": 2,
         "Savings": 2
       }
@@ -13268,7 +13233,6 @@ function renderAuditLogsTable() {
         _setText('resPropId', proposal.proposalId);
         _setText('resPropDate', new Date(proposal.createdAt).toLocaleDateString());
         _setText('resPropSystemCost', '₹' + Number(proposal.system_cost_rs).toLocaleString('en-IN'));
-        _setText('resPropSubsidy', '₹' + Number(proposal.subsidy_rs).toLocaleString('en-IN'));
         _setText('resPropNetCost', '₹' + Number(proposal.net_cost_rs).toLocaleString('en-IN'));
         _setText('resPropMonthlySavings', '₹' + Number(proposal.monthly_savings_rs).toLocaleString('en-IN'));
         _setText('resPropAnnualSavings', '₹' + Number(proposal.annual_savings_rs).toLocaleString('en-IN'));
@@ -13281,9 +13245,7 @@ function renderAuditLogsTable() {
         _setText('resPropSysDesign', proposal.system_overview);
         _setText('resPropFinBenefits', proposal.financial_highlights);
 
-        _setText('resPropCostBreakdown', `The overall system cost is calculated at ₹${Number(proposal.system_cost_rs).toLocaleString('en-IN')} for a ${proposal.recommendedKw} kW installation (using ${proposal.panels_required} x 540W solar modules). After deducting the central PM Surya Ghar subsidy of ₹${Number(proposal.subsidy_rs).toLocaleString('en-IN')}, the net out-of-pocket investment for the customer is ₹${Number(proposal.net_cost_rs).toLocaleString('en-IN')}.`);
-
-        _setText('resPropSubsidyInfo', `Based on the latest guidelines from the Ministry of New and Renewable Energy (MNRE) under the PM Surya Ghar: Muft Bijli Yojana, a grid-connected solar installation of ${proposal.recommendedKw} kW qualifies for a direct cash subsidy of ₹${Number(proposal.subsidy_rs).toLocaleString('en-IN')}, credited directly into the customer's linked bank account after post-installation inspection and net-meter commissioning.`);
+        _setText('resPropCostBreakdown', `The overall system cost is calculated at ₹${Number(proposal.system_cost_rs).toLocaleString('en-IN')} for a ${proposal.recommendedKw} kW installation (using ${proposal.panels_required} x 540W solar modules). The net out-of-pocket investment for the customer is ₹${Number(proposal.net_cost_rs).toLocaleString('en-IN')}.`);
 
         _setText('resPropPaybackAnalysis', `With average monthly solar generation of ${proposal.monthly_generation_units} kWh, the customer saves approximately ₹${Number(proposal.monthly_savings_rs).toLocaleString('en-IN')} per month, translating to ₹${Number(proposal.annual_savings_rs).toLocaleString('en-IN')} in annual savings. At this rate of generation, the system pays back its net cost of ₹${Number(proposal.net_cost_rs).toLocaleString('en-IN')} in just ${proposal.payback_years} years, leaving 20+ years of free green power with overall lifetime savings of ₹${Number(proposal.savings_25_years_rs).toLocaleString('en-IN')}.`);
 
@@ -13424,14 +13386,10 @@ function renderAuditLogsTable() {
 
     <!-- KPIs highlights -->
     <h4 style="margin: 0 0 8px 0; font-size: 11px; color: #ffffff; text-transform: uppercase;">Proposal Financial Highlights</h4>
-    <div style="display: grid; grid-template-columns: repeat(4, 1fr); gap: 8px; text-align: center; margin-bottom: 25px;">
+      <div style="display: grid; grid-template-columns: repeat(3, 1fr); gap: 8px; text-align: center; margin-bottom: 25px;">
       <div style="background: rgba(255,255,255,0.03); border: 1px solid var(--border-color-light); padding: 8px 4px; border-radius: 6px;">
         <span style="font-size: 8px; color: var(--text-muted); display: block;">System Cost</span>
         <strong style="font-size: 12px; color: #ffffff; display: block; margin-top: 2px;">₹${Number(proposal.system_cost_rs).toLocaleString('en-IN')}</strong>
-      </div>
-      <div style="background: rgba(255,255,255,0.03); border: 1px solid var(--border-color-light); padding: 8px 4px; border-radius: 6px;">
-        <span style="font-size: 8px; color: var(--text-muted); display: block;">Subsidy</span>
-        <strong style="font-size: 12px; color: var(--accent-green); display: block; margin-top: 2px;">₹${Number(proposal.subsidy_rs).toLocaleString('en-IN')}</strong>
       </div>
       <div style="background: rgba(255,255,255,0.03); border: 1px solid var(--border-color-light); padding: 8px 4px; border-radius: 6px;">
         <span style="font-size: 8px; color: var(--text-muted); display: block;">Net Cost</span>
@@ -13579,10 +13537,6 @@ function renderAuditLogsTable() {
       <div class="kpi-card">
         <span style="font-size: 8px; color: #9fb3c8; text-transform: uppercase; display: block;">System Cost</span>
         <strong style="font-size: 14px; color: #ffffff; display: block; margin-top: 4px;">₹${Number(proposal.system_cost_rs).toLocaleString('en-IN')}</strong>
-      </div>
-      <div class="kpi-card">
-        <span style="font-size: 8px; color: #9fb3c8; text-transform: uppercase; display: block;">Subsidy</span>
-        <strong style="font-size: 14px; color: #36d399; display: block; margin-top: 4px;">₹${Number(proposal.subsidy_rs).toLocaleString('en-IN')}</strong>
       </div>
       <div class="kpi-card">
         <span style="font-size: 8px; color: #9fb3c8; text-transform: uppercase; display: block;">Net Cost</span>
@@ -15441,7 +15395,6 @@ function renderAIRecommendations(recs) {
     var categoryIcons = {
       solar_sizing: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="5"/><line x1="12" y1="1" x2="12" y2="3"/><line x1="12" y1="21" x2="12" y2="23"/></svg>',
       battery: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="1" y="6" width="18" height="12" rx="2"/><line x1="23" y1="10" x2="23" y2="14"/></svg>',
-      subsidy: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 1v22M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"/></svg>',
       financing: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="2" y="7" width="20" height="14" rx="2"/><path d="M16 7V5a2 2 0 0 0-2-2h-4a2 2 0 0 0-2 2v2"/></svg>',
       lead_priority: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>',
       roof_inspection: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/><path d="M9 22V12h6v10"/></svg>',

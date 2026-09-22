@@ -11,8 +11,7 @@ export function computeProposalInsights({ recommendedKw, electricityRate, roofAr
   const monthlySavings = monthlyGen * rate
   const annualSavings = monthlySavings * 12
   const systemCost = kw * 52000
-  const subsidy = kw === 0 ? 0 : kw <= 2 ? kw * 30000 : kw <= 3 ? 60000 + (kw - 2) * 18000 : 78000
-  const netCost = Math.max(0, systemCost - subsidy)
+  const netCost = systemCost
   const payback = annualSavings > 0 ? (netCost / annualSavings).toFixed(1) : '—'
   const lifetimeSavings = annualSavings > 0 ? annualSavings * 25 - netCost : 0
   const co2 = (annualGen * 0.00082).toFixed(2)
@@ -36,7 +35,7 @@ export function computeProposalInsights({ recommendedKw, electricityRate, roofAr
 
   return {
     kw, rate, area, monthlyGen, annualGen, monthlySavings, annualSavings,
-    systemCost, subsidy, netCost, payback, lifetimeSavings, co2, trees, panels, monthlyCurve,
+    systemCost, netCost, payback, lifetimeSavings, co2, trees, panels, monthlyCurve,
     avgMonthlyBill: parseFloat(monthlyBill) || 0,
     highestConsumptionMonth: null,
   }

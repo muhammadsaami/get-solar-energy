@@ -1,5 +1,4 @@
 import { formatCurrency, formatUnits } from './formatters'
-import { calculateSubsidy } from './solar'
 import type { CustomerDashboardData } from '../hooks/useCustomerDashboard'
 
 function num(v: unknown): number {
@@ -117,8 +116,7 @@ export function deriveDashboard(data: CustomerDashboardData, isDemoMode = false)
 
   const systemCost = (num(bill?.system_cost_rs) || num(roi?.systemCost) || num(roi?.system_cost) || (capacityKw > 0 ? capacityKw * 55000 : 0)) || null
 
-  const subsidy = capacityKw > 0 ? calculateSubsidy(capacityKw) : 0
-  const netInvestment = systemCost ? Math.max(0, systemCost - subsidy) : 0
+  const netInvestment = systemCost ? systemCost : 0
 
   let paybackYears: number | null = null
   const roiPayback = num(roi?.paybackPeriod) || num(roi?.paybackYears) || num(roi?.payback_period)

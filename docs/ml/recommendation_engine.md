@@ -17,7 +17,6 @@ The Recommendation Engine is a business-rule layer that consumes ML predictions 
 | `solar_sizing` | Monthly units > 0 | High |
 | `battery` | Monthly units >= 500 | Medium |
 | `roof_inspection` | No roof analysis or low suitability | High |
-| `subsidy` | System size <= 3 kW | High |
 | `financing` | Net cost > 200,000 INR | Medium |
 | `lead_priority` | Project value >= 300,000 INR | High |
 | `followup` | No activity recorded | High |
@@ -35,7 +34,6 @@ Customer Data + Predictions + CRM Context
            ├─ _solar_size_recommendation()
            ├─ _battery_recommendation()
            ├─ _roof_inspection_recommendation()
-           ├─ _subsidy_recommendation()
            ├─ _financing_recommendation()
            ├─ _high_value_customer()
            ├─ _followup_priority()

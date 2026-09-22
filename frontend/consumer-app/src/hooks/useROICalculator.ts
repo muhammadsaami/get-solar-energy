@@ -62,7 +62,7 @@ function loadPersistence(): ROIState | null {
     if (!parsed.result) return null
     const r = parsed.result
     const numericFields = [
-      r.recommendedKw, r.systemCost, r.governmentSubsidy, r.netCost,
+      r.recommendedKw, r.systemCost, r.netCost,
       r.monthlySavings, r.annualSavings, r.annualGeneration, r.paybackPeriod,
       r.lifetimeSavings, r.roiPercentage, r.co2Reduction,
     ]
@@ -187,7 +187,6 @@ export function useROICalculator(): UseROICalculatorReturn {
       roiResult = {
         recommendedKw: d.recommended_kw,
         systemCost: d.system_cost,
-        governmentSubsidy: d.government_subsidy,
         netCost: d.net_cost,
         monthlySavings: d.monthly_savings,
         annualSavings: d.annual_savings,

@@ -29,8 +29,7 @@ describe('ProposalPreview Component', () => {
     monthlySavings: 5832,
     annualSavings: 69984,
     systemCost: 280800,
-    subsidy: 78000,
-    netCost: 202800,
+    netCost: 280800,
     payback: '2.9',
     lifetimeSavings: 1546800,
     co2: '7.17',
@@ -55,7 +54,7 @@ describe('ProposalPreview Component', () => {
     expect(screen.getByText('Executive Summary')).toBeInTheDocument();
     expect(screen.getByText('1. Customer & Site Specifications')).toBeInTheDocument();
     expect(screen.getByText('2. Technical Bill of Materials (BOM) & Equipment Specifications')).toBeInTheDocument();
-    expect(screen.getByText('3. Financial Breakdown & PM Surya Ghar Subsidy Schedule')).toBeInTheDocument();
+    expect(screen.getByText('3. Financial Breakdown')).toBeInTheDocument();
     expect(screen.getByText('4. Simulated 12-Month Generation & Environmental Impact')).toBeInTheDocument();
     expect(screen.getByText('5. Turnkey Project Execution & Milestone Timeline')).toBeInTheDocument();
     expect(screen.getByText('6. Commercial Terms & Standard Assumptions')).toBeInTheDocument();

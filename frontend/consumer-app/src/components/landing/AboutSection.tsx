@@ -12,7 +12,7 @@ export default function AboutSection() {
       </div>
       <p className="footer-about-text">
         India's premier solar intelligence platform helping residential
-        homeowners navigate solar sizing, subsidy checks, and vendor
+        homeowners navigate solar sizing, savings estimates, and vendor
         connections.
       </p>
       <p className="footer-statement-text">

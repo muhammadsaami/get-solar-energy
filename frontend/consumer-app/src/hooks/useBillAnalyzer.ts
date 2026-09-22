@@ -1,6 +1,5 @@
 import { useState, useRef, useCallback, useEffect } from 'react'
 import api from '../services/api/client'
-import { calculateSubsidy } from '../utils/solar'
 import type { Chart, ChartConfiguration } from 'chart.js'
 import {
   Chart as ChartJS,
@@ -453,11 +452,10 @@ function enrichAnalysisData(apiData: Record<string, unknown>, filename: string, 
     apiData.system_cost_rs,
     recommendedKw * 55000
   )
-  const subsidyRs = calculateSubsidy(recommendedKw)
-  const netCostRs = Math.max(0, systemCostRs - subsidyRs)
+  const netCostRs = systemCostRs
   const annualSavingsRs = monthlySavingsRs * 12
 
-  // Canonical formula: Net Investment = max(0, System Cost - Subsidy), Payback = Net Investment / Annual Savings
+  // Formula: Net Investment = System Cost, Payback = Net Investment / Annual Savings
   const paybackYears = annualSavingsRs > 0
     ? parseFloat((netCostRs / annualSavingsRs).toFixed(1))
     : 0

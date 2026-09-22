@@ -105,7 +105,6 @@ export interface CrmBillSummary {
   monthlySavings: number
   annualSavings: number
   systemCost: number
-  subsidy: number
   netCost: number
   paybackYears: number
   savings25yr: number

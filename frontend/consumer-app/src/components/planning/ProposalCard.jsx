@@ -4,7 +4,7 @@ import { usePlanning } from '../../contexts/PlanningContext'
 const TABS = [
   { id: 'overview', label: 'Overview', icon: 'reports' },
   { id: 'technical', label: 'Technical Details', icon: 'wrench' },
-  { id: 'financial', label: 'Financial & Subsidy', icon: 'savings' },
+  { id: 'financial', label: 'Financials', icon: 'savings' },
   { id: 'timeline', label: 'Installation Timeline', icon: 'calendar' },
   { id: 'ai-notes', label: 'AI Notes & Terms', icon: 'sparkles' },
 ]
@@ -108,7 +108,7 @@ export default function ProposalCard({ proposal }) {
                   Executive Summary
                 </h4>
                 <p style={{ fontSize: '13px', color: 'var(--text-secondary)', lineHeight: 1.7, margin: 0 }}>
-                  {p.executiveSummary || `This customized AI solar proposal is designed for ${p.customerName || 'your property'}. Installing a ${(p.systemSizeKw || 5)} kW On-Grid Solar System will offset approximately 85% of your annual electricity consumption, reducing your monthly bill by up to ₹${((p.systemSizeKw || 5) * 1100).toLocaleString('en-IN')}. Under the PM Surya Ghar Muft Bijli Yojana, your system qualifies for up to ₹78,000 in direct central government subsidies.`}
+                  {p.executiveSummary || `This customized AI solar proposal is designed for ${p.customerName || 'your property'}. Installing a ${(p.systemSizeKw || 5)} kW On-Grid Solar System will offset approximately 85% of your annual electricity consumption, reducing your monthly bill by up to ₹${((p.systemSizeKw || 5) * 1100).toLocaleString('en-IN')}.`}
                 </p>
               </div>
 
@@ -117,7 +117,7 @@ export default function ProposalCard({ proposal }) {
                   Financial Highlights & Return on Investment
                 </h4>
                 <p style={{ fontSize: '13px', color: 'var(--text-secondary)', lineHeight: 1.7, margin: 0 }}>
-                  {p.financialHighlights || `With a net investment of ₹${((p.systemSizeKw || 5) * 50000 - 78000).toLocaleString('en-IN')}, your system pays for itself in approximately 3.8 years. Over its guaranteed 25-year operational lifecycle, you will save more than ₹12.4 Lakhs in cumulative utility bills.`}
+                  {p.financialHighlights || `With a net investment of ₹${((p.systemSizeKw || 5) * 50000).toLocaleString('en-IN')}, your system pays for itself in approximately 3.8 years. Over its guaranteed 25-year operational lifecycle, you will save more than ₹12.4 Lakhs in cumulative utility bills.`}
                 </p>
               </div>
             </div>
@@ -159,12 +159,8 @@ export default function ProposalCard({ proposal }) {
                   <div style={{ fontSize: '18px', fontWeight: 800, color: '#FFFFFF', marginTop: '4px' }}>₹{((p.systemSizeKw || 5) * 50000).toLocaleString('en-IN')}</div>
                 </div>
                 <div className="card-glass" style={{ padding: '14px' }}>
-                  <span style={{ fontSize: '11px', color: 'var(--vendor-success)', textTransform: 'uppercase', fontWeight: 700 }}>PM Surya Ghar Subsidy</span>
-                  <div style={{ fontSize: '18px', fontWeight: 800, color: 'var(--vendor-success)', marginTop: '4px' }}>- ₹78,000</div>
-                </div>
-                <div className="card-glass" style={{ padding: '14px' }}>
-                  <span style={{ fontSize: '11px', color: 'var(--color-orange)', textTransform: 'uppercase', fontWeight: 700 }}>Net Cost After Subsidy</span>
-                  <div style={{ fontSize: '18px', fontWeight: 800, color: 'var(--color-orange)', marginTop: '4px' }}>₹{((p.systemSizeKw || 5) * 50000 - 78000).toLocaleString('en-IN')}</div>
+                  <span style={{ fontSize: '11px', color: 'var(--color-orange)', textTransform: 'uppercase', fontWeight: 700 }}>Net Customer Investment</span>
+                  <div style={{ fontSize: '18px', fontWeight: 800, color: 'var(--color-orange)', marginTop: '4px' }}>₹{((p.systemSizeKw || 5) * 50000).toLocaleString('en-IN')}</div>
                 </div>
                 <div className="card-glass" style={{ padding: '14px' }}>
                   <span style={{ fontSize: '11px', color: 'var(--color-blue)', textTransform: 'uppercase', fontWeight: 700 }}>Payback Period</span>

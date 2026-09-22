@@ -12,7 +12,6 @@ export interface ROIFormData {
 export interface ROIResult {
   recommendedKw: number
   systemCost: number
-  governmentSubsidy: number
   netCost: number
   monthlySavings: number
   annualSavings: number

@@ -98,14 +98,13 @@ describe('ROI Calculator — Hardcoded Value Removal & Fresh Customer State', ()
       data: {
         recommended_kw: 3.0,
         system_cost: 165000,
-        government_subsidy: 78000,
-        net_cost: 87000,
+        net_cost: 165000,
         monthly_savings: 5850,
         annual_savings: 70200,
         annual_generation: 4860,
-        payback_period: 1.2,
-        lifetime_savings: 1668000,
-        roiPercentage: 1817.2,
+        payback_period: 2.4,
+        lifetime_savings: 1590000,
+        roiPercentage: 863.6,
         co2_reduction: 3.99,
       },
     }
@@ -127,8 +126,8 @@ describe('ROI Calculator — Hardcoded Value Removal & Fresh Customer State', ()
     expect(result.current.status).toBe('success')
     expect(result.current.hasCalculated).toBe(true)
     expect(result.current.result).not.toBeNull()
-    expect(result.current.result?.netCost).toBe(87000)
-    expect(result.current.result?.governmentSubsidy).toBe(78000)
+    expect(result.current.result?.netCost).toBe(165000)
+    expect(result.current.result).not.toHaveProperty('governmentSubsidy')
     expect(result.current.chartData.length).toBe(25)
   })
 
@@ -145,14 +144,13 @@ describe('ROI Calculator — Hardcoded Value Removal & Fresh Customer State', ()
       data: {
         recommended_kw: 5.0,
         system_cost: 275000,
-        government_subsidy: 78000,
-        net_cost: 197000,
+        net_cost: 275000,
         monthly_savings: 9000,
         annual_savings: 108000,
         annual_generation: 8100,
-        payback_period: 1.8,
-        lifetime_savings: 2503000,
-        roiPercentage: 1170.6,
+        payback_period: 2.5,
+        lifetime_savings: 2425000,
+        roiPercentage: 781.8,
         co2_reduction: 6.64,
       },
     }
@@ -202,14 +200,13 @@ describe('ROI Calculator — Hardcoded Value Removal & Fresh Customer State', ()
       result: {
         recommendedKw: 4.0,
         systemCost: 220000,
-        governmentSubsidy: 78000,
-        netCost: 142000,
+        netCost: 220000,
         monthlySavings: 7200,
         annualSavings: 86400,
         annualGeneration: 6480,
-        paybackPeriod: 1.6,
-        lifetimeSavings: 2018000,
-        roiPercentage: 1321.1,
+        paybackPeriod: 2.5,
+        lifetimeSavings: 1940000,
+        roiPercentage: 781.8,
         co2Reduction: 5.31,
       },
       lastUpdated: new Date().toISOString(),
@@ -223,7 +220,7 @@ describe('ROI Calculator — Hardcoded Value Removal & Fresh Customer State', ()
     expect(result.current.formData.sunHours).toBe(5.5)
     expect(result.current.formData.systemSize).toBe(4.0)
     expect(result.current.formData.panelQuality).toBe('bifacial')
-    expect(result.current.result?.netCost).toBe(142000)
+    expect(result.current.result?.netCost).toBe(220000)
     expect(result.current.hasCalculated).toBe(true)
     expect(result.current.status).toBe('success')
   })

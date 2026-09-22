@@ -37,7 +37,6 @@ const Journey = lazy(() => import('./pages/Journey'));
 const SiteSurveyPage = lazy(() => import('./pages/SiteSurveyPage'));
 const BillAnalyzer = lazy(() => import('./pages/BillAnalyzer'));
 const RoofAnalyzer = lazy(() => import('./pages/RoofAnalyzer'));
-const Proposal = lazy(() => import('./pages/Proposal'));
 const ROICalculatorPage = lazy(() => import('./pages/ROICalculatorPage'));
 const AIAdvisor = lazy(() => import('./pages/AIAdvisor'));
 const EnterpriseAI = lazy(() => import('./pages/EnterpriseAI'));
@@ -99,7 +98,7 @@ function AppRoutes() {
         {/* Canonical Workspace Routes */}
         <Route path={ROUTES.BILL_ANALYZER} element={<AppRoute><PermissionGuard feature="bill-analyzer"><PageSuspense><BillAnalyzer /></PageSuspense></PermissionGuard></AppRoute>} />
         <Route path={ROUTES.ROOF_ANALYSIS} element={<AppRoute><PermissionGuard feature="roof-analysis"><PageSuspense><RoofAnalyzer /></PageSuspense></PermissionGuard></AppRoute>} />
-        <Route path={ROUTES.PLANNING_PROPOSAL} element={<AppRoute><PermissionGuard feature="proposal-generator"><PageSuspense><Proposal /></PageSuspense></PermissionGuard></AppRoute>} />
+        <Route path={ROUTES.PLANNING_PROPOSAL} element={<AppRoute><PermissionGuard feature="admin-proposals"><PageSuspense><AdminProposalsPage /></PageSuspense></PermissionGuard></AppRoute>} />
         <Route path="/app/proposal" element={<Navigate to={ROUTES.PLANNING_PROPOSAL} replace />} />
         <Route path={ROUTES.ROI_CALCULATOR} element={<AppRoute><PermissionGuard feature="roi-calculator"><PageSuspense><ROICalculatorPage /></PageSuspense></PermissionGuard></AppRoute>} />
 

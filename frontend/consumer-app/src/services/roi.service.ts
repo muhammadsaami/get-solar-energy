@@ -13,7 +13,6 @@ export interface ROIApiResponse {
   data: {
     recommended_kw: number
     system_cost: number
-    government_subsidy: number
     net_cost: number
     monthly_savings: number
     annual_savings: number

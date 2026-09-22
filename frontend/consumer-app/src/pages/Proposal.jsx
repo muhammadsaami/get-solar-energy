@@ -7,7 +7,7 @@ import ProposalPreview from '../components/proposal/ProposalPreview';
 const STEPS = [
   { id: 'analyzing', label: 'Analyzing consumption & DISCOM tariff data...', duration: 600 },
   { id: 'estimating', label: 'Computing optimal rooftop tilt & orientation...', duration: 700 },
-  { id: 'calculating', label: 'Calculating PM Surya Ghar government subsidies...', duration: 600 },
+  { id: 'calculating', label: 'Computing system cost and savings projections...', duration: 600 },
   { id: 'preparing', label: 'Building equipment Bill of Materials (BOM)...', duration: 800 },
   { id: 'rendering', label: 'Generating enterprise solar proposal PDF...', duration: 500 },
 ];
@@ -127,8 +127,7 @@ export default function Proposal() {
     const monthlySavings = monthlyGen * rate;
     const annualSavings = monthlySavings * 12;
     const systemCost = kw * 52000;
-    const subsidy = kw === 0 ? 0 : kw <= 2 ? kw * 30000 : kw <= 3 ? 60000 + (kw - 2) * 18000 : 78000;
-    const netCost = Math.max(0, systemCost - subsidy);
+    const netCost = systemCost;
     const payback = annualSavings > 0 ? (netCost / annualSavings).toFixed(1) : '—';
     const lifetimeSavings = annualSavings > 0 ? annualSavings * 25 - netCost : 0;
     const co2 = (annualGen * 0.00082).toFixed(2);
@@ -152,7 +151,7 @@ export default function Proposal() {
 
     return {
       kw, rate, area, monthlyGen, annualGen, monthlySavings, annualSavings,
-      systemCost, subsidy, netCost, payback, lifetimeSavings, co2, trees, panels, monthlyCurve,
+      systemCost, netCost, payback, lifetimeSavings, co2, trees, panels, monthlyCurve,
       avgMonthlyBill: calculatedAvgBill || (parseFloat(form.monthlyBill) || 0),
       highestConsumptionMonth,
     };
@@ -245,7 +244,6 @@ export default function Proposal() {
         </div>
         <div style={{ display: 'flex', alignItems: 'center', gap: '16px', flexShrink: 0 }}>
           {[
-            { label: 'Subsidy', value: insights.kw > 0 ? `-₹${insights.subsidy.toLocaleString('en-IN')}` : '—', color: 'var(--color-green)' },
             { label: 'Net Outlay', value: insights.kw > 0 ? `₹${insights.netCost.toLocaleString('en-IN')}` : '—', color: 'var(--color-orange)' },
             { label: 'Payback', value: insights.kw > 0 ? `${insights.payback} yr` : '—', color: 'var(--color-blue)' },
             { label: 'Trees Offset', value: insights.kw > 0 ? `${insights.trees}/yr` : '—', color: 'var(--color-green)' },
@@ -382,10 +380,6 @@ export default function Proposal() {
                     <strong style={{ fontSize: '13px', color: 'var(--color-blue)' }}>{insights.annualGen ? `${insights.annualGen.toLocaleString()} kWh` : '—'}</strong>
                   </div>
                   <div style={{ display: 'flex', justifyContent: 'space-between', padding: '8px 10px', borderRadius: '6px', background: 'rgba(255,255,255,0.03)' }}>
-                    <span style={{ fontSize: '12px', color: 'var(--text-muted)' }}>PM Surya Ghar Subsidy:</span>
-                    <strong style={{ fontSize: '13px', color: 'var(--color-green)' }}>{insights.subsidy ? `- ₹${insights.subsidy.toLocaleString('en-IN')}` : '—'}</strong>
-                  </div>
-                  <div style={{ display: 'flex', justifyContent: 'space-between', padding: '8px 10px', borderRadius: '6px', background: 'rgba(255,255,255,0.03)' }}>
                     <span style={{ fontSize: '12px', color: 'var(--text-muted)' }}>Net Investment:</span>
                     <strong style={{ fontSize: '13px', color: 'var(--color-orange)' }}>{insights.netCost ? `₹${insights.netCost.toLocaleString('en-IN')}` : '—'}</strong>
                   </div>
@@ -410,7 +404,7 @@ export default function Proposal() {
                     { id: 'overview', label: 'Executive Overview' },
                     { id: 'technical', label: 'Technical BOM' },
                     { id: 'generation', label: 'Generation & Charts' },
-                    { id: 'financial', label: 'Financial & Subsidy' },
+                    { id: 'financial', label: 'Financials' },
                     { id: 'timeline', label: 'Execution Stepper' },
                     { id: 'terms', label: 'Terms & AI Notes' },
                   ].map(t => (
@@ -436,7 +430,7 @@ export default function Proposal() {
                       This customized solar proposal has been generated for <strong>{form.customerName}</strong> located in <strong>{form.city}</strong> ({form.address}). Based on your 6-month average monthly electricity expenditure of <strong>₹{parseFloat(form.monthlyBill || '0').toLocaleString('en-IN')}</strong> {insights.highestConsumptionMonth ? `(Peak consumption recorded in ${insights.highestConsumptionMonth.month}: ${insights.highestConsumptionMonth.units} kWh)` : `(${form.monthlyUnits} kWh)`}, we recommend a <strong>{insights.kw} kWp On-Grid Rooftop Solar Power Plant</strong>.
                     </p>
                     <p style={{ fontSize: '13px', color: 'var(--text-secondary)', lineHeight: 1.7, marginTop: '10px', margin: 0 }}>
-                      The system will produce approximately <strong>{insights.annualGen.toLocaleString()} kWh</strong> of clean solar energy annually, eliminating up to 85% of your grid energy bills. Under the Ministry of New and Renewable Energy (MNRE) <strong>PM Surya Ghar: Muft Bijli Yojana</strong>, your system qualifies for an upfront direct subsidy of <strong>₹{insights.subsidy.toLocaleString('en-IN')}</strong>.
+                      The system will produce approximately <strong>{insights.annualGen.toLocaleString()} kWh</strong> of clean solar energy annually, eliminating up to 85% of your grid energy bills.
                     </p>
                   </div>
 
@@ -448,11 +442,10 @@ export default function Proposal() {
                       <span style={{ fontSize: '11px', color: 'var(--color-blue)', marginTop: '4px', display: 'block' }}>{insights.panels} Panels (540W Tier-1)</span>
                     </div>
 
-                    <div className="card-base" style={{ padding: '14px', '--card-theme': '255, 138, 29' }}>
-                      <span className="card-metric-label">Net Investment Outlay</span>
-                      <div className="card-metric-value" style={{ fontSize: '24px', marginTop: 4, color: 'var(--color-orange)' }}>₹{insights.netCost.toLocaleString('en-IN')}</div>
-                      <span style={{ fontSize: '11px', color: 'var(--color-green)', marginTop: '4px', display: 'block' }}>After ₹{insights.subsidy.toLocaleString('en-IN')} Subsidy</span>
-                    </div>
+                      <div className="card-base" style={{ padding: '14px', '--card-theme': '255, 138, 29' }}>
+                        <span className="card-metric-label">Net Investment Outlay</span>
+                        <div className="card-metric-value" style={{ fontSize: '24px', marginTop: 4, color: 'var(--color-orange)' }}>₹{insights.netCost.toLocaleString('en-IN')}</div>
+                      </div>
 
                     <div className="card-base" style={{ padding: '14px', '--card-theme': '54, 211, 153' }}>
                       <span className="card-metric-label">Est. Annual Savings</span>
@@ -548,21 +541,17 @@ export default function Proposal() {
                 </div>
               )}
 
-              {/* TAB 4: FINANCIAL & SUBSIDY */}
+              {/* TAB 4: FINANCIALS */}
               {activeTab === 'financial' && (
                 <div style={{ display: 'flex', flexDirection: 'column', gap: 'var(--space-4)' }}>
                   <div className="card-base" style={{ padding: 'var(--space-5)' }}>
                     <div className="ew-divider-head">
-                      <h3 className="ew-divider-title">PM Surya Ghar: Muft Bijli Yojana Subsidy Breakdown</h3>
+                      <h3 className="ew-divider-title">Investment Breakdown</h3>
                     </div>
-                    <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr', gap: '14px' }}>
+                    <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '14px' }}>
                       <div style={{ padding: '12px', borderRadius: '8px', background: 'rgba(255,255,255,0.03)', border: '1px solid var(--border-color)' }}>
                         <span style={{ fontSize: '10px', color: 'var(--text-muted)', textTransform: 'uppercase', fontWeight: 700 }}>System Capacity</span>
                         <div style={{ fontSize: '18px', fontWeight: 800, color: 'var(--text-primary)', marginTop: '4px' }}>{insights.kw} kWp</div>
-                      </div>
-                      <div style={{ padding: '12px', borderRadius: '8px', background: 'rgba(54, 211, 153, 0.08)', border: '1px solid rgba(54, 211, 153, 0.25)' }}>
-                        <span style={{ fontSize: '10px', color: 'var(--color-green)', textTransform: 'uppercase', fontWeight: 700 }}>Direct Govt Subsidy</span>
-                        <div style={{ fontSize: '18px', fontWeight: 800, color: 'var(--color-green)', marginTop: '4px' }}>₹{insights.subsidy.toLocaleString('en-IN')}</div>
                       </div>
                       <div style={{ padding: '12px', borderRadius: '8px', background: 'rgba(255, 138, 29, 0.08)', border: '1px solid rgba(255, 138, 29, 0.25)' }}>
                         <span style={{ fontSize: '10px', color: 'var(--color-orange)', textTransform: 'uppercase', fontWeight: 700 }}>Net Customer Outlay</span>

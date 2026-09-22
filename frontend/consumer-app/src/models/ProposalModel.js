@@ -13,9 +13,8 @@ export class ProposalModel {
     this.annualSavings = raw.annual_savings_rs || raw.financials?.annual_savings || 57600;
     this.lifetimeSavings = raw.savings_25_years_rs || raw.financials?.lifetime_savings_25yr || 1440000;
     this.paybackYears = raw.payback_years || raw.financials?.payback_years || 4.5;
-    this.subsidyAmount = raw.subsidy_rs || raw.financials?.subsidy_amount || 78000;
     this.systemCost = raw.system_cost_rs || raw.financials?.system_cost || raw.recommended_kw * 50000 || 290000;
-    this.netCost = raw.net_cost_rs || this.systemCost - this.subsidyAmount;
+    this.netCost = raw.net_cost_rs || this.systemCost;
     this.monthlyGenerationUnits = raw.monthly_generation_units || Math.round(this.systemSizeKw * 4.5 * 30);
     this.co2OffsetTons = raw.co2_offset_tons_per_year || parseFloat((this.expectedGenerationYrHkwh * 0.0008).toFixed(2));
     this.panelsRequired = raw.panels_required || Math.ceil(this.systemSizeKw * 1000 / 540);

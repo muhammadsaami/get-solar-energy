@@ -73,8 +73,8 @@ export default function AIIntelligencePanel({ loading = false, derived }: Props)
   if (hasBill && hasRoof && !hasRoi) {
     recommendations.push({
       id: 'rec-roi',
-      title: 'Calculate Financial Payback & Subsidies',
-      reason: 'Evaluate PM Surya Ghar subsidy eligibility and project 25-year financial savings.',
+      title: 'Calculate Financial Payback & Savings',
+      reason: 'Project 25-year financial savings for your system.',
       impact: `Est. ₹${(derived.annualSavings || 45000).toLocaleString('en-IN')}/yr savings`,
       actionText: 'Run ROI Calculator →',
       route: ROUTES.ROI_CALCULATOR,
@@ -82,17 +82,8 @@ export default function AIIntelligencePanel({ loading = false, derived }: Props)
     })
   }
 
-  if (hasBill && hasRoof && hasRoi) {
-    recommendations.push({
-      id: 'rec-proposal',
-      title: 'Generate Engineering Proposal & BOM',
-      reason: 'Your solar profile is fully verified. Generate an official engineering proposal and bill of materials.',
-      impact: 'Ready for installation dispatch',
-      actionText: 'View AI Proposal →',
-      route: ROUTES.PLANNING_PROPOSAL,
-      icon: '📑',
-    })
-  }
+  // Proposal generation is an admin-only capability; customers receive
+  // bill/roof/ROI guidance here and never link to the proposal workspace.
 
   // Prediction milestones if analysis completed
   const predictionMilestones = hasAnalysisData ? [
@@ -367,8 +358,8 @@ export default function AIIntelligencePanel({ loading = false, derived }: Props)
               </div>
               <p style={{ fontSize: '11px', color: 'var(--text-muted, #94a3b8)', marginTop: '6px', lineHeight: 1.4, margin: '6px 0 0' }}>
                 {hasRoi
-                  ? `Annual savings of ₹${derived.annualSavings.toLocaleString('en-IN')} with central subsidy assistance.`
-                  : 'Calculate ROI to project capital payback and subsidy savings.'}
+                  ? `Annual savings of ₹${derived.annualSavings.toLocaleString('en-IN')} from your solar generation.`
+                  : 'Calculate ROI to project capital payback and lifetime savings.'}
               </p>
             </div>
 

@@ -80,7 +80,6 @@ class RecommendationEngine:
             recommendations.extend(self._solar_size_recommendation(customer_data, predictions))
             recommendations.extend(self._battery_recommendation(customer_data, predictions))
             recommendations.extend(self._roof_inspection_recommendation(customer_data, crm_context))
-            recommendations.extend(self._subsidy_recommendation(customer_data, predictions))
             recommendations.extend(self._financing_recommendation(customer_data, predictions))
             recommendations.extend(self._high_value_customer(customer_data, predictions, crm_context))
             recommendations.extend(self._followup_priority(customer_data, crm_context))
@@ -184,45 +183,6 @@ class RecommendationEngine:
             )]
         return []
 
-    # ── Subsidy Eligibility ──────────────────────────────────────────────
-
-    def _subsidy_recommendation(
-        self, customer: Dict[str, Any], predictions: Dict[str, Any]
-    ) -> List[Recommendation]:
-        monthly_units = customer.get("monthly_units", 0)
-        if monthly_units <= 0:
-            return []
-
-        recommended_kw = round(monthly_units / 135.0, 1)
-
-        if recommended_kw <= 3:
-            subsidy = 78000 if recommended_kw >= 3 else (60000 if recommended_kw >= 2 else recommended_kw * 30000)
-            return [Recommendation(
-                category="subsidy",
-                title="PM Surya Ghar Subsidy Eligible",
-                description=(
-                    f"System size {recommended_kw} kW qualifies for PM Surya Ghar "
-                    f"subsidy of ₹{subsidy:,.0f}. Net cost after subsidy: "
-                    f"₹{max(0, recommended_kw * 55000 - subsidy):,.0f}."
-                ),
-                priority="high",
-                confidence=0.90,
-                action="Apply for PM Surya Ghar subsidy before installation",
-                metadata={"subsidy_amount": subsidy, "recommended_kw": recommended_kw},
-            )]
-        return [Recommendation(
-            category="subsidy",
-            title="Subsidy Limit Exceeded",
-            description=(
-                f"System size {recommended_kw} kW exceeds PM Surya Ghar cap. "
-                f"Maximum subsidy of ₹78,000 applies. Explore state-level incentives."
-            ),
-            priority="medium",
-            confidence=0.85,
-            action="Check state-level solar incentives",
-            metadata={"recommended_kw": recommended_kw},
-        )]
-
     # ── Financing Recommendation ─────────────────────────────────────────
 
     def _financing_recommendation(
@@ -234,7 +194,7 @@ class RecommendationEngine:
 
         recommended_kw = round(monthly_units / 135.0, 1)
         system_cost = recommended_kw * 55000
-        net_cost = max(0, system_cost - 78000)
+        net_cost = max(0, system_cost)
         monthly_bill = customer.get("bill_amount", monthly_units * 7.5)
 
         if net_cost > 200000:

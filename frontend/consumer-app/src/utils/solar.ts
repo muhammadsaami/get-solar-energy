@@ -4,7 +4,6 @@ export interface EstimateResult {
   annualSavings: number
   paybackYears: number
   systemCost: number
-  subsidy: number
   netCost: number
 }
 
@@ -19,18 +18,11 @@ export function calculateEstimate(
   const monthlySavings = Math.round(monthlyBill * 0.9)
   const annualSavings = monthlySavings * 12
   const systemCost = Math.round(recommendedSize * 55000)
-  const subsidy = calculateSubsidy(recommendedSize)
-  const netCost = Math.max(0, systemCost - subsidy)
+  const netCost = systemCost
   const paybackYears = annualSavings > 0
     ? parseFloat((netCost / annualSavings).toFixed(1))
     : parseFloat((4 + recommendedSize * 0.15).toFixed(1))
-  return { recommendedSize, monthlySavings, annualSavings, paybackYears, systemCost, subsidy, netCost }
-}
-
-export function calculateSubsidy(kW: number): number {
-  if (kW <= 2) return Math.round(kW * 30000)
-  if (kW <= 3) return 60000 + Math.round((kW - 2) * 18000)
-  return 78000
+  return { recommendedSize, monthlySavings, annualSavings, paybackYears, systemCost, netCost }
 }
 
 export function formatInrCompact(amount: number): string {
@@ -52,7 +44,6 @@ export interface FallbackROIInput {
 export interface FallbackROIResult {
   recommendedKw: number
   systemCost: number
-  governmentSubsidy: number
   netCost: number
   monthlySavings: number
   annualSavings: number
@@ -68,16 +59,7 @@ export function calculateFallbackROI(input: FallbackROIInput): FallbackROIResult
 
   const systemCost = systemSize * 55000
 
-  let governmentSubsidy = 0
-  if (systemSize >= 3) {
-    governmentSubsidy = 78000
-  } else if (systemSize >= 2) {
-    governmentSubsidy = 60000 + Math.round((systemSize - 2) * 18000)
-  } else {
-    governmentSubsidy = Math.round(systemSize * 30000)
-  }
-
-  const netCost = systemCost - governmentSubsidy
+  const netCost = systemCost
   const monthlySavings = Math.round(monthlyBill * 0.9)
   const annualSavings = monthlySavings * 12
   const monthlyGeneration = systemSize * 4.5 * 30
@@ -97,7 +79,6 @@ export function calculateFallbackROI(input: FallbackROIInput): FallbackROIResult
   return {
     recommendedKw: systemSize,
     systemCost,
-    governmentSubsidy,
     netCost,
     monthlySavings,
     annualSavings,

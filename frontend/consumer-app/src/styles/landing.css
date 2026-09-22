@@ -1319,13 +1319,7 @@ body {
   margin-top: 1px;
 }
 
-/* Widget Placements — 2-widget layout (subsidy top-right, generation bottom-left) */
-.widget-subsidy {
-  top: 12%;
-  right: 4%;
-  border-left-color: var(--accent-green);
-  animation: floatWidget1 5.5s infinite alternate ease-in-out;
-}
+/* Widget Placements — 2-widget layout (generation bottom-left) */
 
 .widget-generation {
   bottom: 14%;
@@ -1745,89 +1739,7 @@ body {
   color: var(--accent-cyan);
 }
 
-/* --- ④ PM Surya Ghar Subsidy Eligibility Card --- */
-.subsidy-eligibility-card {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  background: linear-gradient(135deg, rgba(16, 185, 129, 0.07) 0%, rgba(16, 185, 129, 0.03) 100%);
-  border: 1px solid rgba(16, 185, 129, 0.22);
-  border-radius: var(--radius-sm);
-  padding: 11px 14px;
-  margin-bottom: 10px;
-}
-
-.subsidy-card-left {
-  display: flex;
-  align-items: center;
-  gap: 10px;
-}
-
-.subsidy-icon {
-  font-size: 18px;
-  line-height: 1;
-  flex-shrink: 0;
-}
-
-.subsidy-body {
-  display: flex;
-  flex-direction: column;
-  gap: 2px;
-}
-
-.subsidy-title {
-  font-size: 10px;
-  font-weight: 700;
-  color: var(--text-secondary);
-  text-transform: uppercase;
-  letter-spacing: 0.4px;
-}
-
-.subsidy-amount {
-  font-size: 17px;
-  font-weight: 900;
-  color: var(--accent-green);
-  letter-spacing: -0.4px;
-}
-
-.subsidy-eligible-badge {
-  display: inline-flex;
-  align-items: center;
-  gap: 5px;
-  font-size: 10px;
-  font-weight: 800;
-  color: var(--accent-green);
-  background: rgba(16, 185, 129, 0.1);
-  border: 1px solid rgba(16, 185, 129, 0.3);
-  padding: 4px 10px;
-  border-radius: 20px;
-  white-space: nowrap;
-  flex-shrink: 0;
-}
-
-.eligible-dot {
-  width: 5px;
-  height: 5px;
-  border-radius: 50%;
-  background: var(--accent-green);
-  box-shadow: 0 0 4px var(--accent-green);
-  display: inline-block;
-  animation: eligiblePulse 1.8s infinite;
-}
-
-@keyframes eligiblePulse {
-
-  0%,
-  100% {
-    opacity: 1;
-  }
-
-  50% {
-    opacity: 0.4;
-  }
-}
-
-/* --- ⑤ Result Insight Note --- */
+/* --- ④ Result Insight Note --- */
 .result-insight-note {
   font-size: 10.5px;
   line-height: 1.6;
@@ -1839,7 +1751,7 @@ body {
   margin-bottom: 12px;
 }
 
-/* --- ⑥ Post-Estimate CTA Button --- */
+/* --- ⑤ Post-Estimate CTA Button --- */
 .btn-post-estimate-cta {
   display: flex;
   align-items: center;
@@ -1887,11 +1799,6 @@ body {
     /* keep 2-col even on small phones */
   }
 
-  .subsidy-eligibility-card {
-    flex-direction: column;
-    align-items: flex-start;
-    gap: 10px;
-  }
 }
 
 /* --- Reduced motion for estimate results --- */

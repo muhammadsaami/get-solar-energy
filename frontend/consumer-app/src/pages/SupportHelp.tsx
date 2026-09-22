@@ -4,10 +4,6 @@ import { getUser } from '../utils/referral'
 
 const FAQS = [
   {
-    q: 'How does PM Surya Ghar: Muft Bijli Yojana subsidy work?',
-    a: 'Under the PM Surya Ghar scheme, residential consumers receive an upfront direct subsidy of ₹30,000 per kW up to 2 kW capacity, and ₹18,000 for the 3rd kW (maximum subsidy ₹78,000 for 3 kW+). The subsidy is credited directly to your verified bank account following DISCOM net-metering installation.',
-  },
-  {
     q: 'What is bi-directional net metering and how does it reduce my bill?',
     a: 'A bi-directional net meter records both electricity drawn from the DISCOM grid and excess solar generation fed back into the grid. At the end of each billing cycle, your DISCOM bills you only for the net difference.',
   },
@@ -88,7 +84,7 @@ export default function SupportHelp() {
           <input
             type="text"
             className="form-input"
-            placeholder="Search FAQs, subsidy policies, net-metering guides..."
+            placeholder="Search FAQs, net-metering guides..."
             value={search}
             onChange={(e) => setSearch(e.target.value)}
             style={{ width: '100%', padding: '10px 14px', borderRadius: '6px', background: 'var(--bg-input)', border: '1px solid var(--border-color)', color: 'var(--text-primary)', fontSize: '12px' }}

@@ -65,17 +65,8 @@ def import_csv_if_empty(db: Session):
             # O&M custom derived attributes
             annual_savings = monthly_savings * 12.0
             
-            # PM Surya Ghar Yojana Subsidy Rule
-            if recommended_kw <= 0:
-                subsidy = 0.0
-            elif recommended_kw < 2:
-                subsidy = 30000.0 * recommended_kw
-            elif recommended_kw < 3:
-                subsidy = 60000.0
-            else:
-                subsidy = 78000.0
-                
-            net_cost = max(0.0, system_cost - subsidy)
+            # Net cost equals the full system cost (no subsidy program).
+            net_cost = max(0.0, system_cost)
 
             bill = BillModel(
                 customer_id=imported_customers[consumer_num],
@@ -88,7 +79,6 @@ def import_csv_if_empty(db: Session):
                 monthly_savings=monthly_savings,
                 annual_savings=annual_savings,
                 system_cost=system_cost,
-                subsidy=subsidy,
                 net_cost=net_cost,
                 payback_years=payback_years,
                 savings_25yr=savings_25yr

@@ -185,7 +185,6 @@ export interface BillRecord {
   monthly_savings: number
   annual_savings: number | null
   system_cost: number
-  subsidy: number | null
   net_cost: number | null
   payback_years: number
   savings_25yr: number

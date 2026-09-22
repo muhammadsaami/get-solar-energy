@@ -31,7 +31,7 @@ const ROLE_BENEFITS: Record<string, string[]> = {
     'Monitor solar generation',
     'Analyze electricity bills',
     'Track savings',
-    'Government subsidy eligibility',
+    'ROI projections',
     'AI recommendations',
   ],
   vendor: [

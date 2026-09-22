@@ -1,6 +1,7 @@
 import React from 'react'
 import { motion, useReducedMotion } from 'motion/react'
 import { useSceneVisibility } from '../../hooks/useSceneVisibility'
+import { ROOF_VISION_RELEASED } from '../../config/release'
 import RoofVisualization from './RoofVisualization'
 import SuitabilityGrid from './SuitabilityGrid'
 import RecommendationBadge from './RecommendationBadge'
@@ -52,20 +53,58 @@ export default function RoofSuitabilityScene() {
           transition={{ duration: shouldReduceMotion ? 0 : 0.55, ease: [0.16, 1, 0.3, 1] }}
         >
           <div className="story-header scene-element step-6">
-            <h2 className="section-title" style={{ textAlign: 'left' }}>
-              Roof Vision AI
-            </h2>
+            <div style={{ display: 'flex', alignItems: 'center', gap: '12px', flexWrap: 'wrap' }}>
+              <span
+                style={{
+                  fontSize: '10px',
+                  fontWeight: 800,
+                  letterSpacing: '0.1em',
+                  textTransform: 'uppercase',
+                  color: 'var(--accent-orange)',
+                  background: 'rgba(247, 147, 30, 0.1)',
+                  border: '1px solid rgba(247, 147, 30, 0.3)',
+                  padding: '4px 12px',
+                  borderRadius: '999px',
+                  whiteSpace: 'nowrap',
+                }}
+              >
+                ✨ Coming Soon
+              </span>
+              <h2 className="section-title" style={{ textAlign: 'left', margin: 0 }}>
+                Roof Vision AI
+              </h2>
+            </div>
             <p className="section-subtitle" style={{ textAlign: 'left' }}>
-              We evaluate satellite imagery, roof tilt, and irradiance to engineer optimal solar placement for your home.
+              {ROOF_VISION_RELEASED
+                ? 'We evaluate satellite imagery, roof tilt, and irradiance to engineer optimal solar placement for your home.'
+                : "Coming soon, you'll be able to explore solar potential, shading, orientation, and estimated generation from your roof."}
             </p>
           </div>
+
+          {!ROOF_VISION_RELEASED && (
+            <p
+              style={{
+                fontSize: '10px',
+                fontWeight: 800,
+                letterSpacing: '0.12em',
+                textTransform: 'uppercase',
+                color: 'var(--text-muted)',
+                margin: '16px 0 0',
+                textAlign: 'left',
+              }}
+            >
+              Planned AI insights
+            </p>
+          )}
 
           <SuitabilityGrid />
 
           <div className="suitability-recommendation scene-element step-7">
             <RecommendationBadge text="Engineering Assessment" />
             <p className="recommendation-text">
-              Every system layout is custom-engineered during the technical site survey to maximize annual energy yield and architectural aesthetics.
+              {ROOF_VISION_RELEASED
+                ? 'Every system layout is custom-engineered during the technical site survey to maximize annual energy yield and architectural aesthetics.'
+                : 'When it arrives, every system layout will be custom-engineered during the technical site survey to maximize annual energy yield and architectural aesthetics.'}
             </p>
           </div>
 

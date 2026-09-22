@@ -619,7 +619,6 @@ def get_admin_overview(user_email: str = Depends(verify_token)):
         
         # Most Common Assistant Question Category
         question_categories = {
-            "Subsidies": 320,
             "ROI": 280,
             "Net Metering": 210,
             "Solar Size": 350,
@@ -859,7 +858,6 @@ def get_admin_assistant(user_email: str = Depends(verify_token)):
             "total_messages": total_messages,
             "avg_messages_per_conversation": avg_messages,
             "question_categories": {
-                "Subsidies": 320,
                 "ROI": 280,
                 "Net Metering": 210,
                 "Solar Size": 350,

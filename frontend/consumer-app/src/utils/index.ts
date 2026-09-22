@@ -2,7 +2,6 @@ export { cn } from './cn'
 export { trackCTA } from './analytics'
 export {
   calculateEstimate,
-  calculateSubsidy,
   calculateLifetimeReturn,
   calculateFallbackROI,
   formatInrCompact,

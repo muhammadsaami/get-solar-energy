@@ -11,7 +11,6 @@ export interface CustomerProfileData {
   joinedDateFormatted: string
   accountType: 'Residential' | 'Commercial' | 'Industrial'
   kycStatus: 'Verified' | 'Pending' | 'In Review'
-  subsidyEligible: boolean
   avatar?: string
 }
 

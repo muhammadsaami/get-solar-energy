@@ -5,7 +5,7 @@ Verification for /api/calculate-roi endpoint input validation:
 - Rejects non-positive monthly_bill (HTTP 400)
 - Rejects non-positive system_size (HTTP 400)
 - Does not return fake fallback defaults (such as 3.0 kW or 6500 bill)
-- Computes accurate PM-Surya Ghar subsidies and ROI for valid inputs
+- Computes ROI from full system cost with no subsidy deduction
 """
 
 import unittest
@@ -50,7 +50,7 @@ class TestROIEndpointValidation(unittest.TestCase):
         data = res.json()
         self.assertIn("greater than zero", data.get("detail", ""))
 
-    def test_03_valid_inputs_calculate_exact_pm_surya_ghar_subsidy(self):
+    def test_03_valid_inputs_calculate_gross_cost_roi_without_subsidy(self):
         payload = {
             "monthly_bill": 6500,
             "system_size": 3.0,
@@ -62,17 +62,18 @@ class TestROIEndpointValidation(unittest.TestCase):
         body = res.json()
         self.assertTrue(body.get("success"))
         data = body.get("data", {})
-        
+
         # System cost: 3 * 55000 = 165000
         self.assertEqual(data.get("system_cost"), 165000)
-        # 3kW subsidy capped at 78000
-        self.assertEqual(data.get("government_subsidy"), 78000.0)
-        # Net cost: 165000 - 78000 = 87000
-        self.assertEqual(data.get("net_cost"), 87000.0)
+        # No subsidy program: field removed, net cost equals full system cost
+        self.assertNotIn("government_subsidy", data)
+        self.assertEqual(data.get("net_cost"), 165000.0)
         # Monthly savings: 6500 * 0.9 = 5850
         self.assertEqual(data.get("monthly_savings"), 5850.0)
         # Annual savings: 5850 * 12 = 70200
         self.assertEqual(data.get("annual_savings"), 70200.0)
+        # Payback: 165000 / 70200 = 2.35 -> 2.4
+        self.assertEqual(data.get("payback_period"), 2.4)
 
     def test_04_no_fake_fallback_data_on_invalid_parameters(self):
         payload = {

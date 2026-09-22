@@ -182,10 +182,9 @@ export async function generateProposalPdf({ form = {}, insights = {}, proposal =
   const kwSize = insights.kw ? `${insights.kw} kWp` : (form.recommendedKw ? `${form.recommendedKw} kWp` : '—');
   const billAmount = form.monthlyBill ? `₹${parseFloat(form.monthlyBill).toLocaleString('en-IN')}` : '—';
   const annualKwh = insights.annualGen ? `${Math.round(insights.annualGen).toLocaleString('en-IN')} kWh` : '—';
-  const subsidyAmount = formatCurrency(insights.subsidy);
   const netOutlay = formatCurrency(insights.netCost);
 
-  const summaryText = `This customized engineering proposal has been developed for ${customerName} located in ${customerCity}. Based on your monthly grid electricity expenditure of ${billAmount} (${safeValue(form.monthlyUnits, ' kWh')}), we recommend an optimized ${kwSize} On-Grid Rooftop Solar Power Plant. Under standard meteorological conditions, the proposed system is estimated to generate approximately ${annualKwh} of clean electricity annually. Under the Ministry of New and Renewable Energy (MNRE) PM Surya Ghar: Muft Bijli Yojana, this installation qualifies for an upfront direct government subsidy of ${subsidyAmount}, resulting in a net customer investment outlay of ${netOutlay}.`;
+  const summaryText = `This customized engineering proposal has been developed for ${customerName} located in ${customerCity}. Based on your monthly grid electricity expenditure of ${billAmount} (${safeValue(form.monthlyUnits, ' kWh')}), we recommend an optimized ${kwSize} On-Grid Rooftop Solar Power Plant. Under standard meteorological conditions, the proposed system is estimated to generate approximately ${annualKwh} of clean electricity annually, resulting in a net customer investment outlay of ${netOutlay}.`;
 
   doc.setFont('helvetica', 'normal');
   doc.setFontSize(8.5);
@@ -197,12 +196,11 @@ export async function generateProposalPdf({ form = {}, insights = {}, proposal =
   // ═══════════════════════════════════════════════════════════════════════════
   // SECTION 3: KEY HIGHLIGHT KPI METRIC TILES
   // ═══════════════════════════════════════════════════════════════════════════
-  const cardW = (contentWidth - 9) / 4;
+  const cardW = (contentWidth - 6) / 3;
   const cardH = 18;
   const kpis = [
     { label: 'Recommended System', value: kwSize, sub: `${safeValue(insights.panels, ' Panels')}`, color: colors.primaryBlue },
-    { label: 'PM Surya Ghar Subsidy', value: subsidyAmount, sub: 'Direct Govt Benefit', color: colors.accentGreen },
-    { label: 'Net Capital Outlay', value: netOutlay, sub: 'After MNRE Subsidy', color: colors.accentOrange },
+    { label: 'Net Capital Outlay', value: netOutlay, sub: 'Turnkey system price', color: colors.accentOrange },
     { label: 'Estimated Payback', value: safeValue(insights.payback, ' Yrs'), sub: `Life: ${formatCurrency(insights.lifetimeSavings)}`, color: colors.primaryBlue },
   ];
 
@@ -302,7 +300,7 @@ export async function generateProposalPdf({ form = {}, insights = {}, proposal =
   currentY = doc.lastAutoTable.finalY + 7;
 
   // ═══════════════════════════════════════════════════════════════════════════
-  // SECTION 6: FINANCIAL BREAKDOWN & GOVERNMENT SUBSIDY
+  // SECTION 6: FINANCIAL BREAKDOWN
   // ═══════════════════════════════════════════════════════════════════════════
   // Check if we need a page break before financial tables
   if (currentY > pageHeight - 75) {
@@ -313,7 +311,7 @@ export async function generateProposalPdf({ form = {}, insights = {}, proposal =
   doc.setFont('helvetica', 'bold');
   doc.setFontSize(11);
   doc.setTextColor(...colors.primaryNavy);
-  doc.text('3. Financial Breakdown & PM Surya Ghar Subsidy Schedule', margin, currentY);
+  doc.text('3. Financial Breakdown', margin, currentY);
   currentY += 3;
 
   autoTable(doc, {
@@ -322,8 +320,7 @@ export async function generateProposalPdf({ form = {}, insights = {}, proposal =
     head: [['Financial Parameter', 'Amount / Value', 'Benchmark Reference & Policy Notes']],
     body: [
       ['Estimated Gross Turnkey System Cost', formatCurrency(insights.systemCost), 'Includes Tier-1 Hardware, Mounting, Structural Civil Work & Commissioning'],
-      ['PM Surya Ghar: Muft Bijli Yojana Subsidy', formatCurrency(insights.subsidy), 'Direct DBT subsidy credited to customer bank account post-inspection'],
-      ['Net Customer Investment Outlay', formatCurrency(insights.netCost), 'Effective net capital expenditure after government subsidy'],
+      ['Net Customer Investment Outlay', formatCurrency(insights.netCost), 'Total turnkey system price payable by the customer'],
       ['Estimated Monthly Electricity Savings', formatCurrency(insights.monthlySavings), 'Based on average monthly generation offset against local grid tariff'],
       ['Estimated Annual Electricity Savings', formatCurrency(insights.annualSavings), 'Annual financial savings resulting from solar self-consumption & export'],
       ['Estimated Payback Period', safeValue(insights.payback, ' Years'), 'Estimated duration to recover initial net capital investment'],
@@ -482,7 +479,6 @@ export async function generateProposalPdf({ form = {}, insights = {}, proposal =
   const terms = [
     '• System performance estimations assume unshaded rooftop conditions with orientation aligned to local optimal azimuth.',
     '• Solar PV panels include a 10-year product warranty and 25-year linear performance warranty guaranteeing >= 84.8% output.',
-    '• Government subsidy disbursement is subject to MNRE national portal guidelines and local DISCOM inspection compliance.',
     '• Milestone payment terms: 10% on proposal approval, 70% upon equipment dispatch, 20% post-commissioning net-meter sync.',
   ];
 
