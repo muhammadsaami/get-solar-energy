@@ -95,11 +95,92 @@ from crm_models import (
 )
 from utils.logger   import get_logger, log_api_request, log_api_response
 from utils.responses import ok, created, not_found, bad_request, server_error, serialise, ok_paginated
-from fastapi import UploadFile, File, Form
+from fastapi import UploadFile, File, Form, HTTPException
 from utils.security import sanitise_text_input
+from permissions import has_admin_access
+from customer_routes import _get_customer_scope_ids
 
 logger = get_logger(__name__)
-router = APIRouter(tags=["Enterprise CRM Core"])
+router = APIRouter(tags=["Enterprise CRM Core"], dependencies=[Depends(verify_token)])
+
+
+def _require_admin(user_email: str):
+    """Raise 403 unless the caller has admin access. Existence is not secret here."""
+    if not has_admin_access(user_email):
+        raise HTTPException(status_code=403, detail="Admin access required")
+
+
+def _owns_customer(db: Session, customer_id: int, user_email: str) -> bool:
+    """
+    Owner-or-admin check for per-customer CRM data.
+
+    Identity is derived from the verified token email only. Admins and
+    operational roles (per the established _get_customer_scope_ids pattern)
+    are unscoped; customers are restricted to CustomerModel records matching
+    their email or phone.
+    """
+    if has_admin_access(user_email):
+        return True
+    scope = _scope_for(db, user_email)
+    if scope is None:
+        return True
+    return customer_id in scope
+
+
+def _require_customer_access(db: Session, customer_id: int, user_email: str):
+    """
+    Return a not_found envelope unless the caller may access this customer.
+
+    Uses 404 (not 403) so customer IDs cannot be probed for existence.
+    Place BEFORE the handler try-block so it is never masked as a 500.
+    """
+    if not _owns_customer(db, customer_id, user_email):
+        return not_found("Customer", customer_id)
+    return None
+
+
+def _scope_for(db: Session, user_email: str):
+    """
+    Customer-ID scope for list/search operations. None means unscoped.
+
+    Admins are always unscoped, even when absent from the users store;
+    otherwise the established _get_customer_scope_ids pattern applies.
+    """
+    if has_admin_access(user_email):
+        return None
+    return _get_customer_scope_ids(db, user_email)
+
+
+def _require_body_customer_access(db: Session, data: dict, user_email: str):
+    """
+    Ownership check for create-operations carrying a customer_id.
+
+    Records without an attributable customer are admin-only.
+    """
+    raw = data.get("customer_id") if isinstance(data, dict) else None
+    try:
+        customer_id = int(raw) if raw is not None else None
+    except (TypeError, ValueError):
+        customer_id = None
+    if customer_id is None:
+        _require_admin(user_email)
+        return None
+    return _require_customer_access(db, customer_id, user_email)
+
+
+def _require_record_customer_access(db: Session, model, record_id: int, user_email: str, resource: str):
+    """
+    Load a CRM record and enforce owner-or-admin on its customer_id.
+
+    Returns (denied_envelope, record). denied_envelope is None when allowed.
+    """
+    record = db.query(model).filter(model.id == record_id).first()
+    if not record:
+        return not_found(resource, record_id), None
+    denied = _require_customer_access(db, getattr(record, "customer_id", None), user_email)
+    if denied:
+        return denied, None
+    return None, record
 
 
 # ══════════════════════════════════════════════════════════════════════════════
@@ -107,9 +188,12 @@ router = APIRouter(tags=["Enterprise CRM Core"])
 # ══════════════════════════════════════════════════════════════════════════════
 
 @router.get("/api/crm/timeline/{customer_id}")
-def get_customer_timeline(customer_id: int, db: Session = Depends(get_sqlite_db)):
+def get_customer_timeline(customer_id: int, user_email: str = Depends(verify_token), db: Session = Depends(get_sqlite_db)):
     """Return all timeline events for a customer in reverse-chronological order."""
     log_api_request(logger, "GET", f"/api/crm/timeline/{customer_id}")
+    denied = _require_customer_access(db, customer_id, user_email)
+    if denied:
+        return denied
     try:
         events = (
             db.query(CRMActivityTimelineModel)
@@ -128,11 +212,17 @@ def get_customer_timeline(customer_id: int, db: Session = Depends(get_sqlite_db)
 # ══════════════════════════════════════════════════════════════════════════════
 
 @router.get("/api/crm/tasks")
-def get_tasks(customer_id: Optional[int] = None, db: Session = Depends(get_sqlite_db)):
-    """Return tasks, optionally filtered by customer_id."""
+def get_tasks(customer_id: Optional[int] = None, user_email: str = Depends(verify_token), db: Session = Depends(get_sqlite_db)):
+    """Return tasks, optionally filtered by customer_id. Non-admins see only their own records."""
     log_api_request(logger, "GET", "/api/crm/tasks", {"customer_id": customer_id})
+    scope = _scope_for(db, user_email)
+    if scope is not None:
+        if customer_id is not None and customer_id not in scope:
+            return not_found("Customer", customer_id)
     try:
         tasks = crm_service.get_tasks(db, customer_id=customer_id)
+        if scope is not None:
+            tasks = [t for t in tasks if getattr(t, "customer_id", None) in scope]
         return ok(data=serialise(tasks), message=f"{len(tasks)} tasks")
     except Exception:
         logger.error("get_tasks failed", exc_info=True)
@@ -143,6 +233,9 @@ def get_tasks(customer_id: Optional[int] = None, db: Session = Depends(get_sqlit
 def create_task(task_data: TaskCreateSchema, db: Session = Depends(get_sqlite_db), user_email: str = Depends(verify_token)):
     """Create a new CRM task."""
     log_api_request(logger, "POST", "/api/crm/tasks")
+    denied = _require_body_customer_access(db, task_data.model_dump(), user_email)
+    if denied:
+        return denied
     try:
         data          = task_data.model_dump()
         data["notes"] = sanitise_text_input(data.get("notes"))
@@ -159,6 +252,9 @@ def create_task(task_data: TaskCreateSchema, db: Session = Depends(get_sqlite_db
 def update_task(id: int, task_data: TaskUpdateSchema, db: Session = Depends(get_sqlite_db), user_email: str = Depends(verify_token)):
     """Update an existing CRM task (partial update supported)."""
     log_api_request(logger, "PUT", f"/api/crm/tasks/{id}")
+    denied, _existing = _require_record_customer_access(db, CRMTaskModel, id, user_email, "Task")
+    if denied:
+        return denied
     try:
         task = crm_service.update_task(db, id, task_data.model_dump(exclude_unset=True))
         if task is None:
@@ -175,6 +271,9 @@ def update_task(id: int, task_data: TaskUpdateSchema, db: Session = Depends(get_
 def delete_task(id: int, db: Session = Depends(get_sqlite_db), user_email: str = Depends(verify_token)):
     """Delete a CRM task."""
     log_api_request(logger, "DELETE", f"/api/crm/tasks/{id}")
+    denied, _existing = _require_record_customer_access(db, CRMTaskModel, id, user_email, "Task")
+    if denied:
+        return denied
     try:
         task = db.query(CRMTaskModel).filter(CRMTaskModel.id == id).first()
         cust_id = task.customer_id if task else None
@@ -194,11 +293,17 @@ def delete_task(id: int, db: Session = Depends(get_sqlite_db), user_email: str =
 # ══════════════════════════════════════════════════════════════════════════════
 
 @router.get("/api/crm/meetings")
-def get_meetings(customer_id: Optional[int] = None, db: Session = Depends(get_sqlite_db)):
-    """Return meetings, optionally filtered by customer_id."""
+def get_meetings(customer_id: Optional[int] = None, user_email: str = Depends(verify_token), db: Session = Depends(get_sqlite_db)):
+    """Return meetings, optionally filtered by customer_id. Non-admins see only their own records."""
     log_api_request(logger, "GET", "/api/crm/meetings", {"customer_id": customer_id})
+    scope = _scope_for(db, user_email)
+    if scope is not None:
+        if customer_id is not None and customer_id not in scope:
+            return not_found("Customer", customer_id)
     try:
         meetings = crm_service.get_meetings(db, customer_id=customer_id)
+        if scope is not None:
+            meetings = [m for m in meetings if getattr(m, "customer_id", None) in scope]
         return ok(data=serialise(meetings), message=f"{len(meetings)} meetings")
     except Exception:
         logger.error("get_meetings failed", exc_info=True)
@@ -209,6 +314,9 @@ def get_meetings(customer_id: Optional[int] = None, db: Session = Depends(get_sq
 def create_meeting(meeting_data: MeetingCreateSchema, db: Session = Depends(get_sqlite_db), user_email: str = Depends(verify_token)):
     """Schedule a new CRM meeting."""
     log_api_request(logger, "POST", "/api/crm/meetings")
+    denied = _require_body_customer_access(db, meeting_data.model_dump(), user_email)
+    if denied:
+        return denied
     try:
         data          = meeting_data.model_dump()
         data["notes"] = sanitise_text_input(data.get("notes"))
@@ -224,6 +332,9 @@ def create_meeting(meeting_data: MeetingCreateSchema, db: Session = Depends(get_
 def update_meeting(id: int, meeting_data: MeetingUpdateSchema, db: Session = Depends(get_sqlite_db), user_email: str = Depends(verify_token)):
     """Update an existing meeting (partial update supported)."""
     log_api_request(logger, "PUT", f"/api/crm/meetings/{id}")
+    denied, _existing = _require_record_customer_access(db, CRMMeetingModel, id, user_email, "Meeting")
+    if denied:
+        return denied
     try:
         meeting = crm_service.update_meeting(db, id, meeting_data.model_dump(exclude_unset=True))
         if meeting is None:
@@ -239,6 +350,9 @@ def update_meeting(id: int, meeting_data: MeetingUpdateSchema, db: Session = Dep
 def delete_meeting(id: int, db: Session = Depends(get_sqlite_db), user_email: str = Depends(verify_token)):
     """Delete a CRM meeting."""
     log_api_request(logger, "DELETE", f"/api/crm/meetings/{id}")
+    denied, _existing = _require_record_customer_access(db, CRMMeetingModel, id, user_email, "Meeting")
+    if denied:
+        return denied
     try:
         success = crm_service.delete_meeting(db, id)
         if not success:
@@ -254,11 +368,17 @@ def delete_meeting(id: int, db: Session = Depends(get_sqlite_db), user_email: st
 # ══════════════════════════════════════════════════════════════════════════════
 
 @router.get("/api/crm/followups")
-def get_followups(customer_id: Optional[int] = None, db: Session = Depends(get_sqlite_db)):
-    """Return follow-ups, optionally filtered by customer_id."""
+def get_followups(customer_id: Optional[int] = None, user_email: str = Depends(verify_token), db: Session = Depends(get_sqlite_db)):
+    """Return follow-ups, optionally filtered by customer_id. Non-admins see only their own records."""
     log_api_request(logger, "GET", "/api/crm/followups", {"customer_id": customer_id})
+    scope = _scope_for(db, user_email)
+    if scope is not None:
+        if customer_id is not None and customer_id not in scope:
+            return not_found("Customer", customer_id)
     try:
         followups = crm_service.get_followups(db, customer_id=customer_id)
+        if scope is not None:
+            followups = [f for f in followups if getattr(f, "customer_id", None) in scope]
         return ok(data=serialise(followups), message=f"{len(followups)} follow-ups")
     except Exception:
         logger.error("get_followups failed", exc_info=True)
@@ -269,6 +389,9 @@ def get_followups(customer_id: Optional[int] = None, db: Session = Depends(get_s
 def create_followup(followup_data: FollowUpCreateSchema, db: Session = Depends(get_sqlite_db), user_email: str = Depends(verify_token)):
     """Create a new follow-up action."""
     log_api_request(logger, "POST", "/api/crm/followups")
+    denied = _require_body_customer_access(db, followup_data.model_dump(), user_email)
+    if denied:
+        return denied
     try:
         data          = followup_data.model_dump()
         data["notes"] = sanitise_text_input(data.get("notes"))
@@ -284,6 +407,9 @@ def create_followup(followup_data: FollowUpCreateSchema, db: Session = Depends(g
 def update_followup(id: int, followup_data: FollowUpUpdateSchema, db: Session = Depends(get_sqlite_db), user_email: str = Depends(verify_token)):
     """Update an existing follow-up (partial update supported)."""
     log_api_request(logger, "PUT", f"/api/crm/followups/{id}")
+    denied, _existing = _require_record_customer_access(db, CRMFollowUpModel, id, user_email, "Follow-up")
+    if denied:
+        return denied
     try:
         followup = crm_service.update_followup(db, id, followup_data.model_dump(exclude_unset=True))
         if followup is None:
@@ -299,6 +425,9 @@ def update_followup(id: int, followup_data: FollowUpUpdateSchema, db: Session = 
 def delete_followup(id: int, db: Session = Depends(get_sqlite_db), user_email: str = Depends(verify_token)):
     """Delete a follow-up action."""
     log_api_request(logger, "DELETE", f"/api/crm/followups/{id}")
+    denied, _existing = _require_record_customer_access(db, CRMFollowUpModel, id, user_email, "Follow-up")
+    if denied:
+        return denied
     try:
         followup = db.query(CRMFollowUpModel).filter(CRMFollowUpModel.id == id).first()
         cust_id  = followup.customer_id if followup else None
@@ -334,6 +463,7 @@ def update_customer_crm(
     4. Runs the full automation suite (scores, next_followup).
     """
     log_api_request(logger, "PUT", f"/api/crm/customers/{id}")
+    _require_admin(user_email)
     try:
         customer = db.query(CustomerModel).filter(CustomerModel.id == id).first()
         if not customer:
@@ -392,9 +522,11 @@ def update_customer_crm(
 # ══════════════════════════════════════════════════════════════════════════════
 
 @router.get("/api/crm/pipeline-metrics")
-def get_pipeline_metrics(db: Session = Depends(get_sqlite_db)):
+def get_pipeline_metrics(user_email: str = Depends(verify_token), db: Session = Depends(get_sqlite_db)):
     """
     Compute and return comprehensive pipeline analytics.
+
+    Admin-only: aggregates span every customer in the platform.
 
     Metrics returned:
       total_leads, pipeline_value, expected_revenue, avg_deal_size,
@@ -406,6 +538,7 @@ def get_pipeline_metrics(db: Session = Depends(get_sqlite_db)):
     per customer per stage — stages with more events indicate longer dwell time.
     """
     log_api_request(logger, "GET", "/api/crm/pipeline-metrics")
+    _require_admin(user_email)
     try:
         t_start   = time.perf_counter()
         customers = db.query(CustomerModel).all()
@@ -510,42 +643,53 @@ def get_pipeline_metrics(db: Session = Depends(get_sqlite_db)):
 # ══════════════════════════════════════════════════════════════════════════════
 
 @router.get("/api/crm/global-search")
-def global_crm_search(q: str = Query(..., min_length=1, max_length=200), db: Session = Depends(get_sqlite_db)):
+def global_crm_search(q: str = Query(..., min_length=1, max_length=200), user_email: str = Depends(verify_token), db: Session = Depends(get_sqlite_db)):
     """
     Unified search across customers, tasks, meetings, and timeline events.
+
+    Admins search the whole platform; other callers are restricted to
+    records belonging to their own customer scope.
 
     Returns grouped results with a total count.
     All text fields support case-insensitive LIKE matching.
     """
     log_api_request(logger, "GET", "/api/crm/global-search", {"q": q})
+    scope = _scope_for(db, user_email)
     try:
         q = q.strip()
         pattern = f"%{q}%"
 
-        customers = db.query(CustomerModel).filter(
+        customers_query = db.query(CustomerModel).filter(
             CustomerModel.customer_name.like(pattern)
             | CustomerModel.consumer_number.like(pattern)
             | CustomerModel.phone.like(pattern)
             | CustomerModel.email.like(pattern)
             | CustomerModel.city.like(pattern)
             | CustomerModel.discom.like(pattern)
-        ).limit(20).all()
-
-        tasks = db.query(CRMTaskModel).filter(
+        )
+        tasks_query = db.query(CRMTaskModel).filter(
             CRMTaskModel.title.like(pattern)
             | CRMTaskModel.notes.like(pattern)
-        ).limit(20).all()
-
-        meetings = db.query(CRMMeetingModel).filter(
+        )
+        meetings_query = db.query(CRMMeetingModel).filter(
             CRMMeetingModel.title.like(pattern)
             | CRMMeetingModel.notes.like(pattern)
             | CRMMeetingModel.outcome.like(pattern)
-        ).limit(20).all()
-
-        timeline = db.query(CRMActivityTimelineModel).filter(
+        )
+        timeline_query = db.query(CRMActivityTimelineModel).filter(
             CRMActivityTimelineModel.event_type.like(pattern)
             | CRMActivityTimelineModel.notes.like(pattern)
-        ).limit(20).all()
+        )
+        if scope is not None:
+            customers_query = customers_query.filter(CustomerModel.id.in_(scope))
+            tasks_query = tasks_query.filter(CRMTaskModel.customer_id.in_(scope))
+            meetings_query = meetings_query.filter(CRMMeetingModel.customer_id.in_(scope))
+            timeline_query = timeline_query.filter(CRMActivityTimelineModel.customer_id.in_(scope))
+
+        customers = customers_query.limit(20).all()
+        tasks = tasks_query.limit(20).all()
+        meetings = meetings_query.limit(20).all()
+        timeline = timeline_query.limit(20).all()
 
         customer_results = [{
             "id": c.id, "name": c.customer_name,
@@ -598,18 +742,24 @@ def global_crm_search(q: str = Query(..., min_length=1, max_length=200), db: Ses
 # ══════════════════════════════════════════════════════════════════════════════
 
 @router.get("/api/crm/alerts")
-def get_crm_alerts(severity: Optional[str] = None, db: Session = Depends(get_sqlite_db)):
+def get_crm_alerts(severity: Optional[str] = None, user_email: str = Depends(verify_token), db: Session = Depends(get_sqlite_db)):
     """
     Return operational warnings and critical alerts.
+
+    Non-admin callers only see alerts for their own customer records.
 
     Alert types:
       Warning  — Missing email or phone
       Critical — Health score < 70, overdue follow-ups
     """
     log_api_request(logger, "GET", "/api/crm/alerts", {"severity": severity})
+    scope = _scope_for(db, user_email)
     try:
         alerts: list[dict] = []
-        customers = db.query(CustomerModel).all()
+        customers_query = db.query(CustomerModel)
+        if scope is not None:
+            customers_query = customers_query.filter(CustomerModel.id.in_(scope))
+        customers = customers_query.all()
 
         for c in customers:
             if not c.email or not c.email.strip():
@@ -643,6 +793,9 @@ def get_crm_alerts(severity: Optional[str] = None, db: Session = Depends(get_sql
 
         # Build customer name map for overdue list
         cust_ids  = {f.customer_id for f in overdue}
+        if scope is not None:
+            overdue = [f for f in overdue if f.customer_id in scope]
+            cust_ids  = {f.customer_id for f in overdue}
         cust_map  = {c.id: c.customer_name for c in db.query(CustomerModel).filter(CustomerModel.id.in_(cust_ids)).all()}
 
         for f in overdue:
@@ -671,13 +824,16 @@ def get_crm_alerts(severity: Optional[str] = None, db: Session = Depends(get_sql
 VALID_REPORT_TYPES = {"crm", "sales", "pipeline", "activity"}
 
 @router.get("/api/crm/reports/{report_type}")
-def get_crm_reports(report_type: str, db: Session = Depends(get_sqlite_db)):
+def get_crm_reports(report_type: str, user_email: str = Depends(verify_token), db: Session = Depends(get_sqlite_db)):
     """
     Download a CRM CSV report.
+
+    Admin-only: reports aggregate every customer in the platform.
 
     report_type: crm | sales | pipeline | activity
     """
     log_api_request(logger, "GET", f"/api/crm/reports/{report_type}")
+    _require_admin(user_email)
     if report_type not in VALID_REPORT_TYPES:
         return bad_request(f"Invalid report type '{report_type}'. Allowed: {VALID_REPORT_TYPES}")
 
@@ -710,13 +866,17 @@ def get_crm_reports(report_type: str, db: Session = Depends(get_sqlite_db)):
 def get_audit_log(
     entity_id: Optional[int] = None,
     limit: int = 100,
+    user_email: str = Depends(verify_token),
     db: Session = Depends(get_sqlite_db),
 ):
     """
     Return audit log records, optionally filtered by entity_id.
     Results are returned in reverse-chronological order.
+
+    Admin-only: the audit trail spans all customers and users.
     """
     log_api_request(logger, "GET", "/api/crm/audit-log", {"entity_id": entity_id, "limit": limit})
+    _require_admin(user_email)
     try:
         query = db.query(CRMAuditLogModel).order_by(CRMAuditLogModel.created_at.desc())
         if entity_id is not None:
@@ -732,9 +892,12 @@ def get_audit_log(
 # ══════════════════════════════════════════════════════════════════════════════
 
 @router.get("/api/crm/customers/{id}/360")
-def get_customer_360(id: int, db: Session = Depends(get_sqlite_db)):
+def get_customer_360(id: int, user_email: str = Depends(verify_token), db: Session = Depends(get_sqlite_db)):
     """Return consolidated customer data envelope."""
     log_api_request(logger, "GET", f"/api/crm/customers/{id}/360")
+    denied = _require_customer_access(db, id, user_email)
+    if denied:
+        return denied
     try:
         data = crm_service.get_customer_360(db, id)
         if not data:
@@ -749,10 +912,14 @@ def get_customer_timeline_paginated(
     id: int,
     page: int = Query(1, ge=1),
     limit: int = Query(10, ge=1, le=100),
+    user_email: str = Depends(verify_token),
     db: Session = Depends(get_sqlite_db)
 ):
     """Return paginated timeline events."""
     log_api_request(logger, "GET", f"/api/crm/customers/{id}/timeline-paginated", {"page": page, "limit": limit})
+    denied = _require_customer_access(db, id, user_email)
+    if denied:
+        return denied
     try:
         events, total = crm_service.get_unified_timeline(db, id, page, limit)
         return ok_paginated(
@@ -779,10 +946,14 @@ def get_customer_documents(
     sort_by: str = Query("uploaded_at"),
     sort_order: str = Query("desc"),
     filter_status: Optional[str] = Query(None),
+    user_email: str = Depends(verify_token),
     db: Session = Depends(get_sqlite_db)
 ):
     """Retrieve paginated, filterable, sortable customer documents."""
     log_api_request(logger, "GET", f"/api/crm/customers/{id}/documents")
+    denied = _require_customer_access(db, id, user_email)
+    if denied:
+        return denied
     try:
         query = db.query(CRMDocumentModel).filter(CRMDocumentModel.customer_id == id)
         if search:
@@ -822,6 +993,9 @@ async def upload_document(
 ):
     """Upload and secure a new customer document."""
     log_api_request(logger, "POST", "/api/crm/documents", {"customer_id": customer_id, "document_type": document_type})
+    denied = _require_customer_access(db, customer_id, user_email)
+    if denied:
+        return denied
     try:
         from utils.crm_storage import save_uploaded_file
         # Save file securely and return metadata
@@ -868,6 +1042,9 @@ def update_document(
 ):
     """Update document verification status and remarks."""
     log_api_request(logger, "PUT", f"/api/crm/documents/{id}")
+    denied, _existing = _require_record_customer_access(db, CRMDocumentModel, id, user_email, "Document")
+    if denied:
+        return denied
     try:
         doc = crm_service.update_document_status(
             db,
@@ -886,6 +1063,9 @@ def update_document(
 def delete_document(id: int, db: Session = Depends(get_sqlite_db), user_email: str = Depends(verify_token)):
     """Delete a customer document and its associated file."""
     log_api_request(logger, "DELETE", f"/api/crm/documents/{id}")
+    denied, _existing = _require_record_customer_access(db, CRMDocumentModel, id, user_email, "Document")
+    if denied:
+        return denied
     try:
         success = crm_service.delete_document(db, id)
         if not success:
@@ -908,10 +1088,14 @@ def get_customer_communications(
     sort_by: str = Query("created_at"),
     sort_order: str = Query("desc"),
     filter_status: Optional[str] = Query(None), # maps to channel filter
+    user_email: str = Depends(verify_token),
     db: Session = Depends(get_sqlite_db)
 ):
     """Retrieve paginated, filterable communication logs."""
     log_api_request(logger, "GET", f"/api/crm/customers/{id}/communications")
+    denied = _require_customer_access(db, id, user_email)
+    if denied:
+        return denied
     try:
         query = db.query(CRMCommunicationModel).filter(CRMCommunicationModel.customer_id == id)
         if search:
@@ -949,6 +1133,9 @@ def create_communication(
 ):
     """Log a new customer communication record."""
     log_api_request(logger, "POST", "/api/crm/communications")
+    denied = _require_body_customer_access(db, payload.model_dump(), user_email)
+    if denied:
+        return denied
     try:
         comm = crm_service.create_communication(db, payload.model_dump())
         return created(data=serialise(comm), message="Communication logged successfully")
@@ -961,9 +1148,12 @@ def create_communication(
 # ══════════════════════════════════════════════════════════════════════════════
 
 @router.get("/api/crm/customers/{id}/installation")
-def get_customer_installation(id: int, db: Session = Depends(get_sqlite_db)):
+def get_customer_installation(id: int, user_email: str = Depends(verify_token), db: Session = Depends(get_sqlite_db)):
     """Retrieve customer installation details."""
     log_api_request(logger, "GET", f"/api/crm/customers/{id}/installation")
+    denied = _require_customer_access(db, id, user_email)
+    if denied:
+        return denied
     try:
         install = crm_service.get_installation(db, id)
         if not install:
@@ -983,6 +1173,9 @@ def update_customer_installation(
 ):
     """Update installation details and step workflow."""
     log_api_request(logger, "PUT", f"/api/crm/customers/{id}/installation")
+    denied = _require_customer_access(db, id, user_email)
+    if denied:
+        return denied
     try:
         install = crm_service.create_or_update_installation(
             db,
@@ -999,9 +1192,12 @@ def update_customer_installation(
 # ══════════════════════════════════════════════════════════════════════════════
 
 @router.get("/api/crm/customers/{id}/amc")
-def get_customer_amc(id: int, db: Session = Depends(get_sqlite_db)):
+def get_customer_amc(id: int, user_email: str = Depends(verify_token), db: Session = Depends(get_sqlite_db)):
     """Retrieve customer AMC contract details."""
     log_api_request(logger, "GET", f"/api/crm/customers/{id}/amc")
+    denied = _require_customer_access(db, id, user_email)
+    if denied:
+        return denied
     try:
         amc = crm_service.get_amc(db, id)
         if not amc:
@@ -1020,6 +1216,9 @@ def update_customer_amc(
 ):
     """Update AMC contract specifications or add visits."""
     log_api_request(logger, "PUT", f"/api/crm/customers/{id}/amc")
+    denied = _require_customer_access(db, id, user_email)
+    if denied:
+        return denied
     try:
         amc = crm_service.create_or_update_amc(
             db,
@@ -1044,10 +1243,14 @@ def get_customer_payments(
     sort_by: str = Query("due_date"),
     sort_order: str = Query("desc"),
     filter_status: Optional[str] = Query(None), # Unpaid | Partially Paid | Paid | Overdue
+    user_email: str = Depends(verify_token),
     db: Session = Depends(get_sqlite_db)
 ):
     """Retrieve paginated invoice statements for a customer."""
     log_api_request(logger, "GET", f"/api/crm/customers/{id}/payments")
+    denied = _require_customer_access(db, id, user_email)
+    if denied:
+        return denied
     try:
         query = db.query(CRMPaymentModel).filter(CRMPaymentModel.customer_id == id)
         if search:
@@ -1082,6 +1285,9 @@ def create_payment(
 ):
     """Generate a new payment invoice milestone."""
     log_api_request(logger, "POST", "/api/crm/payments")
+    denied = _require_body_customer_access(db, payload.model_dump(), user_email)
+    if denied:
+        return denied
     try:
         pay = crm_service.create_payment(db, payload.model_dump())
         return created(data=serialise(pay), message="Payment milestone invoice created successfully")
@@ -1098,6 +1304,9 @@ def update_payment(
 ):
     """Record payment collection or update invoice status."""
     log_api_request(logger, "PUT", f"/api/crm/payments/{id}")
+    denied, _existing = _require_record_customer_access(db, CRMPaymentModel, id, user_email, "Payment")
+    if denied:
+        return denied
     try:
         pay = crm_service.update_payment(
             db,

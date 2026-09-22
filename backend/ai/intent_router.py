@@ -119,7 +119,6 @@ class IntentRouter:
     def __init__(self) -> None:
         if self._initialized:
             return
-        self._client = None  # lazy Gemini client
         self._initialized = True
 
     def classify(
@@ -131,12 +130,12 @@ class IntentRouter:
         Classify a user message into an intent.
 
         Stage 1: keyword matching (fast, free).
-        Stage 2: Gemini fallback if confidence < 0.6 (rare).
+        Stage 2: Centralized AI provider fallback if confidence < 0.6 (rare).
         """
         intent, confidence, entities = self._stage1_keywords(message)
 
         if confidence < 0.6:
-            intent, confidence, entities = self._stage2_gemini(message, intent, confidence, context)
+            intent, confidence, entities = self._stage2_llm(message, intent, confidence, context)
 
         return {
             "intent": intent.value if isinstance(intent, Intent) else intent,
@@ -165,18 +164,14 @@ class IntentRouter:
 
         return best_intent, round(confidence, 2), {}
 
-    def _stage2_gemini(
+    def _stage2_llm(
         self,
         message: str,
         fallback_intent: Intent,
         fallback_confidence: float,
         context: Optional[Dict[str, Any]] = None,
     ) -> Tuple[Intent, float, Dict[str, Any]]:
-        """Gemini-based intent classification (token cost — used sparingly)."""
-        if self._client is None:
-            from .client import get_genai_client
-            self._client = get_genai_client()
-
+        """LLM-based intent classification via centralized provider abstraction (OpenAI default)."""
         intents_list = ", ".join(i.value for i in Intent)
         prompt = f"""Classify the user message into exactly ONE of these intents: {intents_list}
 
@@ -186,12 +181,13 @@ Return ONLY valid JSON:
 {{"intent": "<INTENT>", "confidence": <0.0-1.0>, "entities": {{}}}}"""
 
         try:
-            response = self._client.models.generate_content(
-                model="gemini-2.5-flash-lite",
-                contents=prompt,
-            )
+            from .provider_factory import get_ai_provider
+            from .provider_base import AIRequest
+            provider = get_ai_provider()
+            req = AIRequest(prompt=prompt, temperature=0.1, metadata={"task": "intent_classification"})
+            response = provider.generate_response(req)
             import json
-            text = response.text.strip()
+            text = response.content.strip()
             if "```json" in text:
                 text = text.split("```json")[1].split("```")[0]
             elif "```" in text:
@@ -205,8 +201,11 @@ Return ONLY valid JSON:
             confidence = float(result.get("confidence", 0.7))
             return intent, confidence, result.get("entities", {})
         except Exception as e:
-            logger.warning("Gemini intent classification failed: %s", e)
+            logger.warning("LLM intent classification failed: %s", e)
             return fallback_intent, fallback_confidence, {}
+
+    # Backward-compatible alias for existing tests
+    _stage2_gemini = _stage2_llm
 
 
 def get_intent_router() -> IntentRouter:

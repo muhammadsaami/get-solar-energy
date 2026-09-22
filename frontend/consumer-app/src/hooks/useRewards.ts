@@ -1,6 +1,10 @@
 import { useState, useEffect, useCallback, useRef } from 'react'
 import { getUser } from '../utils/referral'
 import { fetchAnalytics, applyReferralCode, redeemReward } from '../services/reward.service'
+import {
+  saveRewardsToLocalStorage,
+  loadRewardsFromLocalStorage,
+} from '../utils/rewardsLocalStorage'
 import type {
   AnalyticsResponse,
   RewardSummary,
@@ -9,26 +13,6 @@ import type {
   RewardCatalogItem,
   LeaderboardEntry,
 } from '../types/rewards.types'
-
-const LS_CACHE_KEY = 'lastRewardsData'
-
-function readCache(): AnalyticsResponse | null {
-  try {
-    const raw = localStorage.getItem(LS_CACHE_KEY)
-    if (!raw) return null
-    return JSON.parse(raw) as AnalyticsResponse
-  } catch {
-    return null
-  }
-}
-
-function writeCache(data: AnalyticsResponse): void {
-  try {
-    localStorage.setItem(LS_CACHE_KEY, JSON.stringify(data))
-  } catch {
-    /* localStorage full or unavailable */
-  }
-}
 
 export interface RewardsState {
   loading: boolean
@@ -42,44 +26,60 @@ export interface RewardsState {
   userRank: number | null
 }
 
+function emptyRewardsState(referralCode: string): RewardsState {
+  return {
+    loading: true,
+    error: null,
+    referralCode,
+    summary: null,
+    referralHistory: [],
+    transactions: [],
+    rewardsCatalog: [],
+    leaderboard: [],
+    userRank: null,
+  }
+}
+
+function stateFromCache(cached: AnalyticsResponse, referralFallback: string): RewardsState {
+  return {
+    loading: true,
+    error: null,
+    referralCode: cached.referral_code || referralFallback,
+    summary: cached.summary ?? null,
+    referralHistory: cached.referral_history || [],
+    transactions: buildTransactions(cached),
+    rewardsCatalog: cached.rewards_catalog || [],
+    leaderboard: cached.leaderboard || [],
+    userRank: cached.user_rank ?? null,
+  }
+}
+
 export function useRewards() {
   const user = getUser()
   const fetchingRef = useRef(false)
 
   const [state, setState] = useState<RewardsState>(() => {
-    const cached = readCache()
+    // Hydrate only from the current account's scoped storage — never from
+    // another customer's persisted rewards.
+    const cached = loadRewardsFromLocalStorage(user)
     if (cached) {
-      return {
-        loading: true,
-        error: null,
-        referralCode: cached.referral_code || user?.referral_code || '',
-        summary: cached.summary ?? null,
-        referralHistory: cached.referral_history || [],
-        transactions: buildTransactions(cached),
-        rewardsCatalog: cached.rewards_catalog || [],
-        leaderboard: cached.leaderboard || [],
-        userRank: cached.user_rank ?? null,
-      }
+      return stateFromCache(cached, user?.referral_code || '')
     }
-    return {
-      loading: true,
-      error: null,
-      referralCode: user?.referral_code || '',
-      summary: null,
-      referralHistory: [],
-      transactions: [],
-      rewardsCatalog: [],
-      leaderboard: [],
-      userRank: null,
-    }
+    return emptyRewardsState(user?.referral_code || '')
   })
 
   const loadData = useCallback(async () => {
-    if (!user?.email) return
+    if (!user?.email) {
+      setState(emptyRewardsState(''))
+      return
+    }
     if (fetchingRef.current) return
     fetchingRef.current = true
 
-    setState(prev => ({ ...prev, loading: true, error: null }))
+    // Discard any previous account's state first, then hydrate this
+    // account's own persisted rewards while the fresh fetch runs.
+    const scoped = loadRewardsFromLocalStorage(user)
+    setState(scoped ? stateFromCache(scoped, user.referral_code || '') : emptyRewardsState(user.referral_code || ''))
 
     try {
       const data = await fetchAnalytics(user.email)
@@ -87,7 +87,7 @@ export function useRewards() {
         setState(prev => ({ ...prev, loading: false, error: data.error || 'Failed to load rewards data.' }))
         return
       }
-      writeCache(data)
+      saveRewardsToLocalStorage(data, user)
       setState({
         loading: false,
         error: null,

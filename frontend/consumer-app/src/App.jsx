@@ -141,13 +141,13 @@ function AppRoutes() {
         <Route path={ROUTES.ADMIN_DASHBOARD} element={<AppRoute><AdminGuard><PageSuspense><AdminDashboardPage /></PageSuspense></AdminGuard></AppRoute>} />
 
         {/* CRM & Leads */}
-        <Route path={ROUTES.CRM_LEADS} element={<AppRoute><AdminGuard><PageSuspense><CrmDashboardPage /></PageSuspense></AdminGuard></AppRoute>} />
+        <Route path={ROUTES.CRM_LEADS} element={<AppRoute><PermissionGuard feature="crm-dashboard"><PageSuspense><CrmDashboardPage /></PageSuspense></PermissionGuard></AppRoute>} />
 
         {/* Business Intelligence */}
-        <Route path={ROUTES.BUSINESS_INTELLIGENCE} element={<AppRoute><AdminGuard><PageSuspense><BusinessIntelligencePage /></PageSuspense></AdminGuard></AppRoute>} />
+        <Route path={ROUTES.BUSINESS_INTELLIGENCE} element={<AppRoute><PermissionGuard feature="business-intelligence"><PageSuspense><BusinessIntelligencePage /></PageSuspense></PermissionGuard></AppRoute>} />
 
         {/* Audit & Monitoring */}
-        <Route path={ROUTES.AUDIT_MONITORING} element={<AppRoute><AdminGuard><PageSuspense><AuditMonitoringPage /></PageSuspense></AdminGuard></AppRoute>} />
+        <Route path={ROUTES.AUDIT_MONITORING} element={<AppRoute><PermissionGuard feature="audit-monitoring"><PageSuspense><AuditMonitoringPage /></PageSuspense></PermissionGuard></AppRoute>} />
 
         {/* Enterprise MLOps */}
         <Route path={ROUTES.MLOPS} element={<AppRoute><PermissionGuard feature="mlops-dashboard"><PageSuspense><MlOpsPage /></PageSuspense></PermissionGuard></AppRoute>} />

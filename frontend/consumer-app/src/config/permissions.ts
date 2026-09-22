@@ -58,7 +58,7 @@ export const FEATURE_PERMISSIONS: Record<FeatureId, FeaturePermission> = {
   'roi-calculator': { roles: [ROLES.CUSTOMER, ROLES.ADMIN] },
   'ai-assistant': { roles: [ROLES.CUSTOMER, ROLES.ADMIN] },
   'enterprise-ai': { roles: [ROLES.ADMIN] },
-  'knowledge-base': { roles: [ROLES.TECHNICIAN] },
+  'knowledge-base': { roles: [ROLES.TECHNICIAN, ROLES.ADMIN] },
   rewards: { roles: [ROLES.CUSTOMER, ROLES.ADMIN] },
   'activity-center': { roles: [ROLES.CUSTOMER, ROLES.VENDOR, ROLES.ADMIN, ROLES.ENGINEER] },
   'system-performance': { roles: [ROLES.CUSTOMER, ROLES.VENDOR, ROLES.ADMIN, ROLES.ENGINEER] },

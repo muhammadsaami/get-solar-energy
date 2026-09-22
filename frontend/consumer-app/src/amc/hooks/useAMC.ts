@@ -81,11 +81,21 @@ export function useAMC() {
 
     try {
       const defaults = getDefaultRecommendationRequest()
+      const systemSizeKw = overrides?.system_size_kw ?? defaults.system_size_kw ?? 0
+      const installationDate = overrides?.installation_date || ''
+      if (!(systemSizeKw > 0) || !installationDate) {
+        setState((prev) => ({
+          ...prev,
+          recommending: false,
+          error: { hasError: true, message: 'Please enter your system size and installation date before generating a recommendation.' },
+        }))
+        return
+      }
       const request: AMCRecommendationRequest = {
-        customer_name: defaults.customer_name || 'Customer',
+        customer_name: defaults.customer_name || '',
         city: defaults.city || '',
-        system_size_kw: defaults.system_size_kw || 5.0,
-        installation_date: overrides?.installation_date || '2022-01-01',
+        system_size_kw: systemSizeKw,
+        installation_date: installationDate,
         last_service_date: overrides?.last_service_date || '',
         current_generation_units: defaults.current_generation_units || 0,
         expected_generation_units: defaults.expected_generation_units || 0,
@@ -101,6 +111,17 @@ export function useAMC() {
       if (controller.signal.aborted) return
 
       if (raw?.success) {
+        if (raw?.fallback === true) {
+          // The backend returns a fabricated demo estimate when AI capacity
+          // is exhausted. Never render it as the customer's real report —
+          // surface an honest retryable error instead.
+          setState((prev) => ({
+            ...prev,
+            recommending: false,
+            error: { hasError: true, message: 'AMC evaluation is temporarily unavailable. Please try again later.' },
+          }))
+          return
+        }
         setState((prev) => {
           const aggregated = aggregateAMCData(
             prev.contract as Parameters<typeof aggregateAMCData>[0],

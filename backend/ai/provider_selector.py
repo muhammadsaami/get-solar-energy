@@ -42,7 +42,7 @@ logger = logging.getLogger(__name__)
 
 # Standard defaults
 DEFAULT_AI_PROVIDER = "auto"
-DEFAULT_AI_PROVIDER_PRIORITY = "openai,gemini"
+DEFAULT_AI_PROVIDER_PRIORITY = "openai"
 DEFAULT_AI_ALLOW_PROVIDER_FALLBACK = True
 
 DEFAULT_OPENAI_MODEL = "gpt-5.6-luna"
@@ -63,7 +63,7 @@ class AIProviderConfigError(AIProviderError):
 class ProviderConfig:
     """Safe model representing AI provider environment configuration."""
     ai_provider: str = DEFAULT_AI_PROVIDER
-    priority: List[str] = field(default_factory=lambda: ["openai", "gemini"])
+    priority: List[str] = field(default_factory=lambda: ["openai"])
     allow_fallback: bool = DEFAULT_AI_ALLOW_PROVIDER_FALLBACK
     gemini_api_key: Optional[str] = None
     assistant_model: str = "gemini-2.5-flash-lite"
@@ -98,7 +98,7 @@ class ProviderConfig:
                 priority_list.append(p_clean)
 
         if not priority_list:
-            priority_list = ["openai", "gemini"]
+            priority_list = ["openai"]
 
         raw_fallback = source.get("AI_ALLOW_PROVIDER_FALLBACK")
         if raw_fallback is not None:
@@ -333,12 +333,14 @@ class FallbackProviderWrapper(BaseAIProvider):
                 return fallback_resp
             except AIProviderError as e_fallback:
                 safe_fallback_msg = str(e_fallback)
-                raise AIProviderError(
+                err = AIProviderError(
                     f"Both primary provider '{self._primary_name}' and fallback provider '{self._fallback_name}' failed. "
                     f"Primary error: {safe_primary_msg}. Fallback error: {safe_fallback_msg}.",
                     provider=self._fallback_name,
                     original_error=e_fallback,
                 )
+                err.primary_error = e_primary
+                raise err
         except Exception as e:
             logger.error("Unexpected primary error on provider '%s': %s", self._primary_name, str(e)[:120])
             raise e
@@ -489,11 +491,13 @@ class ProviderSelector:
         # 6. Instantiate primary provider
         primary_provider: BaseAIProvider
         if selected_name == "gemini":
+            logger.info("AI Provider initialized: GeminiProvider (Model: %s)", config.assistant_model)
             primary_provider = GeminiProvider(
                 api_key=config.gemini_api_key,
                 model_name=config.assistant_model,
             )
         elif selected_name == "openai":
+            logger.info("AI Provider initialized: OpenAIProvider (Model: %s)", config.openai_model)
             primary_provider = OpenAIProvider(
                 api_key=config.openai_api_key,
                 model_name=config.openai_model,
@@ -501,6 +505,7 @@ class ProviderSelector:
                 timeout=config.openai_timeout_seconds,
             )
         elif selected_name == "mock":
+            logger.info("AI Provider initialized: MockAIProvider (Model: mock)")
             primary_provider = MockAIProvider()
         else:
             raise AIProviderError(f"Cannot instantiate unknown provider '{selected_name}'.")

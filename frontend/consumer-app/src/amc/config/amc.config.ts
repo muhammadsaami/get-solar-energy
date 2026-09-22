@@ -12,14 +12,6 @@ export const AMC_TABS: TabConfig[] = [
   { id: 'recommendation', label: 'AI Recommendation', icon: '\uD83E\uDD16' },
 ]
 
-export const DEFAULT_FORM_VALUES = {
-  system_size: 5.0,
-  monthly_generation: 0,
-  city: 'Lucknow',
-  years: 5,
-  coverage_type: 'comprehensive',
-}
-
 export const COVERAGE_OPTIONS = [
   { value: 'comprehensive', label: 'Comprehensive' },
   { value: 'basic', label: 'Basic' },

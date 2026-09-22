@@ -23,8 +23,8 @@ const AMCAIPromptFormComponent = forwardRef<AMCAIPromptFormHandle, AMCAIPromptFo
   const defaults = getDefaultRecommendationRequest()
   const [customerName, setCustomerName] = useState(defaults.customer_name || '')
   const [city, setCity] = useState(defaults.city || '')
-  const [systemSizeKw, setSystemSizeKw] = useState(defaults.system_size_kw || 5.0)
-  const [installationDate, setInstallationDate] = useState('2022-01-01')
+  const [systemSizeKw, setSystemSizeKw] = useState<number | ''>(defaults.system_size_kw || '')
+  const [installationDate, setInstallationDate] = useState('')
   const [lastServiceDate, setLastServiceDate] = useState('')
   const [currentGenUnits, setCurrentGenUnits] = useState(defaults.current_generation_units || 0)
   const [expectedGenUnits, setExpectedGenUnits] = useState(defaults.expected_generation_units || 0)
@@ -49,8 +49,8 @@ const AMCAIPromptFormComponent = forwardRef<AMCAIPromptFormHandle, AMCAIPromptFo
     },
     resetForm: () => {
       setCustomerName('')
-      setCity('Lucknow')
-      setSystemSizeKw(5.0)
+      setCity('')
+      setSystemSizeKw('')
       setInstallationDate('')
       setLastServiceDate('')
       setCurrentGenUnits(0)
@@ -68,7 +68,7 @@ const AMCAIPromptFormComponent = forwardRef<AMCAIPromptFormHandle, AMCAIPromptFo
     onRecommend({
       customer_name: customerName,
       city,
-      system_size_kw: systemSizeKw,
+      system_size_kw: systemSizeKw === '' ? 0 : systemSizeKw,
       installation_date: installationDate,
       last_service_date: lastServiceDate,
       current_generation_units: currentGenUnits,
@@ -146,7 +146,7 @@ const AMCAIPromptFormComponent = forwardRef<AMCAIPromptFormHandle, AMCAIPromptFo
               min="1"
               max="50"
               value={systemSizeKw}
-              onChange={(e) => setSystemSizeKw(parseFloat(e.target.value) || 0)}
+              onChange={(e) => setSystemSizeKw(e.target.value === '' ? '' : (parseFloat(e.target.value) || 0))}
               disabled={recommending}
               required
               style={{
@@ -302,7 +302,7 @@ const AMCAIPromptFormComponent = forwardRef<AMCAIPromptFormHandle, AMCAIPromptFo
               border: '1px solid rgba(0, 174, 239, 0.3)',
             }}
           >
-            Autofill Demo
+            Autofill from My Data
           </button>
           <button
             type="button"

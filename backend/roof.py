@@ -1,4 +1,5 @@
 from fastapi import APIRouter, Depends, File, UploadFile, Form, Request
+from fastapi.responses import JSONResponse
 from dotenv import load_dotenv
 from security import verify_token
 from auth import auth_rate_limiter
@@ -179,35 +180,14 @@ async def analyze_roof(
     except Exception as e:
         err_str = str(e).lower()
         if any(term in err_str for term in ["resource_exhausted", "quota", "rate limit", "exhausted", "429", "503", "unavailable"]):
-            logger.warning("AI quota exhausted. Returning fallback response.")
-            return {
-                "success": True,
-                "fallback": True,
-                "data": {
-                    "location": city if 'city' in dir() else "Unknown",
-                    "roof_length_ft": length_ft if 'length_ft' in dir() else 0,
-                    "roof_width_ft": width_ft if 'width_ft' in dir() else 0,
-                    "roof_area_sqft": roof_area_sqft if 'roof_area_sqft' in dir() else 0,
-                    "facing_direction": "South",
-                    "compass_angle": "180",
-                    "roof_condition": "Good",
-                    "shading_issues": "None",
-                    "roof_type": "Flat",
-                    "solar_potential": "High",
-                    "plant_fits": True,
-                    "recommended_system": "3 kW",
-                    "system_size_kw": 3,
-                    "total_panels": 6,
-                    "panel_rows": 2,
-                    "panels_per_row": 3,
-                    "total_legs": 4,
-                    "front_legs": 2,
-                    "back_legs": 2,
-                    "front_leg_height_ft": 5,
-                    "back_leg_height_ft": 7,
-                    "monthly_generation_units": 360,
-                    "annual_generation_units": 4320,
-                    "satellite_analysis": source == "satellite" if 'source' in dir() else False
-                }
-            }
+            logger.warning("AI quota exhausted for roof analysis. Returning honest unavailable error.")
+            if any(term in err_str for term in ["rate limit", "429"]):
+                return JSONResponse(
+                    status_code=429,
+                    content={"success": False, "error": "Rate limit exceeded. Please try again later."},
+                )
+            return JSONResponse(
+                status_code=503,
+                content={"success": False, "error": "Roof analysis is temporarily unavailable. Please try again later."},
+            )
         return {"success": False, "error": str(e)}

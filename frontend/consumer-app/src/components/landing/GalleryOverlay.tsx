@@ -1,9 +1,10 @@
 interface GalleryOverlayProps {
-  title: string
+  title?: string
   description: string
+  footer?: string
 }
 
-export default function GalleryOverlay({ title, description }: GalleryOverlayProps) {
+export default function GalleryOverlay({ title, description, footer = 'Homeowner' }: GalleryOverlayProps) {
   return (
     <div
       style={{
@@ -15,8 +16,14 @@ export default function GalleryOverlay({ title, description }: GalleryOverlayPro
         textAlign: 'left',
       }}
     >
-      <h3 style={{ fontSize: 18, fontWeight: 800, marginBottom: 6, color: '#f8fafc' }}>{title}</h3>
+      {title && <h3 style={{ fontSize: 18, fontWeight: 800, marginBottom: 6, color: '#f8fafc' }}>{title}</h3>}
       <p style={{ fontSize: 13.5, color: '#cbd5e1', lineHeight: 1.5, margin: 0 }}>{description}</p>
+      {footer && (
+        <div style={{ marginTop: 10, fontSize: 12, fontWeight: 600, color: 'var(--accent-blue, #38bdf8)', display: 'flex', alignItems: 'center', gap: 6 }}>
+          <span aria-hidden="true">⌂</span>
+          <span>{footer}</span>
+        </div>
+      )}
     </div>
   )
 }

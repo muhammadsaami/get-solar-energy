@@ -2956,6 +2956,161 @@ canvas {
   margin-left: auto;
 }
 
+/* --- Engagement & Community: journey + referral composition --- */
+.footer-eyebrow {
+  display: inline-block;
+  font-size: 9px;
+  font-weight: 800;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--accent-orange);
+  background: rgba(247, 147, 30, 0.1);
+  border: 1px solid rgba(247, 147, 30, 0.25);
+  padding: 3px 8px;
+  border-radius: 999px;
+  margin-bottom: 10px;
+}
+
+.footer-journey-card {
+  gap: 14px;
+}
+
+.footer-journey-media {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  margin-top: 4px;
+}
+
+.footer-journey-img-wrap {
+  border-radius: var(--border-radius-sm);
+  overflow: hidden;
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  background: rgba(255, 255, 255, 0.03);
+}
+
+.footer-journey-img {
+  width: 100%;
+  height: 160px;
+  object-fit: cover;
+  display: block;
+  margin: 0;
+  border: none;
+  border-radius: 0;
+}
+
+.footer-journey-card .footer-banner-btn {
+  width: auto;
+  align-self: flex-start;
+}
+
+.refer-summary {
+  display: flex;
+  gap: 10px;
+  margin-top: 14px;
+  flex-wrap: wrap;
+}
+
+.refer-summary-item {
+  flex: 1 1 120px;
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  padding: 8px 12px;
+  border-radius: var(--border-radius-sm);
+  background: rgba(255, 255, 255, 0.04);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+}
+
+.refer-summary-value {
+  font-size: 16px;
+  font-weight: 800;
+  color: #36d399;
+  line-height: 1.2;
+}
+
+.refer-summary-label {
+  font-size: 9px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  color: var(--text-muted, #94a3b8);
+}
+
+.refer-steps {
+  list-style: none;
+  margin: 14px 0 0;
+  padding: 0;
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(120px, 1fr));
+  gap: 8px;
+}
+
+.refer-step {
+  display: flex;
+  align-items: flex-start;
+  gap: 8px;
+  padding: 8px 10px;
+  border-radius: var(--border-radius-sm);
+  background: rgba(255, 255, 255, 0.03);
+  border: 1px solid rgba(255, 255, 255, 0.08);
+}
+
+.refer-step-index {
+  flex-shrink: 0;
+  width: 20px;
+  height: 20px;
+  border-radius: 50%;
+  background: rgba(247, 147, 30, 0.15);
+  border: 1px solid rgba(247, 147, 30, 0.35);
+  color: var(--accent-orange);
+  font-size: 10px;
+  font-weight: 800;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.refer-step-text {
+  display: flex;
+  flex-direction: column;
+  gap: 1px;
+  min-width: 0;
+}
+
+.refer-step-text strong {
+  font-size: 10.5px;
+  font-weight: 800;
+  color: var(--text-primary, #f1f5f9);
+  line-height: 1.3;
+}
+
+.refer-step-text span {
+  font-size: 9.5px;
+  color: var(--text-muted, #94a3b8);
+  line-height: 1.35;
+}
+
+.refer-card-foot {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+  margin-top: 12px;
+}
+
+.refer-foot-note {
+  font-size: 10px;
+  color: var(--text-muted, #94a3b8);
+  line-height: 1.45;
+}
+
+.refer-card-foot .refer-gift-img {
+  width: 40px;
+  height: 40px;
+  flex-shrink: 0;
+}
+
 /* --- ROI CALCULATOR MODAL --- */
 .modal-overlay {
   position: fixed;
@@ -3284,6 +3439,14 @@ canvas {
   .footer-card:last-child {
     grid-column: span 1;
   }
+
+  .footer-journey-img {
+    height: 150px;
+  }
+
+  .refer-steps {
+    grid-template-columns: repeat(2, 1fr);
+  }
 }
 
 @media (max-width: 540px) {
@@ -3353,6 +3516,19 @@ canvas {
   .promo-display {
     padding: 6px;
     font-size: 11px;
+  }
+
+  .footer-journey-img {
+    height: 130px;
+  }
+
+  .refer-steps {
+    grid-template-columns: 1fr;
+  }
+
+  .footer-journey-card .footer-banner-btn {
+    width: 100%;
+    justify-content: center;
   }
 }
 

@@ -1,23 +1,10 @@
 import api from './api/client';
 import { ProposalModel } from '../models/ProposalModel';
 
-let localProposal = new ProposalModel({
-  proposal_id: "prop_102",
-  status: "Ready",
-  system_size_kw: 5.8,
-  expected_generation_kwh_yr: 8700,
-  financials: {
-    monthly_savings: 4800,
-    annual_savings: 57600,
-    lifetime_savings_25yr: 1440000,
-    payback_years: 4.5,
-    subsidy_amount: 78000
-  },
-  equipment: [
-    { type: "Solar Panels", spec: "450Wp Mono PERC Tier 1", quantity: 13 },
-    { type: "Inverter", spec: "5kW String Inverter with Monitoring", quantity: 1 }
-  ]
-});
+// Release safety: there is no stored/cached proposal. A fresh customer has
+// no proposal until /generate-proposal returns a real backend result.
+// Never seed or return fabricated proposal data here.
+let localProposal = null;
 
 export const proposalService = {
   async getProposal() {
@@ -25,15 +12,21 @@ export const proposalService = {
   },
 
   async generateProposal(formData = {}) {
+    const monthlyBill = parseFloat(formData.monthlyBill);
+    const monthlyUnits = parseFloat(formData.monthlyUnits);
+    const recommendedKw = parseFloat(formData.recommendedKw);
+    if (!(monthlyBill > 0) || !(monthlyUnits > 0) || !(recommendedKw > 0)) {
+      throw new Error('Please enter your monthly bill, peak consumption, and recommended capacity before generating a proposal.');
+    }
     const res = await api.post('/generate-proposal', {
-      customer_name: formData.customerName || 'Solar Customer',
-      customer_address: formData.address || 'Residential Site',
-      city: formData.city || 'Jaipur',
-      monthly_units: parseFloat(formData.monthlyUnits) || 300,
-      monthly_bill_rs: parseFloat(formData.monthlyBill) || 2400,
+      customer_name: formData.customerName || '',
+      customer_address: formData.address || '',
+      city: formData.city || '',
+      monthly_units: monthlyUnits,
+      monthly_bill_rs: monthlyBill,
       per_unit_rate: parseFloat(formData.electricityRate) || 8,
-      recommended_kw: parseFloat(formData.recommendedKw) || 3.0,
-      roof_area_sqft: parseFloat(formData.roofArea) || 300,
+      recommended_kw: recommendedKw,
+      roof_area_sqft: parseFloat(formData.roofArea) || 0,
       vendor_name: formData.vendorName || 'Get Solar Energy',
     });
     if (!res.data?.success) throw new Error(res.data?.error || 'Proposal generation failed');
@@ -43,6 +36,7 @@ export const proposalService = {
   },
 
   async approve() {
+    if (!localProposal) return Promise.resolve(false);
     localProposal = new ProposalModel({
       ...localProposal,
       status: 'Approved'

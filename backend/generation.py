@@ -1,13 +1,12 @@
 from fastapi import APIRouter, Depends, File, UploadFile, Request
 from security import verify_token
 from auth import auth_rate_limiter
-from google import genai
-from google.genai import types
+from ai.provider_factory import get_ai_provider
+from ai.provider_base import AIRequest, AIImageInput
 from dotenv import load_dotenv
 import os, json
 
 load_dotenv()
-client = genai.Client(api_key=os.getenv("GEMINI_API_KEY") or "offline-placeholder")
 router = APIRouter(dependencies=[Depends(verify_token)])
 
 @router.post("/api/analyze-generation")
@@ -52,18 +51,19 @@ async def analyze_generation(
         }
         """
 
-        response = client.models.generate_content(
-            model="gemini-2.5-flash",
-            contents=[
-                types.Content(role="user", parts=[
-                    types.Part.from_bytes(data=bill_data, mime_type=bill.content_type),
-                    types.Part.from_bytes(data=gen_data, mime_type=generation.content_type),
-                    types.Part.from_text(text=prompt)
-                ])
-            ]
+        ai_request = AIRequest(
+            prompt=prompt,
+            image_inputs=[
+                AIImageInput(data=bill_data, mime_type=bill.content_type or "image/jpeg"),
+                AIImageInput(data=gen_data, mime_type=generation.content_type or "image/jpeg"),
+            ],
+            temperature=0.1,
+            metadata={"route": "analyze-generation"},
         )
+        provider = get_ai_provider()
+        ai_response = provider.generate_response(ai_request)
 
-        text = response.text.strip()
+        text = ai_response.content.strip()
         if "```json" in text:
             text = text.split("```json")[1].split("```")[0]
         elif "```" in text:

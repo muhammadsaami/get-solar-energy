@@ -1,7 +1,7 @@
 import { useState, useRef, useCallback, useEffect } from 'react'
 import { sendSolarAdvisorMessage } from '../services/chat.service'
 import { usePlanning } from '../contexts/PlanningContext'
-import type { ChatMessage, GroundingSource } from '../types/chat'
+import type { ChatMessage } from '../types/chat'
 import { readUserStorage, getUserStorageKey, type IdentifiableUser } from '../utils/userStorage'
 import { tokenManager } from '../services/auth/tokenManager'
 
@@ -169,8 +169,8 @@ export function useSolarAdvisor() {
 
       // If the backend sends no reply text, show a helpful fallback instead of an empty bubble
       const replyText =
-        typeof response?.reply === 'string' && response.reply.trim() !== ''
-          ? response.reply
+        typeof response?.response === 'string' && response.response.trim() !== ''
+          ? response.response
           : NO_REPLY_FALLBACK
 
       const botMessage: ChatMessage = {
@@ -178,8 +178,7 @@ export function useSolarAdvisor() {
         content: replyText,
         time: formatTime(),
         contextUsed: contextLabel,
-        groundingSources: (response?.grounding_sources ?? []) as GroundingSource[],
-        confidence: response?.confidence,
+        sources: response?.sources ?? [],
       }
 
       setMessages((prev) => {
@@ -188,11 +187,18 @@ export function useSolarAdvisor() {
           ? [next[0], ...next.slice(next.length - (MAX_HISTORY - 1))]
           : next
       })
-    } catch {
-      setError('Could not connect to the Solar Assistant. Please try again.')
+    } catch (err: unknown) {
+      const errAny = err as { response?: { data?: { detail?: string; error?: string; message?: string } } }
+      const detailMsg =
+        errAny?.response?.data?.detail ||
+        errAny?.response?.data?.error ||
+        errAny?.response?.data?.message
+      setError(detailMsg || 'Could not connect to the Solar Assistant. Please try again.')
       const errorMessage: ChatMessage = {
         role: 'assistant',
-        content: 'I am having trouble connecting to the advisory service right now. Please try again in a moment.',
+        content:
+          detailMsg ||
+          'I am having trouble connecting to the advisory service right now. Please try again in a moment.',
         time: formatTime(),
       }
       setMessages((prev) => [...prev, errorMessage])

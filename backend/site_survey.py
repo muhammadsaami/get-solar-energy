@@ -1,4 +1,5 @@
 from fastapi import APIRouter, Depends, Request, Query
+from fastapi.responses import JSONResponse
 from sqlalchemy.orm import Session
 from pydantic import BaseModel
 from typing import Optional
@@ -11,7 +12,9 @@ from datetime import datetime
 
 from security import verify_token
 from auth import auth_rate_limiter
+from permissions import has_admin_access
 from database_sqlite import get_sqlite_db
+from site_survey_models import SiteSurveyPhotoModel
 from crm_models import CRMInstallationModel
 from crm_service import add_timeline_event
 from site_survey_service import (
@@ -28,29 +31,24 @@ logger = logging.getLogger(__name__)
 load_dotenv()
 router = APIRouter(dependencies=[Depends(verify_token)])
 
-DEMO_SITE_SURVEY_DATA = {
-    "customer_name": "Demo Customer",
-    "usable_area_sqft": 850,
-    "area_required_sqft": 500,
-    "feasibility_score": 85,
-    "feasibility_status": "Highly Feasible",
-    "mounting_structure_type": "Elevated Tilt Structure",
-    "cable_run_estimate_meters": 13,
-    "estimated_additional_cost_rs": 0,
-    "site_assessment_summary": "The site has excellent solar potential with a flat RCC roof providing adequate usable area. No significant shading obstructions detected. The structure is in good condition requiring no reinforcement. The proposed 5kW system is well within the available roof area.",
-    "identified_risks": [
-        "Roof age of 8 years may require waterproofing before installation",
-        "Distance to electrical panel is moderate; cable routing needs proper conduit",
-        "Ensure structural load assessment for elevated mounting structure"
-    ],
-    "recommendations": [
-        "Proceed with 5kW system installation using elevated tilt structure",
-        "Use 10mm2 DC cable with proper UV-rated conduit for cable run",
-        "Schedule waterproofing treatment for roof penetration points",
-        "Install bird mesh around panel array perimeter"
-    ],
-    "shading_impact_note": "No significant shading impact detected. The roof has clear southern exposure ideal for maximum generation."
-}
+
+def require_survey_access(db: Session, survey_id: int, user_email: str):
+    """
+    Owner-or-admin check for a single survey. Returns (denied, survey).
+
+    Access = admin, or the survey is assigned to the caller's token email.
+    Unassigned surveys are admin-only. Uses 404 (not 403) so survey IDs
+    cannot be probed for existence. Identity comes from the verified
+    token only — never from request bodies, query params, or clients.
+    """
+    survey = get_survey(db, survey_id)
+    if not survey:
+        return not_found("Survey", survey_id), None
+    if has_admin_access(user_email):
+        return None, survey
+    if survey.assigned_to and survey.assigned_to.strip().lower() == user_email.strip().lower():
+        return None, survey
+    return not_found("Survey", survey_id), None
 
 
 class SiteSurveyRequest(BaseModel):
@@ -230,8 +228,16 @@ async def ai_site_survey(data: SiteSurveyRequest, req: Request = None, user_emai
     except Exception as e:
         err_str = str(e).lower()
         if any(term in err_str for term in ["resource_exhausted", "quota", "rate limit", "exhausted", "429", "503", "unavailable"]):
-            logger.warning("Gemini quota exhausted for site survey. Returning fallback response.")
-            return {"success": True, "fallback": True, "data": DEMO_SITE_SURVEY_DATA}
+            logger.warning("AI quota exhausted for site survey. Returning honest unavailable error.")
+            if any(term in err_str for term in ["rate limit", "429"]):
+                return JSONResponse(
+                    status_code=429,
+                    content={"success": False, "error": "Rate limit exceeded. Please try again later."},
+                )
+            return JSONResponse(
+                status_code=503,
+                content={"success": False, "error": "Site survey AI is temporarily unavailable. Please try again later."},
+            )
         return {"success": False, "error": str(e)}
 
 
@@ -242,7 +248,6 @@ def dashboard_stats(
 ):
     log_api_request(logger, "GET", "/api/site-surveys/dashboard")
     try:
-        from permissions import has_admin_access
         is_admin = has_admin_access(user_email)
         stats = get_dashboard_stats(db, user_email, is_admin)
         return ok(data=stats, message="Dashboard stats retrieved")
@@ -281,10 +286,13 @@ def list_surveys(
 ):
     log_api_request(logger, "GET", "/api/site-surveys")
     try:
-        from permissions import has_admin_access
         is_admin = has_admin_access(user_email)
-        if not is_admin and not assigned_to:
+        if not is_admin:
+            # Non-admins may only list their own surveys; explicit
+            # assigned_to/customer_id/search filters for others are ignored.
             assigned_to = user_email
+            customer_id = None
+            search = None
         surveys, total = get_surveys(
             db, status, assigned_to, customer_id, search,
             sort_by, sort_desc, page, limit
@@ -306,10 +314,10 @@ def get_survey_endpoint(
     user_email: str = Depends(verify_token),
 ):
     log_api_request(logger, "GET", f"/api/site-surveys/{survey_id}")
+    denied, survey = require_survey_access(db, survey_id, user_email)
+    if denied:
+        return denied
     try:
-        survey = get_survey(db, survey_id)
-        if not survey:
-            return not_found("Survey", survey_id)
         return ok(data=to_dict(survey), message="Survey retrieved")
     except Exception as e:
         logger.error(f"Get survey error: {e}")
@@ -324,6 +332,9 @@ def update_survey_endpoint(
     user_email: str = Depends(verify_token),
 ):
     log_api_request(logger, "PUT", f"/api/site-surveys/{survey_id}")
+    denied, _survey = require_survey_access(db, survey_id, user_email)
+    if denied:
+        return denied
     try:
         filtered = {k: v for k, v in data.model_dump().items() if v is not None}
         if not filtered:
@@ -345,6 +356,9 @@ def update_status_endpoint(
     user_email: str = Depends(verify_token),
 ):
     log_api_request(logger, "PATCH", f"/api/site-surveys/{survey_id}/status")
+    denied, _survey = require_survey_access(db, survey_id, user_email)
+    if denied:
+        return denied
     try:
         survey = update_survey_status(db, survey_id, data.status, user=user_email)
         if not survey:
@@ -365,6 +379,8 @@ def assign_surveyor_endpoint(
     user_email: str = Depends(verify_token),
 ):
     log_api_request(logger, "PATCH", f"/api/site-surveys/{survey_id}/assign")
+    if not has_admin_access(user_email):
+        return not_found("Survey", survey_id)
     try:
         survey = assign_surveyor(db, survey_id, data.assigned_to, data.assigned_name, user=user_email)
         if not survey:
@@ -382,6 +398,9 @@ def delete_survey_endpoint(
     user_email: str = Depends(verify_token),
 ):
     log_api_request(logger, "DELETE", f"/api/site-surveys/{survey_id}")
+    denied, _survey = require_survey_access(db, survey_id, user_email)
+    if denied:
+        return denied
     try:
         if not delete_survey(db, survey_id, user=user_email):
             return not_found("Survey", survey_id)
@@ -398,10 +417,10 @@ def proposal_prefill(
     user_email: str = Depends(verify_token),
 ):
     log_api_request(logger, "GET", f"/api/site-surveys/{survey_id}/proposal-prefill")
+    denied, survey = require_survey_access(db, survey_id, user_email)
+    if denied:
+        return denied
     try:
-        survey = get_survey(db, survey_id)
-        if not survey:
-            return not_found("Survey", survey_id)
         prefill = {
             "survey_id": survey.id,
             "customer_name": survey.customer_name,
@@ -433,10 +452,10 @@ def handoff_installation(
     user_email: str = Depends(verify_token),
 ):
     log_api_request(logger, "POST", f"/api/site-surveys/{survey_id}/handoff-installation")
+    denied, survey = require_survey_access(db, survey_id, user_email)
+    if denied:
+        return denied
     try:
-        survey = get_survey(db, survey_id)
-        if not survey:
-            return not_found("Survey", survey_id)
         if survey.status != "approved":
             return bad_request("Survey must be approved before installation handoff")
         if not survey.customer_id:
@@ -480,8 +499,14 @@ def add_photo_endpoint(
     user_email: str = Depends(verify_token),
 ):
     log_api_request(logger, "POST", f"/api/site-surveys/{survey_id}/photos")
+    denied, _survey = require_survey_access(db, survey_id, user_email)
+    if denied:
+        return denied
     try:
-        photo = add_photo(db, survey_id, data.model_dump())
+        payload = data.model_dump()
+        # Uploader identity comes from the verified token, never the body.
+        payload["uploaded_by"] = user_email
+        photo = add_photo(db, survey_id, payload)
         if not photo:
             return not_found("Survey", survey_id)
         from utils.responses import serialise as ser
@@ -498,6 +523,9 @@ def list_photos_endpoint(
     user_email: str = Depends(verify_token),
 ):
     log_api_request(logger, "GET", f"/api/site-surveys/{survey_id}/photos")
+    denied, _survey = require_survey_access(db, survey_id, user_email)
+    if denied:
+        return denied
     try:
         photos = get_photos(db, survey_id)
         from utils.responses import serialise as ser
@@ -514,6 +542,10 @@ def delete_photo_endpoint(
     user_email: str = Depends(verify_token),
 ):
     log_api_request(logger, "DELETE", f"/api/site-surveys/photos/{photo_id}")
+    photo = db.query(SiteSurveyPhotoModel).filter(SiteSurveyPhotoModel.id == photo_id).first()
+    denied, _survey = require_survey_access(db, photo.survey_id if photo else -1, user_email)
+    if denied:
+        return denied
     try:
         if not delete_photo(db, photo_id):
             return not_found("Photo", photo_id)
@@ -531,6 +563,9 @@ def update_checklist_endpoint(
     user_email: str = Depends(verify_token),
 ):
     log_api_request(logger, "PUT", f"/api/site-surveys/{survey_id}/checklist")
+    denied, _survey = require_survey_access(db, survey_id, user_email)
+    if denied:
+        return denied
     try:
         survey = update_checklist(db, survey_id, data.checklist)
         if not survey:

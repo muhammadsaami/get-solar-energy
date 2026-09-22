@@ -5627,10 +5627,13 @@ function executeROICalculation() {
       }
       return res.json();
     })
-    .then((result) => {
-      if (!result || result.success !== true || !result.data) {
-        throw new Error((result && result.error) || 'Invalid API response format.');
-      }
+          .then((result) => {
+            if (!result || result.success !== true || !result.data) {
+              throw new Error(result.error || 'Invalid API response format');
+            }
+            if (result.fallback === true) {
+              throw new Error('AMC evaluation is temporarily unavailable. Please try again later.');
+            }
 
       showToast('ROI calculation completed successfully!', 'success');
 
@@ -13669,6 +13672,35 @@ function renderAuditLogsTable() {
       /* ==========================================================================
          ANNUAL MAINTENANCE CONTRACT (AMC) WORKSPACE
          ========================================================================== */
+      // AMC persistence is scoped per authenticated account so one customer's
+      // data can never hydrate another customer's session on a shared device.
+      // A legacy global 'lastGeneratedAmc' value carries no trustworthy
+      // ownership and is purged, never adopted.
+      function _amcUserKey() {
+        try {
+          const u = (typeof _getUser === 'function' ? _getUser() : null) || {};
+          if (u.id !== undefined && u.id !== null && String(u.id).trim() !== '') {
+            return 'id_' + String(u.id).trim().replace(/[^a-zA-Z0-9_-]/g, '_');
+          }
+          if (u.email && String(u.email).trim() !== '') {
+            return 'em_' + String(u.email).trim().toLowerCase().replace(/[^a-z0-9_]/g, '_');
+          }
+        } catch (e) { }
+        return 'anon';
+      }
+
+      function _amcScopedKey() {
+        return 'gse_u_' + _amcUserKey() + '_lastGeneratedAmc';
+      }
+
+      function _purgeLegacyGlobalAmcKey() {
+        try {
+          if (localStorage.getItem('lastGeneratedAmc') !== null) {
+            localStorage.removeItem('lastGeneratedAmc');
+          }
+        } catch (e) { }
+      }
+
       function initAmcWorkspace() {
         const btnScroll = document.getElementById('btnScrollToAmcForm');
         const btnAutofill = document.getElementById('btnAutofillAmc');
@@ -13723,13 +13755,15 @@ function renderAuditLogsTable() {
           toggleDamageField(); // init state
         }
 
-        // Restore state from localStorage if exists
+        // Restore state from this account's scoped storage if it exists.
+        // Legacy global values are purged, never adopted into any account.
         try {
-          const lastAmc = localStorage.getItem('lastGeneratedAmc');
+          const lastAmc = localStorage.getItem(_amcScopedKey());
           if (lastAmc) {
             const amcData = JSON.parse(lastAmc);
             restoreAmcState(amcData);
           }
+          _purgeLegacyGlobalAmcKey();
         } catch (e) { }
 
         initAmcFormValidation();
@@ -13755,38 +13789,38 @@ function renderAuditLogsTable() {
       }
 
       function autofillAmcForm() {
-        const fields = {
-          amcCustomerName: "Rajesh Kumar",
-          amcCity: "Lucknow",
-          amcSystemSize: 5.5,
-          amcInstallDate: "2023-04-10",
-          amcLastServiceDate: "2026-01-15",
-          amcCurrentGen: 580,
-          amcExpectedGen: 675,
-          amcInverterErrors: "None",
-          amcPanelCleaning: true,
-          amcDamageObserved: false,
-          amcDamageDetails: "None"
-        };
-
-        for (const [id, val] of Object.entries(fields)) {
-          const el = document.getElementById(id);
-          if (el) {
-            if (el.type === 'checkbox') {
-              el.checked = val;
-            } else {
-              el.value = val;
-            }
-            el.dispatchEvent(new Event('input', { bubbles: true }));
-            el.dispatchEvent(new Event('change', { bubbles: true }));
+        // Honest autofill: only the signed-in customer's own profile identity
+        // is used. System measurements are never fabricated — the customer
+        // fills those in from their real installation.
+        let filled = false;
+        try {
+          const u = (typeof _getUser === 'function' ? _getUser() : null) || {};
+          const nameEl = document.getElementById('amcCustomerName');
+          const cityEl = document.getElementById('amcCity');
+          if (nameEl && u.name && !String(nameEl.value || '').trim()) {
+            nameEl.value = u.name;
+            nameEl.dispatchEvent(new Event('input', { bubbles: true }));
+            nameEl.dispatchEvent(new Event('change', { bubbles: true }));
+            filled = true;
           }
-        }
-        showToast("Autofilled demo AMC data!", "info");
+          if (cityEl && u.city && !String(cityEl.value || '').trim()) {
+            cityEl.value = u.city;
+            cityEl.dispatchEvent(new Event('input', { bubbles: true }));
+            cityEl.dispatchEvent(new Event('change', { bubbles: true }));
+            filled = true;
+          }
+        } catch (e) { }
+        showToast(filled ? "Form filled from your profile data." : "No saved data to autofill — please fill in your system details.", "info");
       }
 
       function resetAmcForm() {
         const form = document.getElementById('amcForm');
         if (form) form.reset();
+
+        try {
+          localStorage.removeItem(_amcScopedKey());
+          _purgeLegacyGlobalAmcKey();
+        } catch (e) { }
 
         const placeholder = document.getElementById('amcPlaceholderInfo');
         const results = document.getElementById('amcResultsView');
@@ -13855,8 +13889,11 @@ function renderAuditLogsTable() {
 
             const amcData = result.data;
 
-            // Save to localStorage
-            localStorage.setItem('lastGeneratedAmc', JSON.stringify(amcData));
+            // Save to this account's scoped storage (never a global key)
+            try {
+              localStorage.setItem(_amcScopedKey(), JSON.stringify(amcData));
+            } catch (e) { }
+            _purgeLegacyGlobalAmcKey();
 
             // Render KPIs with animations
             const score = _safeNum(amcData.health_score);
@@ -13945,10 +13982,10 @@ function renderAuditLogsTable() {
       function restoreAmcState(amcData) {
         if (!amcData) return;
 
-        // Restore fields
+        // Restore fields (honest values only — no fabricated defaults)
         if (document.getElementById('amcCustomerName')) document.getElementById('amcCustomerName').value = amcData.customer_name || '';
-        if (document.getElementById('amcCity')) document.getElementById('amcCity').value = amcData.city || 'Lucknow';
-        if (document.getElementById('amcSystemSize')) document.getElementById('amcSystemSize').value = amcData.system_size_kw || 5.0;
+        if (document.getElementById('amcCity')) document.getElementById('amcCity').value = amcData.city || '';
+        if (document.getElementById('amcSystemSize')) document.getElementById('amcSystemSize').value = amcData.system_size_kw || '';
 
         const score = _safeNum(amcData.health_score);
         let plan = amcData.system_status === 'Healthy' ? 'Premium Annual' : 'Standard Quarterly';

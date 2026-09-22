@@ -97,15 +97,12 @@ def get_ai_provider(provider_name: Optional[str] = None) -> BaseAIProvider:
             provider.get_model_name(),
         )
     elif env_provider == "auto":
-        priority = os.getenv("AI_PROVIDER_PRIORITY", "").strip().lower()
-        if priority.startswith("gemini"):
-            provider = ProviderSelector.select_provider(fallback_to_default=True)
-        else:
-            provider = OpenAIProvider()
-            logger.info(
-                "AI Provider initialized: OpenAIProvider [auto production default] (model=%s)",
-                provider.get_model_name(),
-            )
+        provider = ProviderSelector.select_provider(fallback_to_default=True)
+        logger.info(
+            "AI Provider initialized: %s via ProviderSelector (model=%s)",
+            provider.__class__.__name__,
+            provider.get_model_name(),
+        )
     elif env_provider in ("gemini", "google", "google-genai"):
         provider = GeminiProvider()
         logger.info("AI Provider initialized: GeminiProvider (model=%s)", provider.get_model_name())
