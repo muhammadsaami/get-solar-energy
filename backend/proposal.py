@@ -23,13 +23,9 @@ class ProposalRequest(BaseModel):
     vendor_name: str
 
 
-@router.post("/api/generate-proposal")
-async def generate_proposal(data: ProposalRequest, req: Request = None, user_email: str = Depends(verify_token)):
-    client_ip = req.client.host if req else "unknown"
-    if not auth_rate_limiter.is_allowed(user_email, client_ip):
-        return {"success": False, "error": "Rate limit exceeded. Please try again later."}
-    try:
-        prompt = f"""
+def build_proposal_prompt(data: ProposalRequest) -> str:
+    """Shared prompt builder so admin and customer flows use identical generation logic."""
+    return f"""
         You are a professional solar proposal writer for an Indian solar EPC company.
 
         Generate a complete, professional solar installation proposal using this real customer data:
@@ -84,21 +80,38 @@ async def generate_proposal(data: ProposalRequest, req: Request = None, user_ema
         }}
         """
 
-        provider = get_ai_provider()
-        ai_request = AIRequest(
-            prompt=prompt,
-            temperature=0.3,
-            metadata={"route": "generate-proposal"},
-        )
-        ai_response = provider.generate_response(ai_request)
 
-        text = ai_response.content
-        if "```json" in text:
-            text = text.split("```json")[1].split("```")[0]
-        elif "```" in text:
-            text = text.split("```")[1].split("```")[0]
+def generate_proposal_data(data: ProposalRequest) -> dict:
+    """
+    Shared generation core used by customer and admin flows.
 
-        result = json.loads(text.strip())
+    Goes through the centralized AI provider. Raises on failure —
+    callers surface honest errors and must never fabricate output.
+    """
+    provider = get_ai_provider()
+    ai_request = AIRequest(
+        prompt=build_proposal_prompt(data),
+        temperature=0.3,
+        metadata={"route": "generate-proposal"},
+    )
+    ai_response = provider.generate_response(ai_request)
+
+    text = ai_response.content
+    if "```json" in text:
+        text = text.split("```json")[1].split("```")[0]
+    elif "```" in text:
+        text = text.split("```")[1].split("```")[0]
+
+    return json.loads(text.strip())
+
+
+@router.post("/api/generate-proposal")
+async def generate_proposal(data: ProposalRequest, req: Request = None, user_email: str = Depends(verify_token)):
+    client_ip = req.client.host if req else "unknown"
+    if not auth_rate_limiter.is_allowed(user_email, client_ip):
+        return {"success": False, "error": "Rate limit exceeded. Please try again later."}
+    try:
+        result = generate_proposal_data(data)
         return {"success": True, "data": result}
 
     except Exception as e:

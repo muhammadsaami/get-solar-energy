@@ -73,6 +73,7 @@ export const ROUTES = {
   AMC: '/app/amc',
   SITE_SURVEY: '/app/site-survey',
   ADMIN_DASHBOARD: '/app/admin/dashboard',
+  ADMIN_PROPOSALS: '/app/admin/proposals',
   CRM_LEADS: '/app/crm/leads',
   AUDIT_MONITORING: '/app/audit/monitoring',
   BUSINESS_INTELLIGENCE: '/app/business-intelligence',

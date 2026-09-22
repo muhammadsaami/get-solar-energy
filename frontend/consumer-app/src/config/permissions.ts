@@ -33,6 +33,7 @@ export type FeatureId =
   | 'vendor-settings'
   | 'vendor-profile'
   | 'proposal-generator'
+  | 'admin-proposals'
   | 'admin-dashboard'
   | 'crm-dashboard'
   | 'business-intelligence'
@@ -85,6 +86,7 @@ export const FEATURE_PERMISSIONS: Record<FeatureId, FeaturePermission> = {
   'vendor-settings': { roles: [ROLES.VENDOR, ROLES.ADMIN, ROLES.ENGINEER] },
   'vendor-profile': { roles: [ROLES.VENDOR, ROLES.ADMIN, ROLES.ENGINEER] },
   'admin-dashboard': { roles: [ROLES.ADMIN] },
+  'admin-proposals': { roles: [ROLES.ADMIN] },
   'crm-dashboard': { roles: [ROLES.ADMIN] },
   'business-intelligence': { roles: [ROLES.ADMIN] },
   'audit-monitoring': { roles: [ROLES.ADMIN] },

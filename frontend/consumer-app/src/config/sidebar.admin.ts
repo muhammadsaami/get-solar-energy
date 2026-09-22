@@ -6,6 +6,7 @@ export const ADMIN_SIDEBAR_GROUPS: SidebarGroupConfig[] = [
     groupName: 'Administration',
     items: [
       { id: 'admin-dashboard', label: 'Command Center', route: ROUTES.ADMIN_DASHBOARD, color: 'blue', symbolId: 'layout-dashboard', visible: true, requiredFeature: 'admin-dashboard' },
+      { id: 'admin-proposals', label: 'Proposals', route: ROUTES.ADMIN_PROPOSALS, color: 'orange', symbolId: 'file-text', visible: true, requiredFeature: 'admin-proposals' },
       { id: 'crm-dashboard', label: 'CRM & Customers', route: ROUTES.CRM_LEADS, color: 'purple', symbolId: 'users', visible: true, requiredFeature: 'crm-dashboard' },
       { id: 'business-intelligence', label: 'Business Intelligence', route: ROUTES.BUSINESS_INTELLIGENCE, color: 'green', symbolId: 'trending', visible: true, requiredFeature: 'business-intelligence' },
       { id: 'audit-monitoring', label: 'Audit & Monitoring', route: ROUTES.AUDIT_MONITORING, color: 'yellow', symbolId: 'shield', visible: true, requiredFeature: 'audit-monitoring' },

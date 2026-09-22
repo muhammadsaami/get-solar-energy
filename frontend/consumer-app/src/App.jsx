@@ -52,6 +52,7 @@ const SupportHelp = lazy(() => import('./pages/SupportHelp'));
 const CustomerProfilePage = lazy(() => import('./features/customerProfile/pages/CustomerProfilePage'));
 const ProfilePage = lazy(() => import('./features/profile/pages/ProfilePage'));
 const AdminDashboardPage = lazy(() => import('./pages/admin/AdminDashboard'));
+const AdminProposalsPage = lazy(() => import('./pages/admin/AdminProposals'));
 const CrmDashboardPage = lazy(() => import('./pages/crm/CrmDashboard'));
 const BusinessIntelligencePage = lazy(() => import('./pages/business-intelligence/BusinessIntelligencePage'));
 const AuditMonitoringPage = lazy(() => import('./pages/audit/AuditMonitoringPage'));
@@ -139,6 +140,7 @@ function AppRoutes() {
 
         {/* Admin Dashboard */}
         <Route path={ROUTES.ADMIN_DASHBOARD} element={<AppRoute><AdminGuard><PageSuspense><AdminDashboardPage /></PageSuspense></AdminGuard></AppRoute>} />
+        <Route path={ROUTES.ADMIN_PROPOSALS} element={<AppRoute><PermissionGuard feature="admin-proposals"><PageSuspense><AdminProposalsPage /></PageSuspense></PermissionGuard></AppRoute>} />
 
         {/* CRM & Leads */}
         <Route path={ROUTES.CRM_LEADS} element={<AppRoute><PermissionGuard feature="crm-dashboard"><PageSuspense><CrmDashboardPage /></PageSuspense></PermissionGuard></AppRoute>} />

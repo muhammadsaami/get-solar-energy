@@ -4,6 +4,7 @@ import { render, screen } from '@testing-library/react'
 import { MemoryRouter } from 'react-router-dom'
 import PermissionGuard from '../PermissionGuard'
 import { FEATURE_PERMISSIONS } from '../../config/permissions'
+import { ROUTES } from '../../config/routes'
 
 let mockAuth: any = { isAuthenticated: true, loading: false, user: { role: 'admin' } }
 
@@ -34,6 +35,7 @@ describe('Admin route-guard permission mapping', () => {
     expect(FEATURE_PERMISSIONS['crm-dashboard'].roles).toEqual(['admin'])
     expect(FEATURE_PERMISSIONS['business-intelligence'].roles).toEqual(['admin'])
     expect(FEATURE_PERMISSIONS['audit-monitoring'].roles).toEqual(['admin'])
+    expect(FEATURE_PERMISSIONS['admin-proposals'].roles).toEqual(['admin'])
   })
 
   it('admin passes the corrected CRM/BI/audit guards', () => {
@@ -74,5 +76,17 @@ describe('Admin route-guard permission mapping', () => {
     const { unmount } = renderGuard('amc', 'customer')
     expect(screen.getByText('Guarded Content')).toBeInTheDocument()
     unmount()
+  })
+
+  it('admin proposals route admits admins only', () => {
+    const { unmount: u1 } = renderGuard('admin-proposals', 'admin')
+    expect(screen.getByText('Guarded Content')).toBeInTheDocument()
+    u1()
+    for (const role of ['customer', 'vendor', 'technician'] as const) {
+      const { unmount } = renderGuard('admin-proposals', role)
+      expect(screen.queryByText('Guarded Content')).not.toBeInTheDocument()
+      unmount()
+    }
+    expect(ROUTES.ADMIN_PROPOSALS).toBe('/app/admin/proposals')
   })
 })
