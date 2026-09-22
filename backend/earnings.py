@@ -18,6 +18,7 @@ from sqlalchemy.orm import Session
 from database import get_db
 from technician_models import Earning, Technician, WorkOrder, JobPosting
 from technician_auth import get_current_technician
+from permissions import has_admin_access
 
 router = APIRouter(prefix="/api/technician/earnings", tags=["Earnings"])
 
@@ -235,6 +236,12 @@ def seed_demo_earnings(
     db: Session = Depends(get_db),
     current_technician: Technician = Depends(get_current_technician),
 ):
+    # Dev-only seeding must never run for regular technicians in production.
+    if not has_admin_access(current_technician.email):
+        raise HTTPException(
+            status_code=status.HTTP_403_FORBIDDEN,
+            detail="Admin access required",
+        )
     existing_count = _base_query(db, current_technician.id).count()
     if existing_count > 0:
         raise HTTPException(

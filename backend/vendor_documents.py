@@ -23,10 +23,22 @@ from fastapi.responses import FileResponse
 from sqlalchemy.orm import Session
 
 from database import get_db
+from security import verify_token
+from permissions import has_admin_access
 from vendor_documents_models import VendorDocument
 
 logger = logging.getLogger(__name__)
-router = APIRouter(prefix="/api/vendor/documents", tags=["Vendor Documents"])
+router = APIRouter(
+    prefix="/api/vendor/documents",
+    tags=["Vendor Documents"],
+    dependencies=[Depends(verify_token)],
+)
+
+
+def _require_admin(user_email: str):
+    """Release gate: Vendor Portal is admin-only until public release."""
+    if not has_admin_access(user_email):
+        raise HTTPException(status_code=403, detail="Admin access required")
 
 UPLOAD_DIR = "uploads"  # same folder uploads.py already writes to / main.py already serves
 ALLOWED_EXTENSIONS = {".jpg", ".jpeg", ".png", ".webp", ".pdf", ".doc", ".docx"}
@@ -63,7 +75,9 @@ async def upload_document(
     document_type: Optional[str] = Form(None),
     file: UploadFile = File(...),
     db: Session = Depends(get_db),
+    user_email: str = Depends(verify_token),
 ):
+    _require_admin(user_email)
     ext = os.path.splitext(file.filename)[1].lower()
     if ext not in ALLOWED_EXTENSIONS:
         raise HTTPException(status_code=400, detail=f"File type '{ext}' not allowed. Allowed: {', '.join(ALLOWED_EXTENSIONS)}")
@@ -104,7 +118,8 @@ async def upload_document(
 
 
 @router.get("")
-def list_documents(vendor_email: str, document_type: Optional[str] = None, db: Session = Depends(get_db)):
+def list_documents(vendor_email: str, document_type: Optional[str] = None, db: Session = Depends(get_db), user_email: str = Depends(verify_token)):
+    _require_admin(user_email)
     query = db.query(VendorDocument).filter(VendorDocument.vendor_email == vendor_email)
     if document_type:
         query = query.filter(VendorDocument.document_type == document_type)
@@ -113,7 +128,8 @@ def list_documents(vendor_email: str, document_type: Optional[str] = None, db: S
 
 
 @router.get("/{document_id}")
-def get_document(document_id: int, db: Session = Depends(get_db)):
+def get_document(document_id: int, db: Session = Depends(get_db), user_email: str = Depends(verify_token)):
+    _require_admin(user_email)
     document = db.query(VendorDocument).filter(VendorDocument.id == document_id).first()
     if not document:
         raise HTTPException(status_code=404, detail="Document not found.")
@@ -121,9 +137,10 @@ def get_document(document_id: int, db: Session = Depends(get_db)):
 
 
 @router.put("/{document_id}")
-def update_document(document_id: int, data: DocumentUpdateRequest, db: Session = Depends(get_db)):
+def update_document(document_id: int, data: DocumentUpdateRequest, db: Session = Depends(get_db), user_email: str = Depends(verify_token)):
     """Metadata-only edit (rename, recategorize). The uploaded file itself is
     immutable — to replace the file, delete this record and upload a new one."""
+    _require_admin(user_email)
     document = db.query(VendorDocument).filter(VendorDocument.id == document_id).first()
     if not document:
         raise HTTPException(status_code=404, detail="Document not found.")
@@ -139,9 +156,10 @@ def update_document(document_id: int, data: DocumentUpdateRequest, db: Session =
 
 
 @router.get("/{document_id}/download")
-def download_document(document_id: int, db: Session = Depends(get_db)):
+def download_document(document_id: int, db: Session = Depends(get_db), user_email: str = Depends(verify_token)):
     """Streams the actual file back (as opposed to GET /{document_id}, which
     just returns metadata including the file_url)."""
+    _require_admin(user_email)
     document = db.query(VendorDocument).filter(VendorDocument.id == document_id).first()
     if not document:
         raise HTTPException(status_code=404, detail="Document not found.")
@@ -157,7 +175,8 @@ def download_document(document_id: int, db: Session = Depends(get_db)):
 
 
 @router.delete("/{document_id}")
-def delete_document(document_id: int, db: Session = Depends(get_db)):
+def delete_document(document_id: int, db: Session = Depends(get_db), user_email: str = Depends(verify_token)):
+    _require_admin(user_email)
     document = db.query(VendorDocument).filter(VendorDocument.id == document_id).first()
     if not document:
         raise HTTPException(status_code=404, detail="Document not found.")

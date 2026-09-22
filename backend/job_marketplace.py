@@ -3,22 +3,28 @@ Phase 3 - Job Marketplace
 Vendors post jobs -> technicians browse/apply -> vendor accepts an applicant
 -> a WorkOrder is created automatically for the accepted technician.
 
-NOTE: /post, /{job_id}/applications and /applications/{id}/accept currently
-take vendor_email as a plain field / have no vendor auth guard. Once your
-Phase 2 vendor_auth.py exposes a get_current_vendor() dependency, swap these
-open endpoints to use it (same pattern as get_current_technician below) so
-only the vendor who owns the job can view applicants / accept them.
+NOTE: /post, /{job_id}/applications and /applications/{id}/accept are
+admin-only for the current release (release gate). Owner-or-admin scoping
+can replace this when the Vendor Portal publicly releases.
 """
 from fastapi import APIRouter, HTTPException, Depends
 from pydantic import BaseModel
 from sqlalchemy.orm import Session
 from database import get_db
+from security import verify_token
+from permissions import has_admin_access
 from technician_models import JobPosting, JobApplication, WorkOrder, Technician
 from technician_auth import get_current_technician
 import logging
 
 logger = logging.getLogger(__name__)
 router = APIRouter(prefix="/api/jobs", tags=["Job Marketplace"])
+
+
+def _require_admin(user_email: str):
+    """Release gate: vendor-side job operations are admin-only until public release."""
+    if not has_admin_access(user_email):
+        raise HTTPException(status_code=403, detail="Admin access required")
 
 # Separate router for technician-facing job endpoints — different URL prefix
 # ("/api/technician/jobs/...") than the main job marketplace routes above.
@@ -40,7 +46,8 @@ class ApplicationStatusUpdate(BaseModel):
 
 
 @router.post("/post")
-def post_job(data: JobPostRequest, db: Session = Depends(get_db)):
+def post_job(data: JobPostRequest, db: Session = Depends(get_db), user_email: str = Depends(verify_token)):
+    _require_admin(user_email)
     job = JobPosting(
         vendor_email=data.vendor_email,
         title=data.title,
@@ -147,7 +154,8 @@ def apply_to_job(job_id: int, db: Session = Depends(get_db), current_technician:
 
 
 @router.get("/{job_id}/applications")
-def list_applications(job_id: int, db: Session = Depends(get_db)):
+def list_applications(job_id: int, db: Session = Depends(get_db), user_email: str = Depends(verify_token)):
+    _require_admin(user_email)
     applications = db.query(JobApplication).filter(JobApplication.job_id == job_id).all()
     result = []
     for a in applications:
@@ -165,7 +173,8 @@ def list_applications(job_id: int, db: Session = Depends(get_db)):
 
 
 @router.post("/applications/{application_id}/accept")
-def accept_application(application_id: int, db: Session = Depends(get_db)):
+def accept_application(application_id: int, db: Session = Depends(get_db), user_email: str = Depends(verify_token)):
+    _require_admin(user_email)
     application = db.query(JobApplication).filter(JobApplication.id == application_id).first()
     if not application:
         raise HTTPException(status_code=404, detail="Application not found.")

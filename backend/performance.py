@@ -1,9 +1,9 @@
 """
 Phase 3 (extension) - Technician Performance, Ratings, Skills, Badges
 
-NOTE: POST /ratings/{work_order_id} has no vendor/customer auth gate yet since
-Phase 2 vendor auth doesn't exist — same caveat as job_marketplace.py's open
-endpoints. Swap for a proper get_current_vendor()/customer dependency later.
+NOTE: POST /ratings/{work_order_id} requires an authenticated technician
+(or admin) identity. Customer/vendor-submitted ratings can be added with an
+explicit role allowance when the portals publicly release.
 """
 from fastapi import APIRouter, HTTPException, Depends
 from pydantic import BaseModel
@@ -94,7 +94,7 @@ def get_ratings(db: Session = Depends(get_db), current_technician: Technician = 
 
 
 @router.post("/ratings/{work_order_id}")
-def submit_rating(work_order_id: int, data: RatingCreate, db: Session = Depends(get_db)):
+def submit_rating(work_order_id: int, data: RatingCreate, db: Session = Depends(get_db), current_technician: Technician = Depends(get_current_technician)):
     if not (1 <= data.rating <= 5):
         raise HTTPException(status_code=400, detail="Rating must be between 1 and 5.")
 

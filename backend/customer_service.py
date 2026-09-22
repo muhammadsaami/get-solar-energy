@@ -119,6 +119,7 @@ def search_customers(db: Session, q: str):
     return db.query(CustomerModel).filter(
         (CustomerModel.consumer_number.like(search_pattern)) |
         (CustomerModel.customer_name.like(search_pattern)) |
+        (CustomerModel.email.like(search_pattern)) |
         (CustomerModel.city.like(search_pattern)) |
         (CustomerModel.discom.like(search_pattern))
     ).all()

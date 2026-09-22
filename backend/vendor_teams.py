@@ -14,11 +14,23 @@ from fastapi import APIRouter, HTTPException, Depends
 from pydantic import BaseModel
 from sqlalchemy.orm import Session
 from database import get_db
+from security import verify_token
+from permissions import has_admin_access
 from vendor_teams_models import VendorTeamMember
 import logging
 
 logger = logging.getLogger(__name__)
-router = APIRouter(prefix="/api/vendor/team", tags=["Vendor Teams"])
+router = APIRouter(
+    prefix="/api/vendor/team",
+    tags=["Vendor Teams"],
+    dependencies=[Depends(verify_token)],
+)
+
+
+def _require_admin(user_email: str):
+    """Release gate: Vendor Portal is admin-only until public release."""
+    if not has_admin_access(user_email):
+        raise HTTPException(status_code=403, detail="Admin access required")
 
 
 # ==============================================================================
@@ -61,7 +73,8 @@ def _serialize(m: VendorTeamMember) -> dict:
 # ROUTES
 # ==============================================================================
 @router.post("")
-def add_team_member(data: TeamMemberCreateRequest, db: Session = Depends(get_db)):
+def add_team_member(data: TeamMemberCreateRequest, db: Session = Depends(get_db), user_email: str = Depends(verify_token)):
+    _require_admin(user_email)
     try:
         member = VendorTeamMember(
             vendor_email=data.vendor_email,
@@ -84,7 +97,8 @@ def add_team_member(data: TeamMemberCreateRequest, db: Session = Depends(get_db)
 
 
 @router.get("")
-def list_team(vendor_email: str, active_only: bool = False, db: Session = Depends(get_db)):
+def list_team(vendor_email: str, active_only: bool = False, db: Session = Depends(get_db), user_email: str = Depends(verify_token)):
+    _require_admin(user_email)
     query = db.query(VendorTeamMember).filter(VendorTeamMember.vendor_email == vendor_email)
     if active_only:
         query = query.filter(VendorTeamMember.is_active == True)  # noqa: E712
@@ -93,7 +107,8 @@ def list_team(vendor_email: str, active_only: bool = False, db: Session = Depend
 
 
 @router.get("/{member_id}")
-def get_team_member(member_id: int, db: Session = Depends(get_db)):
+def get_team_member(member_id: int, db: Session = Depends(get_db), user_email: str = Depends(verify_token)):
+    _require_admin(user_email)
     member = db.query(VendorTeamMember).filter(VendorTeamMember.id == member_id).first()
     if not member:
         raise HTTPException(status_code=404, detail="Team member not found.")
@@ -101,7 +116,8 @@ def get_team_member(member_id: int, db: Session = Depends(get_db)):
 
 
 @router.put("/{member_id}")
-def update_team_member(member_id: int, data: TeamMemberUpdateRequest, db: Session = Depends(get_db)):
+def update_team_member(member_id: int, data: TeamMemberUpdateRequest, db: Session = Depends(get_db), user_email: str = Depends(verify_token)):
+    _require_admin(user_email)
     member = db.query(VendorTeamMember).filter(VendorTeamMember.id == member_id).first()
     if not member:
         raise HTTPException(status_code=404, detail="Team member not found.")
@@ -117,7 +133,8 @@ def update_team_member(member_id: int, data: TeamMemberUpdateRequest, db: Sessio
 
 
 @router.delete("/{member_id}")
-def remove_team_member(member_id: int, db: Session = Depends(get_db)):
+def remove_team_member(member_id: int, db: Session = Depends(get_db), user_email: str = Depends(verify_token)):
+    _require_admin(user_email)
     member = db.query(VendorTeamMember).filter(VendorTeamMember.id == member_id).first()
     if not member:
         raise HTTPException(status_code=404, detail="Team member not found.")

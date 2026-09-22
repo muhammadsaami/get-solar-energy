@@ -3,6 +3,8 @@ import { Route, Navigate } from 'react-router-dom'
 
 import { ROUTES } from '../config/routes'
 import PermissionGuard from './PermissionGuard'
+import PortalReleaseGate from './PortalReleaseGate'
+import { VENDOR_PORTAL_RELEASED } from '../config/release'
 import VendorAppShell from '../vendor/components/VendorAppShell'
 import LayoutSkeleton from '../components/layout/LayoutSkeleton'
 
@@ -31,9 +33,11 @@ const vendorRouteElements = [
   <Route key="v-mywork" path={ROUTES.VENDOR_MY_WORK} element={
     <VendorShell>
       <PermissionGuard feature="vendor-projects">
-        <Suspense fallback={<LayoutSkeleton />}>
-          <MyWork />
-        </Suspense>
+        <PortalReleaseGate portal="vendor" released={VENDOR_PORTAL_RELEASED}>
+          <Suspense fallback={<LayoutSkeleton />}>
+            <MyWork />
+          </Suspense>
+        </PortalReleaseGate>
       </PermissionGuard>
     </VendorShell>
   } />,
@@ -45,126 +49,154 @@ const vendorRouteElements = [
   <Route key="v-dashboard" path={ROUTES.VENDOR_DASHBOARD} element={
     <VendorShell>
       <PermissionGuard feature="vendor-dashboard">
-        <Suspense fallback={<LayoutSkeleton />}>
-          <VendorDashboard />
-        </Suspense>
+        <PortalReleaseGate portal="vendor" released={VENDOR_PORTAL_RELEASED}>
+          <Suspense fallback={<LayoutSkeleton />}>
+            <VendorDashboard />
+          </Suspense>
+        </PortalReleaseGate>
       </PermissionGuard>
     </VendorShell>
   } />,
   <Route key="v-projects" path={ROUTES.VENDOR_PROJECTS} element={
     <VendorShell>
       <PermissionGuard feature="vendor-projects">
-        <Suspense fallback={<LayoutSkeleton />}>
-          <VendorProjects />
-        </Suspense>
+        <PortalReleaseGate portal="vendor" released={VENDOR_PORTAL_RELEASED}>
+          <Suspense fallback={<LayoutSkeleton />}>
+            <VendorProjects />
+          </Suspense>
+        </PortalReleaseGate>
       </PermissionGuard>
     </VendorShell>
   } />,
   <Route key="v-customers" path={ROUTES.VENDOR_CUSTOMERS} element={
     <VendorShell>
       <PermissionGuard feature="vendor-customers">
-        <Suspense fallback={<LayoutSkeleton />}>
-          <VendorCustomers />
-        </Suspense>
+        <PortalReleaseGate portal="vendor" released={VENDOR_PORTAL_RELEASED}>
+          <Suspense fallback={<LayoutSkeleton />}>
+            <VendorCustomers />
+          </Suspense>
+        </PortalReleaseGate>
       </PermissionGuard>
     </VendorShell>
   } />,
   <Route key="v-leads" path={ROUTES.VENDOR_LEADS} element={
     <VendorShell>
       <PermissionGuard feature="vendor-leads">
-        <Suspense fallback={<LayoutSkeleton />}>
-          <VendorLeads />
-        </Suspense>
+        <PortalReleaseGate portal="vendor" released={VENDOR_PORTAL_RELEASED}>
+          <Suspense fallback={<LayoutSkeleton />}>
+            <VendorLeads />
+          </Suspense>
+        </PortalReleaseGate>
       </PermissionGuard>
     </VendorShell>
   } />,
   <Route key="v-installations" path={ROUTES.VENDOR_INSTALLATIONS} element={
     <VendorShell>
       <PermissionGuard feature="vendor-installations">
-        <Suspense fallback={<LayoutSkeleton />}>
-          <VendorInstallations />
-        </Suspense>
+        <PortalReleaseGate portal="vendor" released={VENDOR_PORTAL_RELEASED}>
+          <Suspense fallback={<LayoutSkeleton />}>
+            <VendorInstallations />
+          </Suspense>
+        </PortalReleaseGate>
       </PermissionGuard>
     </VendorShell>
   } />,
   <Route key="v-teams" path={ROUTES.VENDOR_TEAMS} element={
     <VendorShell>
       <PermissionGuard feature="vendor-teams">
-        <Suspense fallback={<LayoutSkeleton />}>
-          <VendorTeams />
-        </Suspense>
+        <PortalReleaseGate portal="vendor" released={VENDOR_PORTAL_RELEASED}>
+          <Suspense fallback={<LayoutSkeleton />}>
+            <VendorTeams />
+          </Suspense>
+        </PortalReleaseGate>
       </PermissionGuard>
     </VendorShell>
   } />,
   <Route key="v-inventory" path={ROUTES.VENDOR_INVENTORY} element={
     <VendorShell>
       <PermissionGuard feature="vendor-inventory">
-        <Suspense fallback={<LayoutSkeleton />}>
-          <VendorInventory />
-        </Suspense>
+        <PortalReleaseGate portal="vendor" released={VENDOR_PORTAL_RELEASED}>
+          <Suspense fallback={<LayoutSkeleton />}>
+            <VendorInventory />
+          </Suspense>
+        </PortalReleaseGate>
       </PermissionGuard>
     </VendorShell>
   } />,
   <Route key="v-amc" path={ROUTES.VENDOR_AMC} element={
     <VendorShell>
       <PermissionGuard feature="vendor-amc">
-        <Suspense fallback={<LayoutSkeleton />}>
-          <VendorAMC />
-        </Suspense>
+        <PortalReleaseGate portal="vendor" released={VENDOR_PORTAL_RELEASED}>
+          <Suspense fallback={<LayoutSkeleton />}>
+            <VendorAMC />
+          </Suspense>
+        </PortalReleaseGate>
       </PermissionGuard>
     </VendorShell>
   } />,
   <Route key="v-payments" path={ROUTES.VENDOR_PAYMENTS} element={
     <VendorShell>
       <PermissionGuard feature="vendor-payments">
-        <Suspense fallback={<LayoutSkeleton />}>
-          <VendorPayments />
-        </Suspense>
+        <PortalReleaseGate portal="vendor" released={VENDOR_PORTAL_RELEASED}>
+          <Suspense fallback={<LayoutSkeleton />}>
+            <VendorPayments />
+          </Suspense>
+        </PortalReleaseGate>
       </PermissionGuard>
     </VendorShell>
   } />,
   <Route key="v-reports" path={ROUTES.VENDOR_REPORTS} element={
     <VendorShell>
       <PermissionGuard feature="vendor-reports">
-        <Suspense fallback={<LayoutSkeleton />}>
-          <VendorReports />
-        </Suspense>
+        <PortalReleaseGate portal="vendor" released={VENDOR_PORTAL_RELEASED}>
+          <Suspense fallback={<LayoutSkeleton />}>
+            <VendorReports />
+          </Suspense>
+        </PortalReleaseGate>
       </PermissionGuard>
     </VendorShell>
   } />,
   <Route key="v-analytics" path={ROUTES.VENDOR_ANALYTICS} element={
     <VendorShell>
       <PermissionGuard feature="vendor-analytics">
-        <Suspense fallback={<LayoutSkeleton />}>
-          <VendorAnalytics />
-        </Suspense>
+        <PortalReleaseGate portal="vendor" released={VENDOR_PORTAL_RELEASED}>
+          <Suspense fallback={<LayoutSkeleton />}>
+            <VendorAnalytics />
+          </Suspense>
+        </PortalReleaseGate>
       </PermissionGuard>
     </VendorShell>
   } />,
   <Route key="v-documents" path={ROUTES.VENDOR_DOCUMENTS} element={
     <VendorShell>
       <PermissionGuard feature="vendor-documents">
-        <Suspense fallback={<LayoutSkeleton />}>
-          <VendorDocuments />
-        </Suspense>
+        <PortalReleaseGate portal="vendor" released={VENDOR_PORTAL_RELEASED}>
+          <Suspense fallback={<LayoutSkeleton />}>
+            <VendorDocuments />
+          </Suspense>
+        </PortalReleaseGate>
       </PermissionGuard>
     </VendorShell>
   } />,
   <Route key="v-settings" path={ROUTES.VENDOR_SETTINGS} element={
     <VendorShell>
       <PermissionGuard feature="vendor-settings">
-        <Suspense fallback={<LayoutSkeleton />}>
-          <VendorSettings />
-        </Suspense>
+        <PortalReleaseGate portal="vendor" released={VENDOR_PORTAL_RELEASED}>
+          <Suspense fallback={<LayoutSkeleton />}>
+            <VendorSettings />
+          </Suspense>
+        </PortalReleaseGate>
       </PermissionGuard>
     </VendorShell>
   } />,
   <Route key="v-profile" path={ROUTES.VENDOR_PROFILE} element={
     <VendorShell>
       <PermissionGuard feature="vendor-profile">
-        <Suspense fallback={<LayoutSkeleton />}>
-          <VendorProfile />
-        </Suspense>
+        <PortalReleaseGate portal="vendor" released={VENDOR_PORTAL_RELEASED}>
+          <Suspense fallback={<LayoutSkeleton />}>
+            <VendorProfile />
+          </Suspense>
+        </PortalReleaseGate>
       </PermissionGuard>
     </VendorShell>
   } />,

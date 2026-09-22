@@ -18,11 +18,23 @@ from fastapi.responses import StreamingResponse
 from pydantic import BaseModel
 from sqlalchemy.orm import Session
 from database import get_db
+from security import verify_token
+from permissions import has_admin_access
 from vendor_payments_models import VendorPayout, VendorInvoice
 import logging
 
 logger = logging.getLogger(__name__)
-router = APIRouter(prefix="/api/vendor/payouts", tags=["Vendor Payments"])
+router = APIRouter(
+    prefix="/api/vendor/payouts",
+    tags=["Vendor Payments"],
+    dependencies=[Depends(verify_token)],
+)
+
+
+def _require_admin(user_email: str):
+    """Release gate: Vendor Portal is admin-only until public release."""
+    if not has_admin_access(user_email):
+        raise HTTPException(status_code=403, detail="Admin access required")
 
 VALID_STATUSES = {"Pending", "Processing", "Paid", "Failed"}
 
@@ -109,7 +121,8 @@ def _serialize(p: VendorPayout) -> dict:
 # ROUTES
 # ==============================================================================
 @router.post("")
-def create_payout(data: PayoutCreateRequest, db: Session = Depends(get_db)):
+def create_payout(data: PayoutCreateRequest, db: Session = Depends(get_db), user_email: str = Depends(verify_token)):
+    _require_admin(user_email)
     try:
         payout = VendorPayout(
             vendor_email=data.vendor_email,
@@ -131,7 +144,8 @@ def create_payout(data: PayoutCreateRequest, db: Session = Depends(get_db)):
 
 
 @router.get("")
-def list_payouts(vendor_email: str, status: Optional[str] = None, db: Session = Depends(get_db)):
+def list_payouts(vendor_email: str, status: Optional[str] = None, db: Session = Depends(get_db), user_email: str = Depends(verify_token)):
+    _require_admin(user_email)
     query = db.query(VendorPayout).filter(VendorPayout.vendor_email == vendor_email)
     if status:
         query = query.filter(VendorPayout.status == status)
@@ -153,7 +167,8 @@ def list_payouts(vendor_email: str, status: Optional[str] = None, db: Session = 
 # so they are matched first — otherwise "/invoices" would be swallowed by the
 # /{payout_id} route above and fail int conversion.
 @router.get("/invoices")
-def list_invoices(vendor_email: str, db: Session = Depends(get_db)):
+def list_invoices(vendor_email: str, db: Session = Depends(get_db), user_email: str = Depends(verify_token)):
+    _require_admin(user_email)
     invoices = db.query(VendorInvoice).filter(
         VendorInvoice.vendor_email == vendor_email
     ).order_by(VendorInvoice.created_at.desc()).all()
@@ -161,7 +176,8 @@ def list_invoices(vendor_email: str, db: Session = Depends(get_db)):
 
 
 @router.get("/invoices/{invoice_id}")
-def get_invoice(invoice_id: int, db: Session = Depends(get_db)):
+def get_invoice(invoice_id: int, db: Session = Depends(get_db), user_email: str = Depends(verify_token)):
+    _require_admin(user_email)
     invoice = db.query(VendorInvoice).filter(VendorInvoice.id == invoice_id).first()
     if not invoice:
         raise HTTPException(status_code=404, detail="Invoice not found.")
@@ -169,7 +185,8 @@ def get_invoice(invoice_id: int, db: Session = Depends(get_db)):
 
 
 @router.get("/{payout_id}")
-def get_payout(payout_id: int, db: Session = Depends(get_db)):
+def get_payout(payout_id: int, db: Session = Depends(get_db), user_email: str = Depends(verify_token)):
+    _require_admin(user_email)
     payout = db.query(VendorPayout).filter(VendorPayout.id == payout_id).first()
     if not payout:
         raise HTTPException(status_code=404, detail="Payout record not found.")
@@ -177,7 +194,8 @@ def get_payout(payout_id: int, db: Session = Depends(get_db)):
 
 
 @router.put("/{payout_id}")
-def update_payout(payout_id: int, data: PayoutUpdateRequest, db: Session = Depends(get_db)):
+def update_payout(payout_id: int, data: PayoutUpdateRequest, db: Session = Depends(get_db), user_email: str = Depends(verify_token)):
+    _require_admin(user_email)
     payout = db.query(VendorPayout).filter(VendorPayout.id == payout_id).first()
     if not payout:
         raise HTTPException(status_code=404, detail="Payout record not found.")
@@ -200,7 +218,8 @@ def update_payout(payout_id: int, data: PayoutUpdateRequest, db: Session = Depen
 
 
 @router.delete("/{payout_id}")
-def delete_payout(payout_id: int, db: Session = Depends(get_db)):
+def delete_payout(payout_id: int, db: Session = Depends(get_db), user_email: str = Depends(verify_token)):
+    _require_admin(user_email)
     payout = db.query(VendorPayout).filter(VendorPayout.id == payout_id).first()
     if not payout:
         raise HTTPException(status_code=404, detail="Payout record not found.")
@@ -214,7 +233,8 @@ def delete_payout(payout_id: int, db: Session = Depends(get_db)):
 # INVOICES — one invoice per payout, created on demand
 # ==============================================================================
 @router.post("/{payout_id}/invoice")
-def create_invoice(payout_id: int, description: Optional[str] = None, db: Session = Depends(get_db)):
+def create_invoice(payout_id: int, description: Optional[str] = None, db: Session = Depends(get_db), user_email: str = Depends(verify_token)):
+    _require_admin(user_email)
     payout = db.query(VendorPayout).filter(VendorPayout.id == payout_id).first()
     if not payout:
         raise HTTPException(status_code=404, detail="Payout record not found.")
@@ -243,7 +263,8 @@ def create_invoice(payout_id: int, description: Optional[str] = None, db: Sessio
 # RECEIPT — PDF download for a Paid payout
 # ==============================================================================
 @router.get("/{payout_id}/receipt")
-def download_receipt(payout_id: int, db: Session = Depends(get_db)):
+def download_receipt(payout_id: int, db: Session = Depends(get_db), user_email: str = Depends(verify_token)):
+    _require_admin(user_email)
     payout = db.query(VendorPayout).filter(VendorPayout.id == payout_id).first()
     if not payout:
         raise HTTPException(status_code=404, detail="Payout record not found.")

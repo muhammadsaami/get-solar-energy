@@ -8,9 +8,16 @@ from pydantic import BaseModel
 from typing import Optional, List
 import logging
 
+from technician_auth import get_current_technician
+from technician_models import Technician
+
 logger = logging.getLogger(__name__)
 
-router = APIRouter(prefix="/api/technician/ai", tags=["Technician AI Troubleshooting"])
+router = APIRouter(
+    prefix="/api/technician/ai",
+    tags=["Technician AI Troubleshooting"],
+    dependencies=[Depends(get_current_technician)],
+)
 
 
 class TroubleshootingRequest(BaseModel):

@@ -1,4 +1,4 @@
-import React, { useState, useMemo, useCallback } from 'react'
+import React, { useState, useMemo, useCallback, useRef, useEffect } from 'react'
 import { crmService } from '../../services/crm.service'
 import {
   adminProposalService,
@@ -44,7 +44,11 @@ export default function AdminProposals() {
   const [searching, setSearching] = useState(false)
   const [results, setResults] = useState<CrmCustomer[]>([])
   const [searchError, setSearchError] = useState<string | null>(null)
-  const [searched, setSearched] = useState(false)
+  const [dropdownOpen, setDropdownOpen] = useState(false)
+  const [activeIndex, setActiveIndex] = useState(-1)
+  const searchBoxRef = useRef<HTMLDivElement>(null)
+  const debounceRef = useRef<ReturnType<typeof setTimeout> | null>(null)
+  const searchSeqRef = useRef(0)
 
   const [selected, setSelected] = useState<AdminCustomerBundle | null>(null)
   const [loadingCustomer, setLoadingCustomer] = useState(false)
@@ -85,28 +89,71 @@ export default function AdminProposals() {
     setCustomerError(null)
   }, [])
 
-  const handleSearch = useCallback(async (e?: React.FormEvent) => {
-    e?.preventDefault()
-    const q = search.trim()
-    if (!q || searching) return
+  const runSearch = useCallback(async (query: string) => {
+    const q = query.trim()
+    if (q.length < 2) {
+      setResults([])
+      setDropdownOpen(false)
+      setSearchError(null)
+      setSearching(false)
+      return
+    }
+    const seq = ++searchSeqRef.current
     setSearching(true)
     setSearchError(null)
     try {
       const customers = await crmService.searchCustomers(q)
-      setResults(customers)
-      setSearched(true)
-      if (customers.length === 0) setSearchError('No customer found for this search.')
+      if (seq !== searchSeqRef.current) return
+      setResults(customers.slice(0, 8))
+      setActiveIndex(-1)
+      setDropdownOpen(true)
     } catch {
+      if (seq !== searchSeqRef.current) return
       setResults([])
-      setSearched(true)
+      setDropdownOpen(true)
       setSearchError('Customer search failed. Please try again.')
     } finally {
-      setSearching(false)
+      if (seq === searchSeqRef.current) setSearching(false)
     }
-  }, [search, searching])
+  }, [])
+
+  const handleSearchChange = useCallback((value: string) => {
+    setSearch(value)
+    if (debounceRef.current) clearTimeout(debounceRef.current)
+    debounceRef.current = setTimeout(() => {
+      void runSearch(value)
+    }, 300)
+  }, [runSearch])
+
+  const handleClearSearch = useCallback(() => {
+    if (debounceRef.current) clearTimeout(debounceRef.current)
+    searchSeqRef.current += 1
+    setSearch('')
+    setResults([])
+    setDropdownOpen(false)
+    setSearchError(null)
+    setActiveIndex(-1)
+  }, [])
+
+  useEffect(() => {
+    const onPointerDown = (e: MouseEvent) => {
+      if (searchBoxRef.current && !searchBoxRef.current.contains(e.target as Node)) {
+        setDropdownOpen(false)
+      }
+    }
+    document.addEventListener('mousedown', onPointerDown)
+    return () => {
+      document.removeEventListener('mousedown', onPointerDown)
+      if (debounceRef.current) clearTimeout(debounceRef.current)
+    }
+  }, [])
 
   const handleSelect = useCallback(async (customer: CrmCustomer) => {
     clearCustomerState()
+    setDropdownOpen(false)
+    setSearch('')
+    setResults([])
+    setActiveIndex(-1)
     setLoadingCustomer(true)
     try {
       const bundle = await adminProposalService.getCustomerBundle(customer.id)
@@ -136,6 +183,30 @@ export default function AdminProposals() {
   const setField = useCallback((field: keyof ProposalInputs, value: string) => {
     setInputs((prev) => ({ ...prev, [field]: value }))
   }, [])
+
+  const handleSearchKeyDown = useCallback((e: React.KeyboardEvent) => {
+    if (e.key === 'Escape') {
+      setDropdownOpen(false)
+      return
+    }
+    if (!dropdownOpen || results.length === 0) return
+    if (e.key === 'ArrowDown') {
+      e.preventDefault()
+      setActiveIndex((i) => (i + 1) % results.length)
+    } else if (e.key === 'ArrowUp') {
+      e.preventDefault()
+      setActiveIndex((i) => (i - 1 + results.length) % results.length)
+    } else if (e.key === 'Enter') {
+      e.preventDefault()
+      const customer = results[activeIndex >= 0 ? activeIndex : 0]
+      if (customer) void handleSelect(customer)
+    }
+  }, [dropdownOpen, results, activeIndex, handleSelect])
+
+  const handleChangeCustomer = useCallback(() => {
+    clearCustomerState()
+    handleClearSearch()
+  }, [clearCustomerState, handleClearSearch])
 
   const validateInputs = useCallback((): string | null => {
     if (!(parseFloat(inputs.monthlyBill) > 0)) {
@@ -252,48 +323,88 @@ export default function AdminProposals() {
         </p>
       </div>
 
-      <div className="card-base" style={{ padding: 'var(--space-4)', marginBottom: 'var(--space-4)' }}>
+      <div className="card-base" style={{ padding: 'var(--space-4)', marginBottom: 'var(--space-4)', overflow: 'visible' }}>
         <div className="ew-divider-head">
           <h3 className="ew-divider-title">Customer Selection</h3>
         </div>
-        <form onSubmit={handleSearch} style={{ display: 'flex', gap: '8px', maxWidth: '540px' }}>
+        <div ref={searchBoxRef} style={{ position: 'relative', maxWidth: '540px' }}>
           <input
             type="text"
             className="form-input"
-            placeholder="Search Customer ID / Name / Email"
+            placeholder="Search customer ID, name or email..."
             value={search}
-            onChange={(e) => setSearch(e.target.value)}
-            disabled={searching}
-            style={{ flex: 1, padding: '10px 14px', borderRadius: '6px', background: 'var(--bg-input)', border: '1px solid var(--border-color)', color: 'var(--text-primary)', fontSize: '12px' }}
+            onChange={(e) => handleSearchChange(e.target.value)}
+            onKeyDown={handleSearchKeyDown}
+            onFocus={() => {
+              if (results.length > 0 || searchError) setDropdownOpen(true)
+            }}
+            role="combobox"
+            aria-expanded={dropdownOpen}
+            aria-controls="admin-customer-results"
+            aria-activedescendant={activeIndex >= 0 ? `admin-customer-option-${activeIndex}` : undefined}
+            aria-autocomplete="list"
+            aria-label="Search customer ID, name or email"
+            autoComplete="off"
+            name="admin-customer-search"
+            style={{ width: '100%', padding: '10px 14px', borderRadius: '6px', background: 'var(--bg-input)', border: '1px solid var(--border-color)', color: 'var(--text-primary)', fontSize: '12px' }}
           />
-          <button type="submit" className="btn btn-primary" disabled={searching || !search.trim()} style={{ padding: '9px 16px', fontSize: '12px' }}>
-            {searching ? 'Searching...' : 'Search Customer'}
-          </button>
-        </form>
-        {searchError && (
-          <div role="alert" style={{ marginTop: '12px', fontSize: '12px', color: 'var(--text-primary)' }}>
-            {searchError}
-          </div>
-        )}
-        {searched && results.length > 0 && (
-          <div style={{ marginTop: '12px', display: 'flex', flexDirection: 'column', gap: '8px' }}>
-            {results.slice(0, 8).map((c) => (
-              <div key={c.id} style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '10px 14px', borderRadius: '6px', border: '1px solid var(--border-color)', background: 'rgba(255,255,255,0.02)' }}>
-                <div style={{ fontSize: '12px', color: 'var(--text-primary)' }}>
-                  <strong>Customer ID: {c.consumerNumber}</strong>
-                  <span style={{ color: 'var(--text-secondary)' }}> · {c.customerName} · {c.email || 'no email on record'}</span>
-                </div>
-                <button type="button" className="btn btn-ghost btn-sm" onClick={() => handleSelect(c)} disabled={loadingCustomer}>
-                  Select
+          {searching && (
+            <span style={{ position: 'absolute', right: '12px', top: '50%', transform: 'translateY(-50%)', fontSize: '11px', color: 'var(--text-muted)' }}>
+              Searching...
+            </span>
+          )}
+          {dropdownOpen && (
+            <div
+              role="listbox"
+              id="admin-customer-results"
+              aria-label="Matching customers"
+              style={{ position: 'absolute', top: 'calc(100% + 8px)', left: 0, right: 0, zIndex: 'var(--z-dropdown)', background: 'var(--bg-card)', border: '1px solid var(--border-color)', borderRadius: 'var(--radius-md, 6px)', boxShadow: 'var(--shadow-float)', marginTop: 0, maxHeight: 240, overflowY: 'auto' }}
+            >
+              {results.map((c, i) => (
+                <button
+                  key={c.id}
+                  type="button"
+                  role="option"
+                  id={`admin-customer-option-${i}`}
+                  aria-selected={i === activeIndex}
+                  onClick={() => handleSelect(c)}
+                  onMouseEnter={() => setActiveIndex(i)}
+                  disabled={loadingCustomer}
+                  style={{
+                    display: 'block', width: '100%', textAlign: 'left', padding: '10px 14px',
+                    background: i === activeIndex ? 'rgba(0, 174, 239, 0.12)' : 'transparent',
+                    border: 'none', borderBottom: '1px solid var(--border-subtle)',
+                    color: 'var(--text-primary)', cursor: 'pointer',
+                  }}
+                >
+                  <div style={{ fontSize: '13px', fontWeight: 700 }}>{c.customerName}</div>
+                  <div style={{ fontSize: '11px', color: 'var(--text-secondary)' }}>{c.email || 'no email on record'}</div>
+                  <div style={{ fontSize: '11px', color: 'var(--text-secondary)' }}>Customer ID: {c.consumerNumber}</div>
                 </button>
-              </div>
-            ))}
-          </div>
-        )}
+              ))}
+              {!searching && results.length === 0 && (
+                searchError ? (
+                  <div role="alert" style={{ padding: '12px 14px', fontSize: '12px', color: 'var(--text-primary)' }}>
+                    {searchError}
+                  </div>
+                ) : (
+                  <div style={{ padding: '12px 14px', fontSize: '12px', color: 'var(--text-secondary)' }}>
+                    No customer found — check the search or create the CRM record first.
+                  </div>
+                )
+              )}
+            </div>
+          )}
+        </div>
         {selected && (
           <div style={{ marginTop: '12px', padding: '12px 14px', borderRadius: '6px', border: '1px solid rgba(54, 211, 153, 0.25)', background: 'rgba(54, 211, 153, 0.06)', fontSize: '12px', color: 'var(--text-primary)' }}>
             <strong>Selected Customer</strong>
-            <div>ID: {selected.consumer_number} · {selected.customer_name} · {selected.email || 'no email on record'}</div>
+            <div>{selected.customer_name}</div>
+            <div>{selected.email || 'no email on record'}</div>
+            <div>Customer ID: {selected.consumer_number}</div>
+            <button type="button" className="btn btn-ghost btn-sm" onClick={handleChangeCustomer} style={{ marginTop: '8px' }}>
+              Change Customer
+            </button>
           </div>
         )}
         {loadingCustomer && <p style={{ fontSize: '12px', color: 'var(--text-secondary)' }}>Loading customer...</p>}

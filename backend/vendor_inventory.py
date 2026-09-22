@@ -1,11 +1,10 @@
 """
 Phase 5 - Vendor Inventory
-CRUD APIs for vendor stock/product records. No vendor login system exists
-yet, so - matching the vendor_email string pattern already established in
-plants.py - every endpoint here takes vendor_email directly instead of a
-get_current_vendor() dependency. Swap to a real auth dependency once vendor
-login is built; the request/response shape will not need to change, only
-how vendor_email is obtained.
+CRUD APIs for vendor stock/product records.
+
+RELEASE GATE: Vendor Portal is not publicly released. Every endpoint here
+is Admin-only until the future Vendor Portal release (owner-or-admin
+scoping to be added then). Do not relax without a release decision.
 
 Does NOT touch: auth.py, session_auth.py, technician_auth.py, Customer
 APIs, Plant Monitoring, CRM, AI, Admin. Real PostgreSQL table only - no
@@ -16,11 +15,23 @@ from fastapi import APIRouter, HTTPException, Depends
 from pydantic import BaseModel
 from sqlalchemy.orm import Session
 from database import get_db
+from security import verify_token
+from permissions import has_admin_access
 from vendor_models import VendorInventoryItem
 import logging
 
 logger = logging.getLogger(__name__)
-router = APIRouter(prefix="/api/vendor/inventory", tags=["Vendor Inventory"])
+router = APIRouter(
+    prefix="/api/vendor/inventory",
+    tags=["Vendor Inventory"],
+    dependencies=[Depends(verify_token)],
+)
+
+
+def _require_admin(user_email: str):
+    """Release gate: Vendor Portal is admin-only until public release."""
+    if not has_admin_access(user_email):
+        raise HTTPException(status_code=403, detail="Admin access required")
 
 
 # ==============================================================================
@@ -77,7 +88,8 @@ def _serialize(item: VendorInventoryItem) -> dict:
 # ROUTES
 # ==============================================================================
 @router.post("")
-def add_inventory_item(data: InventoryItemCreateRequest, db: Session = Depends(get_db)):
+def add_inventory_item(data: InventoryItemCreateRequest, db: Session = Depends(get_db), user_email: str = Depends(verify_token)):
+    _require_admin(user_email)
     try:
         item = VendorInventoryItem(
             vendor_email=data.vendor_email,
@@ -113,7 +125,9 @@ def list_inventory(
     page: int = 1,
     page_size: int = 20,
     db: Session = Depends(get_db),
+    user_email: str = Depends(verify_token),
 ):
+    _require_admin(user_email)
     query = db.query(VendorInventoryItem).filter(VendorInventoryItem.vendor_email == vendor_email)
 
     if search:
@@ -150,7 +164,8 @@ def list_inventory(
 
 
 @router.get("/{item_id}")
-def get_inventory_item(item_id: int, db: Session = Depends(get_db)):
+def get_inventory_item(item_id: int, db: Session = Depends(get_db), user_email: str = Depends(verify_token)):
+    _require_admin(user_email)
     item = db.query(VendorInventoryItem).filter(VendorInventoryItem.id == item_id).first()
     if not item:
         raise HTTPException(status_code=404, detail="Inventory item not found.")
@@ -158,7 +173,8 @@ def get_inventory_item(item_id: int, db: Session = Depends(get_db)):
 
 
 @router.put("/{item_id}")
-def update_inventory_item(item_id: int, data: InventoryItemUpdateRequest, db: Session = Depends(get_db)):
+def update_inventory_item(item_id: int, data: InventoryItemUpdateRequest, db: Session = Depends(get_db), user_email: str = Depends(verify_token)):
+    _require_admin(user_email)
     item = db.query(VendorInventoryItem).filter(VendorInventoryItem.id == item_id).first()
     if not item:
         raise HTTPException(status_code=404, detail="Inventory item not found.")
@@ -178,7 +194,8 @@ def update_inventory_item(item_id: int, data: InventoryItemUpdateRequest, db: Se
 
 
 @router.delete("/{item_id}")
-def delete_inventory_item(item_id: int, db: Session = Depends(get_db)):
+def delete_inventory_item(item_id: int, db: Session = Depends(get_db), user_email: str = Depends(verify_token)):
+    _require_admin(user_email)
     item = db.query(VendorInventoryItem).filter(VendorInventoryItem.id == item_id).first()
     if not item:
         raise HTTPException(status_code=404, detail="Inventory item not found.")

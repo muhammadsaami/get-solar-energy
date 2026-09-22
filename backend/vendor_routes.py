@@ -1,11 +1,12 @@
 import logging
 from typing import Optional
-from fastapi import APIRouter, Depends, Query
+from fastapi import APIRouter, Depends, HTTPException, Query
 from sqlalchemy.orm import Session
 from datetime import date, datetime
 
 from database_sqlite import get_sqlite_db
 from security import verify_token
+from permissions import has_admin_access
 from utils.responses import ok, server_error
 from utils.logger import log_api_request, log_api_response
 from site_survey_models import SiteSurveyModel
@@ -13,8 +14,14 @@ from services.project_service import get_projects, get_project_metrics, _to_fron
 from project_models import ProjectModel
 from crm_models import CRMTaskModel, CRMMeetingModel, CRMInstallationModel, CRMAMCModel
 
-router = APIRouter(tags=["Vendor Portal"])
+router = APIRouter(tags=["Vendor Portal"], dependencies=[Depends(verify_token)])
 logger = logging.getLogger(__name__)
+
+
+def _require_admin(user_email: str):
+    """Release gate: Vendor Portal is admin-only until public release."""
+    if not has_admin_access(user_email):
+        raise HTTPException(status_code=403, detail="Admin access required")
 
 
 def _get_vendor_team(user_email: str) -> str:
@@ -28,6 +35,7 @@ def vendor_dashboard(
     db: Session = Depends(get_sqlite_db),
 ):
     log_api_request(logger, "GET", "/api/vendor/dashboard")
+    _require_admin(user_email)
     try:
         team = _get_vendor_team(user_email)
         projects = db.query(ProjectModel).filter(
@@ -160,6 +168,7 @@ def vendor_projects(
     db: Session = Depends(get_sqlite_db),
 ):
     log_api_request(logger, "GET", "/api/vendor/projects")
+    _require_admin(user_email)
     try:
         team = _get_vendor_team(user_email)
         query = db.query(ProjectModel).filter(ProjectModel.assigned_team == team)
@@ -192,6 +201,7 @@ def vendor_tasks(
     db: Session = Depends(get_sqlite_db),
 ):
     log_api_request(logger, "GET", "/api/vendor/tasks")
+    _require_admin(user_email)
     try:
         team = _get_vendor_team(user_email)
         query = db.query(CRMTaskModel).filter(CRMTaskModel.assigned_to.ilike(f"%{team}%"))
@@ -223,6 +233,7 @@ def vendor_alerts(
     db: Session = Depends(get_sqlite_db),
 ):
     log_api_request(logger, "GET", "/api/vendor/alerts")
+    _require_admin(user_email)
     try:
         team = _get_vendor_team(user_email)
         today_str = date.today().isoformat()

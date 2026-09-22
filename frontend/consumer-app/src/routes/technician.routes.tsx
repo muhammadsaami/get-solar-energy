@@ -3,6 +3,8 @@ import { Route, Navigate } from 'react-router-dom'
 
 import { ROUTES } from '../config/routes'
 import PermissionGuard from './PermissionGuard'
+import PortalReleaseGate from './PortalReleaseGate'
+import { TECHNICIAN_PORTAL_RELEASED } from '../config/release'
 import AppShell from '../components/layout/AppShell'
 import LayoutSkeleton from '../components/layout/LayoutSkeleton'
 
@@ -28,72 +30,88 @@ const technicianRouteElements = [
   <Route key="t-dashboard" path={ROUTES.TECHNICIAN_DASHBOARD} element={
     <TechnicianShell>
       <PermissionGuard feature="technician-dashboard">
-        <Suspense fallback={<LayoutSkeleton />}>
-          <TechnicianDashboard />
-        </Suspense>
+        <PortalReleaseGate portal="technician" released={TECHNICIAN_PORTAL_RELEASED}>
+          <Suspense fallback={<LayoutSkeleton />}>
+            <TechnicianDashboard />
+          </Suspense>
+        </PortalReleaseGate>
       </PermissionGuard>
     </TechnicianShell>
   } />,
   <Route key="t-training" path={ROUTES.TECHNICIAN_TRAINING} element={
     <TechnicianShell>
       <PermissionGuard feature="technician-training">
-        <Suspense fallback={<LayoutSkeleton />}>
-          <TrainingAcademy />
-        </Suspense>
+        <PortalReleaseGate portal="technician" released={TECHNICIAN_PORTAL_RELEASED}>
+          <Suspense fallback={<LayoutSkeleton />}>
+            <TrainingAcademy />
+          </Suspense>
+        </PortalReleaseGate>
       </PermissionGuard>
     </TechnicianShell>
   } />,
   <Route key="t-certifications" path={ROUTES.TECHNICIAN_CERTIFICATIONS} element={
     <TechnicianShell>
       <PermissionGuard feature="technician-certifications">
-        <Suspense fallback={<LayoutSkeleton />}>
-          <CertificationsPage />
-        </Suspense>
+        <PortalReleaseGate portal="technician" released={TECHNICIAN_PORTAL_RELEASED}>
+          <Suspense fallback={<LayoutSkeleton />}>
+            <CertificationsPage />
+          </Suspense>
+        </PortalReleaseGate>
       </PermissionGuard>
     </TechnicianShell>
   } />,
   <Route key="t-marketplace" path={ROUTES.TECHNICIAN_MARKETPLACE} element={
     <TechnicianShell>
       <PermissionGuard feature="technician-marketplace">
-        <Suspense fallback={<LayoutSkeleton />}>
-          <JobMarketplacePage />
-        </Suspense>
+        <PortalReleaseGate portal="technician" released={TECHNICIAN_PORTAL_RELEASED}>
+          <Suspense fallback={<LayoutSkeleton />}>
+            <JobMarketplacePage />
+          </Suspense>
+        </PortalReleaseGate>
       </PermissionGuard>
     </TechnicianShell>
   } />,
   <Route key="t-work-orders" path={ROUTES.TECHNICIAN_WORK_ORDERS} element={
     <TechnicianShell>
       <PermissionGuard feature="technician-work-orders">
-        <Suspense fallback={<LayoutSkeleton />}>
-          <WorkOrdersPage />
-        </Suspense>
+        <PortalReleaseGate portal="technician" released={TECHNICIAN_PORTAL_RELEASED}>
+          <Suspense fallback={<LayoutSkeleton />}>
+            <WorkOrdersPage />
+          </Suspense>
+        </PortalReleaseGate>
       </PermissionGuard>
     </TechnicianShell>
   } />,
   <Route key="t-earnings" path={ROUTES.TECHNICIAN_EARNINGS} element={
     <TechnicianShell>
       <PermissionGuard feature="technician-earnings">
-        <Suspense fallback={<LayoutSkeleton />}>
-          <EarningsPage />
-        </Suspense>
+        <PortalReleaseGate portal="technician" released={TECHNICIAN_PORTAL_RELEASED}>
+          <Suspense fallback={<LayoutSkeleton />}>
+            <EarningsPage />
+          </Suspense>
+        </PortalReleaseGate>
       </PermissionGuard>
     </TechnicianShell>
   } />,
   <Route key="t-profile" path={ROUTES.TECHNICIAN_PROFILE} element={
     <TechnicianShell>
       <PermissionGuard feature="technician-profile">
-        <Suspense fallback={<LayoutSkeleton />}>
-          <ProfilePage />
-        </Suspense>
+        <PortalReleaseGate portal="technician" released={TECHNICIAN_PORTAL_RELEASED}>
+          <Suspense fallback={<LayoutSkeleton />}>
+            <ProfilePage />
+          </Suspense>
+        </PortalReleaseGate>
       </PermissionGuard>
     </TechnicianShell>
   } />,
   <Route key="t-ai" path={ROUTES.TECHNICIAN_AI} element={
     <TechnicianShell>
       <PermissionGuard feature="technician-ai">
-        <Suspense fallback={<LayoutSkeleton />}>
-          <TechnicianAiPage />
-        </Suspense>
+        <PortalReleaseGate portal="technician" released={TECHNICIAN_PORTAL_RELEASED}>
+          <Suspense fallback={<LayoutSkeleton />}>
+            <TechnicianAiPage />
+          </Suspense>
+        </PortalReleaseGate>
       </PermissionGuard>
     </TechnicianShell>
   } />,

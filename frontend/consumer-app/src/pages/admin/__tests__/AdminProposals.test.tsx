@@ -65,33 +65,207 @@ const GENERATED = {
   system_cost_rs: 150000,
 }
 
-async function selectCustomer() {
-  mockSearchCustomers.mockResolvedValue([CUSTOMER])
-  mockGetBundle.mockResolvedValue(BUNDLE)
-  fireEvent.change(screen.getByPlaceholderText(/Search Customer ID/i), { target: { value: 'CONS-42' } })
-  fireEvent.click(screen.getByRole('button', { name: /Search Customer/i }))
-  await waitFor(() => {
-    expect(screen.getByText(/Customer ID: CONS-42/i)).toBeInTheDocument()
-  })
-  fireEvent.click(screen.getByRole('button', { name: 'Select' }))
+function searchBox() {
+  return screen.getByRole('combobox', { name: /Search customer ID, name or email/i })
+}
+
+const settle = (ms = 400) => new Promise<void>((resolve) => { setTimeout(resolve, ms) })
+
+async function typeSearch(text: string) {
+  fireEvent.change(searchBox(), { target: { value: text } })
+}
+
+async function selectFirstResult() {
+  const options = await screen.findAllByRole('option')
+  fireEvent.click(options[0])
   await waitFor(() => {
     expect(screen.getByText(/Selected Customer/i)).toBeInTheDocument()
   })
 }
 
-describe('AdminProposals page', () => {
+async function selectCustomer() {
+  mockSearchCustomers.mockResolvedValue([CUSTOMER])
+  mockGetBundle.mockResolvedValue(BUNDLE)
+  await typeSearch('Priya')
+  await selectFirstResult()
+}
+
+describe('AdminProposals customer autocomplete', () => {
   beforeEach(() => {
     vi.clearAllMocks()
     previewProps.length = 0
     render(<AdminProposals />)
   })
 
-  it('selector searches and auto-fills real customer data, never fabricated', async () => {
-    await selectCustomer()
+  it('empty search field makes no request and shows no dropdown', async () => {
+    expect(searchBox()).toHaveValue('')
+    expect(screen.queryByRole('listbox')).not.toBeInTheDocument()
+    expect(mockSearchCustomers).not.toHaveBeenCalled()
+    await typeSearch('x')
+    await settle()
+    expect(mockSearchCustomers).not.toHaveBeenCalled()
+    expect(screen.queryByRole('listbox')).not.toBeInTheDocument()
+  })
+
+  it('typing "demo" shows the matching customer in a dropdown', async () => {
+    mockSearchCustomers.mockResolvedValue([CUSTOMER])
+    await typeSearch('demo')
+    expect(screen.queryByRole('listbox')).not.toBeInTheDocument()
+    await settle()
+    await waitFor(() => {
+      expect(screen.getByRole('listbox')).toBeInTheDocument()
+    })
+    expect(mockSearchCustomers).toHaveBeenCalledTimes(1)
+    expect(mockSearchCustomers.mock.calls[0][0]).toBe('demo')
+    const options = screen.getAllByRole('option')
+    expect(options).toHaveLength(1)
+    expect(options[0]).toHaveTextContent(/Priya Sharma/)
+    expect(options[0]).toHaveTextContent(/priya@example.com/)
+    expect(options[0]).toHaveTextContent(/Customer ID: CONS-42/)
+  })
+
+  it('debounces rapid typing into a single request', async () => {
+    mockSearchCustomers.mockResolvedValue([CUSTOMER])
+    await typeSearch('P')
+    await typeSearch('Pr')
+    await typeSearch('Pri')
+    await settle()
+    await waitFor(() => {
+      expect(screen.getByRole('listbox')).toBeInTheDocument()
+    })
+    expect(mockSearchCustomers).toHaveBeenCalledTimes(1)
+    expect(mockSearchCustomers.mock.calls[0][0]).toBe('Pri')
+  })
+
+  it('searching email or name or consumer_number returns the customer', async () => {
+    for (const query of ['priya@example.com', 'Priya Sharma', 'CONS-42']) {
+      mockSearchCustomers.mockResolvedValue([CUSTOMER])
+      await typeSearch(query)
+      await settle()
+      await waitFor(() => {
+        expect(screen.getAllByRole('option')).toHaveLength(1)
+      })
+      expect(mockSearchCustomers).toHaveBeenLastCalledWith(query)
+      fireEvent.change(searchBox(), { target: { value: '' } })
+      await settle()
+    }
+  })
+
+  it('shows loading, no-results, and failure states', async () => {
+    let resolveSearch!: (v: unknown) => void
+    mockSearchCustomers.mockReturnValue(new Promise((res) => { resolveSearch = res }))
+    await typeSearch('Priya')
+    await settle()
+    await waitFor(() => {
+      expect(screen.getByText(/Searching\.\.\./i)).toBeInTheDocument()
+    })
+    resolveSearch([])
+    await waitFor(() => {
+      expect(screen.getByText(/No customer found — check the search or create the CRM record first\./i)).toBeInTheDocument()
+    })
+    mockSearchCustomers.mockRejectedValue(new Error('down'))
+    await typeSearch('Priya Sharma')
+    await settle()
+    await waitFor(() => {
+      expect(screen.getByRole('alert')).toHaveTextContent(/Customer search failed/i)
+    })
+  })
+
+  it('results expose only name, email, and consumer ID', async () => {
+    mockSearchCustomers.mockResolvedValue([{ ...CUSTOMER, phone: '9000000001', address: 'Secret Lane' }])
+    await typeSearch('Priya')
+    await settle()
+    const options = await screen.findAllByRole('option')
+    const text = options[0].textContent || ''
+    expect(text).toMatch(/Priya Sharma/)
+    expect(text).toMatch(/priya@example.com/)
+    expect(text).toMatch(/CONS-42/)
+    expect(text).not.toMatch(/9000000001/)
+    expect(text).not.toMatch(/Secret Lane/)
+  })
+
+  it('selecting a result closes the dropdown and shows authoritative identity', async () => {
+    mockSearchCustomers.mockResolvedValue([CUSTOMER])
+    mockGetBundle.mockResolvedValue(BUNDLE)
+    await typeSearch('Priya')
+    await settle()
+    await selectFirstResult()
     expect(mockGetBundle).toHaveBeenCalledWith(42)
-    // Identity is read-only text (never editable inputs)
-    expect(screen.getAllByText(/Priya Sharma/).length).toBeGreaterThanOrEqual(1)
-    expect(screen.getAllByText(/priya@example.com/).length).toBeGreaterThanOrEqual(1)
+    expect(screen.queryByRole('listbox')).not.toBeInTheDocument()
+    expect(screen.getByText(/Selected Customer/i)).toBeInTheDocument()
+    expect(screen.getAllByText(/CONS-42/).length).toBeGreaterThanOrEqual(1)
+  })
+
+  it('Escape closes the dropdown without selecting', async () => {
+    mockSearchCustomers.mockResolvedValue([CUSTOMER])
+    await typeSearch('Priya')
+    await settle()
+    await screen.findByRole('listbox')
+    fireEvent.keyDown(searchBox(), { key: 'Escape' })
+    expect(screen.queryByRole('listbox')).not.toBeInTheDocument()
+    expect(mockGetBundle).not.toHaveBeenCalled()
+  })
+
+  it('keyboard Enter selects the highlighted result', async () => {
+    mockSearchCustomers.mockResolvedValue([CUSTOMER])
+    mockGetBundle.mockResolvedValue(BUNDLE)
+    await typeSearch('Priya')
+    await settle()
+    await screen.findByRole('listbox')
+    fireEvent.keyDown(searchBox(), { key: 'ArrowDown' })
+    fireEvent.keyDown(searchBox(), { key: 'Enter' })
+    await waitFor(() => {
+      expect(screen.getByText(/Selected Customer/i)).toBeInTheDocument()
+    })
+    expect(mockGetBundle).toHaveBeenCalledWith(42)
+  })
+
+  it('no separate Search button is required for autocomplete', () => {
+    expect(screen.queryByRole('button', { name: /Search Customer/i })).not.toBeInTheDocument()
+  })
+
+  it('dropdown floats above card content without clipping', async () => {
+    mockSearchCustomers.mockResolvedValue([CUSTOMER])
+    await typeSearch('Priya')
+    await settle()
+    const listbox = await screen.findByRole('listbox')
+    // Positioning context: wrapper is relative so the dropdown anchors to the input
+    const wrapper = listbox.parentElement as HTMLElement
+    expect(wrapper.style.position).toBe('relative')
+    // Dropdown layer uses the design-system dropdown layer (below modals)
+    expect(listbox.style.position).toBe('absolute')
+    expect(listbox.style.zIndex).toBe('var(--z-dropdown)')
+    expect(listbox.style.left).toBe('0px')
+    expect(listbox.style.right).toBe('0px')
+    expect(listbox.style.maxHeight).not.toBe('')
+    // Customer Selection card must not clip the floating dropdown
+    const card = wrapper.closest('.card-base') as HTMLElement
+    expect(card).not.toBeNull()
+    expect(card.style.overflow).toBe('visible')
+  })
+
+  it('dropdown renders multiple results with full content', async () => {
+    const other = { ...CUSTOMER, id: 43, consumerNumber: 'CONS-43', customerName: 'Amit', email: 'amit@example.com' }
+    mockSearchCustomers.mockResolvedValue([CUSTOMER, other])
+    await typeSearch('am')
+    await settle()
+    const options = await screen.findAllByRole('option')
+    expect(options).toHaveLength(2)
+    const text = options.map((o) => o.textContent || '').join('|')
+    expect(text).toMatch(/Priya Sharma/)
+    expect(text).toMatch(/Amit/)
+    expect(text).toMatch(/CONS-42/)
+    expect(text).toMatch(/CONS-43/)
+  })
+
+  it('native browser autocomplete is disabled for the search field', () => {
+    const input = searchBox()
+    expect(input).toHaveAttribute('autocomplete', 'off')
+    expect(input.getAttribute('name')).not.toMatch(/email|user/i)
+  })
+
+  it('selector auto-fills real customer data, never fabricated', async () => {
+    await selectCustomer()
     expect(screen.getAllByText(/CONS-42/).length).toBeGreaterThanOrEqual(1)
     expect(screen.getByDisplayValue('3200')).toBeInTheDocument()
     expect(screen.getByDisplayValue('400')).toBeInTheDocument()
@@ -109,29 +283,23 @@ describe('AdminProposals page', () => {
     expect(mockGenerate).not.toHaveBeenCalled()
   })
 
-  it('switching customers clears previous proposal state', async () => {
+  it('switching customers clears all previous proposal state', async () => {
     await selectCustomer()
     mockGenerate.mockResolvedValue({ success: true, data: GENERATED })
     fireEvent.click(screen.getByRole('button', { name: /Generate Proposal/i }))
     await waitFor(() => {
-      expect(screen.getByText(/Reference:/i)).toBeInTheDocument()
+      expect(screen.getByText(/PROP-ABC123/i)).toBeInTheDocument()
     })
     const other = { ...CUSTOMER, id: 43, consumerNumber: 'CONS-43', customerName: 'Amit' }
     const otherBundle = { ...BUNDLE, customer_id: 43, consumer_number: 'CONS-43', latest_bill: null }
     mockSearchCustomers.mockResolvedValue([other])
     mockGetBundle.mockResolvedValue(otherBundle)
-    fireEvent.change(screen.getByPlaceholderText(/Search Customer ID/i), { target: { value: 'CONS-43' } })
-    fireEvent.click(screen.getByRole('button', { name: /Search Customer/i }))
-    await waitFor(() => {
-      expect(screen.getByText(/Customer ID: CONS-43/i)).toBeInTheDocument()
-    })
-    fireEvent.click(screen.getByRole('button', { name: 'Select' }))
-    await waitFor(() => {
-      expect(screen.getByText(/Selected Customer/i)).toBeInTheDocument()
-    })
+    await typeSearch('Amit')
+    await settle()
+    await selectFirstResult()
     expect(screen.queryByText(/PROP-ABC123/i)).not.toBeInTheDocument()
-    // Missing bill data surfaces as empty, not fabricated
     expect(screen.queryByDisplayValue('3200')).not.toBeInTheDocument()
+    expect(screen.queryByDisplayValue('Priya Sharma')).not.toBeInTheDocument()
   })
 
   it('preview shows the selected customer before sending', async () => {
@@ -160,8 +328,6 @@ describe('AdminProposals page', () => {
     await waitFor(() => {
       expect(screen.getByRole('dialog', { name: /Confirm proposal send/i })).toBeInTheDocument()
     })
-    expect(screen.getAllByText(/Priya Sharma/).length).toBeGreaterThanOrEqual(1)
-    expect(screen.getAllByText(/CONS-42/).length).toBeGreaterThanOrEqual(1)
     mockSend.mockResolvedValue({ success: true, proposal_reference: 'PROP-ABC123', recipient: 'priya@example.com' })
     const sends = screen.getAllByRole('button', { name: /^Send Proposal/i })
     fireEvent.click(sends[sends.length - 1])
@@ -173,7 +339,8 @@ describe('AdminProposals page', () => {
     expect(mockSend.mock.calls[0][1]).toEqual(GENERATED)
   })
 
-  it('send failure shows an honest error and keeps the proposal', async () => {    await selectCustomer()
+  it('send failure shows an honest error and keeps the proposal', async () => {
+    await selectCustomer()
     mockGenerate.mockResolvedValue({ success: true, data: GENERATED })
     fireEvent.click(screen.getByRole('button', { name: /Generate Proposal/i }))
     await waitFor(() => {
@@ -190,7 +357,7 @@ describe('AdminProposals page', () => {
       expect(screen.getByText(/Unable to send the proposal right now/i)).toBeInTheDocument()
     })
     expect(screen.queryByText(/Proposal sent to/i)).not.toBeInTheDocument()
-    expect(screen.getAllByText(/Reference:/i).length).toBeGreaterThanOrEqual(1)
+    expect(screen.getAllByText(/PROP-ABC123/i).length).toBeGreaterThanOrEqual(1)
   })
 
   it('generation failure shows an honest error with no preview', async () => {

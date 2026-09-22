@@ -1,4 +1,4 @@
-import { useState, useRef, useEffect, type FormEvent, type KeyboardEvent } from 'react'
+import { useState, useRef, useEffect, useCallback, type FormEvent, type KeyboardEvent } from 'react'
 import { useNavigate, Link, useSearchParams, useLocation } from 'react-router-dom'
 import { useAuth } from '../contexts/AuthContext'
 import { AUTH_PROVIDERS, PUBLIC_AUTH_ROLES, type PublicAuthRole } from '../config/auth'
@@ -20,6 +20,8 @@ import AuthLogo from '../components/auth/AuthLogo'
 import TrustBadges from '../components/auth/TrustBadges'
 import ForgotPasswordModal from '../components/auth/ForgotPasswordModal'
 import ToastHost from '../components/auth/ToastHost'
+import PortalComingSoon from '../components/ui/PortalComingSoon'
+import { VENDOR_PORTAL_RELEASED, TECHNICIAN_PORTAL_RELEASED } from '../config/release'
 
 const EMAIL_REGEX = /^[^\s@]+@[^\s@]+\.[^\s@]+$/
 
@@ -34,6 +36,31 @@ export default function Login() {
     roleParam === 'technician' ? 'technician' :
     roleParam === 'vendor' ? 'vendor' : 'customer'
   )
+
+  // Keep the mode in sync when the ?role= query changes without a remount
+  // (e.g. "Continue as Customer" CTA, browser back/forward).
+  useEffect(() => {
+    const next: PublicAuthRole =
+      roleParam === 'technician' ? 'technician' :
+      roleParam === 'vendor' ? 'vendor' : 'customer'
+    setAuthMode((prev) => (prev === next ? prev : next))
+  }, [roleParam])
+
+  // Release gate: unreleased portals never present an authentication form.
+  // Customer (and therefore Admin, which shares this form) is unaffected.
+  const gatedPortal: 'vendor' | 'technician' | null =
+    authMode === 'vendor' && !VENDOR_PORTAL_RELEASED ? 'vendor' :
+    authMode === 'technician' && !TECHNICIAN_PORTAL_RELEASED ? 'technician' :
+    null
+
+  // "Continue as Customer" must work even when the URL already reads
+  // ?role=customer (same-URL navigation is a no-op), so reset the mode
+  // directly as well as updating the URL.
+  const backToCustomerLogin = useCallback(() => {
+    setAuthMode('customer')
+    setError('')
+    navigate('/login?role=customer', { replace: true })
+  }, [navigate])
   const [email, setEmail] = useState('')
   const [password, setPassword] = useState('')
   const [error, setError] = useState<string>(() => (location.state as any)?.error || '')
@@ -264,6 +291,44 @@ export default function Login() {
             </div>
           )}
 
+          {gatedPortal ? (
+            <div style={{ marginTop: '4px' }}>
+              {gatedPortal === 'vendor' ? (
+                <PortalComingSoon
+                  title="Vendor Portal"
+                  description="Vendor project management, inventory, payments, and service operations are being prepared for a future release."
+                  capabilities={[
+                    { label: 'Project pipeline', hint: 'Installations assigned to your team' },
+                    { label: 'Inventory', hint: 'Panels, inverters, and mounting stock' },
+                    { label: 'Payments', hint: 'Payouts and invoice tracking' },
+                    { label: 'Service tickets', hint: 'Support and AMC work orders' },
+                  ]}
+                  closingNote="Vendor authentication will be available here when the portal releases."
+                  ctaLabel="Continue as Customer"
+                  ctaTo="/login?role=customer"
+                  ariaLabel="vendor portal coming soon"
+                  onCtaClick={backToCustomerLogin}
+                />
+              ) : (
+                <PortalComingSoon
+                  title="Technician Portal"
+                  description="Work orders, job marketplace, earnings, and training tools are being prepared for a future release."
+                  capabilities={[
+                    { label: 'Work orders', hint: 'Assigned installation and service jobs' },
+                    { label: 'Job marketplace', hint: 'Open jobs in your region' },
+                    { label: 'Earnings', hint: 'Payouts and job history' },
+                    { label: 'Training', hint: 'Certifications and skill building' },
+                  ]}
+                  closingNote="Technician authentication will be available here when the portal releases."
+                  ctaLabel="Continue as Customer"
+                  ctaTo="/login?role=customer"
+                  ariaLabel="technician portal coming soon"
+                  onCtaClick={backToCustomerLogin}
+                />
+              )}
+            </div>
+          ) : (
+          <>
           <form className="auth-form" id="loginForm" onSubmit={handleSubmit} noValidate>
             <div className="form-group">
               <label className="form-label" htmlFor="loginEmail">
@@ -398,6 +463,8 @@ export default function Login() {
               <>New to GET Solar Energy? <Link to="/signup?role=customer" className="auth-link">Create your customer account.</Link></>
             )}
           </div>
+          </>
+          )}
         </div>
       </main>
 
