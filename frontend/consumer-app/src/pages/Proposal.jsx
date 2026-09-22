@@ -39,8 +39,8 @@ export default function Proposal() {
   const [activeTab, setActiveTab] = useState('overview');
   const [status, setStatus] = useState('Draft');
   const [actionSuccess, setActionSuccess] = useState('');
+  const [actionError, setActionError] = useState('');
   const [version, setVersion] = useState('v1.0 (Latest)');
-  const [savedTime, setSavedTime] = useState('Just now');
   const [isExportingPdf, setIsExportingPdf] = useState(false);
   const [isPreviewOpen, setIsPreviewOpen] = useState(false);
 
@@ -116,8 +116,6 @@ export default function Proposal() {
 
   const handleChange = useCallback((field) => (e) => {
     setForm(prev => ({ ...prev, [field]: e.target.value }));
-    setSavedTime('Saving...');
-    setTimeout(() => setSavedTime('Saved to cloud'), 800);
   }, []);
 
   const insights = useMemo(() => {
@@ -162,18 +160,24 @@ export default function Proposal() {
 
   const runGeneration = async () => {
     setGenerating(true);
+    setActionError('');
     setCurrentStep(0);
     for (let i = 0; i < STEPS.length; i++) {
       await new Promise(r => setTimeout(r, STEPS[i].duration));
       setCurrentStep(i + 1);
     }
-    await generateProposal(form);
+    const result = await generateProposal(form);
     setGenerating(false);
     setCurrentStep(-1);
-    setShowOutput(true);
-    setStatus('Generated');
-    setVersion(`v${(parseFloat(version.slice(1)) + 0.1).toFixed(1)}`);
-    showFeedback('Proposal re-generated successfully with AI irradiance optimization!');
+    if (result && result.success) {
+      setShowOutput(true);
+      setStatus('Generated');
+      setVersion(`v${(parseFloat(version.slice(1)) + 0.1).toFixed(1)}`);
+      showFeedback('Proposal generated successfully from your inputs and live analysis.');
+    } else {
+      setShowOutput(false);
+      setActionError(result?.error || error || 'Proposal generation failed. Please try again.');
+    }
   };
 
   const showFeedback = (msg) => {
@@ -184,7 +188,7 @@ export default function Proposal() {
   const handleApprove = async () => {
     await approveProposal();
     setStatus('Approved');
-    showFeedback('Proposal officially approved! Sent to DISCOM net-metering dispatch queue.');
+    showFeedback('Proposal marked as approved (local draft).');
   };
 
   const handleReject = () => {
@@ -214,10 +218,6 @@ export default function Proposal() {
     setIsPreviewOpen(false);
   };
 
-  const handleEmailProposal = () => {
-    showFeedback(`Proposal email dispatch queued for ${form.email || 'customer'}!`);
-  };
-
   const handleDownloadJson = () => {
     const dataStr = "data:text/json;charset=utf-8," + encodeURIComponent(JSON.stringify({ form, insights, date: new Date().toISOString() }, null, 2));
     const downloadAnchor = document.createElement('a');
@@ -238,15 +238,17 @@ export default function Proposal() {
             <span className="ew-live-dot" style={{ marginRight: 6, display: 'inline-block' }} /> AI OPTIMIZATION
           </span>
           <span style={{ fontSize: '12px', color: 'var(--text-secondary)' }}>
-            Recommended {insights.kw} kWp system for ₹{form.monthlyBill ? parseFloat(form.monthlyBill).toLocaleString('en-IN') : '0'} monthly bill &middot; {insights.panels} panels &middot; {Math.round(insights.annualGen).toLocaleString()} kWh/yr
+            {insights.kw > 0
+              ? <>Recommended {insights.kw} kWp system for ₹{form.monthlyBill ? parseFloat(form.monthlyBill).toLocaleString('en-IN') : '—'} monthly bill &middot; {insights.panels} panels &middot; {Math.round(insights.annualGen).toLocaleString()} kWh/yr</>
+              : 'No proposal inputs yet — enter your details below to size your system'}
           </span>
         </div>
         <div style={{ display: 'flex', alignItems: 'center', gap: '16px', flexShrink: 0 }}>
           {[
-            { label: 'Subsidy', value: `-₹${insights.subsidy.toLocaleString('en-IN')}`, color: 'var(--color-green)' },
-            { label: 'Net Outlay', value: `₹${insights.netCost.toLocaleString('en-IN')}`, color: 'var(--color-orange)' },
-            { label: 'Payback', value: `${insights.payback} yr`, color: 'var(--color-blue)' },
-            { label: 'Trees Offset', value: `${insights.trees}/yr`, color: 'var(--color-green)' },
+            { label: 'Subsidy', value: insights.kw > 0 ? `-₹${insights.subsidy.toLocaleString('en-IN')}` : '—', color: 'var(--color-green)' },
+            { label: 'Net Outlay', value: insights.kw > 0 ? `₹${insights.netCost.toLocaleString('en-IN')}` : '—', color: 'var(--color-orange)' },
+            { label: 'Payback', value: insights.kw > 0 ? `${insights.payback} yr` : '—', color: 'var(--color-blue)' },
+            { label: 'Trees Offset', value: insights.kw > 0 ? `${insights.trees}/yr` : '—', color: 'var(--color-green)' },
           ].map(m => (
             <div key={m.label} style={{ display: 'flex', flexDirection: 'column', alignItems: 'flex-end', borderLeft: '1px solid var(--border-color)', paddingLeft: '14px' }}>
               <strong style={{ fontSize: '13px', color: m.color, lineHeight: 1.2 }}>{m.value}</strong>
@@ -262,6 +264,12 @@ export default function Proposal() {
       {actionSuccess && (
         <div style={{ padding: '10px 14px', borderRadius: '6px', background: 'rgba(54, 211, 153, 0.12)', border: '1px solid rgba(54, 211, 153, 0.3)', color: 'var(--color-green)', fontSize: '12px', fontWeight: 700, marginBottom: 'var(--space-4)', display: 'flex', alignItems: 'center', gap: '8px' }}>
           <span>✓</span> {actionSuccess}
+        </div>
+      )}
+
+      {(actionError || error) && !generating && (
+        <div role="alert" style={{ padding: '10px 14px', borderRadius: '6px', background: 'rgba(239, 68, 68, 0.08)', border: '1px solid rgba(239, 68, 68, 0.3)', color: 'var(--color-red)', fontSize: '12px', fontWeight: 700, marginBottom: 'var(--space-4)', display: 'flex', alignItems: 'center', gap: '8px' }}>
+          <span>⚠</span> {actionError || error}
         </div>
       )}
 
@@ -610,7 +618,7 @@ export default function Proposal() {
               <div className="card-glass" style={{ padding: '14px 20px', display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: '12px' }}>
                 <div style={{ display: 'flex', gap: '8px' }}>
                   <button className="btn btn-primary btn-sm" onClick={handleApprove} disabled={status === 'Approved'}>
-                    ✓ Approve &amp; Sign Proposal
+                    ✓ Approve Draft
                   </button>
                   <button className="btn btn-ghost btn-sm" onClick={handleReject} style={{ color: 'var(--color-red)' }}>
                     ✕ Request Revision
@@ -634,9 +642,6 @@ export default function Proposal() {
                     style={{ fontWeight: 700 }}
                   >
                     {isExportingPdf ? '⏳ Generating PDF...' : '📄 Export Proposal PDF'}
-                  </button>
-                  <button className="btn btn-ghost btn-sm" onClick={handleEmailProposal}>
-                    ✉ Email to Customer
                   </button>
                   <button className="btn btn-ghost btn-sm" onClick={handleDownloadJson}>
                     📥 Download JSON

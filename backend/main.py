@@ -43,7 +43,15 @@ logger = logging.getLogger(__name__)
 load_dotenv()
 
 from ai.provider_factory import get_ai_provider
-from ai.provider_base import AIRequest, AIImageInput
+from ai.provider_base import (
+    AIRequest,
+    AIImageInput,
+    AIProviderError,
+    AIProviderAuthError,
+    AIProviderRateLimitError,
+    AIProviderTimeoutError,
+)
+from ai.assistant_service import get_assistant_service
 
 Base.metadata.create_all(bind=engine)
 
@@ -246,8 +254,9 @@ async def startup_event():
 ADMIN_EMAIL = os.getenv("ADMIN_EMAIL", "admin@getsolar.in")
 ADMIN_PASSWORD = os.getenv("ADMIN_PASSWORD", "Admin@5678")
 
-# In-memory monitoring state for Gemini AI
-last_gemini_success_time = time.time()
+# In-memory monitoring state for AI Provider
+last_ai_provider_success_time = time.time()
+last_gemini_success_time = last_ai_provider_success_time  # Backward compatibility
 
 # Seed default administrator account if it doesn't exist
 from security import hash_password
@@ -551,6 +560,12 @@ def get_admin_overview(user_email: str = Depends(verify_token)):
         
         # System health
         current_time = time.time()
+        from ai.provider_selector import ProviderSelector
+        prov_status = ProviderSelector.get_provider_status()
+        active_ai_provider = prov_status.get("selected_provider") or "openai"
+        openai_status = prov_status.get("providers", {}).get("openai", {}).get("status", "NOT_CONFIGURED")
+        ai_provider_health = "Online" if openai_status in ("SELECTED", "CONFIGURED") or os.getenv("OPENAI_API_KEY") else "Warning"
+
         elapsed_gemini = current_time - last_gemini_success_time
         if not os.getenv("GEMINI_API_KEY"):
             gemini_status = "Offline"
@@ -695,6 +710,8 @@ def get_admin_overview(user_email: str = Depends(verify_token)):
             
             # Health
             "health": {
+                "ai_provider": ai_provider_health,
+                "active_provider": active_ai_provider,
                 "gemini": gemini_status,
                 "gemini_last_success_time": last_gemini_success_time,
                 "referral": referral_status,
@@ -950,136 +967,116 @@ class SolarAssistantRequest(BaseModel):
 
 @app.post("/api/solar-assistant")
 async def solar_assistant(request: SolarAssistantRequest, req: Request, user_email: str = Depends(verify_token)):
-    client_ip = req.client.host
+    client_ip = req.client.host if req and req.client else "unknown"
     if not auth_rate_limiter.is_allowed(user_email, client_ip):
         return {"success": False, "error": "Rate limit exceeded. Please try again later."}
+
+    if not request.message or not request.message.strip():
+        raise HTTPException(status_code=400, detail="Message cannot be empty.")
+
     try:
-        system_prompt = """You are the GET Solar Energy AI Assistant — a professional and neutral solar intelligence advisor for Indian homeowners.
+        # Load user context for the assistant
+        from auth import load_users
+        users = load_users()
+        user_record = users.get(user_email, {}) if isinstance(users, dict) else {}
+        user_name = user_record.get("name", "") if isinstance(user_record, dict) else ""
+        user_role = user_record.get("role", "customer") if isinstance(user_record, dict) else "customer"
 
-Your style:
-- Speak in a professional, neutral, and matter-of-fact tone.
-- Do NOT use emojis, enthusiastic/sales phrases, or promotional slogans.
-- Avoid warm or marketing-style greetings like "Namaste!", "Hi!", or "I'm your AI Solar Expert!".
-- Keep responses concise (typically 2-4 sentences for simple queries, structured list for complex ones).
-- Format using simple bullet points or lists for multi-step instructions.
-- Speak in plain English or standard language based on user's query.
-
-Your knowledge areas:
-- Residential rooftop solar systems (1kW – 10kW)
-- Indian electricity bills (DISCOM tariffs, slab rates, fixed charges)
-- Solar panel sizing: monthly_units / 135 = recommended kW
-- PM Surya Ghar Muft Bijli Yojana — ₹78,000 subsidy for ≤3kW systems
-- Net metering policies across Indian states
-- Solar ROI calculations, payback period (typically 4–6 years)
-- Panel types (mono PERC, bifacial), inverters, mounting structures
-- Maintenance: panel cleaning, monitoring, warranty terms
-- Financing: solar loans, EMI options through SBI, HDFC, Tata Capital
-
-Rules:
-- Do NOT make legal or financial guarantees.
-- If the user asks about topics unrelated to solar energy or electrical bills, politely decline and redirect them back to solar.
-- If the user asks about their specific solar layout or analysis, use the provided user context below. If context is missing/not completed yet, explain that the specific analysis has not been run yet.
-"""
-
-        # Build context from request data
-        context_lines = []
+        # Build frontend context dictionary from request data
+        frontend_context = {}
         if request.context:
             ctx = request.context
-            
-            # Bill Analysis
-            if ctx.bill_analysis and isinstance(ctx.bill_analysis, dict) and ctx.bill_analysis.get("monthly_units"):
-                b = ctx.bill_analysis
-                context_lines.append(
-                    f"Bill Analysis: Customer Name={b.get('customer_name')}, Utility DISCOM={b.get('discom')}, Billing Period={b.get('billing_period')}, "
-                    f"Monthly Units={b.get('monthly_units')} kWh, Bill Amount=₹{b.get('bill_amount')}, Per Unit Rate=₹{b.get('per_unit_rate')}, "
-                    f"Recommended Solar Size={b.get('recommended_kw')} kW."
-                )
-            else:
-                context_lines.append("Bill Analysis: Not Completed/Available")
-                
-            # Roof Analysis
-            if ctx.roof_analysis and isinstance(ctx.roof_analysis, dict) and ctx.roof_analysis.get("usable_area_sqft"):
-                r = ctx.roof_analysis
-                context_lines.append(
-                    f"Roof Analysis: Roof Type={r.get('roof_type')}, Total Area={r.get('total_area_sqft')} sqft, Usable Area={r.get('usable_area_sqft')} sqft, "
-                    f"Shading Issues={r.get('shading_issues')}, Recommended Solar Size={r.get('recommended_kw')} kW, Number of Panels={r.get('number_of_panels')}, "
-                    f"Monthly Generation={r.get('monthly_generation_units')} kWh."
-                )
-            else:
-                context_lines.append("Roof Analysis: Not Completed/Available")
-                
-            # ROI Analysis
-            if ctx.roi_analysis and isinstance(ctx.roi_analysis, dict):
-                roi = ctx.roi_analysis
-                roi_data = roi.get('data') if isinstance(roi.get('data'), dict) else roi
-                if roi_data and (roi_data.get('net_cost') or roi_data.get('annual_savings')):
-                    context_lines.append(
-                        f"ROI Analysis: Recommended Size={roi_data.get('recommended_kw')} kW, System Cost=₹{roi_data.get('system_cost') or roi_data.get('system_cost_rs')}, "
-                        f"Subsidy=₹{roi_data.get('government_subsidy')}, Net Cost=₹{roi_data.get('net_cost')}, Monthly Savings=₹{roi_data.get('monthly_savings') or roi_data.get('monthly_savings_rs')}, "
-                        f"Annual Savings=₹{roi_data.get('annual_savings')}, Lifetime Savings=₹{roi_data.get('lifetime_savings') or roi_data.get('savings_25_years_rs')}, "
-                        f"Payback Period={roi_data.get('payback_period') or roi_data.get('payback_years')} years, ROI={roi_data.get('roi_percentage')}%."
-                    )
-                else:
-                    context_lines.append("ROI Analysis: Not Completed/Available")
-            else:
-                context_lines.append("ROI Analysis: Not Completed/Available")
-        else:
-            context_lines.append("User Context: No analysis context has been completed yet (Bill, Roof, and ROI analyses are unavailable).")
+            frontend_context = {
+                "bill": ctx.bill_analysis,
+                "roof": ctx.roof_analysis,
+                "roi": ctx.roi_analysis,
+                "bill_analysis": ctx.bill_analysis,
+                "roof_analysis": ctx.roof_analysis,
+                "roi_analysis": ctx.roi_analysis,
+            }
 
-        context_string = "\n".join(context_lines)
-        full_system_prompt = f"{system_prompt}\n\nUSER'S PERSONALIZED ANALYSIS CONTEXT:\n{context_string}"
+        # Delegate to the Enterprise AI Assistant Service
+        service = get_assistant_service()
+        result = service.chat(
+            message=request.message.strip(),
+            user_email=user_email,
+            user_role=user_role,
+            user_name=user_name,
+            session_id=None,
+            frontend_context=frontend_context,
+        )
 
-        # Build conversation context from history
-        history_text = ""
-        for msg in request.history[-10:]:  # Last 10 messages for context window
-            prefix = "User" if msg.role == "user" else "Assistant"
-            history_text += f"{prefix}: {msg.content}\n"
-        full_prompt = f"{full_system_prompt}\n\n{history_text}User: {request.message}\nAssistant:"
+        if result.get("provider_error"):
+            prov_err = result["provider_error"]
+            primary = getattr(prov_err, "primary_error", None) or prov_err
+            if isinstance(primary, Exception):
+                raise primary
+            elif isinstance(prov_err, Exception):
+                raise prov_err
 
-        max_attempts = 3
-        last_error = None
-        for attempt in range(max_attempts):
-            try:
-                provider = get_ai_provider()
-                ai_request = AIRequest(
-                    prompt=full_prompt,
-                    temperature=0.2,
-                    metadata={"route": "solar-assistant"},
-                )
-                ai_response = provider.generate_response(ai_request)
-                return {
-                    "success": True,
-                    "response": ai_response.content
-                }
-            except Exception as e:
-                last_error = e
-                err_str = str(e).lower()
-                if any(t in err_str for t in ["503", "429", "unavailable", "exhausted", "demand", "rate_limit"]):
-                    time.sleep(2 ** (attempt + 1))
-                else:
-                    raise e
-        raise last_error
+        response_text = result.get("response", "")
+        return {
+            "success": True,
+            "response": response_text,
+            "reply": response_text,
+            "confidence": result.get("confidence", 0.9),
+            "tool_results": result.get("tool_results", []),
+            "recommendations": result.get("recommendations", []),
+            "next_actions": result.get("next_actions", []),
+            "conversation_id": result.get("conversation_id"),
+        }
 
     except HTTPException:
         raise
-    except Exception as e:
-        err_str = str(e).lower()
-        if any(t in err_str for t in ["resource_exhausted", "quota", "rate limit", "429", "503"]):
-            logger.warning("AI quota exhausted for solar assistant: %s", str(e))
+    except AIProviderAuthError as e:
+        logger.error("Solar assistant provider authentication/configuration error: %s", str(e))
+        raise HTTPException(
+            status_code=503,
+            detail="Solar AI Assistant is not configured or provider credentials are invalid. Please configure valid OPENAI_API_KEY in .env.",
+        )
+    except AIProviderRateLimitError as e:
+        logger.warning("Solar assistant provider rate limit/quota: %s", str(e))
+        raise HTTPException(
+            status_code=429,
+            detail="Solar AI Assistant is currently experiencing high demand. Please try again shortly.",
+        )
+    except AIProviderTimeoutError as e:
+        logger.warning("Solar assistant provider timeout: %s", str(e))
+        raise HTTPException(
+            status_code=504,
+            detail="Solar AI Assistant request timed out. Please try again.",
+        )
+    except AIProviderError as e:
+        err_msg = str(e).lower()
+        if any(term in err_msg for term in ["auth", "key", "credential", "401", "not configured", "incorrect api key"]):
+            logger.error("Solar assistant provider configuration error: %s", str(e))
+            raise HTTPException(
+                status_code=503,
+                detail="Solar AI Assistant provider is not configured with valid credentials. Please configure valid OPENAI_API_KEY in .env.",
+            )
+        elif any(term in err_msg for term in ["quota", "rate limit", "429", "resource_exhausted"]):
+            logger.warning("Solar assistant provider quota exceeded: %s", str(e))
             raise HTTPException(
                 status_code=429,
-                detail="Solar AI Assistant is currently experiencing high demand. Please try again shortly."
+                detail="Solar AI Assistant is currently experiencing high demand. Please try again shortly.",
             )
-        elif any(t in err_str for t in ["timeout", "deadline"]):
-            logger.warning("AI timeout for solar assistant: %s", str(e))
+        elif any(term in err_msg for term in ["timeout", "deadline"]):
+            logger.warning("Solar assistant provider timeout: %s", str(e))
             raise HTTPException(
                 status_code=504,
-                detail="Solar AI Assistant request timed out. Please try again."
+                detail="Solar AI Assistant request timed out. Please try again.",
             )
-        logger.error("Solar assistant generation error: %s", str(e))
+        else:
+            logger.error("Solar assistant provider unavailable: %s", str(e))
+            raise HTTPException(
+                status_code=503,
+                detail="Solar AI Assistant provider is currently unavailable. Please try again later.",
+            )
+    except Exception as e:
+        logger.exception("Solar assistant unexpected error: %s", str(e))
         raise HTTPException(
             status_code=500,
-            detail="Solar AI service encountered an unexpected error. Please try again later."
+            detail="Solar AI service encountered an unexpected error. Please try again later.",
         )
 
 
@@ -1308,6 +1305,7 @@ Carefully analyze this electricity bill and extract the following real data:
 5. Billing period (month and year)
 6. Consumer number if visible
 7. Discom/utility company name if visible
+8. Net billed units in kWh exactly as printed on the bill (look for "Net Billed Unit", "Net Billed Units", "Net Billed KWH"). This is a direct bill field, not a calculated value. If the bill does not print net billed units, return null. Never derive it from other fields.
 
 Then calculate solar recommendations based on extracted data:
 - Recommended solar system size: monthly_units / 135 (rounded to nearest 0.5)
@@ -1326,6 +1324,7 @@ Return ONLY valid JSON with real extracted values, no extra text:
     "bill_amount": <actual amount from bill>,
     "per_unit_rate": <actual rate from bill>,
     "billing_period": "<actual month year from bill>",
+    "net_billed_units": <net billed units as printed on the bill, or null if not printed>,
     "recommended_kw": <calculated>,
     "monthly_generation_units": <calculated>,
     "monthly_savings_rs": <calculated>,

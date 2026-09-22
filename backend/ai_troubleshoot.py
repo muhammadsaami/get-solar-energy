@@ -8,8 +8,8 @@ from fastapi import APIRouter, HTTPException, Depends
 from pydantic import BaseModel
 from typing import List, Optional
 from sqlalchemy.orm import Session
-from google import genai
-from google.genai import types
+from ai.provider_factory import get_ai_provider
+from ai.provider_base import AIRequest, AIImageInput
 from database import get_db
 from technician_models import Technician
 from ai_troubleshoot_models import AIConversationLog
@@ -19,8 +19,6 @@ import logging
 
 logger = logging.getLogger(__name__)
 router = APIRouter(prefix="/api/technician/ai", tags=["AI Troubleshooting"])
-
-client = genai.Client(api_key=os.getenv("GEMINI_API_KEY") or "offline-placeholder")
 
 SYSTEM_PROMPT = """You are the GET Solar Energy Technician AI Assistant — a practical,
 safety-first troubleshooting helper for field technicians working on residential
@@ -72,13 +70,17 @@ def _log_conversation(db: Session, technician_id: int, interaction_type: str, us
     db.commit()
 
 
-def _call_gemini_text(prompt: str) -> str:
+def _call_ai_text(prompt: str) -> str:
     try:
-        response = client.models.generate_content(model="gemini-2.5-flash-lite", contents=prompt)
-        return response.text.strip()
+        provider = get_ai_provider()
+        req = AIRequest(prompt=prompt, temperature=0.3, metadata={"route": "technician-ai-chat"})
+        response = provider.generate_response(req)
+        return response.content.strip()
     except Exception as e:
-        logger.error("Gemini call failed: %s", str(e))
+        logger.error("AI troubleshooting call failed: %s", str(e))
         raise HTTPException(status_code=503, detail="AI assistant is currently unavailable. Please try again shortly.")
+
+_call_gemini_text = _call_ai_text
 
 
 @router.post("/chat")
@@ -86,7 +88,7 @@ def ai_chat(data: ChatRequest, db: Session = Depends(get_db), current_technician
     history_text = "\n".join(f"{m.role.capitalize()}: {m.content}" for m in data.history[-10:])
     prompt = f"{SYSTEM_PROMPT}\n\n{history_text}\nTechnician: {data.message}\nAssistant:"
 
-    answer = _call_gemini_text(prompt)
+    answer = _call_ai_text(prompt)
     _log_conversation(db, current_technician.id, "chat", data.message, answer)
 
     return {"success": True, "response": answer}
@@ -109,21 +111,17 @@ def ai_image_diagnose(
     prompt = f"{SYSTEM_PROMPT}\n\nA technician has shared a photo from a solar site. Question: {question}"
 
     try:
-        response = client.models.generate_content(
-            model="gemini-2.5-flash-lite",
-            contents=[
-                types.Content(
-                    role="user",
-                    parts=[
-                        types.Part.from_bytes(data=image_bytes, mime_type="image/jpeg"),
-                        types.Part.from_text(text=prompt)
-                    ]
-                )
-            ]
+        provider = get_ai_provider()
+        req = AIRequest(
+            prompt=prompt,
+            image_inputs=[AIImageInput(data=image_bytes, mime_type="image/jpeg")],
+            temperature=0.3,
+            metadata={"route": "technician-ai-image"},
         )
-        answer = response.text.strip()
+        response = provider.generate_response(req)
+        answer = response.content.strip()
     except Exception as e:
-        logger.error("Gemini image call failed: %s", str(e))
+        logger.error("AI image call failed: %s", str(e))
         raise HTTPException(status_code=503, detail="AI assistant is currently unavailable. Please try again shortly.")
 
     _log_conversation(db, current_technician.id, "image", question, answer)

@@ -17,7 +17,14 @@ import uuid
 import logging
 from typing import Any, Dict, List, Optional, Tuple
 
-from .provider_base import AIRequest, AIProviderError, BaseAIProvider
+from .provider_base import (
+    AIRequest,
+    AIProviderError,
+    AIProviderAuthError,
+    AIProviderRateLimitError,
+    AIProviderTimeoutError,
+    BaseAIProvider,
+)
 from .provider_factory import get_ai_provider
 from .client import ASSISTANT_MODEL
 from .conversation_memory import get_memory_store, _empty_session, _new_session_id
@@ -151,6 +158,8 @@ class AssistantService:
             model=safe_model,
             fallback_used=fallback_used,
         )
+        if gen_meta.get("error"):
+            response["provider_error"] = gen_meta.get("provider_error")
 
         # 10. Record assistant turn + update memory
         self._memory.add_turn(conversation_id, "assistant", llm_response)
@@ -270,10 +279,16 @@ class AssistantService:
             return response.content.strip(), meta
         except AIProviderError as e:
             logger.warning("AI Provider generation failed: %s", e)
-            return "I'm currently experiencing high demand. Please try again in a moment.", {"error": True}
+            return "I'm currently experiencing high demand. Please try again in a moment.", {
+                "error": True,
+                "provider_error": e,
+            }
         except Exception as e:
             logger.error("Unexpected generation error: %s", e)
-            return "I'm currently experiencing high demand. Please try again in a moment.", {"error": True}
+            return "I'm currently experiencing high demand. Please try again in a moment.", {
+                "error": True,
+                "provider_error": e,
+            }
 
     def _format_response(
         self,

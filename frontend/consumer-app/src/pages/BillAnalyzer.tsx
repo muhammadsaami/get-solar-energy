@@ -27,6 +27,7 @@ import {
   MONTH_MULTIPLIERS,
 } from '../hooks/billAnalyzer.constants'
 import DashboardSprites from '../components/dashboard/DashboardSprites'
+import { useAuth } from '../contexts/AuthContext'
 import { DEMO_BILL_ANALYZER_DATA } from '../data/billAnalyzerDemoData'
 import DemoBanner from '../components/billAnalyzer/DemoBanner'
 import DemoMetricExplainer, { DemoExplainerProvider } from '../components/billAnalyzer/DemoMetricExplainer'
@@ -1837,7 +1838,22 @@ export default function BillAnalyzer() {
     retrySolarUpload,
     clearSolarReport,
     submitManualBill,
+    fetchQuotas,
   } = useBillAnalyzer()
+
+  const auth = useAuth() as unknown as { isAuthenticated?: boolean; loading?: boolean } | null
+  const quotaRefreshedRef = useRef(false)
+
+  // Re-fetch quota once the session is restored. The hook already fires
+  // once on mount, which can precede cookie-based session restoration and
+  // surface a 401 for an otherwise valid session. This retry uses the same
+  // authenticated client and adds no new request mechanism.
+  // Null-safe: outside AuthProvider (e.g. isolated tests) the retry is skipped.
+  useEffect(() => {
+    if (!auth || auth.loading || !auth.isAuthenticated || quotaRefreshedRef.current) return
+    quotaRefreshedRef.current = true
+    fetchQuotas()
+  }, [auth, fetchQuotas])
 
   const [inputMode, setInputMode] = useState<'upload' | 'manual'>('upload')
   const [isDemoMode, setIsDemoMode] = useState(false)

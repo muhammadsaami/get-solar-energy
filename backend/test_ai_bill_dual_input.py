@@ -519,5 +519,35 @@ class TestBillAnalyzerRoutes(unittest.TestCase):
             self.assertIn("5 pages or fewer", err)
 
 
+    def test_31_upload_propagates_net_billed_units(self):
+        """AI payloads carrying net_billed_units must reach the API response unchanged."""
+        import uuid
+        from security import verify_token
+        payload = dict(SAMPLE_VALID_BILL_RESULT)
+        payload["net_billed_units"] = 613.0
+        set_ai_provider(MockAIProvider(default_response=json.dumps(payload)))
+        app.dependency_overrides[verify_token] = lambda: f"test_netbilled_{uuid.uuid4().hex[:8]}@getsolar.internal"
+        try:
+            png_bytes = b"\x89PNG\r\n\x1a\n\x00\x00\x00\rIHDR" + b"\x00" * 30
+            files = {"image": ("net_billed.png", png_bytes, "image/png")}
+            response = self.client.post("/api/analyze-bill", files=files)
+            self.assertEqual(response.status_code, 200)
+            data = response.json()
+            self.assertTrue(data.get("success"))
+            self.assertEqual(data["data"]["net_billed_units"], 613.0)
+        finally:
+            set_ai_provider(self.mock_provider)
+
+    def test_32_net_billed_units_optional_for_validation(self):
+        """net_billed_units must be optional: present, null, and absent all validate."""
+        with_net = dict(SAMPLE_VALID_BILL_RESULT)
+        with_net["net_billed_units"] = 613.0
+        self.assertTrue(_is_valid_bill_analysis(with_net))
+        with_null = dict(SAMPLE_VALID_BILL_RESULT)
+        with_null["net_billed_units"] = None
+        self.assertTrue(_is_valid_bill_analysis(with_null))
+        self.assertTrue(_is_valid_bill_analysis(SAMPLE_VALID_BILL_RESULT))
+
+
 if __name__ == "__main__":
     unittest.main()

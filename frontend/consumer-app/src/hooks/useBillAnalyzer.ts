@@ -731,7 +731,7 @@ export function useBillAnalyzer(): BillAnalyzerReturn {
     setBillProgress({ percent: 0, status: 'Starting...' })
     setAnalysis(null)
     setUnifiedEnergy(null)
-    localStorage.removeItem(LS_KEY_BILL)
+    localStorage.removeItem(getBillStorageKey())
     destroyCharts()
 
     const ext = file.name.split('.').pop()?.toLowerCase() ?? ''
@@ -951,7 +951,7 @@ export function useBillAnalyzer(): BillAnalyzerReturn {
     setSolarProgress({ percent: 0, status: 'Starting upload...' })
     setSolarReport(null)
     setUnifiedEnergy(null)
-    localStorage.removeItem(LS_KEY_SOLAR)
+    localStorage.removeItem(getSolarStorageKey())
 
     const ext = file.name.split('.').pop()?.toLowerCase() ?? ''
     const isValidType = VALID_MIME_TYPES.includes(file.type) || VALID_EXTENSIONS.includes(ext)
@@ -994,7 +994,7 @@ export function useBillAnalyzer(): BillAnalyzerReturn {
       clearSolarProgressInterval()
       updateSolarProgress(100, 'Analysis Complete')
       setSolarReport(prodData)
-      writeLS(LS_KEY_SOLAR, prodData)
+      writeLS(getSolarStorageKey(), prodData)
       setSolarUploadState('EXTRACTED')
     }
 
@@ -1003,7 +1003,7 @@ export function useBillAnalyzer(): BillAnalyzerReturn {
       clearSolarProgressInterval()
       setSolarReport(null)
       setUnifiedEnergy(null)
-      localStorage.removeItem(LS_KEY_SOLAR)
+      localStorage.removeItem(getSolarStorageKey())
       setSolarProgress({ percent: 0, status: '' })
       setSolarError(err.message || 'Could not read solar report. Try another file.')
       setSolarUploadState(targetState)

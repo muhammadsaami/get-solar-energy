@@ -97,9 +97,11 @@ class TestDualProviderArchitecture(unittest.TestCase):
         self.assertIn("No eligible AI provider found", str(ctx.exception))
 
     # 2. Gemini key only
+    # 2. Gemini key only (with dual-priority configured)
     def test_02_gemini_key_only(self):
         env = {
             "AI_PROVIDER": "auto",
+            "AI_PROVIDER_PRIORITY": "openai,gemini",
             "GEMINI_API_KEY": "AIzaSy-test-gemini-key",
             "OPENAI_API_KEY": "",
         }
@@ -129,10 +131,11 @@ class TestDualProviderArchitecture(unittest.TestCase):
         self.assertIsInstance(provider, OpenAIProvider)
         self.assertEqual(provider.get_model_name(), "gpt-5.6-luna")
 
-    # 4. Both keys configured (OpenAI wins by default priority, Gemini is fallback)
+    # 4. Both keys configured (OpenAI wins priority, Gemini is fallback when dual-priority configured)
     def test_04_both_keys_configured_openai_wins_with_gemini_fallback(self):
         env = {
             "AI_PROVIDER": "auto",
+            "AI_PROVIDER_PRIORITY": "openai,gemini",
             "GEMINI_API_KEY": "AIzaSy-test-key",
             "OPENAI_API_KEY": "sk-openai-key",
             "OPENAI_BASE_URL": "https://api.openai.com/v1",
@@ -543,7 +546,7 @@ class TestDualProviderArchitecture(unittest.TestCase):
     # 33. OpenAI-first priority default
     def test_33_openai_first_priority_default(self):
         config = ProviderConfig.from_env({})
-        self.assertEqual(config.priority, ["openai", "gemini"])
+        self.assertEqual(config.priority, ["openai"])
         self.assertTrue(config.allow_fallback)
         self.assertEqual(config.openai_model, "gpt-5.6-luna")
 
@@ -574,10 +577,11 @@ class TestDualProviderArchitecture(unittest.TestCase):
         mock_openai.generate_response.assert_called_once()
         mock_gemini.generate_response.assert_called_once()
 
-    # 35. Missing OpenAI key selects Gemini in auto mode
+    # 35. Missing OpenAI key selects Gemini in auto mode when dual-priority configured
     def test_35_missing_openai_key_selects_gemini_in_auto(self):
         env = {
             "AI_PROVIDER": "auto",
+            "AI_PROVIDER_PRIORITY": "openai,gemini",
             "OPENAI_API_KEY": "",
             "GEMINI_API_KEY": "AIzaSy-valid-gemini-key",
         }

@@ -79,6 +79,7 @@ class OpenAIProvider(BaseAIProvider):
         )
         self._timeout = timeout or (float(timeout_env) if timeout_env else DEFAULT_TIMEOUT_SECONDS)
         self._client = client
+        logger.info("AI Provider initialized: OpenAIProvider (Model: %s)", self._model_name)
 
     def _get_client(self) -> Any:
         """Lazily initialize the OpenAI client."""

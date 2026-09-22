@@ -160,7 +160,7 @@ export function useSolarAdvisor() {
 
       const botMessage: ChatMessage = {
         role: 'assistant',
-        content: response.reply,
+        content: response.reply || response.response,
         time: formatTime(),
         contextUsed: contextLabel,
         groundingSources: response.grounding_sources as GroundingSource[],
@@ -173,11 +173,18 @@ export function useSolarAdvisor() {
           ? [next[0], ...next.slice(next.length - (MAX_HISTORY - 1))]
           : next
       })
-    } catch {
-      setError('Could not connect to the Solar Assistant. Please try again.')
+    } catch (err: unknown) {
+      const errAny = err as { response?: { data?: { detail?: string; error?: string; message?: string } } }
+      const detailMsg =
+        errAny?.response?.data?.detail ||
+        errAny?.response?.data?.error ||
+        errAny?.response?.data?.message
+      setError(detailMsg || 'Could not connect to the Solar Assistant. Please try again.')
       const errorMessage: ChatMessage = {
         role: 'assistant',
-        content: 'I am having trouble connecting to the advisory service right now. Please try again in a moment.',
+        content:
+          detailMsg ||
+          'I am having trouble connecting to the advisory service right now. Please try again in a moment.',
         time: formatTime(),
       }
       setMessages((prev) => [...prev, errorMessage])
