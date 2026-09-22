@@ -394,17 +394,10 @@ export const knowledgeBaseService = {
       }
     }
 
-    const docs = this.getDocuments()
-    return {
-      allDocuments: docs,
-      featuredDocuments: docs.filter((d) => d.featured),
-      bookmarkedDocuments: docs.filter((d) => d.bookmarked),
-      recentlyViewedDocuments: docs.filter((d) => d.recentlyViewed).slice(0, 5),
-      popularDocuments: sortBy(docs, 'views').slice(0, 6),
-      latestDocuments: sortBy(docs, 'updatedAt').slice(0, 6),
-      categories: [...new Set(docs.map((d) => d.category))],
-      score: deriveKnowledgeScore().score,
-    }
+    // Backend unavailable (network/5xx/malformed): never fabricate a
+    // production library. Throw so the hook surfaces its honest
+    // error state with a retry action instead of mock documents.
+    throw new Error('Failed to load the knowledge base')
   },
 
   getDocument(id) {

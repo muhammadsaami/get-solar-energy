@@ -478,8 +478,16 @@ export function useRoofAnalyzer(): RoofAnalyzerReturn {
       .then((res) => {
         clearProgressInterval()
         analysisInProgressRef.current = false
-        setRoofProgress({ percent: 100, status: 'Roof Analysis Complete' })
         const result = res.data
+        if (result?.fallback === true) {
+          // The backend must never serve fabricated estimates as real
+          // analysis. Treat any fallback payload as an honest failure:
+          // no persist, no render, error state with retry.
+          setRoofError('Roof analysis is temporarily unavailable. Please try again later.')
+          setRoofUploadState('error')
+          return
+        }
+        setRoofProgress({ percent: 100, status: 'Roof Analysis Complete' })
         const apiData = result?.data || result || {}
         const enriched = enrichRoofData(apiData as Record<string, unknown>, filename, isSatellite)
         setAnalysis(enriched)

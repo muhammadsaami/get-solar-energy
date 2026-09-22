@@ -121,7 +121,16 @@ export function SiteSurveyProvider({ children }) {
 
   const runAiFeasibility = useCallback(async (data) => {
     try {
-      return await siteSurveyService.runAiFeasibility(data);
+      const result = await siteSurveyService.runAiFeasibility(data);
+      if (result?.fallback === true) {
+        // The backend must never serve fabricated estimates as real
+        // analysis. Treat any fallback payload as an honest failure so
+        // callers cannot persist or promote it.
+        const message = 'Site survey AI is temporarily unavailable. Please try again later.';
+        setError(message);
+        return { success: false, error: message };
+      }
+      return result;
     } catch (err) {
       setError(err.message);
       return { success: false, error: err.message };

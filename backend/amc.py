@@ -1,9 +1,10 @@
 from fastapi import APIRouter, Depends, Request
+from fastapi.responses import JSONResponse
 from security import verify_token
 from auth import auth_rate_limiter
 from pydantic import BaseModel
-from google import genai
-from google.genai import types
+from ai.provider_factory import get_ai_provider
+from ai.provider_base import AIRequest
 from dotenv import load_dotenv
 import os, json, time
 import logging
@@ -11,39 +12,7 @@ import logging
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
 load_dotenv()
-client = genai.Client(api_key=os.getenv("GEMINI_API_KEY") or "offline-placeholder")
 router = APIRouter(dependencies=[Depends(verify_token)])
-
-DEMO_AMC_DATA = {
-    "customer_name": "Demo Customer",
-    "system_size_kw": 5,
-    "health_score": 78,
-    "system_status": "Needs Attention",
-    "generation_drop_pct": 12.5,
-    "monthly_loss_rs": 800,
-    "next_service_due": "2026-10-15",
-    "urgent_action_required": False,
-    "diagnosis_summary": "The system is operational with minor performance degradation. A 12.5% generation drop suggests potential soiling or partial shading issues. Inverter diagnostics show no critical errors. Preventive maintenance is recommended to restore optimal performance.",
-    "fault_analysis": [
-        "12.5% generation drop indicates possible panel soiling or degradation",
-        "Panel cleaning was last performed over 6 months ago",
-        "Minor performance variation in string 2 output"
-    ],
-    "recommended_actions": [
-        "Schedule comprehensive panel cleaning within 2 weeks",
-        "Perform I-V curve tracing on all strings",
-        "Inspect wiring and connections for corrosion",
-        "Update monitoring system firmware",
-        "Verify inverter cooling fan operation"
-    ],
-    "preventive_measures": [
-        "Schedule quarterly panel cleaning",
-        "Monitor generation data weekly for early anomaly detection",
-        "Keep vegetation around the installation trimmed",
-        "Document all maintenance activities in the CRM"
-    ],
-    "estimated_service_cost_rs": 4500
-}
 
 
 class AMCRequest(BaseModel):
@@ -69,52 +38,43 @@ async def amc_recommendation(data: AMCRequest, req: Request = None, user_email: 
         generation_drop_pct = round(
             ((data.expected_generation_units - data.current_generation_units)
              / data.expected_generation_units) * 100, 1
-        ) if data.expected_generation_units > 0 else 0
+        ) if data.expected_generation_units > 0 else 0.0
 
         prompt = f"""
-        You are a senior solar O&M (Operations & Maintenance) engineer in India.
+        You are an expert solar system engineer and AMC specialist in India.
+        Analyze this solar rooftop system and generate a comprehensive maintenance recommendation.
 
-        Analyze this real solar system data and provide a professional AMC service report:
+        System Details:
+        - Customer: {data.customer_name}, {data.city}
+        - System Size: {data.system_size_kw} kW
+        - Installed: {data.installation_date}
+        - Last Serviced: {data.last_service_date}
+        - Expected Generation: {data.expected_generation_units} units/month
+        - Actual Generation: {data.current_generation_units} units/month
+        - Generation Drop: {generation_drop_pct}%
+        - Inverter Errors: {data.inverter_error_codes}
+        - Recent Panel Cleaning Done: {data.panel_cleaning_done}
+        - Physical Damage Observed: {data.physical_damage_observed}
+        - Damage Details: {data.damage_details}
 
-        Customer: {data.customer_name}
-        City: {data.city}
-        System Size: {data.system_size_kw} kW
-        Installation Date: {data.installation_date}
-        Last Service Date: {data.last_service_date}
-        Last Month Actual Generation: {data.current_generation_units} units
-        Expected Generation: {data.expected_generation_units} units
-        Generation Drop: {generation_drop_pct}%
-        Inverter Error Codes: {data.inverter_error_codes}
-        Panel Cleaning Done: {data.panel_cleaning_done}
-        Physical Damage Observed: {data.physical_damage_observed}
-        Damage Details: {data.damage_details}
+        Calculate and determine:
+        1. health_score: 0-100 score based on drop%, age, errors, damage
+        2. system_status: "Excellent" (90-100), "Good" (75-89), "Needs Attention" (60-74), "Critical" (<60)
+        3. monthly_loss_rs: generation drop units x Rs 7.50 per unit
+        4. next_service_due: recommended date (YYYY-MM-DD) based on last service and status
+        5. urgent_action_required: boolean — true if critical errors or >25% drop or physical damage
+        6. diagnosis_summary: 2-3 sentences explaining what's happening and why
+        7. fault_analysis: list of 2-4 specific identified or likely issues
+        8. recommended_actions: list of 4-6 prioritized action items for the engineer/technician
+        9. preventive_measures: list of 3-4 tips for the customer to prevent future issues
+        10. estimated_service_cost_rs: estimated cost in INR for recommended service/repairs
 
-        Assess and calculate:
-        - health_score: 0-100 based on generation drop, errors, damage, cleaning status
-          (100 = perfect, deduct points: generation drop >10% = -20, >20% = -35,
-           inverter errors present = -15, physical damage = -25, cleaning not done = -10)
-        - system_status: "Healthy" (80-100), "Needs Attention" (50-79), "Critical" (below 50)
-        - monthly_loss_rs: (expected - actual) units * 8 (average Rs per unit)
-        - next_service_due: recommend next service date based on last_service_date
-          (quarterly service = 3 months after last service)
-        - urgent_action_required: true if health_score < 50 or physical damage observed
-
-        Then write:
-        - diagnosis_summary: 3-4 sentence professional summary of system health
-        - fault_analysis: array of 3-5 specific identified issues based on the data
-          (inverter errors explanation, generation drop cause, cleaning impact, etc.)
-        - recommended_actions: array of 5-6 specific actionable maintenance tasks
-          ordered by priority (urgent first)
-        - preventive_measures: array of 3-4 preventive tips for this specific system
-        - estimated_service_cost_rs: realistic AMC visit cost estimate
-          (base Rs 1500 + Rs 500 per kW + Rs 2000 if inverter error + Rs 3000 if physical damage)
-
-        Return ONLY valid JSON, no markdown, no extra text:
+        Return ONLY a valid JSON object, no markdown, no explanation:
         {{
             "customer_name": "{data.customer_name}",
             "system_size_kw": {data.system_size_kw},
             "health_score": <number 0-100>,
-            "system_status": "<text>",
+            "system_status": "<status>",
             "generation_drop_pct": {generation_drop_pct},
             "monthly_loss_rs": <number>,
             "next_service_due": "<date string>",
@@ -127,18 +87,15 @@ async def amc_recommendation(data: AMCRequest, req: Request = None, user_email: 
         }}
         """
 
-        max_attempts = 4
+        max_attempts = 2
         last_error = None
         for attempt in range(max_attempts):
             try:
-                response = client.models.generate_content(
-                    model="gemini-2.5-flash",
-                    contents=[
-                        types.Content(role="user", parts=[types.Part.from_text(text=prompt)])
-                    ]
-                )
+                provider = get_ai_provider()
+                req = AIRequest(prompt=prompt, temperature=0.2, metadata={"route": "amc-recommendation"})
+                response = provider.generate_response(req)
 
-                text = response.text.strip()
+                text = response.content.strip()
                 if "```json" in text:
                     text = text.split("```json")[1].split("```")[0]
                 elif "```" in text:
@@ -151,7 +108,7 @@ async def amc_recommendation(data: AMCRequest, req: Request = None, user_email: 
                 last_error = e
                 err_str = str(e).lower()
                 if "503" in err_str or "429" in err_str or "unavailable" in err_str or "exhausted" in err_str or "demand" in err_str:
-                    wait_time = 2 ** (attempt + 1)
+                    wait_time = 1.5 * (attempt + 1)
                     time.sleep(wait_time)
                 else:
                     raise e
@@ -161,6 +118,14 @@ async def amc_recommendation(data: AMCRequest, req: Request = None, user_email: 
     except Exception as e:
         err_str = str(e).lower()
         if any(term in err_str for term in ["resource_exhausted", "quota", "rate limit", "exhausted", "429", "503", "unavailable"]):
-            logger.warning("Gemini quota exhausted for AMC recommendation. Returning fallback response.")
-            return {"success": True, "fallback": True, "data": DEMO_AMC_DATA}
+            logger.warning("AI provider busy/quota exhausted for AMC recommendation. Returning honest unavailable error.")
+            if any(term in err_str for term in ["rate limit", "429"]):
+                return JSONResponse(
+                    status_code=429,
+                    content={"success": False, "error": "Rate limit exceeded. Please try again later."},
+                )
+            return JSONResponse(
+                status_code=503,
+                content={"success": False, "error": "AMC evaluation is temporarily unavailable. Please try again later."},
+            )
         return {"success": False, "error": str(e)}

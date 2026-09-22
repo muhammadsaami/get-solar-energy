@@ -5,13 +5,19 @@ import { renderHook, act } from '@testing-library/react'
 import { useSettings } from '../hooks/useSettings'
 import { SettingsPreferencesCard } from '../components/SettingsPreferencesCard'
 import { SettingsForm } from '../components/SettingsForm'
+import { getUserStorageKey } from '../../utils/userStorage'
 
 // NOTE: stable reference required — useSettings keys its load effect on
 // auth?.user, so a fresh object per useAuth() call would loop renders.
 const stableUser = { name: 'Test Customer', displayRole: 'Standard User' }
+const stableTokenUser = { id: 'settings-page-u1', email: 'settings-page@getsolar.test' }
 
 vi.mock('../../contexts/AuthContext', () => ({
   useAuth: () => ({ user: stableUser }),
+}))
+
+vi.mock('../../services/auth/tokenManager', () => ({
+  tokenManager: { getUser: () => stableTokenUser },
 }))
 
 vi.mock('../../stores/notificationStore', () => ({
@@ -54,7 +60,9 @@ describe('Account Settings page (device-scoped prefs)', () => {
     act(() => {
       result.current.save()
     })
-    const saved = JSON.parse(localStorage.getItem('userPreferences') || '{}')
+    const saved = JSON.parse(
+      localStorage.getItem(getUserStorageKey('userPreferences', stableTokenUser)) || '{}',
+    )
     expect(saved.tariff).toBe('9.50')
     expect(result.current.error).toBeNull()
   })

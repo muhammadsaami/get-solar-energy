@@ -8,6 +8,7 @@ from pydantic import BaseModel
 from database_sqlite import get_sqlite_db, CustomerModel
 from sqlalchemy import func, or_
 from auth import load_users
+from permissions import has_admin_access
 import customer_service
 
 router = APIRouter(dependencies=[Depends(verify_token)], tags=["Customer Data Platform"])
@@ -35,6 +36,22 @@ def _get_customer_scope_ids(db: Session, user_email: str) -> Optional[List[int]]
     )
     customer_ids = [c[0] for c in query.all()]
     return customer_ids
+
+
+def _require_admin(user_email: str):
+    """Raise 403 unless the caller has admin access."""
+    if not has_admin_access(user_email):
+        raise HTTPException(status_code=403, detail="Admin access required")
+
+
+def _owns_customer_id(db: Session, customer_id: int, user_email: str) -> bool:
+    """Owner-or-admin check derived from the verified token email only."""
+    if has_admin_access(user_email):
+        return True
+    scope = _get_customer_scope_ids(db, user_email)
+    if scope is None:
+        return True
+    return customer_id in scope
 
 # ═════════════════════════════════════════════════════════════
 # PYDANTIC SCHEMAS
@@ -112,27 +129,46 @@ class CustomerResponse(CustomerBase):
 def get_customers(
     skip: int = Query(0, ge=0),
     limit: int = Query(50, ge=1, le=100),
+    user_email: str = Depends(verify_token),
     db: Session = Depends(get_sqlite_db)
 ):
-    """Retrieve a paginated list of customer accounts."""
+    """Retrieve a paginated list of customer accounts. Non-admins see only their own records."""
+    if not has_admin_access(user_email):
+        scope = _get_customer_scope_ids(db, user_email)
+    else:
+        scope = None
+    if scope is not None:
+        customers = [c for c in customer_service.get_customers(db, skip=0, limit=100000) if c.id in scope]
+        return customers[skip:skip + limit]
     return customer_service.get_customers(db, skip=skip, limit=limit)
 
 
 @router.get("/api/customers/search", response_model=List[CustomerResponse])
 def search_customers(
     q: str = Query(..., min_length=1),
+    user_email: str = Depends(verify_token),
     db: Session = Depends(get_sqlite_db)
 ):
-    """Search customers by consumer number, name, city, or discom."""
-    return customer_service.search_customers(db, q=q)
+    """Search customers by consumer number, name, city, or discom. Non-admins search only their own records."""
+    results = customer_service.search_customers(db, q=q)
+    if not has_admin_access(user_email):
+        scope = _get_customer_scope_ids(db, user_email)
+    else:
+        scope = None
+    if scope is not None:
+        results = [c for c in results if c.id in scope]
+    return results
 
 
 @router.get("/api/customers/{id}", response_model=CustomerResponse)
 def get_customer_profile(
     id: int,
+    user_email: str = Depends(verify_token),
     db: Session = Depends(get_sqlite_db)
 ):
     """Retrieve a specific customer profile including all nested bills."""
+    if not _owns_customer_id(db, id, user_email):
+        raise HTTPException(status_code=404, detail="Customer not found")
     customer = customer_service.get_customer_by_id(db, customer_id=id)
     if not customer:
         raise HTTPException(status_code=404, detail="Customer not found")
@@ -142,9 +178,11 @@ def get_customer_profile(
 @router.post("/api/customers", response_model=CustomerResponse, status_code=201)
 def create_customer(
     customer_data: CustomerCreate,
+    user_email: str = Depends(verify_token),
     db: Session = Depends(get_sqlite_db)
 ):
-    """Create a new customer account with a unique consumer number."""
+    """Create a new customer account with a unique consumer number. Admin-only."""
+    _require_admin(user_email)
     try:
         return customer_service.create_customer(db, customer_data.dict())
     except ValueError as e:
@@ -155,9 +193,12 @@ def create_customer(
 def update_customer(
     id: int,
     update_data: CustomerUpdate,
+    user_email: str = Depends(verify_token),
     db: Session = Depends(get_sqlite_db)
 ):
-    """Update customer demographic or contact details."""
+    """Update customer demographic or contact details. Owners may update their own record; admins any."""
+    if not _owns_customer_id(db, id, user_email):
+        raise HTTPException(status_code=404, detail="Customer not found")
     updated = customer_service.update_customer(db, customer_id=id, update_data=update_data.dict(exclude_unset=True))
     if not updated:
         raise HTTPException(status_code=404, detail="Customer not found")
@@ -167,9 +208,11 @@ def update_customer(
 @router.delete("/api/customers/{id}", status_code=200)
 def delete_customer(
     id: int,
+    user_email: str = Depends(verify_token),
     db: Session = Depends(get_sqlite_db)
 ):
-    """Delete a customer account and all associated billing data."""
+    """Delete a customer account and all associated billing data. Admin-only."""
+    _require_admin(user_email)
     success = customer_service.delete_customer(db, customer_id=id)
     if not success:
         raise HTTPException(status_code=404, detail="Customer not found")
@@ -200,7 +243,9 @@ def get_recent_bills(
 
 @router.get("/api/dashboard/analytics")
 def get_dashboard_analytics(
+    user_email: str = Depends(verify_token),
     db: Session = Depends(get_sqlite_db)
 ):
-    """Retrieve comprehensive SQL-driven business intelligence and aggregates."""
+    """Retrieve comprehensive SQL-driven business intelligence and aggregates. Admin-only: contains platform-wide PII aggregates."""
+    _require_admin(user_email)
     return customer_service.get_dashboard_analytics(db)
