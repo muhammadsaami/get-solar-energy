@@ -23,8 +23,7 @@
     "baseUrl": ".",
     "ignoreDeprecations": "6.0",
     "paths": {
-      "@/*": ["./src/*"],
-      "@styles/*": ["../frontend/styles/*"]
+      "@/*": ["./src/*"]
     }
   },
   "include": ["src"],

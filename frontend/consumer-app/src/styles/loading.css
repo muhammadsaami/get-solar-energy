@@ -77,7 +77,7 @@
 .skeleton-grid-4 { grid-template-columns: repeat(4, 1fr); }
 
 /* ── SHIMMER LOADING BLOCK ──────────────────────────────── */
-/* Legacy compat — used in landing.html estimate calculator */
+/* Used in Landing page EstimateCalculator component */
 .shimmer-loading-block {
   padding: var(--space-4);
 }

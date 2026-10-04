@@ -34,6 +34,7 @@ import vendor_teams_models  # noqa: F401 — must import before create_all() so 
 import vendor_documents_models  # noqa: F401 — must import before create_all() so Phase 5 vendor documents table is registered
 import os
 import json
+import re
 import time
 import logging
 
@@ -927,24 +928,18 @@ def get_admin_activity(user_email: str = Depends(verify_token)):
         return {"success": False, "error": str(e)}
 
 
-# Serve frontend static files at /frontend/
-_frontend_dir = Path(__file__).resolve().parent.parent / "frontend"
-if not _frontend_dir.exists():
-    _frontend_dir = Path(__file__).resolve().parent / "frontend"
-if _frontend_dir.exists():
-    app.mount("/frontend", StaticFiles(directory=str(_frontend_dir), html=True), name="frontend")
-
 # Serve uploaded files (work order photos, documents, profile photos, etc.)
 _uploads_dir = Path(__file__).resolve().parent / "uploads"
 os.makedirs(str(_uploads_dir), exist_ok=True)
 app.mount("/uploads", StaticFiles(directory=str(_uploads_dir)), name="uploads")
 
-@app.get("/", response_class=FileResponse)
+@app.get("/")
 def home():
-    return FileResponse(
-        str(Path(__file__).resolve().parent.parent / "frontend" / "landing.html"),
-        headers={"Cache-Control": "public, max-age=300"}
-    )
+    return {
+        "status": "online",
+        "service": "GET Solar Energy API",
+        "version": "1.0.0"
+    }
 
 
 # =====================================================================
@@ -1085,22 +1080,176 @@ async def solar_assistant(request: SolarAssistantRequest, req: Request, user_ema
 def _is_valid_bill_analysis(data: dict) -> bool:
     if not isinstance(data, dict):
         return False
-    rules = {
-        "monthly_units":  (1, 1_000_000),
-        "bill_amount":    (1, 10_000_000),
-        "per_unit_rate":  (0.01, 100),
-        "recommended_kw": (0.1, 10_000),
-    }
-    for field, (lo, hi) in rules.items():
-        val = data.get(field)
-        if not isinstance(val, (int, float)):
-            return False
-        if val < lo or val > hi:
-            return False
-    name = data.get("customer_name", "")
-    if not isinstance(name, str) or not name.strip():
+
+    # 1. Authoritative required consumption and financial amount
+    units = data.get("monthly_units")
+    if units is None or isinstance(units, bool) or not isinstance(units, (int, float)):
         return False
+    if units < 1 or units > 1_000_000:
+        return False
+
+    amount = data.get("bill_amount")
+    if amount is None or isinstance(amount, bool) or not isinstance(amount, (int, float)):
+        return False
+    if amount < 1 or amount > 10_000_000:
+        return False
+
+    # 2. Recommended system capacity (derived or explicit)
+    rec_kw = data.get("recommended_kw")
+    if rec_kw is not None:
+        if isinstance(rec_kw, bool) or not isinstance(rec_kw, (int, float)):
+            return False
+        if rec_kw < 0.1 or rec_kw > 10_000:
+            return False
+
+    # 3. Explicit per-unit tariff rate:
+    # Multi-slab bills do NOT print a single per-unit rate; therefore None/null is valid.
+    # If explicitly provided, it must be within realistic domain bounds (0.01 to 100 Rs/kWh).
+    rate = data.get("per_unit_rate")
+    if rate is not None:
+        if isinstance(rate, bool) or not isinstance(rate, (int, float)):
+            return False
+        if rate < 0.01 or rate > 100:
+            return False
+
+    # 4. Effective rate (derived tariff for multi-slab or composite charges)
+    eff_rate = data.get("effective_rate")
+    if eff_rate is not None:
+        if isinstance(eff_rate, bool) or not isinstance(eff_rate, (int, float)):
+            return False
+        if eff_rate < 0.01 or eff_rate > 100:
+            return False
+
+    # 5. Customer name is optional on physical utility documents (may be unprinted or redacted)
+    name = data.get("customer_name")
+    if name is not None and not isinstance(name, str):
+        return False
+
+    # 6. Solar & net-metering metrics if present must be non-negative numbers
+    for metric in ["net_billed_units", "grid_import", "grid_export", "monthly_generation_units", "solar_generation_units"]:
+        val = data.get(metric)
+        if val is not None:
+            if isinstance(val, bool) or not isinstance(val, (int, float)):
+                return False
+            if val < 0:
+                return False
+
     return True
+
+
+def _normalize_raw_ai_bill_result(data: dict) -> dict:
+    """
+    Sanitize and coerce raw AI bill extractions into canonical types.
+    Ensures that string numbers, missing optional names, or multi-slab rate
+    calculations are standardized before passing strict schema validation.
+
+    Preserves strict separation between RAW BILL FACTS (authoritative consumption,
+    bill amount, explicit per-unit rate, net billed units, grid import/export) and
+    DERIVED VALUES (effective rate, solar generation, solar savings, payback, ROI).
+    """
+    if not isinstance(data, dict):
+        return data
+    normalized = dict(data)
+
+    # 1. Customer name: clean string or preserve None if missing/unprinted
+    name = normalized.get("customer_name")
+    if isinstance(name, str):
+        cleaned_name = name.strip()
+        if not cleaned_name or cleaned_name.lower() in ["null", "none", "n/a", "unknown", "not specified"]:
+            normalized["customer_name"] = None
+        else:
+            normalized["customer_name"] = cleaned_name
+    else:
+        normalized["customer_name"] = None
+
+    # 2. Coerce numeric fields from strings or formatted text
+    def _parse_num(val):
+        if val is None or isinstance(val, bool):
+            return None
+        if isinstance(val, (int, float)):
+            return float(val)
+        if isinstance(val, str):
+            cleaned = re.sub(r"[^\d.]", "", val)
+            try:
+                return float(cleaned) if cleaned else None
+            except ValueError:
+                return None
+        return None
+
+    numeric_keys = [
+        "monthly_units", "bill_amount", "per_unit_rate", "effective_rate",
+        "recommended_kw", "monthly_generation_units", "monthly_savings_rs",
+        "system_cost_rs", "payback_years", "savings_25_years_rs",
+        "net_billed_units", "grid_import", "grid_export", "fixed_charges",
+        "energy_charges", "taxes", "payable_amount", "previous_dues",
+        "solar_generation_units", "solar_capacity_kw"
+    ]
+    for k in numeric_keys:
+        if k in normalized and normalized[k] is not None:
+            parsed = _parse_num(normalized[k])
+            normalized[k] = parsed
+
+    # 3. Bill Amount: fallback to payable_amount if bill_amount was omitted
+    if normalized.get("bill_amount") is None and normalized.get("payable_amount") is not None:
+        normalized["bill_amount"] = normalized["payable_amount"]
+
+    # 4. Multi-Slab Tariff & Effective Rate derivation:
+    # A raw explicit per_unit_rate is preserved ONLY if explicitly provided (> 0 and <= 100).
+    # On multi-slab bills without a single rate, per_unit_rate remains None.
+    # An effective_rate is transparently computed from energy charges or bill amount.
+    units = normalized.get("monthly_units")
+    amount = normalized.get("bill_amount")
+
+    if isinstance(units, (int, float)) and units > 0:
+        raw_rate = normalized.get("per_unit_rate")
+        if raw_rate is not None and isinstance(raw_rate, (int, float)) and 0.01 <= raw_rate <= 100:
+            explicit_rate = float(raw_rate)
+        else:
+            explicit_rate = None
+        normalized["per_unit_rate"] = explicit_rate
+
+        # Derive effective rate transparently
+        energy_charges = normalized.get("energy_charges")
+        if isinstance(energy_charges, (int, float)) and energy_charges > 0:
+            eff_rate = round(energy_charges / max(1.0, units), 2)
+        elif isinstance(amount, (int, float)) and amount > 0:
+            eff_rate = round(amount / max(1.0, units), 2)
+        else:
+            eff_rate = explicit_rate or 7.50
+
+        normalized["effective_rate"] = normalized.get("effective_rate") or eff_rate
+
+        # Rate used for solar recommendations: explicit rate if available, else derived effective rate
+        calc_rate = explicit_rate or normalized["effective_rate"] or 7.50
+
+        # Sizing and recommendations:
+        kw = normalized.get("recommended_kw")
+        if not kw or not isinstance(kw, (int, float)) or kw <= 0:
+            normalized["recommended_kw"] = round((units / 135) * 2) / 2
+
+        rec_kw = normalized.get("recommended_kw") or 1.0
+
+        if not normalized.get("monthly_generation_units") or not isinstance(normalized["monthly_generation_units"], (int, float)):
+            normalized["monthly_generation_units"] = round(rec_kw * 4.5 * 30, 1)
+
+        gen_units = normalized["monthly_generation_units"]
+        if not normalized.get("monthly_savings_rs") or not isinstance(normalized["monthly_savings_rs"], (int, float)):
+            normalized["monthly_savings_rs"] = round(gen_units * calc_rate, 0)
+
+        savings_rs = normalized["monthly_savings_rs"]
+        if not normalized.get("system_cost_rs") or not isinstance(normalized["system_cost_rs"], (int, float)):
+            normalized["system_cost_rs"] = round(rec_kw * 55000, 0)
+
+        cost_rs = normalized["system_cost_rs"]
+        if not normalized.get("payback_years") or not isinstance(normalized["payback_years"], (int, float)):
+            annual_sav = savings_rs * 12
+            normalized["payback_years"] = round(cost_rs / max(1.0, annual_sav), 1)
+
+        if normalized.get("savings_25_years_rs") is None or not isinstance(normalized.get("savings_25_years_rs"), (int, float)):
+            normalized["savings_25_years_rs"] = round((savings_rs * 12 * 25) - cost_rs, 0)
+
+    return normalized
+
 
 
 class ManualBillRequest(BaseModel):
@@ -1300,33 +1449,50 @@ BILL_ANALYSIS_PROMPT = """
 You are an expert at reading Indian electricity bills.
 
 Carefully analyze this electricity bill and extract the following real data:
-1. Customer name exactly as written on the bill
-2. Monthly units consumed in kWh (look for units, consumption)
-3. Total bill amount in Rupees
-4. Per unit electricity rate in Rs/kWh
+1. Customer name exactly as written on the bill. If unprinted, redacted, or not visible, return null. Never fabricate customer names.
+2. Monthly units consumed in kWh (look for units, consumption, billed units). This must be the actual total consumption/billed units.
+3. Total bill amount in Rupees (current payable bill amount).
+4. Per unit electricity rate in Rs/kWh. If the bill uses a slab tariff schedule or does not state a single explicit per-unit rate, return null. Never guess or fabricate a rate.
 5. Billing period (month and year)
-6. Consumer number if visible
-7. Discom/utility company name if visible
+6. Consumer number if visible, otherwise null.
+7. Discom/utility company name if visible, otherwise null.
 8. Net billed units in kWh exactly as printed on the bill (look for "Net Billed Unit", "Net Billed Units", "Net Billed KWH"). This is a direct bill field, not a calculated value. If the bill does not print net billed units, return null. Never derive it from other fields.
+9. Grid import units in kWh if printed on bill, otherwise null.
+10. Grid export units in kWh if printed on bill, otherwise null.
+11. Fixed charges in Rupees if printed, otherwise null.
+12. Energy charges in Rupees if printed, otherwise null.
+13. Slabs if multi-slab schedule is printed on the bill (e.g. [{"range": "0-100", "rate": 5.0}]), otherwise null.
 
 Then calculate solar recommendations based on extracted data:
 - Recommended solar system size: monthly_units / 135 (rounded to nearest 0.5)
 - Monthly generation: recommended_kw * 4.5 * 30
-- Monthly savings: monthly_generation * per_unit_rate
-- System cost: recommended_kw * 55000
+- Effective rate: energy_charges / monthly_units (if energy charges available), or per_unit_rate, or bill_amount / monthly_units
+- Monthly savings: monthly_generation * (per_unit_rate if available, else effective_rate)
+- System cost: recommended_kw * 55000 (No government subsidies apply. Never calculate, promise, or deduct subsidies).
 - Payback years: system_cost / (monthly_savings * 12)
 - 25 year savings: (monthly_savings * 12 * 25) - system_cost
 
+CRITICAL INSTRUCTIONS:
+- Distinguish monthly consumption from grid import, grid export, and net billed units.
+- Distinguish explicit per-unit rate from multi-slab tariffs (return null for per_unit_rate if slab-based).
+- Extract only values actually present on the bill. Never fabricate missing fields.
+
 Return ONLY valid JSON with real extracted values, no extra text:
 {
-    "customer_name": "<exact name from bill>",
-    "consumer_number": "<consumer number from bill>",
-    "discom": "<electricity company name>",
+    "customer_name": "<exact name from bill, or null>",
+    "consumer_number": "<consumer number from bill, or null>",
+    "discom": "<electricity company name, or null>",
     "monthly_units": <actual units from bill>,
     "bill_amount": <actual amount from bill>,
-    "per_unit_rate": <actual rate from bill>,
-    "billing_period": "<actual month year from bill>",
+    "per_unit_rate": <actual rate from bill, or null if multi-slab>,
+    "effective_rate": <effective rate in Rs/kWh>,
+    "billing_period": "<actual month year from bill, or null>",
     "net_billed_units": <net billed units as printed on the bill, or null if not printed>,
+    "grid_import": <grid import as printed, or null>,
+    "grid_export": <grid export as printed, or null>,
+    "fixed_charges": <fixed charges as printed, or null>,
+    "energy_charges": <energy charges as printed, or null>,
+    "slabs": <array of slabs or null>,
     "recommended_kw": <calculated>,
     "monthly_generation_units": <calculated>,
     "monthly_savings_rs": <calculated>,
@@ -1433,6 +1599,7 @@ async def analyze_bill(
                     text = text.split("```")[1].split("```")[0]
 
                 result = json.loads(text.strip())
+                result = _normalize_raw_ai_bill_result(result)
 
                 if not _is_valid_bill_analysis(result):
                     logger.warning("OpenAI returned invalid bill data: %s", result)
@@ -1578,6 +1745,7 @@ async def analyze_bill_manual(
             text = text.split("```")[1].split("```")[0]
 
         result = json.loads(text.strip())
+        result = _normalize_raw_ai_bill_result(result)
 
         if data.solar_installed and data.solar_capacity_kw:
             result["solar_installed"] = True

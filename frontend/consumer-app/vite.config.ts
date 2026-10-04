@@ -9,7 +9,6 @@ export default defineConfig({
   resolve: {
     alias: {
       '@': path.resolve(__dirname, './src'),
-      '@styles': path.resolve(__dirname, '../frontend/styles'),
     },
   },
 

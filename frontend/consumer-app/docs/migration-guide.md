@@ -92,12 +92,9 @@ test('renders feature content', () => {
 })
 ```
 
-### 8. Cutover
+### 8. Cutover (Completed)
 
-When the React page is ready:
-1. Update the legacy `dashboard.html` sidebar link to point to `/app/my-feature`
-2. Auth is shared via localStorage — user stays logged in
-3. If issues arise, revert the sidebar link
+All application features and routes have been migrated to the React SPA. The legacy `dashboard.html` and static pages have been fully retired and removed.
 
 ## Patterns
 

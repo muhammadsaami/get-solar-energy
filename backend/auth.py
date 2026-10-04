@@ -359,7 +359,7 @@ async def forgot_password(data: ForgotPasswordRequest, request: Request):
 
         # Generate reset link
         frontend_url = os.getenv("FRONTEND_URL", "http://localhost:8080")
-        reset_link = f"{frontend_url}/reset-password.html?token={token}"
+        reset_link = f"{frontend_url}/reset-password?token={token}"
 
         # Build MIMEMultipart email
         message = MIMEMultipart("alternative")

@@ -2,7 +2,7 @@
 
 ## Overview
 
-The GET Solar Consumer App is a single-page application (SPA) built with React 19, TypeScript, and Vite. It coexists with a legacy vanilla JS frontend served by the same FastAPI backend. Migration is gradual — tab by tab.
+The GET Solar Consumer App is a single-page application (SPA) built with React 19, TypeScript, and Vite. The legacy vanilla JS frontend has been decommissioned and removed. All application routes and workspaces are served by the React SPA communicating with the FastAPI backend.
 
 ## Technology Decisions
 
@@ -42,7 +42,7 @@ The GET Solar Consumer App is a single-page application (SPA) built with React 1
 
 ## CSS Strategy
 
-- **Design tokens**: `frontend/styles/tokens.css` — single source of truth for colors, spacing, typography, glassmorphism, motion
+- **Design tokens**: `src/styles/tokens.css` — single source of truth for colors, spacing, typography, glassmorphism, motion
 - **Global styles**: Imported via `design-system.css` entry point
 - **Component styles**: CSS Modules (`Component.module.css`) — scoped by default, no specificity conflicts
 - **Utility classes**: `cn()` helper combining `clsx` + `tailwind-merge`
@@ -67,13 +67,14 @@ Protected (auth required):
 
 Route guards: `RouteGuard` (auth check) → `AdminGuard` (role check) → lazy-loaded page.
 
-## Coexistence with Legacy
+## Frontend Architecture
 
-The FastAPI backend serves both the legacy HTML frontend and the React SPA:
+The GET Solar Energy platform uses a unified React 19 SPA frontend with FastAPI as the API backend:
 
-- `/` → `landing.html` (legacy)
-- `/frontend/*` → legacy static files
-- `/app/*`, `/login`, `/signup` → React SPA (`index.html`)
-- `/api/*` → FastAPI routers (shared, unchanged)
+- `/` → React SPA Landing page (`src/pages/Landing.tsx`)
+- `/login`, `/signup`, `/reset-password` → React SPA Auth pages
+- `/app/*` → React SPA Workspaces & Dashboards (`src/pages/*`)
+- `/api/*` → FastAPI REST API endpoints
+- `/uploads/*` → FastAPI static uploads
 
-Auth is shared via localStorage keys `access_token` and `user`.
+The legacy HTML/JavaScript frontend has been fully retired and removed. Auth state is managed via secure session tokens and user-scoped storage.
