@@ -1,4 +1,4 @@
-import React from 'react'
+import React, { useState } from 'react'
 import { useSystemPerformance } from '../hooks/useSystemPerformance'
 import { PERFORMANCE_CHARTS } from '../config/performanceCharts'
 import { ComponentHealthCard } from '../components/ComponentHealthCard'
@@ -11,6 +11,7 @@ import { PerformanceLoadingSkeleton } from '../components/PerformanceLoadingSkel
 import { PerformanceEmptyState } from '../components/PerformanceEmptyState'
 import { PerformanceErrorBanner } from '../components/PerformanceErrorBanner'
 import PerformanceChartsRenderer from '../components/PerformanceChartsRenderer'
+import { ManualSolarProductionModal } from '../../components/solar/ManualSolarProductionModal'
 
 export default function SystemPerformance() {
   const {
@@ -27,7 +28,10 @@ export default function SystemPerformance() {
     refresh,
     syncTelemetry,
     acknowledgeAlert,
+    saveManualSolar,
   } = useSystemPerformance()
+
+  const [showManualModal, setShowManualModal] = useState(false)
 
   const hasCriticalError = !!(error?.hasError && !summary)
   const unreadAlerts = alerts.filter((a) => !a.is_read)
@@ -107,6 +111,26 @@ export default function SystemPerformance() {
             }}
           >
             <span>🔄</span> {loading ? 'Refreshing...' : 'Refresh'}
+          </button>
+          <button
+            className="btn btn-secondary btn-sm"
+            id="btnManualSolarPerformance"
+            onClick={() => setShowManualModal(true)}
+            style={{
+              fontSize: '12px',
+              padding: '6px 14px',
+              borderRadius: '8px',
+              background: 'rgba(255, 138, 29, 0.15)',
+              border: '1px solid rgba(255, 138, 29, 0.35)',
+              color: 'var(--accent-orange, #ff8a1d)',
+              fontWeight: 700,
+              cursor: 'pointer',
+              display: 'flex',
+              alignItems: 'center',
+              gap: '6px',
+            }}
+          >
+            <span>☀️</span> Enter Readings Manually
           </button>
         </div>
       </div>
@@ -240,7 +264,35 @@ export default function SystemPerformance() {
       )}
 
       {!loading && !summary && !hasCriticalError && (
-        <PerformanceEmptyState />
+        <PerformanceEmptyState
+          title="No Performance Telemetry Connected"
+          description="If your plant does not have active IoT telemetry sensors connected yet, you can enter your solar generation readings manually or complete your home assessment."
+          ctaLabel="Enter Readings Manually"
+          ctaAction={() => setShowManualModal(true)}
+        />
+      )}
+
+      {showManualModal && (
+        <ManualSolarProductionModal
+          isOpen={showManualModal}
+          onClose={() => setShowManualModal(false)}
+          onSave={(data) => {
+            saveManualSolar?.(data)
+            setShowManualModal(false)
+          }}
+          initialData={
+            summary?.generation?.source === 'manual'
+              ? {
+                  productionKwh: summary.generation.solarGenerated,
+                  systemSizeKw: summary.generation.systemSizeKw,
+                  periodType: (summary.generation.periodType as any) || 'month',
+                  month: summary.generation.month || null,
+                  year: summary.generation.year || null,
+                  source: 'manual',
+                }
+              : null
+          }
+        />
       )}
     </div>
   )

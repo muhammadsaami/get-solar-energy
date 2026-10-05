@@ -49,7 +49,7 @@ export function formatContextLabel(context?: {
   return 'General AI guidance'
 }
 
-function getActiveContext(_planning: ReturnType<typeof usePlanning>) {
+export function getActiveContext(_planning?: any) {
   const user = tokenManager.getUser() as IdentifiableUser | null
   const context: {
     bill_analysis?: Record<string, unknown>

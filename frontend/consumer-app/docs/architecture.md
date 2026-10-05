@@ -78,3 +78,15 @@ The GET Solar Energy platform uses a unified React 19 SPA frontend with FastAPI 
 - `/uploads/*` → FastAPI static uploads
 
 The legacy HTML/JavaScript frontend has been fully retired and removed. Auth state is managed via secure session tokens and user-scoped storage.
+
+## Solar Production Persistence & Reconciliation (Phase 7B)
+
+To ensure customer solar data survives cross-device sessions and clears browser storage safely:
+
+- **Backend Model**: `CustomerSolarProduction` in `backend/solar_production_models.py` (SQLAlchemy, mapped to `customer_solar_production` table in primary PostgreSQL/SQLite database).
+- **Backend Router**: `backend/solar_production.py` mounted at `/api/solar-production`, requiring authenticated customer token. Strict tenant isolation ensures customers cannot access or overwrite other users' records.
+- **Frontend Service**: `src/services/solarProduction.service.ts` converts between API payloads and client `SolarReportData` types, with graceful error recovery.
+- **Hook Integration**: `useBillAnalyzer` synchronizes production state:
+  - On mount: Server-first restore with localStorage fallback.
+  - On manual entry or report extraction: Immediate state update and local write, followed by background fire-and-forget sync to `/api/solar-production`.
+- **Integrity**: Solar production is strictly separated from electricity consumption/utility billing data; zero synthetic daily curves are generated from aggregate monthly values.

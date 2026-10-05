@@ -44,6 +44,10 @@ ChartJS.register(ArcElement, ChartTooltip, Legend, CategoryScale, LinearScale, B
 
 import { getUserStorageKey, type IdentifiableUser } from '../utils/userStorage'
 import { tokenManager } from '../services/auth/tokenManager'
+import {
+  saveSolarProductionToServer,
+  fetchLatestSolarProductionFromServer,
+} from '../services/solarProduction.service'
 
 function getBillStorageKey(): string {
   const user = tokenManager.getUser() as IdentifiableUser | null
@@ -469,7 +473,7 @@ function enrichAnalysisData(apiData: Record<string, unknown>, filename: string, 
   const netMeteringBen = exportedToGridVal * NET_METERING_RATE
 
   const gridImportRaw = apiData.grid_import ?? apiData.import_units ?? apiData.importUnits ?? (solarFieldData.importUnits != null ? solarFieldData.importUnits : null)
-  const gridImportVal = gridImportRaw != null ? Number(gridImportRaw) : (solarFieldData.isSolarConsumer ? null : (monthlyUnits > 0 ? monthlyUnits : null))
+  const gridImportVal = gridImportRaw != null ? Number(gridImportRaw) : null
   const gridExportRaw = apiData.grid_export ?? apiData.export_units ?? apiData.exportUnits ?? solarFieldData.exportUnits
   const gridExportVal = gridExportRaw != null ? Number(gridExportRaw) : null
   const openingSurplusRaw = apiData.opening_solar_surplus ?? apiData.openingSolarSurplus ?? solarFieldData.openingSolarSurplus
@@ -502,6 +506,12 @@ function enrichAnalysisData(apiData: Record<string, unknown>, filename: string, 
   }
   const enriched: BillAnalysisData = {
     ...base,
+    monthlyConsumptionKwh: monthlyUnits > 0 ? monthlyUnits : null,
+    gridImportKwh: gridImportVal,
+    gridExportKwh: gridExportVal,
+    netBilledUnitsKwh: netBilledVal,
+    solarGenerationKwh: solarFieldData.solarGeneratedUnits != null ? Number(solarFieldData.solarGeneratedUnits) : null,
+    netGridEnergyKwh: gridImportVal !== null && gridExportVal !== null ? (gridImportVal - gridExportVal) : null,
     solarYield: SOLAR_YIELD,
     monthlySolarGeneration: monthlySolarGen,
     annualSolarGeneration: annualSolarGen,
@@ -551,6 +561,7 @@ export interface BillAnalyzerHandlers {
   clearSolarReport: () => void
   resetBill: () => void
   submitManualBill: (formData: ManualBillInput) => void
+  saveManualSolar: (data: SolarReportData) => void
   fetchQuotas: () => void
 }
 
@@ -864,6 +875,16 @@ export function useBillAnalyzer(): BillAnalyzerReturn {
     clearSolarReport()
   }, [clearSolarReport])
 
+  const saveManualSolar = useCallback((data: SolarReportData) => {
+    clearSolarProgressInterval()
+    setSolarReport(data)
+    writeLS(getSolarStorageKey(), data)
+    writeLS('lastSolarProduction', data)
+    setSolarUploadState('EXTRACTED')
+    setSolarError(null)
+    saveSolarProductionToServer(data).catch(() => { /* intentionally silent */ })
+  }, [clearSolarProgressInterval, getSolarStorageKey])
+
   const fetchQuotas = useCallback(() => {
     api.get('/analyze-bill/quota')
       .then((res) => {
@@ -993,7 +1014,9 @@ export function useBillAnalyzer(): BillAnalyzerReturn {
       updateSolarProgress(100, 'Analysis Complete')
       setSolarReport(prodData)
       writeLS(getSolarStorageKey(), prodData)
+      writeLS('lastSolarProduction', prodData)
       setSolarUploadState('EXTRACTED')
+      saveSolarProductionToServer(prodData).catch(() => { /* intentionally silent */ })
     }
 
     const doError = (err: Error, targetState: SolarReportState = 'EXTRACTION_FAILED') => {
@@ -1063,14 +1086,34 @@ export function useBillAnalyzer(): BillAnalyzerReturn {
         localStorage.removeItem(getBillStorageKey())
       }
     }
-    const savedSolar = readLS<SolarReportData>(getSolarStorageKey())
-    if (savedSolar && savedSolar.productionKwh != null) {
-      setSolarReport(savedSolar)
-      setSolarUploadState('EXTRACTED')
-    } else {
-      localStorage.removeItem(getSolarStorageKey())
-      setSolarUploadState('NOT_PROVIDED')
-    }
+
+    // Phase 7B: Try server first, fall back to localStorage
+    fetchLatestSolarProductionFromServer().then((serverData) => {
+      if (serverData && serverData.productionKwh != null) {
+        setSolarReport(serverData)
+        setSolarUploadState('EXTRACTED')
+        writeLS(getSolarStorageKey(), serverData)
+        writeLS('lastSolarProduction', serverData)
+      } else {
+        const savedSolar = readLS<SolarReportData>(getSolarStorageKey())
+        if (savedSolar && savedSolar.productionKwh != null) {
+          setSolarReport(savedSolar)
+          setSolarUploadState('EXTRACTED')
+        } else {
+          localStorage.removeItem(getSolarStorageKey())
+          setSolarUploadState('NOT_PROVIDED')
+        }
+      }
+    }).catch(() => {
+      const savedSolar = readLS<SolarReportData>(getSolarStorageKey())
+      if (savedSolar && savedSolar.productionKwh != null) {
+        setSolarReport(savedSolar)
+        setSolarUploadState('EXTRACTED')
+      } else {
+        localStorage.removeItem(getSolarStorageKey())
+        setSolarUploadState('NOT_PROVIDED')
+      }
+    })
   }, [])
 
   useEffect(() => {
@@ -1126,6 +1169,7 @@ export function useBillAnalyzer(): BillAnalyzerReturn {
     clearSolarReport,
     resetBill,
     submitManualBill,
+    saveManualSolar,
     fetchQuotas,
   }
 }

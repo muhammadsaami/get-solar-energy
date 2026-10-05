@@ -3,6 +3,8 @@ import { usePlanning } from '../contexts/PlanningContext';
 import { useAuth } from '../contexts/AuthContext';
 import { generateProposalPdf } from '../services/pdf/proposalPdfGenerator';
 import ProposalPreview from '../components/proposal/ProposalPreview';
+import { readUserStorage } from '../utils/userStorage';
+import { normalizeBillData } from '../utils/billNormalization';
 
 const STEPS = [
   { id: 'analyzing', label: 'Analyzing consumption & DISCOM tariff data...', duration: 600 },
@@ -53,8 +55,15 @@ export default function Proposal() {
 
   // Compute 6-month average bill and highest consumption month from actual available billing records
   const billRecords = useMemo(() => {
-    return Array.isArray(bills) && bills.length > 0 ? bills : (activeBillOcr ? [activeBillOcr] : []);
-  }, [bills, activeBillOcr]);
+    let persistedBill = null;
+    try {
+      persistedBill = readUserStorage('lastBillAnalysis', user);
+    } catch {
+      persistedBill = null;
+    }
+    const fallbackBill = persistedBill || activeBillOcr;
+    return Array.isArray(bills) && bills.length > 0 ? bills : (fallbackBill ? [fallbackBill] : []);
+  }, [bills, activeBillOcr, user]);
 
   const { calculatedAvgBill, highestConsumptionMonth } = useMemo(() => {
     const validBillAmounts = billRecords
@@ -106,8 +115,22 @@ export default function Proposal() {
       phone: prev.phone || user?.phone || '',
       address: prev.address || user?.address || '',
       city: prev.city || user?.city || '',
-      monthlyBill: prev.monthlyBill || (calculatedAvgBill ? String(calculatedAvgBill) : (activeBillOcr?.bill_amount ? String(activeBillOcr.bill_amount) : '')),
-      monthlyUnits: prev.monthlyUnits || (highestConsumptionMonth?.units ? String(highestConsumptionMonth.units) : (activeBillOcr?.monthly_units ? String(activeBillOcr.monthly_units) : '')),
+      monthlyBill: prev.monthlyBill || (() => {
+        let p = null;
+        try { p = readUserStorage('lastBillAnalysis', user); } catch {}
+        const eff = p || activeBillOcr;
+        const norm = eff ? normalizeBillData(eff) : null;
+        const amt = norm?.billAmount ?? eff?.bill_amount ?? eff?.amount;
+        return amt != null ? String(amt) : (calculatedAvgBill ? String(calculatedAvgBill) : '');
+      })(),
+      monthlyUnits: prev.monthlyUnits || (() => {
+        let p = null;
+        try { p = readUserStorage('lastBillAnalysis', user); } catch {}
+        const eff = p || activeBillOcr;
+        const norm = eff ? normalizeBillData(eff) : null;
+        const u = norm?.monthlyConsumptionKwh ?? eff?.monthly_units;
+        return u != null ? String(u) : (highestConsumptionMonth?.units ? String(highestConsumptionMonth.units) : '');
+      })(),
       electricityRate: prev.electricityRate || (activeBillOcr?.per_unit_rate ? String(activeBillOcr.per_unit_rate) : '8.0'),
       roofArea: prev.roofArea || (roofAnalysis?.roof_area_sqft ? String(roofAnalysis.roof_area_sqft) : ''),
       recommendedKw: prev.recommendedKw || (roofAnalysis?.system_size_kw ? String(roofAnalysis.system_size_kw) : (activeBillOcr?.recommended_kw ? String(activeBillOcr.recommended_kw) : '')),

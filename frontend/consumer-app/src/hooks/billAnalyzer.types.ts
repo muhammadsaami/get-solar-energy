@@ -31,6 +31,12 @@ export interface BillAnalysisData {
   netMeteringCredit: number
 
   // Authoritative energy model & net-metering credit fields
+  monthlyConsumptionKwh?: number | null
+  gridImportKwh?: number | null
+  gridExportKwh?: number | null
+  netBilledUnitsKwh?: number | null
+  solarGenerationKwh?: number | null
+  netGridEnergyKwh?: number | null
   openingSolarSurplus?: number | null
   closingSolarSurplus?: number | null
   netBilledUnits?: number | null
@@ -51,6 +57,10 @@ export interface SolarReportData {
   source: string | null
   dailyGenerationKwh?: number | null
   confidence?: number | string | null
+  periodType?: 'day' | 'week' | 'month' | 'year' | 'lifetime' | 'custom' | null
+  startDate?: string | null
+  endDate?: string | null
+  dailyPoints?: Array<{ id: string; date: string; productionKwh: number }> | null
 }
 
 export interface UnifiedEnergyData {

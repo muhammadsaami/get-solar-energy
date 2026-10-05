@@ -12,7 +12,7 @@ import {
   type ROIPersistence,
 } from './roiCalculator.types'
 
-import { getUserStorageKey, type IdentifiableUser } from '../utils/userStorage'
+import { getUserStorageKey, readUserStorage, type IdentifiableUser } from '../utils/userStorage'
 import { tokenManager } from '../services/auth/tokenManager'
 
 function getRoiStorageKey(): string {
@@ -25,6 +25,32 @@ const EMPTY_FORM: ROIFormData = {
   sunHours: '',
   systemSize: '',
   panelQuality: 'mono',
+  monthlyUnits: '',
+}
+
+function getInitialForm(persistedForm?: ROIFormData): ROIFormData {
+  if (persistedForm && typeof persistedForm.monthlyBill === 'number' && persistedForm.monthlyBill > 0) {
+    return persistedForm
+  }
+  const user = tokenManager.getUser() as IdentifiableUser | null
+  const bill = readUserStorage<Record<string, unknown>>('lastBillAnalysis', user)
+  if (bill) {
+    const billAmount = Number(bill.billAmount ?? bill.bill_amount ?? bill.amount)
+    const monthlyUnits = Number(bill.monthlyConsumptionKwh ?? bill.monthly_units ?? bill.kwhConsumption)
+    const recommendedKw = Number(bill.recommendedKw ?? bill.recommended_kw)
+    const derivedKw = recommendedKw > 0
+      ? recommendedKw
+      : (monthlyUnits > 0 ? Math.max(1, Math.round((monthlyUnits / 135) * 2) / 2) : '')
+
+    return {
+      monthlyBill: Number.isFinite(billAmount) && billAmount > 0 ? billAmount : '',
+      sunHours: '',
+      systemSize: Number.isFinite(derivedKw) && derivedKw > 0 ? derivedKw : '',
+      panelQuality: 'mono',
+      monthlyUnits: Number.isFinite(monthlyUnits) && monthlyUnits > 0 ? monthlyUnits : '',
+    }
+  }
+  return EMPTY_FORM
 }
 
 function generateChartData(result: ROIResult): ChartDataPoint[] {
@@ -108,8 +134,8 @@ function savePersistence(formData: ROIFormData, result: ROIResult | null): void 
 export function useROICalculator(): UseROICalculatorReturn {
   const persisted = loadPersistence()
 
-  const [formData, setFormData] = useState<ROIFormData>(
-    persisted?.formData ?? EMPTY_FORM,
+  const [formData, setFormData] = useState<ROIFormData>(() =>
+    persisted?.formData ?? getInitialForm()
   )
   const [result, setResult] = useState<ROIResult | null>(
     persisted?.result ?? null,
@@ -151,6 +177,10 @@ export function useROICalculator(): UseROICalculatorReturn {
     (v: PanelQuality) => updateForm('panelQuality', v),
     [updateForm],
   )
+  const setMonthlyUnits = useCallback(
+    (v: number | '') => updateForm('monthlyUnits', v),
+    [updateForm],
+  )
 
   const calculate = useCallback(async () => {
     const rawBill = formData.monthlyBill
@@ -171,10 +201,15 @@ export function useROICalculator(): UseROICalculatorReturn {
 
     let roiResult: ROIResult
 
+    const user = tokenManager.getUser() as IdentifiableUser | null
+    const userLocation = readUserStorage<string>('current_location', user)
+    const lastBill = readUserStorage<Record<string, unknown>>('lastBillAnalysis', user)
+    const userState = (lastBill?.state as string) || (lastBill?.providerState as string) || userLocation || 'Uttar Pradesh'
+
     try {
       const apiResponse = await calculateROI({
         monthly_bill: bill,
-        state: 'Uttar Pradesh',
+        state: userState,
         roof_type: 'flat',
         system_size: size,
       })
@@ -235,6 +270,7 @@ export function useROICalculator(): UseROICalculatorReturn {
     chartData,
     hasCalculated,
     setMonthlyBill,
+    setMonthlyUnits,
     setSunHours,
     setSystemSize,
     setPanelQuality,

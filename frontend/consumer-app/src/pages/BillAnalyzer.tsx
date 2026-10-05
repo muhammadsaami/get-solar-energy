@@ -31,6 +31,8 @@ import { useAuth } from '../contexts/AuthContext'
 import { DEMO_BILL_ANALYZER_DATA } from '../data/billAnalyzerDemoData'
 import DemoBanner from '../components/billAnalyzer/DemoBanner'
 import DemoMetricExplainer, { DemoExplainerProvider } from '../components/billAnalyzer/DemoMetricExplainer'
+import { ManualSolarProductionModal } from '../components/solar/ManualSolarProductionModal'
+import { formatPeriodSummary } from '../utils/solarProductionValidation'
 
 ChartJS.register(ArcElement, ChartTooltip, Legend, CategoryScale, LinearScale, BarElement, BarController, DoughnutController)
 
@@ -78,7 +80,16 @@ export function formatKwNumber(val: number | null | undefined): string {
   return fixed2.endsWith('0') ? val.toFixed(1) : fixed2
 }
 
-export function getReportingPeriodText(month?: string | null, year?: string | number | null): string {
+export function getReportingPeriodText(
+  month?: string | null,
+  year?: string | number | null,
+  periodType?: string | null,
+  startDate?: string | null,
+  endDate?: string | null
+): string {
+  if (periodType && periodType !== 'month') {
+    return formatPeriodSummary({ periodType: periodType as any, startDate, endDate, month, year })
+  }
   if (month && year) return `${month} ${year}`
   if (month) return month
   if (year) return String(year)
@@ -693,6 +704,7 @@ function SolarReportUploadCard({
   onFile,
   onRetry,
   onClear,
+  onEnterManually,
 }: {
   state: SolarReportState
   progress: { percent: number; status: string }
@@ -701,6 +713,7 @@ function SolarReportUploadCard({
   onFile: (file: File) => void
   onRetry: () => void
   onClear?: () => void
+  onEnterManually?: () => void
 }) {
   const fileInputRef = useRef<HTMLInputElement>(null)
   const [dragOver, setDragOver] = React.useState(false)
@@ -735,7 +748,32 @@ function SolarReportUploadCard({
             <span style={{ fontSize: '10px', color: 'var(--text-muted)', display: 'block', marginTop: '1px' }}>Optional for existing solar installations</span>
           </div>
         </div>
-        <span className="api-tag" style={{ background: 'rgba(255,138,29,0.08)', color: 'var(--accent-orange)', borderColor: 'rgba(255,138,29,0.2)' }}>OPTIONAL</span>
+        <div style={{ display: 'flex', alignItems: 'center', gap: '6px', flexWrap: 'wrap' }}>
+          {onEnterManually && (
+            <button
+              type="button"
+              className="calc-btn manual-solar-btn"
+              id="btnOpenManualSolarModal"
+              onClick={onEnterManually}
+              style={{
+                fontSize: '10px',
+                padding: '3px 8px',
+                height: 'auto',
+                width: 'auto',
+                margin: 0,
+                background: 'rgba(255, 138, 29, 0.1)',
+                border: '1px solid rgba(255, 138, 29, 0.3)',
+                color: 'var(--accent-orange)',
+                fontWeight: 700,
+                borderRadius: '4px',
+                cursor: 'pointer',
+              }}
+            >
+              Enter Readings Manually
+            </button>
+          )}
+          <span className="api-tag" style={{ background: 'rgba(255,138,29,0.08)', color: 'var(--accent-orange)', borderColor: 'rgba(255,138,29,0.2)' }}>OPTIONAL</span>
+        </div>
       </div>
 
       {isExtracted ? (
@@ -772,16 +810,27 @@ function SolarReportUploadCard({
             </div>
             <div>
               <span style={{ fontSize: '12px', fontWeight: '700', color: 'var(--accent-orange)', display: 'block' }}>
-                Solar Report Loaded
+                {solarReport?.source === 'manual' ? 'Manual Solar Reading Loaded' : 'Solar Report Loaded'}
               </span>
               <span style={{ fontSize: '10px', color: 'var(--text-muted)', display: 'block', marginTop: '1px' }}>
                 {solarReport
-                  ? `${solarReport.productionKwh != null ? `${formatSolarKwh(solarReport.productionKwh)} kWh` : '—'} · ${solarReport.systemSizeKw != null ? `${formatKwNumber(solarReport.systemSizeKw)} kW` : '—'} · ${getReportingPeriodText(solarReport.month, solarReport.year)}`
+                  ? `${solarReport.productionKwh != null ? `${formatSolarKwh(solarReport.productionKwh)} kWh` : '—'} · ${solarReport.systemSizeKw != null ? `${formatKwNumber(solarReport.systemSizeKw)} kW` : '—'} · ${getReportingPeriodText(solarReport.month, solarReport.year, solarReport.periodType, solarReport.startDate, solarReport.endDate)}`
                   : '— · — · —'}
               </span>
             </div>
           </div>
-          <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+          <div style={{ display: 'flex', alignItems: 'center', gap: '8px', flexWrap: 'wrap' }}>
+            {solarReport?.source === 'manual' && onEnterManually && (
+              <button
+                type="button"
+                className="calc-btn"
+                id="btnEditManualSolar"
+                onClick={onEnterManually}
+                style={{ padding: '5px 12px', fontSize: '11px', height: 'auto', width: 'auto', background: 'rgba(255, 138, 29, 0.15)', border: '1px solid rgba(255, 138, 29, 0.3)', color: 'var(--accent-orange)', fontWeight: 700 }}
+              >
+                Edit Reading
+              </button>
+            )}
             <button
               type="button"
               className="calc-btn"
@@ -839,6 +888,31 @@ function SolarReportUploadCard({
             <p className="upload-text" style={{ fontSize: '12px', color: 'var(--text-navy)', margin: '0 0 4px' }}>
               Drag & drop solar report here, or <span className="browse-link" style={{ color: 'var(--accent-orange)', fontWeight: '700', textDecoration: 'underline' }}>browse</span>
             </p>
+            {onEnterManually && (
+              <p style={{ margin: '4px 0 0', fontSize: '11px', color: 'var(--text-muted)' }}>
+                Don't have a report?{' '}
+                <button
+                  type="button"
+                  id="btnBrowseManualSolar"
+                  onClick={(e) => {
+                    e.stopPropagation()
+                    onEnterManually()
+                  }}
+                  style={{
+                    background: 'none',
+                    border: 'none',
+                    color: 'var(--accent-orange)',
+                    fontWeight: 700,
+                    textDecoration: 'underline',
+                    cursor: 'pointer',
+                    fontSize: '11px',
+                    padding: 0,
+                  }}
+                >
+                  Enter Readings Manually
+                </button>
+              </p>
+            )}
             <input ref={fileInputRef} type="file" id="solarReportFileInput" accept=".pdf,.png,.jpg,.jpeg,.webp,application/pdf,image/*" style={{ display: 'none' }} onChange={handleChange} />
             <div style={{ marginTop: '6px', display: 'flex', flexWrap: 'wrap', justifyContent: 'center', gap: '4px' }}>
               <span style={{ fontSize: '9px', color: 'var(--text-muted)', background: 'rgba(255,255,255,0.04)', border: '1px solid var(--border-color)', padding: '1px 6px', borderRadius: '3px' }}>Solar App Screenshot</span>
@@ -1081,9 +1155,9 @@ function AnalysisResults({
   const averageDailyGen = calculateAverageDailyGeneration(solarReport?.productionKwh, solarReport?.month, solarReport?.year)
 
   // 1. Authoritative Primary Energy Source Figures
-  const gridImportKwh = d.importUnits != null ? d.importUnits : (d.gridImport != null ? d.gridImport : (d.monthly_units > 0 ? d.monthly_units : null))
-  const gridExportKwh = d.exportUnits != null ? d.exportUnits : (d.gridExport != null ? d.gridExport : null)
-  const solarGenKwh = solarReport && solarReport.productionKwh != null ? solarReport.productionKwh : null
+  const gridImportKwh = d.gridImportKwh ?? (d.gridImport != null ? d.gridImport : (d.importUnits != null ? d.importUnits : null))
+  const gridExportKwh = d.gridExportKwh ?? (d.gridExport != null ? d.gridExport : (d.exportUnits != null ? d.exportUnits : null))
+  const solarGenKwh = solarReport && solarReport.productionKwh != null ? solarReport.productionKwh : (d.solarGenerationKwh ?? null)
 
   // 2. Period Compatibility
   const isPeriodCompatible = checkPeriodCompatibility(d.billing_period, solarReport?.month, solarReport?.year)
@@ -1655,7 +1729,7 @@ function AnalysisResults({
               <div className="card-base" style={{ '--card-theme': '23, 168, 229', padding: '10px', background: 'rgba(23,168,229,0.02)', border: '1px solid var(--border-color)' } as React.CSSProperties}>
                 <span style={{ fontSize: '8px', color: 'var(--text-muted)', display: 'block', textTransform: 'uppercase', fontWeight: '700' }}>Reporting Period</span>
                 <span style={{ fontSize: '12px', fontWeight: '800', color: 'var(--text-navy)', display: 'block' }} id="resProdMonth">
-                  {getReportingPeriodText(solarReport.month, solarReport.year)}
+                  {getReportingPeriodText(solarReport.month, solarReport.year, solarReport.periodType, solarReport.startDate, solarReport.endDate)}
                 </span>
               </div>
               <div className="card-base" style={{ '--card-theme': '255, 138, 29', padding: '10px', background: 'rgba(255,138,29,0.02)', border: '1px solid var(--border-color)' } as React.CSSProperties}>
@@ -1837,7 +1911,9 @@ export default function BillAnalyzer() {
     retryBillUpload,
     retrySolarUpload,
     clearSolarReport,
+    resetBill,
     submitManualBill,
+    saveManualSolar,
     fetchQuotas,
   } = useBillAnalyzer()
 
@@ -1856,6 +1932,7 @@ export default function BillAnalyzer() {
   }, [auth, fetchQuotas])
 
   const [inputMode, setInputMode] = useState<'upload' | 'manual'>('upload')
+  const [showManualSolarModal, setShowManualSolarModal] = useState(false)
   const [isDemoMode, setIsDemoMode] = useState(false)
 
   const demoCostChartRef = useRef<ChartJS | null>(null)
@@ -2054,7 +2131,7 @@ export default function BillAnalyzer() {
           <div className="card-base shadow-lift" style={{ '--card-theme': '23, 168, 229', padding: '12px 14px' } as React.CSSProperties}>
             <div className="kpi-header-row" style={{ marginBottom: '6px' }}>
               <div style={{ display: 'flex', alignItems: 'center', gap: '6px', flexWrap: 'wrap' }}>
-                <span className="kpi-title">Monthly Units / Grid Import</span>
+                <span className="kpi-title">Monthly Units Consumed</span>
                 {isDemoMode && <DemoMetricExplainer metricKey="gridImport" compact />}
               </div>
               <svg className="kpi-title-icon blue"><use href="#icon-bill" xlinkHref="#icon-bill" /></svg>
@@ -2062,7 +2139,7 @@ export default function BillAnalyzer() {
             <div className="kpi-value-block">
               <span className="kpi-value-text" id="billTabUnits">
                 {(() => {
-                  const kwh = d ? (d.importUnits != null ? d.importUnits : (d.monthly_units > 0 ? d.monthly_units : null)) : null
+                  const kwh = d ? (d.monthlyConsumptionKwh ?? (d.monthly_units > 0 ? d.monthly_units : null)) : null
                   return kwh != null ? `${formatKwhNumber(kwh)} kWh` : '—'
                 })()}
               </span>
@@ -2070,7 +2147,7 @@ export default function BillAnalyzer() {
             <p className="kpi-card-subdesc" style={{ fontSize: '10px', color: 'var(--text-muted)', marginTop: '4px' }}>
               {isDemoMode
                 ? 'Sample metered grid consumption: 380 kWh'
-                : d && (d.importUnits != null || d.monthly_units > 0) ? `Grid import: ${formatKwhNumber(d.importUnits != null ? d.importUnits : d.monthly_units)} kWh` : 'No consumption data'}
+                : d && (d.monthlyConsumptionKwh ?? d.monthly_units) ? `Billed consumption: ${formatKwhNumber(d.monthlyConsumptionKwh ?? d.monthly_units)} kWh` : 'No consumption data'}
             </p>
           </div>
           <div className="card-base shadow-lift" style={{ '--card-theme': '54, 211, 153', padding: '12px 14px' } as React.CSSProperties}>
@@ -2130,6 +2207,7 @@ export default function BillAnalyzer() {
                 onFile={handleSolarFile}
                 onRetry={retrySolarUpload}
                 onClear={clearSolarReport}
+                onEnterManually={() => setShowManualSolarModal(true)}
               />
             </div>
           </div>
@@ -2222,6 +2300,18 @@ export default function BillAnalyzer() {
               Analyze My Bill
             </button>
           </div>
+        )}
+
+        {showManualSolarModal && (
+          <ManualSolarProductionModal
+            isOpen={showManualSolarModal}
+            onClose={() => setShowManualSolarModal(false)}
+            onSave={(data) => {
+              saveManualSolar(data)
+              setShowManualSolarModal(false)
+            }}
+            initialData={solarReport}
+          />
         )}
       </div>
       </DemoExplainerProvider>

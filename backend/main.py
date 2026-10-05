@@ -32,6 +32,7 @@ import vendor_models  # noqa: F401 — must import before create_all() so Phase 
 import vendor_payments_models  # noqa: F401 — must import before create_all() so Phase 5 vendor payouts table is registered
 import vendor_teams_models  # noqa: F401 — must import before create_all() so Phase 5 vendor team table is registered
 import vendor_documents_models  # noqa: F401 — must import before create_all() so Phase 5 vendor documents table is registered
+import solar_production_models  # noqa: F401 — must import before create_all() so customer_solar_production table is registered
 import os
 import json
 import re
@@ -217,6 +218,10 @@ app.include_router(oauth_router)
 # ── Customer Support ticket email delivery ──────────────────────────────
 app.include_router(support_router)
 app.include_router(admin_proposal_router)
+
+# ── Phase 7B: Solar Production Persistence & Reconciliation ───────────────
+from solar_production import router as solar_production_router
+app.include_router(solar_production_router)
 
 @app.on_event("startup")
 async def startup_event():

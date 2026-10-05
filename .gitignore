@@ -125,3 +125,6 @@ _repository_archive/*
 # Test Generated Artifacts
 GET-Solar-Energy-Proposal-*.pdf
 **/GET-Solar-Energy-Proposal-*.pdf
+
+# Agent Tooling
+.agent/

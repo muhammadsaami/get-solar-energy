@@ -210,6 +210,55 @@ export function useSystemPerformance() {
     } else if (plants.length > 0) {
       setSelectedPlantId(plants[0].id)
     } else {
+      try {
+        const stored = localStorage.getItem('lastSolarProduction')
+        if (stored) {
+          const manual = JSON.parse(stored)
+          if (manual && typeof manual.productionKwh === 'number') {
+            const cap = manual.systemSizeKw || 0
+            const gen = manual.productionKwh
+            setSummary({
+              generation: {
+                solarGenerated: gen,
+                dailyGeneration: manual.dailyGenerationKwh ?? (manual.periodType === 'day' ? gen : Number((gen / 30).toFixed(1))),
+                monthlyGeneration: gen,
+                systemSizeKw: cap,
+                monthlyGenerationTrend: null,
+                source: 'manual',
+                periodType: manual.periodType,
+                month: manual.month,
+                year: manual.year,
+              },
+              consumption: {
+                solarConsumed: 0,
+                monthlyConsumption: 0,
+                selfConsumptionPct: 0,
+              },
+              grid: {
+                importUnits: 0,
+                exportUnits: 0,
+                netExport: 0,
+                gridDependencyPct: 0,
+              },
+              efficiency: {
+                prRatio: 0,
+                systemEfficiency: null,
+                performanceRating: 'Good',
+              },
+              health: {
+                inverterHealth: null,
+                panelHealth: null,
+                batteryHealth: null,
+                wiringHealth: null,
+                overallHealth: 100,
+                healthLabel: 'Manual Reading Active',
+              },
+            })
+          }
+        }
+      } catch {
+        // Fallback safely to empty state
+      }
       setLoading(false)
     }
     return () => {
@@ -247,6 +296,53 @@ export function useSystemPerformance() {
     }
   }, [selectedPlantId])
 
+  const saveManualSolar = useCallback((data: any) => {
+    try {
+      localStorage.setItem('lastSolarProduction', JSON.stringify(data))
+      const cap = data.systemSizeKw || 0
+      const gen = data.productionKwh || 0
+      setSummary({
+        generation: {
+          solarGenerated: gen,
+          dailyGeneration: data.dailyGenerationKwh ?? (data.periodType === 'day' ? gen : Number((gen / 30).toFixed(1))),
+          monthlyGeneration: gen,
+          systemSizeKw: cap,
+          monthlyGenerationTrend: null,
+          source: 'manual',
+          periodType: data.periodType,
+          month: data.month,
+          year: data.year,
+        },
+        consumption: {
+          solarConsumed: 0,
+          monthlyConsumption: 0,
+          selfConsumptionPct: 0,
+        },
+        grid: {
+          importUnits: 0,
+          exportUnits: 0,
+          netExport: 0,
+          gridDependencyPct: 0,
+        },
+        efficiency: {
+          prRatio: 0,
+          systemEfficiency: null,
+          performanceRating: 'Good',
+        },
+        health: {
+          inverterHealth: null,
+          panelHealth: null,
+          batteryHealth: null,
+          wiringHealth: null,
+          overallHealth: 100,
+          healthLabel: 'Manual Reading Active',
+        },
+      })
+    } catch {
+      // Ignore
+    }
+  }, [])
+
   const activePlant = plants.find((p) => p.id === selectedPlantId) || null
 
   return {
@@ -265,5 +361,6 @@ export function useSystemPerformance() {
     refresh,
     syncTelemetry,
     acknowledgeAlert,
+    saveManualSolar,
   }
 }

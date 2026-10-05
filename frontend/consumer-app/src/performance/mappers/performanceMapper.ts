@@ -50,7 +50,7 @@ export function mapConsumptionData(raw: GenerationApiData | null): ConsumptionMe
   if (!raw) {
     return { solarConsumed: 0, monthlyConsumption: 0, selfConsumptionPct: 0 }
   }
-  const monthlyConsumption = safeNum(raw.monthly_units || raw.solar_consumption)
+  const monthlyConsumption = safeNum(raw.monthly_units)
   return {
     solarConsumed: safeNum(raw.solar_consumption),
     monthlyConsumption,

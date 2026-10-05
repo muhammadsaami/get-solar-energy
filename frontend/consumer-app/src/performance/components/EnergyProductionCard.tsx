@@ -58,8 +58,19 @@ function EnergyProductionCardComponent({
               letterSpacing: '0.04em',
             }}
           >
-            {hasData && <span style={{ width: '4px', height: '4px', borderRadius: '50%', background: '#36D399', display: 'inline-block', boxShadow: '0 0 6px #36D399' }} />}
-            {hasData ? 'LIVE' : 'STANDBY'}
+            {hasData && (
+              <span
+                style={{
+                  width: '4px',
+                  height: '4px',
+                  borderRadius: '50%',
+                  background: metrics?.source === 'manual' ? '#ff8a1d' : '#36D399',
+                  display: 'inline-block',
+                  boxShadow: `0 0 6px ${metrics?.source === 'manual' ? '#ff8a1d' : '#36D399'}`,
+                }}
+              />
+            )}
+            {hasData ? (metrics?.source === 'manual' ? 'MANUAL ENTRY' : 'LIVE') : 'STANDBY'}
           </span>
         </div>
 
@@ -125,7 +136,9 @@ function EnergyProductionCardComponent({
                   {generatedMonth} kWh
                 </span>
                 <span style={{ fontSize: '9px', color: 'var(--text-muted, #94a3b8)', marginTop: '2px' }}>
-                  Generated this month
+                  {metrics?.source === 'manual'
+                    ? (metrics?.periodType ? `Recorded (${metrics.periodType})` : 'Manually Recorded')
+                    : 'Generated this month'}
                 </span>
               </div>
             </div>

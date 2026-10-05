@@ -164,8 +164,8 @@ export default function AdminProposals() {
       setSelected(bundle)
       const bill = bundle.latest_bill
       setInputs({
-        monthlyBill: numOrNull(bill?.bill_amount)?.toString() ?? '',
-        monthlyUnits: numOrNull(bill?.monthly_units)?.toString() ?? '',
+        monthlyBill: (numOrNull((bill as any)?.billAmount) ?? numOrNull(bill?.bill_amount))?.toString() ?? '',
+        monthlyUnits: (numOrNull((bill as any)?.monthlyConsumptionKwh) ?? numOrNull(bill?.monthly_units))?.toString() ?? '',
         electricityRate: numOrNull(bill?.per_unit_rate)?.toString() ?? '8.0',
         roofArea: '',
         recommendedKw: numOrNull(bill?.recommended_kw)?.toString() ?? '',

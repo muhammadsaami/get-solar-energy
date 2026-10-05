@@ -20,15 +20,21 @@ export const errorHandler = {
     const status = error.response.status;
     let message = "A connection error occurred. Please try again.";
 
-    if (status === 400) message = "Invalid parameters provided.";
+    if (status === 400) {
+      message = error.response.data?.error || error.response.data?.message || "Invalid parameters provided.";
+    }
     else if (status === 401) message = "Session expired. Please sign in again.";
-    else if (status === 403) message = "You do not have permissions to access this feature.";
+    else if (status === 403) message = error.response.data?.error || "You do not have permissions to access this feature.";
     else if (status === 404) message = "The requested resource was not found.";
     else if (status === 413) message = "The file uploaded is too large (Maximum size is 5MB).";
     else if (status === 415) message = "Unsupported file type. Please upload a PDF, JPG, or PNG.";
     else if (status === 422) {
-      const detail = error.response.data?.detail;
-      if (Array.isArray(detail) && detail.length > 0) {
+      const data = error.response.data;
+      const detail = data?.detail;
+      const backendErr = data?.error || data?.message;
+      if (backendErr && typeof backendErr === 'string') {
+        message = backendErr;
+      } else if (Array.isArray(detail) && detail.length > 0) {
         message = detail.map(d => `${d.loc?.slice(-1)[0] || 'Field'}: ${d.msg}`).join(', ');
       } else if (typeof detail === 'string') {
         message = detail;
@@ -36,7 +42,9 @@ export const errorHandler = {
         message = "Validation error. Please verify form inputs.";
       }
     }
-    else if (status === 429) message = "GET Solar Copilot is currently experiencing high demand. Please try again in a few moments.";
+    else if (status === 429) {
+      message = error.response.data?.error || error.response.data?.message || "GET Solar Copilot is currently experiencing high demand. Please try again in a few moments.";
+    }
     else if (status >= 500) message = "An internal server error occurred. Our engineering team has been notified.";
 
     return {

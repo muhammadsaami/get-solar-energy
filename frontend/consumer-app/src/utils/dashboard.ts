@@ -31,7 +31,13 @@ export function deriveDashboard(data: CustomerDashboardData, isDemoMode = false)
 
   // Determine if the customer has genuine customer-owned analysis data
   const hasRealAnalysis = Boolean(
-    (bill && (num(bill.bill_amount) > 0 || num(bill.monthly_units) > 0 || num(bill.recommended_kw) > 0)) ||
+    (bill && (
+      num(bill.billAmount) > 0 ||
+      num(bill.bill_amount) > 0 ||
+      num(bill.monthlyConsumptionKwh) > 0 ||
+      num(bill.monthly_units) > 0 ||
+      num(bill.recommended_kw) > 0
+    )) ||
     (solar && (num(solar.productionKwh) > 0 || num(solar.system_size_kw) > 0)) ||
     (roof && (num(roof.recommendedKw) > 0 || num(roof.system_size_kw) > 0 || num(roof.roof_area_sqft) > 0 || num(roof.area_sqft) > 0)) ||
     (roi && (num(roi.annualSavings) > 0 || num(roi.annual_savings) > 0 || num(roi.lifetimeSavings) > 0 || num(roi.netCost) > 0)) ||
@@ -99,8 +105,8 @@ export function deriveDashboard(data: CustomerDashboardData, isDemoMode = false)
   }
 
   // 3. Genuine Customer-Owned Analysis State
-  const monthlyBill = num(bill?.bill_amount) || null
-  const monthlyUnits = num(bill?.monthly_units) || null
+  const monthlyBill = num(bill?.billAmount) || num(bill?.bill_amount) || num(bill?.amount) || null
+  const monthlyUnits = num(bill?.monthlyConsumptionKwh) || num(bill?.monthly_units) || num(bill?.kwhConsumption) || null
   const recommendedKw = (num(bill?.recommended_kw) || num(roof?.recommendedKw) || num(roof?.system_size_kw)) || null
   const roofSystemKw = (num(roof?.recommendedKw) || num(roof?.system_size_kw) || num(roof?.recommended_kw)) || null
 
@@ -137,14 +143,14 @@ export function deriveDashboard(data: CustomerDashboardData, isDemoMode = false)
 
   const roiPercent = (num(roi?.roi) || num(roi?.roiPercent) || (netInvestment > 0 && lifetimeSavings && lifetimeSavings > 0 ? parseFloat((((lifetimeSavings - netInvestment) / netInvestment) * 100).toFixed(1)) : null))
 
-  const completion = Object.values(data.journey).filter(Boolean).length
+  const completion = Object.values(data.journey || {}).filter(Boolean).length
   const readinessPercent = completion > 0 ? Math.min(100, Math.round((completion / 4) * 100)) : null
 
   const activities: Array<{ id: string; label: string; date: string }> = []
   if (bill || solar) activities.push({ id: 'ab', label: 'Electricity bill analyzed', date: new Date().toLocaleDateString() })
   if (roof) activities.push({ id: 'ar', label: 'Roof analysis completed', date: new Date().toLocaleDateString() })
   if (roi) activities.push({ id: 'aroi', label: 'ROI calculated', date: new Date().toLocaleDateString() })
-  for (const b of data.recentBills.slice(0, 4)) {
+  for (const b of (data.recentBills || []).slice(0, 4)) {
     const stamp = b.created_at ? new Date(String(b.created_at)).toLocaleDateString() : new Date().toLocaleDateString()
     activities.push({ id: `rb-${b.id}`, label: `${b.billing_period || 'Bill'} analyzed`, date: stamp })
   }

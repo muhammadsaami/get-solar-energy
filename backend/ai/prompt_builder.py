@@ -138,9 +138,18 @@ class PromptBuilder:
 
         bill = context.get("bill")
         if bill and isinstance(bill, dict):
-            units = bill.get("monthly_units")
-            if units:
-                lines.append(f"Monthly Units: {units} kWh")
+            units = bill.get("monthlyConsumptionKwh") if bill.get("monthlyConsumptionKwh") is not None else bill.get("monthly_units")
+            if units is not None:
+                lines.append(f"Monthly Units Consumed: {units} kWh")
+            import_kwh = bill.get("gridImportKwh") if bill.get("gridImportKwh") is not None else (bill.get("grid_import") if bill.get("grid_import") is not None else bill.get("importUnits"))
+            if import_kwh is not None:
+                lines.append(f"Grid Import: {import_kwh} kWh")
+            export_kwh = bill.get("gridExportKwh") if bill.get("gridExportKwh") is not None else (bill.get("grid_export") if bill.get("grid_export") is not None else bill.get("exportUnits"))
+            if export_kwh is not None:
+                lines.append(f"Grid Export: {export_kwh} kWh")
+            net_billed = bill.get("netBilledUnitsKwh") if bill.get("netBilledUnitsKwh") is not None else bill.get("net_billed_units")
+            if net_billed is not None:
+                lines.append(f"Net Billed Units: {net_billed} kWh")
 
         roi = context.get("roi")
         if roi and isinstance(roi, dict):

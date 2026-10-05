@@ -7,6 +7,7 @@ export interface ROIFormData {
   sunHours: number | ''
   systemSize: number | ''
   panelQuality: PanelQuality
+  monthlyUnits?: number | ''
 }
 
 export interface ROIResult {
@@ -47,6 +48,7 @@ export interface UseROICalculatorReturn extends ROIState {
   setSunHours: (v: number | '') => void
   setSystemSize: (v: number | '') => void
   setPanelQuality: (v: PanelQuality) => void
+  setMonthlyUnits?: (v: number | '') => void
   calculate: () => Promise<void>
   reset: () => void
   hasCalculated: boolean

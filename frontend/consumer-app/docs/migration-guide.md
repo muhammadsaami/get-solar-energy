@@ -107,3 +107,22 @@ All application features and routes have been migrated to the React SPA. The leg
 | Custom hook | `hooks/useHookName.ts` | `hooks/useDebounce.ts` |
 | Type definition | `types/domain.ts` | `types/user.ts` |
 | Utility | `utils/utilName.ts` | `utils/formatters.ts` |
+
+## Phase 7B: Solar Production Persistence & Data Reconciliation
+
+### Server-Side Persistence Architecture
+Previously, manual solar generation inputs and extracted solar report data lived only in client-side `localStorage`. In Phase 7B, server persistence was introduced:
+
+1. **Database Schema (`CustomerSolarProduction`)**:
+   - Stores `customer_email`, `period_type` (`month`, `year`, `custom`, `lifetime`), `start_date`, `end_date`, `month`, `year`, `production_kwh`, `installed_capacity_kwp`, `system_size_kw`, `source` (`manual`, `upload`, `report`), `daily_generation_kwh`, and `daily_points` (JSON).
+   - Strict customer isolation enforced using verified JWT `sub` claims.
+2. **REST API (`/api/solar-production`)**:
+   - `POST /api/solar-production`: Validate and save verified solar production reading.
+   - `GET /api/solar-production/latest`: Retrieve most recent verified reading for authenticated customer.
+   - `GET /api/solar-production/history`: Retrieve paginated reading history.
+   - `DELETE /api/solar-production/{id}`: Delete an owned reading.
+3. **Frontend Client Service (`solarProduction.service.ts`)**:
+   - Provides clean asynchronous methods with silent fallback on network/auth errors.
+4. **Hook Synchronization (`useBillAnalyzer.ts`)**:
+   - **Mount Effect**: Performs server-first query via `fetchLatestSolarProductionFromServer()`, automatically syncing verified cloud records down to localStorage. If server is offline or user unauthenticated, seamlessly falls back to `readLS()`.
+   - **Save Actions**: Both `saveManualSolar` and `handleSolarFile`'s `doComplete` trigger non-blocking fire-and-forget `saveSolarProductionToServer()`, ensuring immediate responsive UI updates while guaranteeing cross-device persistence.
