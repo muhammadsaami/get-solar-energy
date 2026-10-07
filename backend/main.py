@@ -1168,13 +1168,14 @@ def _normalize_raw_ai_bill_result(data: dict) -> dict:
         normalized["customer_name"] = None
 
     # 2. Coerce numeric fields from strings or formatted text
-    def _parse_num(val):
+    def _parse_num(val, allow_negative=False):
         if val is None or isinstance(val, bool):
             return None
         if isinstance(val, (int, float)):
             return float(val)
         if isinstance(val, str):
-            cleaned = re.sub(r"[^\d.]", "", val)
+            regex = r"[^\d.-]" if allow_negative else r"[^\d.]"
+            cleaned = re.sub(regex, "", val)
             try:
                 return float(cleaned) if cleaned else None
             except ValueError:
@@ -1187,12 +1188,36 @@ def _normalize_raw_ai_bill_result(data: dict) -> dict:
         "system_cost_rs", "payback_years", "savings_25_years_rs",
         "net_billed_units", "grid_import", "grid_export", "fixed_charges",
         "energy_charges", "taxes", "payable_amount", "previous_dues",
-        "solar_generation_units", "solar_capacity_kw"
+        "solar_generation_units", "solar_capacity_kw",
+        "sanctioned_load_kw", "billed_demand_kw", "billed_demand", "power_factor",
+        "kwh_meter_consumption", "kvah_consumption", "electricity_duty", "fppa",
+        "demand_charges"
     ]
     for k in numeric_keys:
         if k in normalized and normalized[k] is not None:
-            parsed = _parse_num(normalized[k])
+            parsed = _parse_num(normalized[k], allow_negative=(k == "fppa"))
             normalized[k] = parsed
+
+    # Demand charges / fixed charges normalization
+    if normalized.get("fixed_charges") is None and normalized.get("demand_charges") is not None:
+        normalized["fixed_charges"] = normalized.get("demand_charges")
+    elif normalized.get("demand_charges") is None and normalized.get("fixed_charges") is not None:
+        normalized["demand_charges"] = normalized.get("fixed_charges")
+
+    # Sanctioned load normalization
+    if normalized.get("sanctioned_load_kw") is None and normalized.get("sanctionedLoad") is not None:
+        normalized["sanctioned_load_kw"] = _parse_num(normalized.get("sanctionedLoad"))
+
+    # Billed demand normalization
+    if normalized.get("billed_demand_kw") is None and normalized.get("billed_demand") is not None:
+        normalized["billed_demand_kw"] = normalized.get("billed_demand")
+
+    # String identifiers cleaning
+    for str_key in ["bill_number", "bill_date", "due_date", "disconnection_date", "tariff_category", "meter_number", "metering_arrangement"]:
+        val = normalized.get(str_key)
+        if isinstance(val, str):
+            cleaned_str = val.strip()
+            normalized[str_key] = cleaned_str if cleaned_str and cleaned_str.lower() not in ["null", "none", "n/a", "unknown"] else None
 
     # 3. Bill Amount: fallback to payable_amount if bill_amount was omitted
     if normalized.get("bill_amount") is None and normalized.get("payable_amount") is not None:
@@ -1464,9 +1489,19 @@ Carefully analyze this electricity bill and extract the following real data:
 8. Net billed units in kWh exactly as printed on the bill (look for "Net Billed Unit", "Net Billed Units", "Net Billed KWH"). This is a direct bill field, not a calculated value. If the bill does not print net billed units, return null. Never derive it from other fields.
 9. Grid import units in kWh if printed on bill, otherwise null.
 10. Grid export units in kWh if printed on bill, otherwise null.
-11. Fixed charges in Rupees if printed, otherwise null.
+11. Fixed charges (or Demand Charges) in Rupees if printed, otherwise null.
 12. Energy charges in Rupees if printed, otherwise null.
-13. Slabs if multi-slab schedule is printed on the bill (e.g. [{"range": "0-100", "rate": 5.0}]), otherwise null.
+13. Slabs if multi-slab schedule is printed on the bill (e.g. [{"range": "0-100", "rate": 5.0, "units": 48}]), otherwise null.
+14. Sanctioned load in kW (look for "Sanctioned Load", "Conn Load", "Sanct Load", in kW). If in HP or kVA convert appropriately or return number in kW. Otherwise null.
+15. Billed demand in kW (look for "Billed Demand", "Billing Demand", "Max Demand", in kW), otherwise null.
+16. Power factor (look for "Power Factor", "P.F.", "PF", e.g. 0.87, between 0.1 and 1.0), otherwise null.
+17. Bill number or invoice number if visible, otherwise null.
+18. Bill date (DD-Mon-YYYY or DD/MM/YYYY) if visible, otherwise null.
+19. Due date for payment if visible, otherwise null.
+20. KWH active meter consumption before net deductions if distinctly printed, otherwise null.
+21. KVAH units if printed, otherwise null.
+22. Electricity duty in Rupees if printed, otherwise null.
+23. FPPA (Fuel and Power Purchase Adjustment) in Rupees if printed (can be negative or positive), otherwise null.
 
 Then calculate solar recommendations based on extracted data:
 - Recommended solar system size: monthly_units / 135 (rounded to nearest 0.5)
@@ -1498,6 +1533,16 @@ Return ONLY valid JSON with real extracted values, no extra text:
     "fixed_charges": <fixed charges as printed, or null>,
     "energy_charges": <energy charges as printed, or null>,
     "slabs": <array of slabs or null>,
+    "sanctioned_load_kw": <sanctioned load in kW, or null>,
+    "billed_demand_kw": <billed demand in kW, or null>,
+    "power_factor": <power factor, or null>,
+    "bill_number": "<bill number, or null>",
+    "bill_date": "<bill date, or null>",
+    "due_date": "<due date, or null>",
+    "kwh_meter_consumption": <kwh active meter consumption, or null>,
+    "kvah_consumption": <kvah units, or null>,
+    "electricity_duty": <electricity duty in Rs, or null>,
+    "fppa": <fppa in Rs, or null>,
     "recommended_kw": <calculated>,
     "monthly_generation_units": <calculated>,
     "monthly_savings_rs": <calculated>,

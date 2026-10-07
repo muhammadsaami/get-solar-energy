@@ -54,7 +54,34 @@ export class BillModel {
     // Timeline attributes driven from processing stages
     this.ocrStatus = raw.ocr_status || raw.ocrStatus || 'Completed';
     this.verificationStatus = raw.verification_status || raw.verificationStatus || 'Verified';
-    this.sanctionedLoad = raw.sanctioned_load_kw || raw.sanctionedLoad || 8.0;
+    this.sanctionedLoad = raw.sanctioned_load_kw ?? raw.sanctionedLoad ?? 8.0;
+    this.sanctioned_load_kw = raw.sanctioned_load_kw ?? this.sanctionedLoad;
+    this.billedDemand = raw.billed_demand_kw ?? raw.billed_demand ?? raw.billedDemand ?? null;
+    this.billed_demand_kw = this.billedDemand;
+    this.powerFactor = raw.power_factor ?? raw.powerFactor ?? null;
+    this.power_factor = this.powerFactor;
+    this.billNumber = raw.bill_number ?? raw.billNumber ?? '';
+    this.bill_number = this.billNumber;
+    this.billDate = raw.bill_date ?? raw.billDate ?? '';
+    this.bill_date = this.billDate;
+    this.dueDate = raw.due_date ?? raw.dueDate ?? '';
+    this.due_date = this.dueDate;
+    this.effectiveRate = raw.effective_rate ?? raw.effectiveRate ?? null;
+    this.effective_rate = this.effectiveRate;
+    this.energyCharges = raw.energy_charges ?? raw.energyCharges ?? null;
+    this.energy_charges = this.energyCharges;
+    this.fixedCharges = raw.fixed_charges ?? raw.demand_charges ?? raw.fixedCharges ?? null;
+    this.fixed_charges = this.fixedCharges;
+    this.demand_charges = this.fixedCharges;
+    this.electricityDuty = raw.electricity_duty ?? raw.electricityDuty ?? null;
+    this.electricity_duty = this.electricityDuty;
+    this.fppa = raw.fppa ?? null;
+    this.kwhMeterConsumption = raw.kwh_meter_consumption ?? raw.kwhMeterConsumption ?? null;
+    this.kwh_meter_consumption = this.kwhMeterConsumption;
+    this.kvahConsumption = raw.kvah_consumption ?? raw.kvahConsumption ?? null;
+    this.kvah_consumption = this.kvahConsumption;
+    this.tariffSlabs = raw.tariff_slabs ?? raw.slabs ?? raw.tariffSlabs ?? null;
+    this.tariff_slabs = this.tariffSlabs;
   }
 }
 

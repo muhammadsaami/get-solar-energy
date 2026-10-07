@@ -43,6 +43,25 @@ export interface BillAnalysisData {
   gridImport?: number | null
   gridExport?: number | null
 
+  // Detailed bill parameters & multi-slab tariff information
+  effective_rate?: number | null
+  sanctioned_load_kw?: number | null
+  sanctionedLoad?: number | null
+  billed_demand_kw?: number | null
+  power_factor?: number | null
+  bill_number?: string | null
+  bill_date?: string | null
+  due_date?: string | null
+  kwh_meter_consumption?: number | null
+  kvah_consumption?: number | null
+  energy_charges?: number | null
+  fixed_charges?: number | null
+  demand_charges?: number | null
+  electricity_duty?: number | null
+  fppa?: number | null
+  tariff_slabs?: Array<{ units?: number; range?: string; rate: number }> | null
+  payable_amount?: number | null
+
   extractionConfidence: ConfidenceResult
   billHealth: ScoreResult
   solarOpportunity: ScoreResult

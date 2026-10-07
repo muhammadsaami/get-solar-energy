@@ -83,7 +83,8 @@ function writeLS(key: string, data: unknown): void {
   }
 }
 
-function safeNum(val: unknown, fallback = 0): number {
+export function safeNum(val: unknown, fallback = 0): number {
+  if (val === null || val === undefined || val === '') return fallback
   const n = Number(val)
   return isFinite(n) ? n : fallback
 }
@@ -435,10 +436,31 @@ function extractSolarProductionData(text: string, filename: string): SolarReport
 function enrichAnalysisData(apiData: Record<string, unknown>, filename: string, isFallback: boolean, solarFieldData: ReturnType<typeof extractSolarFields>): BillAnalysisData {
   const monthlyUnits = safeNum(apiData.monthly_units ?? apiData.units, 0)
   const billAmount = safeNum(apiData.bill_amount ?? apiData.total_amount ?? apiData.amount, 0)
-  const perUnitRate = safeNum(
-    apiData.per_unit_rate,
-    monthlyUnits > 0 ? Math.round((billAmount / monthlyUnits) * 100) / 100 : 0
-  )
+
+  // Explicit tariff rate vs derived effective rate
+  const rawExplicitRate = apiData.per_unit_rate !== null && apiData.per_unit_rate !== undefined && apiData.per_unit_rate !== ''
+    ? Number(apiData.per_unit_rate)
+    : null
+  const explicitPerUnitRate = rawExplicitRate !== null && isFinite(rawExplicitRate) && rawExplicitRate > 0
+    ? rawExplicitRate
+    : null
+
+  const rawEffectiveRate = apiData.effective_rate !== null && apiData.effective_rate !== undefined && apiData.effective_rate !== ''
+    ? Number(apiData.effective_rate)
+    : null
+  const energyChargesRaw = apiData.energy_charges != null ? Number(apiData.energy_charges) : null
+  const derivedEffectiveRate = rawEffectiveRate !== null && isFinite(rawEffectiveRate) && rawEffectiveRate > 0
+    ? rawEffectiveRate
+    : (energyChargesRaw !== null && isFinite(energyChargesRaw) && energyChargesRaw > 0 && monthlyUnits > 0
+        ? Math.round((energyChargesRaw / monthlyUnits) * 100) / 100
+        : (monthlyUnits > 0 ? Math.round((billAmount / monthlyUnits) * 100) / 100 : null))
+
+  // Sizing financial calculations rate: explicit flat tariff -> derived effective rate -> 7.50 benchmark
+  const calcRate = explicitPerUnitRate ?? derivedEffectiveRate ?? 7.50
+
+  // Fallback per-unit rate for display: never let this be 0 if effective rate exists
+  const displayPerUnitRate = explicitPerUnitRate ?? derivedEffectiveRate ?? (monthlyUnits > 0 ? Math.round((billAmount / monthlyUnits) * 100) / 100 : 0)
+
   const recommendedKw = safeNum(
     apiData.recommended_kw,
     monthlyUnits > 0 ? Math.round((monthlyUnits / 135) * 2) / 2 : 0
@@ -450,7 +472,7 @@ function enrichAnalysisData(apiData: Record<string, unknown>, filename: string, 
   const annualSolarGen = monthlySolarGen * 12
   const monthlySavingsRs = safeNum(
     apiData.monthly_savings_rs,
-    monthlySolarGen * perUnitRate
+    monthlySolarGen * calcRate
   )
   const systemCostRs = safeNum(
     apiData.system_cost_rs,
@@ -483,6 +505,30 @@ function enrichAnalysisData(apiData: Record<string, unknown>, filename: string, 
   const netBilledRaw = apiData.net_billed_units ?? apiData.netBilledUnits ?? solarFieldData.netBilledUnits
   const netBilledVal = netBilledRaw != null ? Number(netBilledRaw) : null
 
+  // Detailed bill parameters
+  const sanctionedLoadRaw = apiData.sanctioned_load_kw ?? apiData.sanctionedLoad
+  const sanctionedLoadVal = sanctionedLoadRaw != null && isFinite(Number(sanctionedLoadRaw)) ? Number(sanctionedLoadRaw) : null
+  const billedDemandRaw = apiData.billed_demand_kw ?? apiData.billed_demand
+  const billedDemandVal = billedDemandRaw != null && isFinite(Number(billedDemandRaw)) ? Number(billedDemandRaw) : null
+  const powerFactorRaw = apiData.power_factor
+  const powerFactorVal = powerFactorRaw != null && isFinite(Number(powerFactorRaw)) ? Number(powerFactorRaw) : null
+  const kwhMeterRaw = apiData.kwh_meter_consumption
+  const kwhMeterVal = kwhMeterRaw != null && isFinite(Number(kwhMeterRaw)) ? Number(kwhMeterRaw) : null
+  const kvahRaw = apiData.kvah_consumption
+  const kvahVal = kvahRaw != null && isFinite(Number(kvahRaw)) ? Number(kvahRaw) : null
+  const fixedChargesRaw = apiData.fixed_charges ?? apiData.demand_charges
+  const fixedChargesVal = fixedChargesRaw != null && isFinite(Number(fixedChargesRaw)) ? Number(fixedChargesRaw) : null
+  const electricityDutyRaw = apiData.electricity_duty
+  const electricityDutyVal = electricityDutyRaw != null && isFinite(Number(electricityDutyRaw)) ? Number(electricityDutyRaw) : null
+  const fppaRaw = apiData.fppa
+  const fppaVal = fppaRaw != null && isFinite(Number(fppaRaw)) ? Number(fppaRaw) : null
+  const billNumberVal = apiData.bill_number ? String(apiData.bill_number) : null
+  const billDateVal = apiData.bill_date ? String(apiData.bill_date) : null
+  const dueDateVal = apiData.due_date ? String(apiData.due_date) : null
+  const slabsVal = (apiData.slabs || apiData.tariff_slabs) as Array<{ units?: number; range?: string; rate: number }> | null
+  const payableAmountRaw = apiData.payable_amount ?? apiData.bill_amount
+  const payableAmountVal = payableAmountRaw != null && isFinite(Number(payableAmountRaw)) ? Number(payableAmountRaw) : null
+
   const isSolarInstalled = solarFieldData.isSolarConsumer && (gridImportVal !== null || gridExportVal !== null)
   const netCons = gridImportVal !== null && gridExportVal !== null
     ? Math.max(gridImportVal - gridExportVal, 0)
@@ -496,7 +542,7 @@ function enrichAnalysisData(apiData: Record<string, unknown>, filename: string, 
     billing_period: String(apiData.billing_period ?? ''),
     monthly_units: monthlyUnits,
     bill_amount: billAmount,
-    per_unit_rate: perUnitRate,
+    per_unit_rate: displayPerUnitRate,
     recommended_kw: recommendedKw,
     monthly_generation_units: monthlySolarGen,
     monthly_savings_rs: monthlySavingsRs,
@@ -532,6 +578,23 @@ function enrichAnalysisData(apiData: Record<string, unknown>, filename: string, 
     netConsumptionUnits: solarFieldData.netConsumptionUnits,
     netConsumption: netCons,
     netMeteringCredit: netCredit,
+    effective_rate: derivedEffectiveRate,
+    sanctioned_load_kw: sanctionedLoadVal,
+    sanctionedLoad: sanctionedLoadVal,
+    billed_demand_kw: billedDemandVal,
+    power_factor: powerFactorVal,
+    kwh_meter_consumption: kwhMeterVal,
+    kvah_consumption: kvahVal,
+    energy_charges: energyChargesRaw,
+    fixed_charges: fixedChargesVal,
+    demand_charges: fixedChargesVal,
+    electricity_duty: electricityDutyVal,
+    fppa: fppaVal,
+    bill_number: billNumberVal,
+    bill_date: billDateVal,
+    due_date: dueDateVal,
+    tariff_slabs: slabsVal,
+    payable_amount: payableAmountVal,
     extractionConfidence: calculateExtractionConfidence(base as unknown as BillAnalysisData, isFallback),
     billHealth: calculateBillHealthScore(base as unknown as BillAnalysisData),
     solarOpportunity: calculateSolarOpportunityScore(base as unknown as BillAnalysisData, isSolarInstalled),

@@ -997,14 +997,25 @@ function SolarReportUploadCard({
   )
 }
 
-function formatDetailValue(key: string, val: string | number): string {
+function formatDetailValue(key: string, val: string | number | null | undefined): string {
   if (val === '-' || val === 'Not Available' || val === '' || val === null || val === undefined) return 'Not Available'
+  if (typeof val === 'string' && isNaN(Number(val))) return val
   const n = Number(val)
   if (!isFinite(n)) return String(val)
   switch (key) {
     case 'monthly_units': return `${Math.round(n)} kWh`
     case 'bill_amount': return formatCurrency(n)
     case 'per_unit_rate': return `₹${n} / kWh`
+    case 'effective_rate': return `₹${n} / kWh (Effective)`
+    case 'sanctioned_load_kw': return `${n} kW`
+    case 'billed_demand_kw': return `${n} kW`
+    case 'kwh_meter_consumption': return `${n.toFixed(2)} kWh`
+    case 'kvah_consumption': return `${n.toFixed(2)} kVAh`
+    case 'power_factor': return `${n.toFixed(2)}`
+    case 'energy_charges': return formatCurrency(n)
+    case 'fixed_charges': return formatCurrency(n)
+    case 'electricity_duty': return formatCurrency(n)
+    case 'fppa': return `${n < 0 ? '-' : ''}${formatCurrency(Math.abs(n))}`
     case 'recommended_kw': return `${n} kW`
     case 'monthly_generation_units': return `${Math.round(n)} kWh`
     case 'monthly_savings_rs': return `${formatCurrency(n)} / mo`
@@ -1191,28 +1202,63 @@ function AnalysisResults({
   const currentBillAmt = d.bill_amount
   const savingsPotential = d.monthly_savings_rs
 
-  const detailFields = [
-    { label: 'Customer Name', value: d.customer_name, key: 'customer_name', id: 'resCustomerName' },
-    { label: 'Consumer Number', value: d.consumer_number, key: 'consumer_number', id: 'resConsumerNumber' },
-    { label: 'Electricity Company', value: d.discom, key: 'discom', id: 'resElectricityCompany' },
-    { label: 'Billing Period', value: d.billing_period, key: 'billing_period', id: 'resBillingPeriod' },
-    { label: 'Monthly Units Consumed', value: d.monthly_units, key: 'monthly_units', id: 'resMonthlyUnits' },
-    { label: 'Bill Amount', value: d.bill_amount, key: 'bill_amount', id: 'resBillAmount' },
-    { label: 'Per Unit Rate', value: d.per_unit_rate, key: 'per_unit_rate', id: 'resPerUnitRate' },
+  const sanctionedLoadDisplay = d.sanctioned_load_kw != null
+    ? `${d.sanctioned_load_kw} kW`
+    : (d.sanctionedLoad != null ? `${d.sanctionedLoad} kW` : null)
+  const billedDemandDisplay = d.billed_demand_kw != null ? `${d.billed_demand_kw} kW` : null
+  const pfDisplay = d.power_factor != null ? `${d.power_factor.toFixed(2)}` : null
+  const kwhMeterDisplay = d.kwh_meter_consumption != null ? `${d.kwh_meter_consumption.toFixed(2)} kWh` : null
+  const kvahDisplay = d.kvah_consumption != null ? `${d.kvah_consumption.toFixed(2)} kVAh` : null
+  const energyChargesDisplay = d.energy_charges != null ? formatCurrency(d.energy_charges) : null
+  const fixedChargesDisplay = d.fixed_charges != null ? formatCurrency(d.fixed_charges) : null
+  const dutyDisplay = d.electricity_duty != null ? formatCurrency(d.electricity_duty) : null
+  const fppaDisplay = d.fppa != null ? `${d.fppa < 0 ? '-' : ''}${formatCurrency(Math.abs(d.fppa))}` : null
+
+  // Tariff rate display:
+  // Show explicit flat tariff rate if present; if multi-slab, show derived effective rate clearly labeled.
+  const rateDisplay = (d.per_unit_rate != null && d.per_unit_rate > 0 && d.per_unit_rate !== d.effective_rate)
+    ? `₹${d.per_unit_rate} / kWh (Flat)`
+    : (d.effective_rate != null && d.effective_rate > 0
+        ? `₹${d.effective_rate} / kWh (Effective)`
+        : (d.per_unit_rate != null && d.per_unit_rate > 0 ? `₹${d.per_unit_rate} / kWh` : '—'))
+
+  const verifiedBillFields = [
+    { label: 'Customer Name', value: d.customer_name || 'Not Available', key: 'customer_name', id: 'resCustomerName' },
+    { label: 'Consumer Number', value: d.consumer_number || 'Not Available', key: 'consumer_number', id: 'resConsumerNumber' },
+    { label: 'Electricity Company', value: d.discom || 'Not Available', key: 'discom', id: 'resElectricityCompany' },
+    { label: 'Billing Period', value: d.billing_period || 'Not Available', key: 'billing_period', id: 'resBillingPeriod' },
+    ...(d.bill_number ? [{ label: 'Bill Number', value: d.bill_number, key: 'bill_number', id: 'resBillNumber' }] : []),
+    ...(d.bill_date ? [{ label: 'Bill Date', value: d.bill_date, key: 'bill_date', id: 'resBillDate' }] : []),
+    ...(d.due_date ? [{ label: 'Due Date', value: d.due_date, key: 'due_date', id: 'resDueDate' }] : []),
+    { label: 'Sanctioned Load', value: sanctionedLoadDisplay || 'Not Available', key: 'sanctioned_load_kw', id: 'resSanctionedLoad' },
+    ...(billedDemandDisplay ? [{ label: 'Billed Demand', value: billedDemandDisplay, key: 'billed_demand_kw', id: 'resBilledDemand' }] : []),
+    { label: 'Monthly Units Consumed', value: `${Math.round(d.monthly_units)} kWh`, key: 'monthly_units', id: 'resMonthlyUnits' },
+    ...(kwhMeterDisplay ? [{ label: 'Active Meter Consumption', value: kwhMeterDisplay, key: 'kwh_meter_consumption', id: 'resKwhMeter' }] : []),
+    ...(kvahDisplay ? [{ label: 'Apparent Consumption (KVAH)', value: kvahDisplay, key: 'kvah_consumption', id: 'resKvahUnits' }] : []),
+    ...(pfDisplay ? [{ label: 'Power Factor', value: pfDisplay, key: 'power_factor', id: 'resPowerFactor' }] : []),
+    { label: 'Bill Amount', value: formatCurrency(d.bill_amount), key: 'bill_amount', id: 'resBillAmount' },
+    ...(energyChargesDisplay ? [{ label: 'Energy Charges', value: energyChargesDisplay, key: 'energy_charges', id: 'resEnergyCharges' }] : []),
+    ...(fixedChargesDisplay ? [{ label: 'Fixed / Demand Charges', value: fixedChargesDisplay, key: 'fixed_charges', id: 'resFixedCharges' }] : []),
+    ...(dutyDisplay ? [{ label: 'Electricity Duty', value: dutyDisplay, key: 'electricity_duty', id: 'resElectricityDuty' }] : []),
+    ...(fppaDisplay ? [{ label: 'FPPA Charges', value: fppaDisplay, key: 'fppa', id: 'resFppa' }] : []),
+    { label: 'Tariff / Effective Rate', value: rateDisplay, key: 'per_unit_rate', id: 'resPerUnitRate' },
+  ]
+
+  const solarRecommendationFields = [
     { label: 'Recommended Solar Size', value: d.recommended_kw, key: 'recommended_kw', id: 'resRecommendedSolarSize' },
-    { label: 'Monthly Generation', value: d.monthly_generation_units, key: 'monthly_generation_units', id: 'resMonthlyGeneration' },
-    { label: 'Monthly Savings', value: d.monthly_savings_rs, key: 'monthly_savings_rs', id: 'resMonthlySavings' },
+    { label: 'Estimated Monthly Generation', value: d.monthly_generation_units, key: 'monthly_generation_units', id: 'resMonthlyGeneration' },
+    { label: 'Projected Monthly Savings', value: d.monthly_savings_rs, key: 'monthly_savings_rs', id: 'resMonthlySavings' },
     { label: 'Estimated System Cost', value: d.system_cost_rs, key: 'system_cost_rs', id: 'resSystemCost' },
-    { label: 'Payback Period', value: d.payback_years, key: 'payback_years', id: 'resPaybackPeriod' },
+    { label: 'Estimated Payback Period', value: d.payback_years, key: 'payback_years', id: 'resPaybackPeriod' },
   ]
 
   const solarUtilFields = [
-    { label: isSolarConsumer ? 'Solar Generated' : 'Projected Solar Generation', value: `${d.monthlySolarGeneration.toFixed(1)} kWh`, id: 'resSolarGenerated' },
-    { label: isSolarConsumer ? 'Annual Solar Generation' : 'Projected Annual Generation', value: `${Math.round(d.annualSolarGeneration).toLocaleString('en-IN')} kWh/year`, id: 'resAnnualSolarGeneration' },
-    { label: isSolarConsumer ? 'Solar Used Directly' : 'Estimated Direct Usage', value: `${d.solarUsedDirectly.toFixed(1)} kWh`, id: 'resSolarUsedDirectly' },
-    { label: isSolarConsumer ? 'Exported To Grid' : 'Estimated Grid Export', value: `${d.solarExportedToGrid.toFixed(1)} kWh`, id: 'resExportedToGrid' },
-    { label: isSolarConsumer ? 'Solar Offset' : 'Estimated Solar Offset', value: `${d.solarOffsetPercent.toFixed(1)}%`, id: 'resSolarOffsetPercent', valueColor: 'var(--accent-blue)' },
-    { label: isSolarConsumer ? 'Grid Dependency' : 'Estimated Grid Dependency', value: `${d.gridDependency.toFixed(1)} kWh`, id: 'resGridDependency', valueColor: 'var(--accent-orange)' },
+    { label: 'Projected Solar Generation', value: `${d.monthlySolarGeneration.toFixed(1)} kWh`, id: 'resSolarGenerated' },
+    { label: 'Projected Annual Generation', value: `${Math.round(d.annualSolarGeneration).toLocaleString('en-IN')} kWh/year`, id: 'resAnnualSolarGeneration' },
+    { label: 'Estimated Direct Usage', value: `${d.solarUsedDirectly.toFixed(1)} kWh`, id: 'resSolarUsedDirectly' },
+    { label: 'Estimated Grid Export', value: `${d.solarExportedToGrid.toFixed(1)} kWh`, id: 'resExportedToGrid' },
+    { label: 'Estimated Solar Offset', value: `${d.solarOffsetPercent.toFixed(1)}%`, id: 'resSolarOffsetPercent', valueColor: 'var(--accent-blue)' },
+    { label: 'Estimated Grid Dependency', value: `${d.gridDependency.toFixed(1)} kWh`, id: 'resGridDependency', valueColor: 'var(--accent-orange)' },
   ]
 
   const unifiedFields = unifiedEnergy ? [
@@ -1579,40 +1625,109 @@ function AnalysisResults({
           </svg>
         }
       >
-        {/* Premium Summary Snapshot */}
-        <div className="card-base" style={{ '--card-theme': '54, 211, 153', marginBottom: '12px', padding: '10px 12px', background: 'rgba(54, 211, 153, 0.04)', border: '1px solid rgba(54, 211, 153, 0.25)' } as React.CSSProperties}>
-          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: '6px', textAlign: 'center' }}>
-            <div><span style={{ fontSize: '8px', color: 'var(--text-muted)', display: 'block', textTransform: 'uppercase', fontWeight: '700' }}>Solar Potential</span><span style={{ fontSize: '15px', fontWeight: '900', color: 'var(--accent-green)', display: 'block', marginTop: '2px' }} id="snapSolarPotential">{potentialScore != null ? `${potentialScore}/100` : '—'}</span></div>
-            <div><span style={{ fontSize: '8px', color: 'var(--text-muted)', display: 'block', textTransform: 'uppercase', fontWeight: '700' }}>System Size</span><span style={{ fontSize: '15px', fontWeight: '900', color: 'var(--accent-blue)', display: 'block', marginTop: '2px' }} id="snapSystemSize">{d.recommended_kw ? `${d.recommended_kw} kW` : '—'}</span></div>
-            <div><span style={{ fontSize: '8px', color: 'var(--text-muted)', display: 'block', textTransform: 'uppercase', fontWeight: '700' }}>Annual Savings</span><span style={{ fontSize: '15px', fontWeight: '900', color: 'var(--accent-blue)', display: 'block', marginTop: '2px' }} id="snapAnnualSavings">{d.monthly_savings_rs ? formatCurrency(d.monthly_savings_rs * 12) : '—'}</span></div>
-            <div><span style={{ fontSize: '8px', color: 'var(--text-muted)', display: 'block', textTransform: 'uppercase', fontWeight: '700' }}>Payback</span><span style={{ fontSize: '15px', fontWeight: '900', color: 'var(--accent-orange)', display: 'block', marginTop: '2px' }} id="snapPaybackPeriod">{d.payback_years != null && d.payback_years > 0 ? `${d.payback_years} Yrs` : '—'}</span></div>
-          </div>
-        </div>
-
-        {/* Extracted Bill Details */}
-        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(2, 1fr)', gap: '8px' }}>
-          {detailFields.map((field) => (
-            <div key={field.key} style={{ background: 'rgba(255, 255, 255, 0.02)', border: '1px solid var(--border-color)', padding: '6px 10px', borderRadius: '4px' }}>
-              <span style={{ fontSize: '8px', color: 'var(--text-muted)', display: 'block', textTransform: 'uppercase', fontWeight: '700' }}>{field.label}</span>
-              <span
-                id={field.id}
-                style={{
-                  fontSize: '11px',
-                  fontWeight: '800',
-                  color: ['recommended_kw', 'monthly_generation_units'].includes(field.key) ? 'var(--accent-blue)' :
-                         field.key === 'monthly_savings_rs' ? 'var(--accent-green)' :
-                         ['system_cost_rs', 'payback_years'].includes(field.key) ? 'var(--accent-orange)' : 'var(--text-navy)',
-                  display: 'block',
-                }}
-              >
-                {formatDetailValue(field.key, field.value)}
+        {/* SECTION A: VERIFIED BILL DETAILS */}
+        <div style={{ marginBottom: '16px' }}>
+          <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '8px', paddingBottom: '6px', borderBottom: '1px solid rgba(255, 255, 255, 0.06)' }}>
+            <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
+              <span style={{ fontSize: '11px', fontWeight: '800', color: 'var(--text-navy)', textTransform: 'uppercase', letterSpacing: '0.5px' }}>
+                Verified Bill Details
+              </span>
+              <span style={{ fontSize: '9px', background: 'var(--accent-green)', color: '#fff', padding: '1px 5px', borderRadius: '3px', fontWeight: '700', fontFamily: "'Outfit', sans-serif" }}>
+                BILL VERIFIED
               </span>
             </div>
-          ))}
+            <span style={{ fontSize: '9px', color: 'var(--text-muted)' }}>Extracted from utility invoice</span>
+          </div>
+
+          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(2, 1fr)', gap: '8px' }}>
+            {verifiedBillFields.map((field) => (
+              <div key={field.id} style={{ background: 'rgba(255, 255, 255, 0.02)', border: '1px solid var(--border-color)', padding: '6px 10px', borderRadius: '4px' }}>
+                <span style={{ fontSize: '8px', color: 'var(--text-muted)', display: 'block', textTransform: 'uppercase', fontWeight: '700' }}>{field.label}</span>
+                <span
+                  id={field.id}
+                  style={{
+                    fontSize: '11px',
+                    fontWeight: '800',
+                    color: field.id === 'resPerUnitRate' ? 'var(--accent-blue)' :
+                           field.id === 'resBillAmount' ? 'var(--text-navy)' : 'var(--text-navy)',
+                    display: 'block',
+                  }}
+                >
+                  {formatDetailValue(field.key, field.value)}
+                </span>
+              </div>
+            ))}
+          </div>
+
+          {/* Multi-Slab Tariff Breakdown (if present on bill) */}
+          {d.tariff_slabs && d.tariff_slabs.length > 0 && (
+            <div style={{ marginTop: '10px', padding: '8px 12px', background: 'rgba(23, 168, 229, 0.03)', border: '1px solid rgba(23, 168, 229, 0.2)', borderRadius: '4px' }}>
+              <span style={{ fontSize: '9px', fontWeight: '800', color: 'var(--accent-blue)', display: 'block', textTransform: 'uppercase', marginBottom: '6px' }}>
+                Electricity Tariff Slabs Printed On Bill
+              </span>
+              <div style={{ display: 'flex', gap: '8px', flexWrap: 'wrap' }}>
+                {d.tariff_slabs.map((slab, idx) => (
+                  <div key={idx} style={{ fontSize: '10px', padding: '4px 8px', background: 'rgba(255, 255, 255, 0.04)', borderRadius: '3px', border: '1px solid var(--border-color)' }}>
+                    <span style={{ color: 'var(--text-muted)' }}>Slab {idx + 1}: </span>
+                    <span style={{ fontWeight: '700', color: 'var(--text-navy)' }}>
+                      {slab.units != null ? `${slab.units} kWh` : (slab.range || '')} @ ₹{slab.rate}/kWh
+                    </span>
+                  </div>
+                ))}
+              </div>
+            </div>
+          )}
         </div>
-        <div style={{ background: 'rgba(54, 211, 153, 0.04)', border: '1px dashed rgba(54, 211, 153, 0.3)', padding: '8px 12px', borderRadius: '4px', marginTop: '8px', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-          <span style={{ fontSize: '10px', fontWeight: '700', color: 'var(--text-navy)' }}>25-Year Cumulative Savings:</span>
-          <span style={{ fontSize: '14px', fontWeight: '900', color: 'var(--accent-green)' }} id="res25YearSavings">{d.savings_25_years_rs ? formatCurrency(d.savings_25_years_rs) : 'Not Available'}</span>
+
+        {/* SECTION B: SOLAR SIZING & ECONOMICS (ESTIMATE & RECOMMENDATION) */}
+        <div style={{ marginTop: '16px', paddingTop: '14px', borderTop: '1px dashed rgba(255, 255, 255, 0.1)' }}>
+          <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '10px', paddingBottom: '6px', borderBottom: '1px solid rgba(255, 255, 255, 0.06)' }}>
+            <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
+              <span style={{ fontSize: '11px', fontWeight: '800', color: 'var(--text-navy)', textTransform: 'uppercase', letterSpacing: '0.5px' }}>
+                Solar Sizing & Economics
+              </span>
+              <span style={{ fontSize: '9px', background: 'var(--accent-blue)', color: '#fff', padding: '1px 5px', borderRadius: '3px', fontWeight: '700', fontFamily: "'Outfit', sans-serif" }}>
+                ESTIMATE & RECOMMENDATION
+              </span>
+            </div>
+            <span style={{ fontSize: '9px', color: 'var(--accent-blue)', fontWeight: '700' }}>ENGINEERING PROJECTIONS</span>
+          </div>
+
+          {/* Premium Summary Snapshot */}
+          <div className="card-base" style={{ '--card-theme': '23, 168, 229', marginBottom: '12px', padding: '10px 12px', background: 'rgba(23, 168, 229, 0.04)', border: '1px solid rgba(23, 168, 229, 0.25)' } as React.CSSProperties}>
+            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: '6px', textAlign: 'center' }}>
+              <div><span style={{ fontSize: '8px', color: 'var(--text-muted)', display: 'block', textTransform: 'uppercase', fontWeight: '700' }}>Solar Potential</span><span style={{ fontSize: '15px', fontWeight: '900', color: 'var(--accent-green)', display: 'block', marginTop: '2px' }} id="snapSolarPotential">{potentialScore != null ? `${potentialScore}/100` : '—'}</span></div>
+              <div><span style={{ fontSize: '8px', color: 'var(--text-muted)', display: 'block', textTransform: 'uppercase', fontWeight: '700' }}>Recommended Solar Size</span><span style={{ fontSize: '15px', fontWeight: '900', color: 'var(--accent-blue)', display: 'block', marginTop: '2px' }} id="snapSystemSize">{d.recommended_kw ? `${d.recommended_kw} kW` : '—'}</span></div>
+              <div><span style={{ fontSize: '8px', color: 'var(--text-muted)', display: 'block', textTransform: 'uppercase', fontWeight: '700' }}>Annual Savings</span><span style={{ fontSize: '15px', fontWeight: '900', color: 'var(--accent-blue)', display: 'block', marginTop: '2px' }} id="snapAnnualSavings">{d.monthly_savings_rs ? formatCurrency(d.monthly_savings_rs * 12) : '—'}</span></div>
+              <div><span style={{ fontSize: '8px', color: 'var(--text-muted)', display: 'block', textTransform: 'uppercase', fontWeight: '700' }}>Payback</span><span style={{ fontSize: '15px', fontWeight: '900', color: 'var(--accent-orange)', display: 'block', marginTop: '2px' }} id="snapPaybackPeriod">{d.payback_years != null && d.payback_years > 0 ? `${d.payback_years} Yrs` : '—'}</span></div>
+            </div>
+          </div>
+
+          {/* Solar Sizing Recommendation Fields */}
+          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(2, 1fr)', gap: '8px' }}>
+            {solarRecommendationFields.map((field) => (
+              <div key={field.id} style={{ background: 'rgba(255, 255, 255, 0.02)', border: '1px solid var(--border-color)', padding: '6px 10px', borderRadius: '4px' }}>
+                <span style={{ fontSize: '8px', color: 'var(--text-muted)', display: 'block', textTransform: 'uppercase', fontWeight: '700' }}>{field.label}</span>
+                <span
+                  id={field.id}
+                  style={{
+                    fontSize: '11px',
+                    fontWeight: '800',
+                    color: ['recommended_kw', 'monthly_generation_units'].includes(field.key) ? 'var(--accent-blue)' :
+                           field.key === 'monthly_savings_rs' ? 'var(--accent-green)' :
+                           ['system_cost_rs', 'payback_years'].includes(field.key) ? 'var(--accent-orange)' : 'var(--text-navy)',
+                    display: 'block',
+                  }}
+                >
+                  {formatDetailValue(field.key, field.value)}
+                </span>
+              </div>
+            ))}
+          </div>
+          <div style={{ background: 'rgba(54, 211, 153, 0.04)', border: '1px dashed rgba(54, 211, 153, 0.3)', padding: '8px 12px', borderRadius: '4px', marginTop: '8px', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+            <span style={{ fontSize: '10px', fontWeight: '700', color: 'var(--text-navy)' }}>25-Year Cumulative Savings:</span>
+            <span style={{ fontSize: '14px', fontWeight: '900', color: 'var(--accent-green)' }} id="res25YearSavings">{d.savings_25_years_rs ? formatCurrency(d.savings_25_years_rs) : 'Not Available'}</span>
+          </div>
         </div>
       </CollapsibleSection>
 
@@ -1623,6 +1738,11 @@ function AnalysisResults({
         subtitle="Monthly/annual generation, direct self-consumption & grid export breakdown"
         defaultExpanded={false}
         themeColor="var(--accent-orange)"
+        badge={
+          <span style={{ fontSize: '9px', background: 'rgba(251, 146, 60, 0.15)', color: 'var(--accent-orange)', padding: '1px 5px', borderRadius: '3px', fontWeight: '700' }}>
+            ESTIMATED
+          </span>
+        }
         icon={
           <svg style={{ width: '14px', height: '14px', stroke: 'var(--accent-orange)', fill: 'none', strokeWidth: '2' }} viewBox="0 0 24 24">
             <circle cx="12" cy="12" r="10" /><polyline points="12 6 12 12 16 14" />
@@ -1637,7 +1757,7 @@ function AnalysisResults({
             </div>
           ))}
           <div className="card-base" style={{ padding: '10px', gridColumn: 'span 2', background: 'rgba(54, 211, 153, 0.02)', border: '1px solid var(--border-color)' }}>
-            <span style={{ fontSize: '8px', color: 'var(--text-muted)', display: 'block', textTransform: 'uppercase', fontWeight: '700' }}>Net Metering Benefit</span>
+            <span style={{ fontSize: '8px', color: 'var(--text-muted)', display: 'block', textTransform: 'uppercase', fontWeight: '700' }}>Estimated Net Metering Benefit</span>
             <span style={{ fontSize: '14px', fontWeight: '900', color: 'var(--accent-green)', display: 'block' }} id="resNetMeteringBenefit">{formatCurrencyPerMonth(Math.round(d.netMeteringBenefit))}</span>
           </div>
         </div>
