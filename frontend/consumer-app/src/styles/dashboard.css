@@ -5036,7 +5036,12 @@ input[type="date"]::-webkit-calendar-picker-indicator {
   pointer-events: none;
 }
 
-/* Mobile responsiveness for dual uploader layout */
+/* Responsive layout for primary KPIs and dual uploader */
+@media (max-width: 1024px) {
+  .primary-kpis-grid {
+    grid-template-columns: repeat(2, 1fr) !important;
+  }
+}
 @media (max-width: 768px) {
   #tab-bill-analyzer .tab-grid-layout {
     grid-template-columns: 1fr !important;

@@ -1519,7 +1519,7 @@ function AnalysisResults({
               </div>
               <div style={{ background: 'rgba(54, 211, 153, 0.03)', border: '1px solid var(--border-color)', padding: '8px', borderRadius: '6px' }}>
                 <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '3px' }}>
-                  <span style={{ fontSize: '8px', color: 'var(--text-muted)', textTransform: 'uppercase', fontWeight: '700' }}>Solar Savings Potential</span>
+                  <span style={{ fontSize: '8px', color: 'var(--text-muted)', textTransform: 'uppercase', fontWeight: '700' }}>Estimated Solar Savings</span>
                   {isDemo && <DemoMetricExplainer metricKey="potentialSavings" compact />}
                 </div>
                 <span id="resFinancialSavingsPotential" style={{ fontSize: '14px', fontWeight: '900', color: 'var(--accent-green)', display: 'block', marginTop: '2px' }}>
@@ -2226,15 +2226,17 @@ export default function BillAnalyzer() {
           className="primary-kpis-grid"
           style={{
             display: 'grid',
-            gridTemplateColumns: 'repeat(3, 1fr)',
+            gridTemplateColumns: 'repeat(4, 1fr)',
             gap: '12px',
             marginBottom: '16px',
           }}
         >
+          {/* 1. Verified: Current Monthly Bill */}
           <div className="card-base shadow-lift" style={{ '--card-theme': '255, 138, 29', padding: '12px 14px' } as React.CSSProperties}>
             <div className="kpi-header-row" style={{ marginBottom: '6px' }}>
               <div style={{ display: 'flex', alignItems: 'center', gap: '6px', flexWrap: 'wrap' }}>
                 <span className="kpi-title">Current Monthly Bill</span>
+                <span style={{ fontSize: '8px', color: 'var(--accent-orange)', background: 'rgba(255, 138, 29, 0.1)', padding: '1px 5px', borderRadius: '3px', fontWeight: '700', letterSpacing: '0.4px' }}>VERIFIED BILL</span>
                 {isDemoMode && <DemoMetricExplainer metricKey="billAmount" compact />}
               </div>
               <svg className="kpi-title-icon orange"><use href="#icon-electricity-consumption" xlinkHref="#icon-electricity-consumption" /></svg>
@@ -2248,10 +2250,13 @@ export default function BillAnalyzer() {
                 : d && d.bill_amount > 0 ? 'Extracted from latest billing cycle' : 'No bill data available'}
             </p>
           </div>
+
+          {/* 2. Verified: Monthly Units Consumed */}
           <div className="card-base shadow-lift" style={{ '--card-theme': '23, 168, 229', padding: '12px 14px' } as React.CSSProperties}>
             <div className="kpi-header-row" style={{ marginBottom: '6px' }}>
               <div style={{ display: 'flex', alignItems: 'center', gap: '6px', flexWrap: 'wrap' }}>
                 <span className="kpi-title">Monthly Units Consumed</span>
+                <span style={{ fontSize: '8px', color: 'var(--accent-blue)', background: 'rgba(23, 168, 229, 0.1)', padding: '1px 5px', borderRadius: '3px', fontWeight: '700', letterSpacing: '0.4px' }}>VERIFIED BILL</span>
                 {isDemoMode && <DemoMetricExplainer metricKey="gridImport" compact />}
               </div>
               <svg className="kpi-title-icon blue"><use href="#icon-bill" xlinkHref="#icon-bill" /></svg>
@@ -2270,10 +2275,15 @@ export default function BillAnalyzer() {
                 : d && (d.monthlyConsumptionKwh ?? d.monthly_units) ? `Billed consumption: ${formatKwhNumber(d.monthlyConsumptionKwh ?? d.monthly_units)} kWh` : 'No consumption data'}
             </p>
           </div>
+
+          {/* 3. Estimated Solar Savings (Solar Projection) */}
           <div className="card-base shadow-lift" style={{ '--card-theme': '54, 211, 153', padding: '12px 14px' } as React.CSSProperties}>
             <div className="kpi-header-row" style={{ marginBottom: '6px' }}>
               <div style={{ display: 'flex', alignItems: 'center', gap: '6px', flexWrap: 'wrap' }}>
-                <span className="kpi-title">Solar Savings Potential</span>
+                <span className="kpi-title">Estimated Solar Savings</span>
+                <span style={{ fontSize: '8px', color: 'var(--accent-green)', background: 'rgba(54, 211, 153, 0.1)', padding: '1px 5px', borderRadius: '3px', fontWeight: '700', letterSpacing: '0.4px' }}>
+                  ESTIMATED · SOLAR PROJECTION
+                </span>
                 {isDemoMode && <DemoMetricExplainer metricKey="potentialSavings" compact />}
               </div>
               <svg className="kpi-title-icon green"><use href="#icon-annual-savings" xlinkHref="#icon-annual-savings" /></svg>
@@ -2282,11 +2292,35 @@ export default function BillAnalyzer() {
               <span className="kpi-value-text" id="billTabSavings">{d && d.monthly_savings_rs > 0 ? formatCurrencyPerMonth(d.monthly_savings_rs) : '—'}</span>
             </div>
             <p className="kpi-card-subdesc" style={{ fontSize: '10px', color: 'var(--text-muted)', marginTop: '4px' }}>
-              {isDemoMode
-                ? 'Sample projected monthly dividend: ₹2,835/mo (~82% reduction)'
-                : d && d.monthly_savings_rs > 0
-                ? (d.bill_amount > 0 ? `Equivalent to ~${Math.round((d.monthly_savings_rs / d.bill_amount) * 100)}% reduction` : 'Solar savings potential calculated')
-                : 'Savings calculated upon bill extraction'}
+              Solar projection
+            </p>
+          </div>
+
+          {/* 4. Estimated Bill Reduction (Solar Projection) */}
+          <div className="card-base shadow-lift" style={{ '--card-theme': '54, 211, 153', padding: '12px 14px' } as React.CSSProperties}>
+            <div className="kpi-header-row" style={{ marginBottom: '6px' }}>
+              <div style={{ display: 'flex', alignItems: 'center', gap: '6px', flexWrap: 'wrap' }}>
+                <span className="kpi-title">Estimated Bill Reduction</span>
+                <span style={{ fontSize: '8px', color: 'var(--accent-green)', background: 'rgba(54, 211, 153, 0.1)', padding: '1px 5px', borderRadius: '3px', fontWeight: '700', letterSpacing: '0.4px' }}>
+                  ESTIMATED · SOLAR PROJECTION
+                </span>
+                {isDemoMode && <DemoMetricExplainer metricKey="potentialSavings" compact />}
+              </div>
+              <svg className="kpi-title-icon green" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" style={{ width: '16px', height: '16px' }}>
+                <line x1="19" y1="5" x2="5" y2="19" />
+                <circle cx="6.5" cy="6.5" r="2.5" />
+                <circle cx="17.5" cy="17.5" r="2.5" />
+              </svg>
+            </div>
+            <div className="kpi-value-block">
+              <span className="kpi-value-text" id="billTabReduction">
+                {d && d.monthly_savings_rs > 0 && d.bill_amount > 0
+                  ? `~${Math.round((d.monthly_savings_rs / d.bill_amount) * 100)}%`
+                  : (isDemoMode ? '~82%' : '—')}
+              </span>
+            </div>
+            <p className="kpi-card-subdesc" style={{ fontSize: '10px', color: 'var(--text-muted)', marginTop: '4px' }}>
+              Solar projection
             </p>
           </div>
         </div>
